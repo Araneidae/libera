@@ -1,0 +1,71 @@
+#!/bin/sh
+
+# This file is part of the Libera EPICS Driver,
+# Copyright (C) 2005  Michael Abbott, Diamond Light Source Ltd.
+#
+# The Libera EPICS Driver is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# The Libera EPICS Driver is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc., 51
+# Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# Contact:
+#      Dr. Michael Abbott,
+#      Diamond Light Source Ltd,
+#      Diamond House,
+#      Chilton,
+#      Didcot,
+#      Oxfordshire,
+#      OX11 0DE
+#      michael.abbott@diamond.ac.uk
+
+# Startup script for Libera EPICS ioc.
+cd "$(dirname "$0")"
+
+
+# Pick up the location of the epics files.
+. /etc/sysconfig/epics_ioc
+export EPICS_BASE
+
+
+export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$EPICS_BASE/lib"
+export PATH="$PATH:$EPICS_BASE/bin"
+export EPICS_CA_MAX_ARRAY_BYTES=1000000
+export DEVICE="$(hostname)"
+
+INTERACTIVE=
+while getopts "d:n" option; do
+    case "$option" in
+    d)  DEVICE="$OPTARG";;
+    n)  INTERACTIVE=-n ;;
+    *)  cat <<'EOF' >&2
+Invalid option
+    -d <device>:  use supplied device name instead of hostname
+    -n            run non-interactive without an IOC shell
+EOF
+        exit 1;;
+    esac
+done
+
+
+# Ensure that leventd isn't still running: at the moment we have a resource
+# collision with this process.
+if [ -e /var/run/leventd.pid ]; then
+    kill $(cat /var/run/leventd.pid)
+fi
+
+
+# Start the repeater first and background it properly to avoid possible
+# conflicts (for instance, it can hold important file handles open!)
+caRepeater </dev/null >/dev/null 2>&1 &
+
+# Now run the ioc proper.
+./bin/ioc -p/var/run/ioc.pid $INTERACTIVE st.cmd

@@ -1,0 +1,34 @@
+#!/bin/sh
+
+# Script to build the distribution
+
+TARGET="${1:?Where to put the files?}"
+
+cd "$(dirname "$0")/.." &&
+
+# Pick up the version
+. install/CONFIG  &&
+
+# Need to build the .db files in case the recipient doesn't have the epics
+# Python library.  
+make &&
+for f in sensors libera; do
+    sed '/^# \*\*\* Please do not edit/d' db/$f.db >install/$f.db.prebuilt
+done  &&
+
+# Make sure we now start with a fresh page
+make clean uninstall &&
+
+# Build the distribution.  We do this in two parts to avoid confusion about
+# copyright!
+EPICS="$TARGET"/libera-epics."$VERSION".tgz
+DRIVER="$TARGET"/libera-driver.0.92-2.tgz
+tar czf "$EPICS" \
+    --exclude=CVS --exclude=Libera/driver --exclude=Libera/opi \
+    -C.. Libera  &&
+tar czf $DRIVER --exclude=CVS driver  &&
+
+# Finally get rid of the prebuilt files again: we don't want them normally.
+rm install/*.db.prebuilt  &&
+
+echo 'Distribution built ok in:'$'\n'"    $EPICS"$'\n'"    $DRIVER"

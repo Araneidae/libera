@@ -1,0 +1,5 @@
+#!/bin/sh
+#/home/mga83/epics/Diagnostics/opi/runedm -p5064 -x -noedit -eolc \
+/home/mga83/epics/Diagnostics/opi/runedm -p5064 -x -eolc \
+    /home/mga83/epics/Libera/opi/launcher.edl &
+

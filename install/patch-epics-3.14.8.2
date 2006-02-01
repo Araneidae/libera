@@ -1,0 +1,185 @@
+Index: configure/os/CONFIG.linux-x86.linux-arm
+===================================================================
+--- configure/os/CONFIG.linux-x86.linux-arm	(.../vendor/base/R3.14.8.2)	(revision 0)
++++ configure/os/CONFIG.linux-x86.linux-arm	(.../branches/base/R3.14.8.2)	(revision 1144)
+@@ -0,0 +1,23 @@
++# CONFIG.linux-x86.linux-arm
++#
++# Definitions for linux-x86 host - linux-arm target builds
++# Sites may override these definitions in CONFIG_SITE.linux-x86.linux-arm
++#-------------------------------------------------------
++
++# Include common gnu compiler definitions
++include $(CONFIG)/CONFIG.gnuCommon
++
++GNU_DIR = /usr
++
++# Override the -nostdinc flag, needed here...
++CROSS_CPPFLAGS = 
++
++# Copied from x86.x86
++STATIC_LDFLAGS_YES= -Wl,-Bstatic
++STATIC_LDFLAGS_NO= 
++STATIC_LDLIBS_YES= -Wl,-Bdynamic
++STATIC_LDLIBS_NO= 
++
++SHRLIB_LDFLAGS +=  -shared -fPIC
++LOADABLE_SHRLIB_LDFLAGS = -shared -fPIC
++
+Index: configure/os/CONFIG.Common.linux-arm
+===================================================================
+--- configure/os/CONFIG.Common.linux-arm	(.../vendor/base/R3.14.8.2)	(revision 0)
++++ configure/os/CONFIG.Common.linux-arm	(.../branches/base/R3.14.8.2)	(revision 1144)
+@@ -0,0 +1,27 @@
++# CONFIG.Common.linux-arm
++#
++# This file is maintained by the build community.
++#
++# Definitions for linux-arm target builds
++# Sites may override these definitions in CONFIG_SITE.Common.linux-arm
++#-------------------------------------------------------
++
++# Include definitions common to all Unix targets
++include $(CONFIG)/os/CONFIG.Common.linuxCommon
++
++ARCH_CLASS = arm
++
++# Set a special definition for network order of Netwinder ARM floating point
++ARCH_DEP_CPPFLAGS += -D_ARM_NWFP_
++
++# Set runtime path for shared libraries
++#RUNTIME_LDFLAGS = $(SHRLIB_SEARCH_DIRS:%=-Wl,-rpath,%)
++RUNTIME_LDFLAGS = $(SHRLIB_SEARCH_DIRS:%=-Wl,-rpath-link,%)
++
++ifdef CROSS
++   GNU_TARGET=arm-linux
++   # prefix of compiler tools
++   CMPLR_SUFFIX=
++   CMPLR_PREFIX=$(addsuffix -,$(GNU_TARGET))
++endif
++
+Index: configure/os/CONFIG_SITE.linux-x86.linux-arm
+===================================================================
+--- configure/os/CONFIG_SITE.linux-x86.linux-arm	(.../vendor/base/R3.14.8.2)	(revision 0)
++++ configure/os/CONFIG_SITE.linux-x86.linux-arm	(.../branches/base/R3.14.8.2)	(revision 1144)
+@@ -0,0 +1,8 @@
++#  CONFIG_SITE.linux-x86.linux-arm
++#
++# $Id: patch-epics-3.14.8.2,v 1.1 2006/01/31 19:23:20 mga83 Exp $
++#
++# Site specific definitions for linux-x86 host - linux-arm target builds
++#-------------------------------------------------------
++
++#GNU_DIR = /home/targetOS/linux-arm/host/x86-linux/gcc_3.3.3
+Index: src/ca/convert.cpp
+===================================================================
+--- src/ca/convert.cpp	(.../vendor/base/R3.14.8.2)	(revision 1144)
++++ src/ca/convert.cpp	(.../branches/base/R3.14.8.2)	(revision 1144)
+@@ -1612,7 +1612,7 @@
+ 
+ #endif /*CA_FLOAT_MIT*/
+ 
+-#if defined(CA_FLOAT_IEEE)
++#if defined(CA_FLOAT_IEEE) || defined(CA_FLOAT_NWFP)
+ 
+ /*
+  * dbr_htond ()
+@@ -1629,15 +1629,15 @@
+      * (assume that src and dest ptrs
+      * may be identical)
+      */    
+-#ifndef _armv4l_
++
++#ifdef CA_FLOAT_NWFP /* Special ARM FPA format */
++    pNet[0] = dbr_htonl (pHost[0]);
++    pNet[1] = dbr_htonl (pHost[1]);
++#else
+     /* pure little endian */
+     ca_uint32_t tmp = pHost[0];
+     pNet[0] = dbr_htonl (pHost[1]);
+     pNet[1] = dbr_htonl (tmp);  
+-#else
+-    /* impure little endian, compatible with archaic ARM FP hardware */
+-    pNet[0] = dbr_htonl (pHost[0]);
+-    pNet[1] = dbr_htonl (pHost[1]);
+ #endif
+ 
+ #else
+@@ -1660,15 +1660,13 @@
+      * (assume that src and dest ptrs
+      * may be identical)
+      */
+-#ifndef _armv4l_
+-     /* pure little endian */
+-     ca_uint32_t tmp = pNet[0];
+-     pHost[0] = dbr_ntohl (pNet[1]);
+-     pHost[1] = dbr_ntohl (tmp); 
+-#else
+-    /* impure little endian, compatible with archaic ARM FP hardware */
++#ifdef CA_FLOAT_NWFP /* Special ARM FPA format */
+     pHost[0] = dbr_ntohl (pNet[0]);
+     pHost[1] = dbr_ntohl (pNet[1]);
++#else
++    ca_uint32_t tmp = pNet[0];
++    pHost[0] = dbr_ntohl (pNet[1]);
++    pHost[1] = dbr_ntohl (tmp); 
+ #endif
+ 
+ #else
+Index: src/ca/net_convert.h
+===================================================================
+--- src/ca/net_convert.h	(.../vendor/base/R3.14.8.2)	(revision 1144)
++++ src/ca/net_convert.h	(.../branches/base/R3.14.8.2)	(revision 1144)
+@@ -27,7 +27,7 @@
+  * Here are the definitions for architecture dependent byte ordering 
+  * and floating point format
+  */
+-#if defined (_M_IX86) || defined (_X86_) || defined (__i386__) || defined(_armv4l_) || defined (_X86_64_)
++#if defined (_M_IX86) || defined (_X86_) || defined (__i386__) || defined (_X86_64_)
+ #	define CA_FLOAT_IEEE
+ #	define CA_LITTLE_ENDIAN
+ #elif defined (VAX) 
+@@ -39,6 +39,19 @@
+ #elif ( defined (__ALPHA) || defined (__alpha) ) && defined (UNIX)
+ #	define CA_FLOAT_IEEE
+ #	define CA_LITTLE_ENDIAN
++#elif defined (__arm__) 
++#	if defined(_ARM_NWFP_)
++    /* The ARM supports two different floating point architectures, the
++     * original and a more recent "vector" format.  The original FPU is
++     * emulated by the Netwinder library and, in little endian mode, has
++     * the two words in the opposite order to that which would otherwise
++     * be expected!  The vector format is identical to IEEE. */
++#		define CA_FLOAT_NWFP
++#	else
++#		define CA_FLOAT_IEEE
++#	endif
++    /* ARM defaults to little-endian operation. */
++#	define CA_LITTLE_ENDIAN 
+ #else
+ #	define CA_FLOAT_IEEE
+ #	define CA_BIG_ENDIAN
+@@ -56,9 +69,12 @@
+ #if defined(CA_FLOAT_IEEE) && defined(CA_FLOAT_MIT)
+ #   error defined(CA_FLOAT_IEEE) && defined(CA_FLOAT_MIT)
+ #endif
+-#if !defined(CA_FLOAT_IEEE) && !defined(CA_FLOAT_MIT)
+-#   error !defined(CA_FLOAT_IEEE) && !defined(CA_FLOAT_MIT) 
++#if defined(CA_FLOAT_NWFP) && (defined(CA_FLOAT_IEEE) || defined(CA_FLOAT_MIT))
++#   error defined(CA_FLOAT_NWFP) && (defined(CA_FLOAT_IEEE) || defined(CA_FLOAT_MIT))
+ #endif
++#if !defined(CA_FLOAT_IEEE) && !defined(CA_FLOAT_MIT) && !defined(CA_FLOAT_NWFP)
++#   error !defined(CA_FLOAT_IEEE) && !defined(CA_FLOAT_MIT) && !defined(CA_FLOAT_NWFP)
++#endif
+ 
+ /*
+  * CONVERSION_REQUIRED is set if either the byte order
+@@ -83,7 +99,7 @@
+ epicsShareExtern CACVRTFUNC *cac_dbr_cvrt[LAST_BUFFER_TYPE+1];
+ #endif
+ 
+-#if defined(CA_FLOAT_IEEE) && !defined(CA_LITTLE_ENDIAN)
++#if defined(CA_FLOAT_IEEE) && defined(CA_BIG_ENDIAN)  /* no conversion */
+ #   ifdef _cplusplus
+         inline void dbr_htond ( dbr_double_t *IEEEhost, dbr_double_t *IEEEnet )
+         {

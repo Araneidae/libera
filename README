@@ -1,0 +1,121 @@
+Epics driver for Libera Electron Beam Position Monitor (EBPM)
+
+This software provides an EPICS interface to the Libera electron beam position
+monitor, allowing the performance of the electron beam to be monitored through
+epics channels.
+
+This version of the epics driver is designed to work with exclusively with
+version 0.92-2 of the Libera device driver, as distributed by Instrumentation
+Technologies, http://www.i-tech.si, and has been built to support the
+comissioning of the Diamond light source, http://diamond.ac.uk.
+
+For licensing see the attached file COPYING.  For installation instructions
+see the attached file INSTALL.
+
+
+This version provides the following functionality:
+
+First Turn Data
+    This is designed for monitoring transfer paths and behaviour during
+    injection of the first turn into a synchrotron.  A hardware trigger is
+    required at tens of microseconds before the event.
+
+Turn-by-turn Data
+    Very long waveforms (up to 200,000 points) can be captured on a hardware
+    trigger and then read out in 1024 point segments.  This is designed
+    specifically for tune measurements at frequencies up to 1/2 the
+    synchrotron revolution frequency.
+
+Booster Ramp Data
+    Waveforms are provided giving an overview of the booster ramp.  This is
+    done by reducing 100ms of ramp data to two sample rates: 1/1024 turn
+    frequency, and 1/64 turn frequency.
+
+
+All EPICS records follow a uniform naming convention of the form
+    <device>:<group>:<record>
+where:
+    <device> is normally derived from the hostname of the epics IOC, but can
+        be configured to any string at startup.  
+    <group> is the major function (FT = "First Turn", etc)
+    <record> is the remainder of the record name as specified below.
+
+In the list of records below we use a number of abbreviations:
+    <buttons> 
+        refers to four names, A, B, C, D, referring to the four beam position
+        monitor buttons.
+    <positions> 
+        refers to four names, X, Y, Q, S referring to the computed electron
+        beam position (X,Y), a skew factor (Q) and the total beam intensity
+        (S).  The intensity S is in arbitrary units, normally scaled to
+        0.5822*2^31 full scale; the positions are in either nm or mm. 
+    ..._S
+        Every record of the form <name>_S is used to write a value into the
+        driver and has a corresponding readback record <name> which returns
+        the current value.
+        
+
+The following EPICS records provided by this driver will be of interest:
+
+First Turn (<group> = FT):
+    WF<buttons>
+        32 point arrays at turn-by-turn frequency, updated on trigger
+    <buttons>
+        Button values averaged within the window specified by OFF and LEN.
+    <positions>
+        Position data derived from <buttons>, in mm.
+    OFF, LEN
+        These two fields determine the window within WF<buttons> used to
+        compute the averaged <buttons> values.
+
+Turn by Turn (<group> = TT):
+    ARM
+        1 must be written to this record to enable capture of a full
+        turn-by-turn waveform at the next trigger.
+    READY
+        This record becomes set to 1 when a waveform has been captured.
+    CAPLEN
+        Programs the number of points to be captured into the internal long
+        waveform.  A maximum of 200,000 points can be specified.
+    CAPTURED
+        Records how many points were captured.  At Diamond's booster frequency
+        (1.893MHz) typically no more than 120,000 points can be reliably
+        captured.
+    OFFSET_S
+        Used to set the offset into the long buffer for reading out waveforms.
+    LENGTH_S
+        Used to set how many points are read from the long buffer.  The
+        default (and maximum) value is 1024.
+    WF<buttons>, WF<positions>
+        Waveforms of up to 1024 points read from the internal captured long
+        waveform using the specified OFFSET and LENGTH.
+
+Booster (<group> = BN):
+    WF<buttons>, WF<positions>
+        3040 point waveforms of the 100ms booster ramp at booster turn-by-turn
+        frequency reduced by 64.
+    WFS<positions>
+        190 point waveforms of the 100ms booster ramp reduced by a factor of
+        1024 from turn-by-turn frequency.
+
+Configuration (<group> = CF):
+    DIAG_S
+        Configures button or stripline orientation
+    KX_S, KY_S, KQ_S
+        Scaling factor in mm.  These are determined by the physical geometry
+        of the button or stripline pickups.  At Diamond typical values are
+        17mm for the transfer path striplines and 10.6mm and 11mm (horizontal
+        and vertical) for the booster buttons.
+    X0_S, Y0_S
+        Zero point offsets.  It is intended that these can be used to define a
+        logical "centre" point once the centre of the focusing system has been
+        located precisely.
+    G<buttons>_S
+        Gain offsets can be set for individual channels to compensate for
+        channel imbalances within Libera.
+    ATTWF, ATT1_S, ATT2_S
+        The eight input attenuators (two per button) are set collectively
+        using ATT1_S and ATT2_S, but read back as an 8 point array using
+        ATTWF.  The driver initialises with all attenuators set to 20: this
+        results in 40dB attenuation per button channel.  Any value (in dB)
+        between 0 and 31 can be set per channel.

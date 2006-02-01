@@ -1,0 +1,32 @@
+record(dfanout, "$(DEVICE):INI:DIAG")
+{
+    field(VAL,  "1")
+    field(PINI, "YES")
+    field(OMSL, "supervisory")
+    field(OUTA, "$(DEVICE):CF:DIAG_S PP")
+}
+
+
+record(dfanout, "$(DEVICE):INI:KX")
+{
+    field(VAL,  "10.6")
+    field(PINI, "YES")
+    field(OMSL, "supervisory")
+    field(OUTA, "$(DEVICE):CF:KX_S PP")
+}
+
+record(dfanout, "$(DEVICE):INI:KY")
+{
+    field(VAL,  "11")
+    field(PINI, "YES")
+    field(OMSL, "supervisory")
+    field(OUTA, "$(DEVICE):CF:KY_S PP")
+}
+
+record(dfanout, "$(DEVICE):INI:KQ")
+{
+    field(VAL,  "10")
+    field(PINI, "YES")
+    field(OMSL, "supervisory")
+    field(OUTA, "$(DEVICE):CF:KQ_S PP")
+}

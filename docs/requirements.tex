@@ -1,0 +1,407 @@
+\documentclass[
+    a4paper,
+    fleqn
+]{article}
+
+\usepackage{mathptmx}        % Postscript fonts
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{array}
+\usepackage{tabularx}
+
+\sloppy
+\hyphenpenalty 4000
+
+
+\newcommand{\id}[1]{\texttt{#1}}
+\newcommand{\XY}{\id{X}, \id{Y}}
+\newcommand{\SQ}{\id{S}, \id{Q}}
+\newcommand{\XYSQ}{\XY, \SQ}
+\newcommand{\ABCD}{\id{A}, \id{B}, \id{C}, \id{D}}
+\newcommand{\ABCDIQ}{%
+  \id{AI}, \id{AQ}, \id{BI}, \id{BQ}, 
+  \id{CI}, \id{CQ}, \id{DI}, \id{DQ}}
+
+
+\newenvironment{epics}{%
+  \begin{list}{}{%
+    \newcommand{\entry}[2]{\item[##1\hfill]\hfill##2\\}%
+  }%
+}{%
+  \end{list}%
+}
+
+
+\begin{document}
+\title{Requirements for Libera EPICS Interface}
+\author{Michael Abbott}
+\date{29\textsuperscript{th} July 2005}
+\maketitle
+
+\section{Overview}
+
+This note documents the requirements for EPICS support for the Libera
+electron beam position monitoring system.  
+
+\subsection{Libera Signal Processing Chain}
+
+The raw data captured by Libera before digital processing is in the
+form of individual button signals for buttons labelled A, B, C and D.
+This data stream is sampled at approximately 117MHz and carries the
+underlying machine 500MHz clock at an aliased frequency of
+approximately 30MHz.
+
+In other words, immediately after digitisation all the beam position
+information is carried in the sidebands of a frequency line at
+approximately 30MHz: this is the \emph{intermediate frequency}.
+
+This raw signal is then immediately mixed with a oscillator running at
+the same intermediate frequency.  This shifts the beam position
+information down to close to DC.  The output from this step is a pair
+of signals in quadrature for each button.
+
+Unfortunately there are significant difficulties in phase locking the
+mixing clock (at low signal levels the phase locking would be very
+vulnerable to noise, so it would be necessary to feed back a filtered
+signal) and it is also not practical to reduce the quadrature pair of
+signals back to an absolute value, as this is a costly operation.
+Thus at high frequencies we have eight signals to deal with.
+
+Subsequent processing reduces the sample rate from the raw sample rate
+to turn-by-turn sampling at either 1.893MHz (for the booster) or
+534kHz (for the storage ring), and further processing reduces this to
+4kHz samples (for fast feedback), 10Hz samples (for slow feedback) and
+other custom sample rates.
+
+In the present implementation of Libera only turn-by-turn quadrature
+data is available together with the same reduced in sample rate by 64.
+Future versions of Libera should provide turn-by-turn data reduced to
+X, Y, S, Q together with the other data streams described in this
+document.
+
+\subsection{Forms of Libera Data}
+
+The underlying data is button signals, \ABCD.  This is often provided
+in quadrature form, \ABCDIQ, in which case the button signals have to
+be calculated as
+\begin{align*}
+\id{A} &= \sqrt{\id{AI}^2+\id{AQ}^2} &
+\id{B} &= \sqrt{\id{BI}^2+\id{BQ}^2} \\
+\id{C} &= \sqrt{\id{CI}^2+\id{CQ}^2} &
+\id{D} &= \sqrt{\id{DI}^2+\id{DQ}^2} 
+\enspace.
+\end{align*}
+
+The end user form of the Libera data is as positions \XY{} which is
+supplemented by a signal strength value \id{S} and a ``quality
+factor'' \id{Q}.  These are calculated thus:
+\begin{align*}
+\id{S} &= \id{A} + \id{B} + \id{C} + \id{D}  &
+\id{X} &= 
+    K_X \times (\id{A} - \id{B} - \id{C} + \id{D}) / \id{S} - X_0 \\
+\id{Q} &= (\id{A} - \id{B} + \id{C} - \id{D}) / \id{S} &
+\id{Y} &= 
+    K_Y \times (\id{A} + \id{B} - \id{C} - \id{D}) / \id{S} - Y_0
+\enspace.
+\end{align*}
+The strength value \id{S} together with the programmed gain can be
+used provide a measurement of beam current.  The quality factor \id{Q}
+should be close to zero and can be alarmed to detect faults in the BPM
+system.
+
+It is planned to process and deliver all data as 32-bit integers with
+positions \XY{} scaled to nanometres.
+
+
+\section{Requirements}
+
+The Libera beam position monitors operate in three quite different
+environments.
+\begin{description}
+\item[Transfer paths.]  Electrons travel through the transfer paths in
+  transient bursts lasting no more than half a microsecond; this
+  repeats at 5Hz.
+\item[Booster.]  Electrons stay in the booster for 100ms during which
+  time their positions may change quite considerably;  a detailed view
+  of this is needed.  This also repeats at 5Hz.
+\item[Storage.]  Electrons stay in the storage ring indefinitely.
+\end{description}
+
+
+
+
+\subsection{Transfer Paths (LtB, BtS)}
+
+Electrons pass through the transfer path in a single pulse lasting for
+between one bunch ($\ll$2ns) up to one booster turn (528ns).  In both
+cases this corresponds to one sample at the turn-by-turn clock, which
+in both cases will be the booster clock.  At the raw sampling rate of
+approximately 117MHz these times correspond to between 1 to 62
+samples, though the impulse response of the system will stretch this
+somewhat.
+
+The following data can usefully be derived from this signal and
+published through the EPICS interface.
+\begin{itemize}
+\item
+  Reduction of the triggered turn-by-turn data to a single point to be
+  provided as \XYSQ{} and \ABCD.  This can be done by capturing a
+  small window around the trigger point and averaging.
+\item
+  It may be useful to provide access to the turn-by-turn waveform used
+  in the averaging process above.  This is a very short waveform,
+  perhaps 5 to 10 points.
+\item
+  If possible it would be useful to have access to the raw waveform as
+  captured by the ADC.  If so a waveform length of 100 seems suitable.
+  This will not be available from Libera for some time.
+\end{itemize}
+All of these data points would update at 5Hz in response to the
+appropriate injection trigger.  The volume of data involved is very
+small and no special tune testing operation is required.
+
+
+\subsection{Booster (BR)}
+
+A booster cycle lasts 100ms and is repeated at 5Hz.  During this time
+turn-by-turn will accumulate nearly 200,000 samples --- access to this
+data is required for tune measurement.  During normal operation it
+will also be desirable to provide access to a reduced form of this
+waveform.  During commissioning it will be helpful to have access to
+the ``first turn'' data.
+
+Thus we will provide the following through EPICS.
+\begin{itemize}
+\item
+  Position waveforms providing \XYSQ{} for a complete booster cycle
+  with a reduced sample rate of, say, 2kHz --- this means each
+  waveform would be 200 points long.
+\item
+  Averaged positions from the start, middle and end of the booster
+  cycle: again, \XYSQ{} would be provided as single points for each
+  time. 
+\item
+  Tune measurement.  In this mode a single full turn-by-turn waveform
+  would be captured in its entirety from a single booster cycle and
+  then read out in segments.
+
+  Data reduction to \XY{} and \SQ{} may be done in the Libera or in a
+  supporting Matlab routine.  The choice of which implementation to
+  use will be done to optimise performance.
+\item
+  First turn data.  This can be accessed either through the tune
+  measurement interface or through the same interface as used for
+  transfer paths.
+\end{itemize}
+
+During normal operation all data will update at 5Hz.  Tune testing
+will involve single-shot triggering and slower readout.
+
+
+\subsection{Storage (SR)}
+
+The storage ring operates continuously.  Three main activities need to
+be supported:
+\begin{itemize}
+\item
+  Continuous position monitoring at 10Hz.
+\item
+  Fast feedback status monitoring and control.
+\item
+  Tune measurement.
+\end{itemize}
+The interface to the fast feedback system is not covered here, however
+we do provide access to the fast feedback position buffer.
+
+The following functionality is provided through EPICS:
+\begin{itemize}
+\item
+  Positions reduced to \XYSQ{} updated at 10Hz.  This will be provided
+  at all times.
+\item
+  Tune measurement.  In response to a trigger a long waveform of at
+  least 25,000 points will be captured at turn-by-turn and made
+  available for subsequent readout.  It should be possible to use a
+  subArray record to provide access to the entire waveform.  
+
+  This requirement can be unified with booster tune measurement.
+\item
+  Fast feedback buffer.  Positions reduced to \XY{} at 4kHz sample
+  rate provided as a continually updating waveform.
+\end{itemize}
+
+
+\subsection{Configuration and Control}
+
+There are a handful of configuration settings and controls.  The
+following list is likely to grow.
+
+\begin{itemize}
+\item
+  Fast feedback interfacing: to be defined.
+\item
+  Clock synchronisation.  A process involving close interaction with the
+  timing system is required for Libera clock synchronisation.  It
+  would make sense to provide an EPICS interface for this.
+\item
+  Attenuators and RF cross-bar switch.  These can either be
+  automatically controlled by Libera or managed through an EPICS
+  interface.
+\item
+  Scaling coefficients and zero point.  The scaling coefficients
+  $K_X$, $K_Y$ and zero point $X_0$, $Y_0$ will be defined when the
+  beam is aligned with the dipole centres\footnote{It's easy to see
+  how $X_0$, $Y_0$ are determined: but how are $K_X$ and $K_Y$
+  found?}.
+\item
+  Internal temperature and fan speeds can be monitored through the
+  EPICS interface.
+\item
+  Support for vxStats style monitoring of processor activity will be
+  useful.  It would be good to provide the same records so the same UI
+  can be used for vxWorks IOCs and Libera.
+\end{itemize}
+
+
+\section{EPICS Interface}
+
+The EPICS interface can be divided into six functional groups.  Which
+functional group is active in which beam position monitor position is
+shown by the table below.
+\begin{figure}[h]
+\begin{tabular}{>{\tt}llccc}
+ & & Transfer & Booster & Storage \\
+FT & First Turn & \checkmark &  \checkmark &  \checkmark \\
+TUNE & Tune Measurement & & \checkmark &  \checkmark \\
+RAMP & Booster Ramp & & \checkmark & \\
+10HZ & Storage 10Hz & & & \checkmark \\
+FAST & Fast Feedback & & & \checkmark \\
+CT & Control \& Miscellaneous  & \checkmark &  \checkmark &  \checkmark 
+\end{tabular}
+\end{figure}
+
+In the EPICS interface descriptions below the record names are
+described concisely.  Each functional group has a 2 or four character
+abbreviation listed in the table above and in the title of the section
+below.  This is combined with the short form of the record name as
+listed and the location of the beam position monitor on the machine to
+produce the final record name.
+
+For example, the first turn X position is listed with name \id{X}
+under First Turn \texttt{:FT:}.  The corresponding record name for the
+first beam position monitor in the linac to booster transfer path is
+\begin{quote}
+\texttt{LB-DI-EBPM-01:FT:X}
+\end{quote}
+
+
+
+\subsection{First Turn \texttt{:FT:}}
+
+These records support the analysis of the behaviour of the electron
+beam immediately after a trigger.
+
+\begin{epics}
+\entry{\XYSQ, \ABCD}{longin}
+  First turn positions and associated averaged button measurements.
+  Calculated from triggered turn-by-turn data.
+\entry{\id{WFA}, \id{WFB}, \id{WFC}, \id{WFD}}{waveform(10)}
+  Triggered turn-by-turn button values.
+\entry{\id{RAWA}, \id{RAWB}, \id{RAWC}, \id{RAWD}}{waveform(100)}
+  Raw triggered data at underlying 117MHz sample rate.  Not available
+  until this data is provided by Libera.
+\end{epics}
+
+
+\subsection{Tune Measurement \texttt{:TUNE:}}
+
+These records provide access to long triggered waveforms at
+turn-by-turn sample rates. 
+
+\begin{epics}
+\entry{\id{LEN}}{longout}
+  Specifies number of points to be captured in one trigger.  At least
+  200,000 can be specified.
+\entry{\id{ARM}}{bo}
+  Writing 1 to this record arms the trigger and enables the capture of
+  one waveform of the specified length.
+\entry{\id{READY}}{bi}
+  This bit is reset when \id{ARM} is set and is set when data is
+  available to be read out from the captured buffer.
+\entry{\id{WFX}, \id{WFY}, \id{WFS}, \id{WFQ}}{subArray(10000)}
+  These records provide a window into the captured data.  Up to 10,000
+  points can be read directly, or data can be read by moving the
+  subArray through the captured waveform.
+\end{epics}
+
+
+\subsection{Booster Ramp \texttt{:RAMP:}}
+
+Access to low bandwidth view of the booster ramp data: both full
+waveforms and points at the start, middle and end of the ramp are provided.
+
+\begin{epics}
+\entry{\id{WFX}, \id{WFY}, \id{WFS}, \id{WFQ}}{waveform(200)}
+  Booster positions at sample rate of 2kHz covering entire booster
+  cycle from initial trigger.
+\entry{\id{STAX}, \id{STAY}, \id{STAS}, \id{STAQ}}{longin}
+  Average booster position at start of cycle.
+\entry{\id{MIDX}, \id{MIDY}, \id{MIDS}, \id{MIDQ}}{longin}
+  Average booster position at middle of cycle.
+\entry{\id{ENDX}, \id{ENDY}, \id{ENDS}, \id{ENDQ}}{longin}
+  Average booster position at end of cycle.
+\end{epics}
+
+
+\subsection{Storage 10Hz \texttt{:10HZ:}}
+
+Storage ring 10Hz position updates only.
+
+\begin{epics}
+\entry{\XYSQ}{longin}
+  Beam positions reduced to 10Hz bandwidth, updating at 10Hz.
+\end{epics}
+
+
+\subsection{Fast Feedback \texttt{:FAST:}}
+
+Access to 4kHz positions being fed into the fast feedback system.
+
+\begin{epics}
+\entry{\id{WFX}, \id{WFY}, \id{WFS}, \id{WFQ}}{waveform(4000)}
+  Fast feedback waveforms, updating at 1Hz.  It should be possible to
+  capture consecutive updates to each of these waveforms to generate a
+  continuous stream of 4kHz position data.
+\end{epics}
+
+
+\subsection{Control \& Miscellaneous \texttt{:CT:}}
+
+Controls for attenuation and switches, zero points and scaling, and
+general status readouts.
+
+\begin{epics}
+\entry{\id{ATT1}, \id{ATT2}}{longout}
+  Settings for first and second stages of attenuation.  Attenuation is
+  set uniformly for all channels, but the two stages of attenuation on
+  each channel are separately controllable.
+\entry{\id{AGC}}{bo}
+  Enable or disable automatic gain control.  If \id{AGC} is clear the
+  attenuator settings can be manually set by controlling \id{ATT1} and
+  \id{ATT2}; when this bit is set the attenuation is automatically
+  controlled in the FPGA.
+\entry{\id{GAIN}}{longin}
+  Returns the current gain.
+\entry{\id{XBAR}}{longout}
+  Sets the crossbar switch.  One of 16 positions can be selected.
+  This only takes effect if the crossbar is in manual mode.
+\entry{\id{XBARAUT}}{bo}
+  Controls automatic crossbar switch operation.
+\entry{\id{K\_X}, \id{K\_Y}, \id{X\_0}, \id{Y\_0}}{longout}
+  Calibration factors and zero offset points for \XY{} calculations.
+\end{epics}
+
+
+
+
+\end{document}

@@ -1,0 +1,14 @@
+#!/bin/sh
+
+# This script is copied into $INSTALL_HOST and should be run in place on the
+# IOC to ensure that the appropriate files are copied into place.
+
+cd "$(dirname "$0")"
+
+if [ "$(uname -m)" != armv5tel ]; then
+    echo This should be run on Libera >&2
+    exit 1
+fi
+
+cp -f epics /etc/init.d
+cp -f epics_ioc /etc/sysconfig

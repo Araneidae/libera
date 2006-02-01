@@ -1,0 +1,7 @@
+device(longin,   CONSTANT, longinLibera,   "Libera")
+device(longout,  CONSTANT, longoutLibera,  "Libera")
+device(ai,       CONSTANT, aiLibera,       "Libera")
+device(ao,       CONSTANT, aoLibera,       "Libera")
+device(bi,       CONSTANT, biLibera,       "Libera")
+device(bo,       CONSTANT, boLibera,       "Libera")
+device(waveform, CONSTANT, waveformLibera, "Libera")

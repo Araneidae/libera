@@ -1,0 +1,18 @@
+record(dfanout, "$(DEVICE):INI:DIAG")
+{
+    field(VAL,  "1")
+    field(PINI, "YES")
+    field(OMSL, "supervisory")
+    field(OUTA, "$(DEVICE):CF:DIAG_S PP")
+}
+
+
+record(dfanout, "$(DEVICE):INI:K")
+{
+    field(VAL,  "18")
+    field(PINI, "YES")
+    field(OMSL, "supervisory")
+    field(OUTA, "$(DEVICE):CF:KX_S PP")
+    field(OUTB, "$(DEVICE):CF:KY_S PP")
+    field(OUTC, "$(DEVICE):CF:KQ_S PP")
+}

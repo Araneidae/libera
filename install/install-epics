@@ -1,0 +1,68 @@
+#!/bin/sh
+
+# This file is part of the Libera EPICS Driver,
+# Copyright (C) 2005  Michael Abbott, Diamond Light Source Ltd.
+#
+# The Libera EPICS Driver is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# The Libera EPICS Driver is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc., 51
+# Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# Contact:
+#      Dr. Michael Abbott,
+#      Diamond Light Source Ltd,
+#      Diamond House,
+#      Chilton,
+#      Didcot,
+#      Oxfordshire,
+#      OX11 0DE
+#      michael.abbott@diamond.ac.uk
+
+# Install epics in target directory.  This script also assembles the
+# /etc/sysconfig/epics_ioc and /etc/init.d/epics scripts in the same directory
+# ready to be placed in the appropriate places.
+
+SOURCE="$(cd "$(dirname "$0")"/..; pwd)"  &&
+# Pick up the configuration settings: this will tell us where to put the
+# epics files we're assembling.
+. "$SOURCE"/install/CONFIG  &&
+: ${INSTALL_HOST:?Local installation path not defined}  &&
+
+# Figure out where Epics base is from the epics directory.
+EPICS_BASE="$(
+    sed -n '/^EPICS_BASE=/{s///;p;q}' "$SOURCE"/configure/RELEASE)"  &&
+
+TARGET="$INSTALL_HOST"/epics  &&
+rm -rf "$TARGET"  &&
+
+# Place the EPICS binaries in bin and lib directories as appropriate.
+mkdir -p "$TARGET"/bin "$TARGET"/lib  &&
+cp -f "$EPICS_BASE"/bin/linux-arm/* "$TARGET"/bin  &&
+cp -f "$EPICS_BASE"/lib/linux-arm/*.so "$TARGET"/lib  &&
+
+# Also place the epics and epics_ioc files ready to be deployed on the ioc.
+for f in epics install-libera; do
+    cp "$SOURCE"/install/$f "$TARGET"
+done  &&
+
+# The epics_ioc file is basically a digest of the stuff in CONFIG that is
+# directly relevant to the target system.
+cat <<EOF >"$TARGET"/epics_ioc  &&
+# Paths to EPICS base and the Libera IOC.
+# This file should be placed in /etc/sysconfig/epics_ioc
+EPICS_BASE="$EPICS_TARGET"
+LIBERA_IOC="$DRIVER_TARGET"/runioc
+EOF
+# All symbols ending _IOC will be passed through to the target IOC.
+grep '^[[:alnum:]_]*_IOC=' "$SOURCE"/install/CONFIG >>"$TARGET"/epics_ioc  &&
+
+echo Epics files installed in "$TARGET".

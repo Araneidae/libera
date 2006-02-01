@@ -1,0 +1,63 @@
+TOP=../..
+
+include $(TOP)/configure/CONFIG
+
+#----------------------------------------
+#  ADD MACRO DEFINITIONS AFTER THIS LINE
+#=============================
+
+#USR_CXXFLAGS += -S
+USR_CXXFLAGS += -Werror
+
+# Make sure that we pick up the version from install/CONFIG.
+USR_CXXFLAGS += -DLIBERA_VERSION='"$(shell \
+    sed -n '/^VERSION=/{s///;p}' $(TOP)/install/CONFIG)"'
+
+# The lines below defeat the -ansi flag.
+#CMPLR=LAX
+#CXXCMPLR=LAX
+CONFORM_CFLAGS_STRICT = 
+CONFORM_CXXFLAGS_STRICT = 
+
+
+#=============================
+# build an ioc application
+
+PROD_IOC = ioc
+
+# <name>.dbd will be created from <name>Include.dbd
+DBD += ioc.dbd
+DBD += device.dbd
+DBD += libera.dbd
+
+
+# <name>_registerRecordDeviceDriver.cpp will be created from <name>.dbd
+ioc_SRCS += ioc_registerRecordDeviceDriver.cpp
+ioc_SRCS += iocMain.cpp
+ioc_SRCS += readFile.cpp
+ioc_SRCS += drivers.cpp
+ioc_SRCS += publish.cpp
+ioc_SRCS += trigger.cpp
+ioc_SRCS += firstTurn.cpp
+ioc_SRCS += booster.cpp
+ioc_SRCS += turnByTurn.cpp
+ioc_SRCS += waveform.cpp
+ioc_SRCS += cordic.cpp
+ioc_SRCS += convert.cpp
+ioc_SRCS += hardware.cpp
+ioc_SRCS += events.cpp
+
+
+ioc_LIBS += $(EPICS_BASE_IOC_LIBS)
+
+
+# Point to the Libera device driver include, libera.h.
+USR_INCLUDES += -I$(TOP)/driver
+
+
+#===========================
+
+include $(TOP)/configure/RULES
+#----------------------------------------
+#  ADD RULES AFTER THIS LINE
+

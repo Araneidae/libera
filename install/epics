@@ -1,0 +1,79 @@
+#!/bin/sh
+
+# This file is part of the Libera EPICS Driver,
+# Copyright (C) 2005  Michael Abbott, Diamond Light Source Ltd.
+#
+# The Libera EPICS Driver is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# The Libera EPICS Driver is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc., 51
+# Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# Contact:
+#      Dr. Michael Abbott,
+#      Diamond Light Source Ltd,
+#      Diamond House,
+#      Chilton,
+#      Didcot,
+#      Oxfordshire,
+#      OX11 0DE
+#      michael.abbott@diamond.ac.uk
+
+# Starts or stops EPICS IOC in the background
+# This file should be placed in /etc/init.d/epics
+
+# Pick up the epics ioc definitions: this tells us where to find the IOC.
+. /etc/sysconfig/epics_ioc
+
+# We use the standard print_status and evaluate_retval functions.
+. /etc/init.d/functions
+
+
+case "$1" in
+    start)
+        echo -n "Starting EPICS"
+        if [ -e /var/run/ioc.pid ]; then
+            echo -n " - already running?"
+            print_status failure
+        else
+            if [ -z "$LOG_IOC" ]; then
+                # If no IOC log file specified then run in a screen.
+                screen -dmS epics "$LIBERA_IOC"
+            else
+                # If a log file is specified then run as a daemon with all
+                # output sent to this file.
+                "$LIBERA_IOC" -n >"$LOG_IOC" 2>&1 &
+            fi
+            evaluate_retval
+        fi
+        ;;
+
+    stop)
+        echo -n "Stopping EPICS"
+        [ -e /var/run/ioc.pid ] && kill "$(cat /var/run/ioc.pid)"
+        evaluate_retval
+        # Make sure that the ioc.pid file doesn't stay around, otherwise if
+        # the ioc dies without removing its pid file we can never restart
+        # without manual intervention.
+        rm -f /var/run/ioc.pid
+        ;;
+
+    restart)
+        "$0" stop
+        "$0" start
+        ;;
+
+
+    *)
+        echo "Usage: $0 {start|stop|restart}"
+        exit 1
+        ;;
+esac
