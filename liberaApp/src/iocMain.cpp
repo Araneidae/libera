@@ -264,6 +264,7 @@ int main(int argc, char *argv[])
         {
             /* Wait for the shutdown request. */
             printf("Running in non-interactive mode.  Kill to close.\n");
+            fflush(stdout);
             sem_wait(&ShutdownSemaphore);
         }
     }
