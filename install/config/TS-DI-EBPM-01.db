@@ -16,3 +16,48 @@ record(dfanout, "$(DEVICE):INI:K")
     field(OUTB, "$(DEVICE):CF:KY_S PP")
     field(OUTC, "$(DEVICE):CF:KQ_S PP")
 }
+
+record(dfanout, "$(DEVICE):INI:ATT1")
+{
+    field(VAL,  "5")
+    field(PINI, "YES")
+    field(OMSL, "supervisory")
+    field(OUTA, "$(DEVICE):CF:ATT1_S PP")
+}
+
+record(dfanout, "$(DEVICE):INI:ATT2")
+{
+    field(VAL,  "10")
+    field(PINI, "YES")
+    field(OMSL, "supervisory")
+    field(OUTA, "$(DEVICE):CF:ATT2_S PP")
+}
+
+record(dfanout, "$(DEVICE):INI:SW")
+{
+    field(VAL,  "3")
+    field(PINI, "YES")
+    field(OMSL, "supervisory")
+    field(OUTA, "$(DEVICE):CF:SW_S PP")
+}
+
+record(dfanout, "$(DEVICE):INI:XY0")
+{
+    field(VAL,  "0")
+    field(PINI, "YES")
+    field(OMSL, "supervisory")
+    field(OUTA, "$(DEVICE):CF:X0_S PP")
+    field(OUTB, "$(DEVICE):CF:Y0_S PP")
+}
+
+record(dfanout, "$(DEVICE):INI:G")
+{
+    field(VAL,  "1")
+    field(PINI, "YES")
+    field(OMSL, "supervisory")
+    field(OUTA, "$(DEVICE):CF:GA_S PP")
+    field(OUTB, "$(DEVICE):CF:GB_S PP")
+    field(OUTC, "$(DEVICE):CF:GC_S PP")
+    field(OUTD, "$(DEVICE):CF:GD_S PP")
+}
+
