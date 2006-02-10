@@ -29,6 +29,7 @@
 
 import sys
 import os
+from math import *
 
 import epics
 epics.Configure(recordnames=epics.TemplateRecordNames())
@@ -106,33 +107,23 @@ def longInOut(name, OMSL='supervisory', **fields):
     return input, output
 
     
-def Waveform(name, length):
+def Waveform(name, length, FTVL='LONG', **fields):
     return Libera.waveform(
         name, name,
         SCAN = 'Passive',
         NELM = length,
-        FTVL = 'LONG')
+        FTVL = FTVL,
+        **fields)
 
         
-
-# Booster ramp support records.  Decimated waveforms for overview of entire
-# 100ms booster ramp.
-def Booster():
-    waveforms = \
-        [Waveform('BN:WF%s' % button, 3040) for button in 'ABCDXYSQ'] + \
-        [Waveform('BN:WFS%s' % button, 190) for button in 'XYS']
-
-    Libera.bi('BN:TRIG',
-        SCAN = 'I/O Intr',
-        FLNK = create_fanout('BN:FAN', *waveforms),
-        DESC = 'Trigger FT waveform capture')
-
 
 # First turn snapshot records.  Access to position data immediately following
 # the trigger for use on transfer paths and during injection.
 def FirstTurn():
     waveforms = [
-        Waveform('FT:WF%s' % button, 32)
+        Waveform('FT:WF%s' % button, 256)
+        for button in 'ABCD'] + [
+        Waveform('FT:RAW%s' % button, 1024)
         for button in 'ABCD']
 
     position_S = Libera.longin('FT:S')
@@ -140,20 +131,46 @@ def FirstTurn():
         [position_S] + \
         [Libera.longin('FT:%s' % position) for position in 'ABCD'] + \
         [Libera.ai('FT:%s' % position, PREC = 1, EGU  = 'mm')
-            for position in 'XYQ']
+            for position in 'XYQ'] + \
+        [Libera.longin('FT:MAXADC',
+            LOPR = 0,        HOPR = 2048,
+            HSV  = 'MINOR',  HIGH = 1024,                   # -6dB
+            HHSV = 'MAJOR',  HIHI = int(1024*sqrt(2)), )]   # -3dB
 
+    # The maximum possible first turn intensity is determined by the
+    # calculation in waveform.cpp:ADC_WAVEFORM::Capture() where the raw ADC
+    # value (+-2^11) is rescaled into the range 0..sqrt(2)*0.5822*2^30.  Here
+    # 0.5822 is the cordic correction factor.
+    logMax = log10(2**30 * 0.582217 * sqrt(2))
     sl = records.calc('FT:SL',
-        CALC = '20*(LOG(A)-9.097)',     # What's 9.097, eh?
+        CALC = '20*(LOG(A)-%g)' % logMax,
         INPA = position_S,
         EGU  = 'dB',  PREC = 0)
             
     Libera.bi('FT:TRIG',
         SCAN = 'I/O Intr',
-        FLNK = create_fanout('FT:FAN', *waveforms + positions + [sl]),
-        DESC = 'Trigger FT waveform capture')
+        FLNK = create_fanout('FT:FAN', *waveforms + positions + [sl]))
 
-    longInOut('FT:OFF', LOPR = 0, HOPR = 31)
-    longInOut('FT:LEN', LOPR = 1, HOPR = 32)
+    longInOut('FT:OFF', LOPR = 0, HOPR = 1023)
+    longInOut('FT:LEN', LOPR = 1, HOPR = 1024)
+
+
+# Booster ramp support records.  Decimated waveforms for overview of entire
+# 100ms booster ramp.
+def Booster():
+    waveforms = \
+        [Waveform('BN:WF%s' % button, 3040) for button in 'ABCDXYSQ'] + \
+        [Waveform('BN:WFS%s' % button, 190) for button in 'XYS'] 
+
+    Libera.bi('BN:TRIG',
+        SCAN = 'I/O Intr',
+        FLNK = create_fanout('BN:FAN', *waveforms))
+
+    # Axes for user friendly graphs, used to label the WF and WFS waveforms.
+    # Each labels the time axis in milliseconds.
+    Waveform('BN:AXIS', 3040, 'FLOAT', PINI='YES')
+    Waveform('BN:AXISS', 190, 'FLOAT', PINI='YES')
+        
 
 
 # Turn-by-turn snapshot records.  Access to long waveforms captured on
@@ -233,15 +250,17 @@ def Config():
     longInOut('CF:SW', LOPR = 0, HOPR = 15)
 
 
-# Not yet used ...
-#   These interfaces will probably change drastically.
-
-def Storage():
-    sa = [Libera.ai('SA:' + name, PREC = 4, EGU = 'mm')
-        for name in 'XYSQ']
+def SlowAcquisition():
+    sa = [Libera.ai('SA:' + name, MDEL = -1, PREC = 4, EGU = 'mm')
+        for name in 'ABCDXYSQ']
     Libera.bi('SA:TRIG',
         SCAN = 'I/O Intr',
         FLNK = create_fanout('SA:FAN', *sa))
+
+
+
+# Not yet used ...
+#   These interfaces will probably change drastically.
 
 def Fast():
     waveforms = [
@@ -265,5 +284,6 @@ FirstTurn()
 Booster()
 TurnByTurn()
 Config()
+SlowAcquisition()
 
 WriteRecords(sys.argv[1])

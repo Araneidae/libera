@@ -43,11 +43,6 @@
 #include "firstTurn.h"
 
 
-/* Length of waveform examined for first turn data.  In reality we're only
- * interested in a window of about 4 to 8 points, but a wider window helps
- * with finding the trigger point. */
-#define WAVEFORM_LENGTH 32
-
 
 /* provides support for "first turn" data.  This uses triggered data to read
  * a short waveform which is then converted into X,Y,S,Q values locally. */
@@ -55,13 +50,15 @@
 class FIRST_TURN : I_EVENT
 {
 public:
-    FIRST_TURN(size_t WaveformSize) :
-        Waveform(WaveformSize)
+    FIRST_TURN(size_t WaveformSize) 
     {
         /* Sensible defaults for offset and length.  Must be bounded to lie
-         * within the waveform. */
-        Offset = 10;
-        SetLength(5);
+         * within the waveform.
+         *    By default we set the window to cover approximately two bunches
+         * at booster clock frequency.  This allows a sensible signal to be
+         * read without tight adjustment of the timing. */
+        Offset = 5;
+        SetLength(31);
         
         /* Publish the PVs associated with First Turn data. */
         
@@ -74,12 +71,23 @@ public:
         Publish_ai("FT:Y", Y);
         Publish_ai("FT:Q", Q);
         Publish_longin("FT:S", Row[7]);
+
+        /* The computed maximum ADC values (used to detect overflow). */
+        Publish_longin("FT:MAXADC", MaxAdc);
+
         /* The raw waveforms are provided for help with trigger placement and
          * other diagnostic operations. */
-        Publish_waveform("FT:WFA", Waveform.Waveform(0));
-        Publish_waveform("FT:WFB", Waveform.Waveform(1));
-        Publish_waveform("FT:WFC", Waveform.Waveform(2));
-        Publish_waveform("FT:WFD", Waveform.Waveform(3));
+        /* ??? Can say a bit more here. */
+        Publish_waveform("FT:RAWA", AdcWaveform.RawWaveform(0));
+        Publish_waveform("FT:RAWB", AdcWaveform.RawWaveform(1));
+        Publish_waveform("FT:RAWC", AdcWaveform.RawWaveform(2));
+        Publish_waveform("FT:RAWD", AdcWaveform.RawWaveform(3));
+        
+        Publish_waveform("FT:WFA", AdcWaveform.Waveform(0));
+        Publish_waveform("FT:WFB", AdcWaveform.Waveform(1));
+        Publish_waveform("FT:WFC", AdcWaveform.Waveform(2));
+        Publish_waveform("FT:WFD", AdcWaveform.Waveform(3));
+        
         /* Finally the trigger used to notify events.  The database wires this
          * up so that the all the variables above are processed when a trigger
          * has occured.  This code is then responsible for ensuring that all
@@ -93,7 +101,7 @@ public:
         PUBLISH_METHOD(longout, "FT:LEN", SetLength);
 
         /* Announce our interest in the trigger event from libera. */
-        RegisterEvent(*this, PRIORITY_FT);
+        RegisterTriggerEvent(*this, PRIORITY_FT);
     }
 
 
@@ -102,8 +110,13 @@ public:
      * and all associated values are computed. */
     void OnEvent()
     {
-        Waveform.Capture(1);
-        Waveform.Cordic(8);
+        /* Capture a fresh ADC waveform and compute the maximum raw ADC
+         * button value: this allows input overload to be detected. */
+        AdcWaveform.Capture();
+        MaxAdc = Maximum(0, 0);
+        MaxAdc = Maximum(1, MaxAdc);
+        MaxAdc = Maximum(2, MaxAdc);
+        MaxAdc = Maximum(3, MaxAdc);
 
         /* Prepare the button data into a LIBERA_ROW that we can use standard
          * conversion functions.  Average the waveforms to compute A-D. */
@@ -131,21 +144,41 @@ private:
      * which button to average. */
     int Average(int Index)
     {
-        int Data[WAVEFORM_LENGTH];
-        Waveform.Read(Index, Data, 0, WAVEFORM_LENGTH);
+        int * Data = AdcWaveform.Array(Index);
 
-        int total = 0;
+        int Total = 0;
         for (int i = 0; i < Length; i ++)
-            /* We divide each value by 32 to avoid overflow.  Copes with the
-             * case Length = total Length = 32. */
-            total += Data[Offset + i] >> 5;
-        return ((long long) total * AverageScale) >> 24;
+            /* Prescale data as we accumulate to ensure we don't overflow.
+             * We know that each data point is <2^30 (see the Capture()
+             * method of ADC_WAVEFORM), and there can be at most 2^8 points,
+             * so scaling by 2^-7 is safe. */
+            Total += Data[Offset + i] >> 7;
+        /* We know that:
+         *      AverageScale = 2^30/Length
+         *      Total = 2^-7 * Sum
+         * so to compute the desired average Sum/Length we compute
+         *      2^-23 * Total * AverageScale. */
+        return ((long long) Total * AverageScale) >> 23;
+    }
+
+    /* Accumulates maximum raw ADC value for selected button. */
+    int Maximum(int Index, int Start)
+    {
+        int * Data = AdcWaveform.RawArray(Index);
+        int Maximum = Start;
+        for (int i = 0; i < ADC_LENGTH; i ++)
+        {
+            int x = Data[i];
+            if (x > Maximum)   Maximum = x;
+            if (-x > Maximum)  Maximum = -x;
+        }
+        return Maximum;
     }
 
     /* Access methods for offset and length. */
     bool SetOffset(int newOffset)
     {
-        if (0 <= newOffset  &&  newOffset + Length <= WAVEFORM_LENGTH)
+        if (0 <= newOffset  &&  newOffset + Length <= ADC_LENGTH/4)
         {
             Offset = newOffset;
             return true;
@@ -160,10 +193,12 @@ private:
 
     bool SetLength(int newLength)
     {
-        if (0 < newLength  &&  Offset + newLength <= WAVEFORM_LENGTH)
+        if (0 < newLength  &&  Offset + newLength <= ADC_LENGTH/4)
         {
             Length = newLength;
-            AverageScale = (1 << 29) / Length;
+            /* We compute the average scale as 2^30/Length so that we can
+             * compute the average by a simple multiplication. */
+            AverageScale = (1 << 30) / Length;
             return true;
         }
         else
@@ -174,7 +209,7 @@ private:
         }
     }
     
-    LIBERA_WAVEFORM Waveform;
+    ADC_WAVEFORM AdcWaveform;
 
     /* Control variables for averaging. */
     int Offset;
@@ -187,6 +222,9 @@ private:
      * the appropriate elements are published to epics. */
     LIBERA_ROW Row;
     double X, Y, Q;
+
+    /* Maximum raw ADC across all four buttons. */
+    int MaxAdc;
 
     /* This is used to inform EPICS of our updated. */
     TRIGGER Trigger;

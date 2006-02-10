@@ -61,7 +61,7 @@ public:
 
     /* Note that subscribers can only *add* entries.  This simplifies this
      * class substantially! */
-    void Subscribe(I_EVENT & iEvent, int EventType, int Priority)
+    void Subscribe(I_EVENT & iEvent, HARDWARE_EVENT_ID EventType, int Priority)
     {
         SUBSCRIPTION * Subscription = new SUBSCRIPTION;
         Subscription->iEvent = & iEvent;
@@ -91,7 +91,7 @@ public:
     }
 
     /* Return next subscriber, or returns false if end of list. */
-    bool StepIteration(I_EVENT * &iEvent, int &EventType)
+    bool StepIteration(I_EVENT * &iEvent, HARDWARE_EVENT_ID &EventType)
     {
         if (Iterator == NULL)
             return false;
@@ -124,7 +124,7 @@ private:
     {
         SUBSCRIPTION * Next;
         I_EVENT * iEvent;
-        int EventType;
+        HARDWARE_EVENT_ID EventType;
         int Priority;
     };
 
@@ -213,7 +213,7 @@ public:
 
 
     /* Register interest in a particular event type. */
-    void Register(I_EVENT & Event, int EventType, int Priority)
+    void Register(I_EVENT & Event, HARDWARE_EVENT_ID EventType, int Priority)
     {
         Receivers.Subscribe(Event, EventType, Priority);
     }
@@ -250,7 +250,7 @@ private:
                     break;
 
                 if (FD_ISSET(queue_fd, &readfds))
-                    DispatchEvent();
+                    DispatchEvents();
             }
             else
                 /* If select fails we might as well give up right now. */
@@ -258,52 +258,47 @@ private:
         }
     }
 
-    void DispatchEvent()
+    void DispatchEvents()
     {
-        LIBERA_EVENT_ID EventId;
-        int param;
-        if (ReadEvent(EventId, param))
+        /* First discover which events need to be dispatched. */
+        int IncomingEvents = ReadEvents();
+
+        /* Work through all possibly interested parties and dispatch events
+         * to all who wish to hear. */
+        Receivers.StartIteration();
+        I_EVENT * iEvent;
+        HARDWARE_EVENT_ID EventId;
+        while (Receivers.StepIteration(iEvent, EventId))
         {
-            PRINTF("{");
-            I_EVENT * iEvent;
-            int EventType;
-            Receivers.StartIteration();
-            while (Receivers.StepIteration(iEvent, EventType))
-            {
-                if (EventId == EventType)
-                {
-                    PRINTF("[");
-                    iEvent->OnEvent();
-                    PRINTF("]");
-                }
-            }
-            PRINTF("}");
+            if (IncomingEvents & (1 << EventId))
+                iEvent->OnEvent();
         }
-        else
-            printf("ReadEvent failed\n");
     }
+
 
     /* Returns the next event from the event queue.
      *
      * Checks for multiple events and complains if more than one event
      * encountered.  This isn't quite right, but we do need to keep the event
      * queue clear, even if we're busy. */
-    bool ReadEvent(LIBERA_EVENT_ID &Id, int &Param)
+    int ReadEvents()
     {
-//        printf(".");
-        int EventCount = 0;
+        int IncomingEvents = 0;
+        HARDWARE_EVENT_ID Id;
+        int Param;
         while (ReadOneEvent(Id, Param))
         {
-            EventCount ++;
-            if (Id != LIBERA_EVENT_TRIGGER)
-                printf("Event %d, %d received\n", Id, Param);
+            /* Ideally each event should set a bit in the incoming event
+             * mask.  Check what we can. */
+            if (Id < 0  ||  32 <= Id)
+                printf("Invalid event id %d\n", Id);
+            else
+            {
+                int Event = 1 << Id;
+                IncomingEvents |= Event;
+            }
         }
-        if (EventCount > 1)
-//            printf("Missed %d events!\n", EventCount - 1);
-            ;
-        else if (EventCount == 0)
-            printf("Odd: nothing to read?\n");
-        return EventCount >= 1;
+        return IncomingEvents;
     }
 
 
@@ -338,7 +333,13 @@ void TerminateEventReceiver()
 }
 
 
-void RegisterEvent(I_EVENT &Event, int Priority)
+void RegisterTriggerEvent(I_EVENT &Event, int Priority)
 {
-    EventReceiver->Register(Event, LIBERA_EVENT_TRIGGER, Priority);
+    EventReceiver->Register(Event, HARDWARE_EVENT_TRIGGET, Priority);
+}
+
+
+void RegisterSlowAcquisitionEvent(I_EVENT &Event)
+{
+    EventReceiver->Register(Event, HARDWARE_EVENT_SA, PRIORITY_SA);
 }

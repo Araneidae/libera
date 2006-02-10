@@ -47,7 +47,7 @@
 #include <epicsExport.h>
 
 #include <alarm.h>
-#include <db_access.h>
+#include <dbFldTypes.h>
 #include <recGbl.h>
 #include <dbCommon.h>
 #include <longinRecord.h>

@@ -46,7 +46,8 @@ rm -rf "$TARGET"  &&
 
 # Place the EPICS binaries in bin and lib directories as appropriate.
 mkdir -p "$TARGET"/bin "$TARGET"/lib  &&
-cp -f "$EPICS_BASE"/bin/linux-arm/* "$TARGET"/bin  &&
+#cp -f "$EPICS_BASE"/bin/linux-arm/* "$TARGET"/bin  &&
+cp -f "$EPICS_BASE"/bin/linux-arm/caRepeater "$TARGET"/bin  &&
 cp -f "$EPICS_BASE"/lib/linux-arm/*.so "$TARGET"/lib  &&
 
 # Also place the epics and epics_ioc files ready to be deployed on the ioc.

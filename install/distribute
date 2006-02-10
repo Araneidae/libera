@@ -21,8 +21,8 @@ make clean uninstall &&
 
 # Build the distribution.  We do this in two parts to avoid confusion about
 # copyright!
-EPICS="$TARGET"/libera-epics."$VERSION".tgz
-DRIVER="$TARGET"/libera-driver.0.92-2.tgz
+EPICS="$TARGET"/libera-epics-"$VERSION".tgz
+DRIVER="$TARGET"/libera-driver-0.92-2.tgz
 tar czf "$EPICS" \
     --exclude=CVS --exclude=.svn \
     --exclude=Libera/driver --exclude=Libera/opi \

@@ -40,6 +40,7 @@
 #include "firstTurn.h"
 #include "booster.h"
 #include "turnByTurn.h"
+#include "slowAcquisition.h"
 
 #include "events.h"
 #include "hardware.h"
@@ -163,7 +164,9 @@ bool InitialiseLibera()
         InitialiseTurnByTurn()  &&
         /* Booster operation is designed for viewing the entire booster ramp
          * at reduced resolution. */
-        InitialiseBooster();
+        InitialiseBooster()  &&
+        /* Slow acquisition returns highly filtered positions at 10Hz. */
+        InitialiseSlowAcquisition();
 }
 
 
@@ -263,7 +266,8 @@ int main(int argc, char *argv[])
         else
         {
             /* Wait for the shutdown request. */
-            printf("Running in non-interactive mode.  Kill to close.\n");
+            printf("Running in non-interactive mode.  "
+                "Kill process %d to close.\n", getpid());
             fflush(stdout);
             sem_wait(&ShutdownSemaphore);
         }

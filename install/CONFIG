@@ -3,7 +3,7 @@
 
 # Version number of this software: automatically included in build and used
 # to build distribution files.
-VERSION=0.2
+VERSION=0.3-dev
 
 # This is where installed files will be placed ready for deployment to the
 # Libera IOC.
@@ -18,4 +18,4 @@ DRIVER_TARGET=/mnt/nfs/testing/ioc
 # If this symbol is empty then the IOC will run in a screen: screen must be
 # installed on Libera for this to work.  Otherwise the IOC will run as a
 # daemon with output redirected to this file.
-#LOG_IOC=/var/log/ioc.log
+LOG_IOC=/var/log/ioc

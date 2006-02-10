@@ -69,7 +69,7 @@ public:
     {
         ShortOffset = 0;
         /* Make the default waveform length something more reasonable. */
-        LongWaveform.SetLength(102400);
+        LongWaveform.SetLength(1024);
         ShortWaveform.SetLength(1024);
         /* Don't trigger until asked to. */
         Armed = false;
@@ -105,7 +105,7 @@ public:
         Publish_bi("TT:TRIG", ShortTrigger);
 
         /* Announce our interest in the trigger. */
-        RegisterEvent(*this, PRIORITY_TT);
+        RegisterTriggerEvent(*this, PRIORITY_TT);
     }
 
 

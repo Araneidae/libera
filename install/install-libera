@@ -10,5 +10,10 @@ if [ "$(uname -m)" != armv5tel ]; then
     exit 1
 fi
 
+[ -e /etc/init.d/epics ] && /etc/init.d/epics stop
+
 cp -f epics /etc/init.d
 cp -f epics_ioc /etc/sysconfig
+ln -sf ../init.d/epics /etc/rc3.d/S900epics
+ln -sf ../init.d/epics /etc/rc6.d/K100epics
+

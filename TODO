@@ -1,0 +1,23 @@
+Work to do
+
+* Support slow acquisition
+
+* Add controls for disabling unwanted functionality
+
+* Review event handling
+
+* Define LOPR and HOPR values for all records.
+
+* Implement autosave and restore
+
+* Review configuration handling
+
+* Try to create proper release process
+
+* Update hardware description document
+
+* Create proper documentation
+
+* Use leventd for event source
+
+* Implement full CSPI hardware interface.

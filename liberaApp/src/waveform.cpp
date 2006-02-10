@@ -34,11 +34,12 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include <db_access.h>
+#include <dbFldTypes.h>
 
 #include "drivers.h"
 #include "hardware.h"
 #include "convert.h"
+#include "cordic.h"
 
 #include "waveform.h"
 
@@ -74,6 +75,22 @@ size_t SIMPLE_WAVEFORM::read(void *array, size_t length)
 }
 
 
+FLOAT_WAVEFORM::FLOAT_WAVEFORM(size_t WaveformLength) :
+    I_WAVEFORM(DBF_FLOAT),
+    WaveformLength(WaveformLength),
+    Waveform(new float[WaveformLength])
+{
+}
+
+
+size_t FLOAT_WAVEFORM::read(void *array, size_t length)
+{
+    if (length > WaveformLength)  length = WaveformLength;
+    memcpy(array, Waveform, sizeof(float) * length);
+    return length;
+}
+
+
 
 /* Implements EPICS access to a single column of a LIBERA_WAVEFORM. */
 
@@ -97,6 +114,7 @@ private:
     LIBERA_WAVEFORM & Waveform;
     const int Index;
 };
+
 
 
 
@@ -183,4 +201,94 @@ void LIBERA_WAVEFORM::Cordic(int Iterations)
 void LIBERA_WAVEFORM::ABCDtoXYQS()
 {
     ::ABCDtoXYQS(Data.Rows, ActiveLength);
+}
+
+
+
+/****************************************************************************/
+/*                                                                          */
+/*                            class ADC_WAVEFORM                            */
+/*                                                                          */
+/****************************************************************************/
+
+
+
+ADC_WAVEFORM::ADC_WAVEFORM()
+{
+    /* Initialise waveforms for all four buttons.  We maintain two waveforms
+     * for each button: the raw 1024 samples as read from the ADC, and the
+     * same data frequency shifted and resampled down to 256 points. */
+    for (int i = 0; i < 4; i ++)
+    {
+        RawWaveforms[i] = new SIMPLE_WAVEFORM(ADC_LENGTH);
+        Waveforms[i]    = new SIMPLE_WAVEFORM(ADC_LENGTH/4);
+    }
+}
+
+
+/* Read a waveform from Libera.   The raw ADC data is read, sign extended
+ * from 12 to 32 bits, and transposed into the four raw waveforms.
+ *
+ * The next stage of processing takes advantage of a couple of important
+ * features of the data being sampled.  The input data is RF (at
+ * approximately 500MHz) and is undersampled (at approximately 117Mhz) so
+ * that the centre frequency appears at approximately 1/4 the sampling
+ * frequency.  To make this possible, the data is filtered through a narrow
+ * band (approximately 10MHz bandwith) filter.
+ *
+ * Thus the intensity profile of the incoming train can be recovered by the
+ * following steps:
+ *  - mix with the centre frequency (producing a complex IQ waveform) to
+ *    bring the carrier frequency close to DC
+ *  - low pass filter the data
+ *  - compute the absolute magnitude of each data point.
+ *
+ * Furthermore, because the carrier frequency is so close to 1/4 sampling
+ * frequency, mixing becomes a matter of multiplying successively by
+ * exp(2*pi*i*n), in other words, by the sequence
+ *      1,  i,  -1,  -i,  1,  ...
+ * and if we then low pass filter by averaging four points together before
+ * computing the magnitude, we can reduce the data stream
+ *      x1, x2, x3, x4, x5, ...
+ * to the stream
+ *      |(x1-x3,x2-x4)|, |(x5-x7,x6-x8)|, ...
+ */
+
+bool ADC_WAVEFORM::Capture()
+{
+    ADC_DATA RawData;
+    bool Ok = ReadAdcWaveform(RawData);
+    if (Ok)
+    {
+        int * a[4];
+        for (int j = 0; j < 4; j ++)
+            a[j] = RawWaveforms[j]->Array();
+        /* First sign extend each waveform point, extend to 32-bits and
+         * transpose to a more useful orientation. */
+        for (int i = 0; i < ADC_LENGTH; i ++)
+            for (int j = 0; j < 4; j ++)
+                a[j][i] = ((int) RawData.Rows[i][j] << 20) >> 20;
+        
+        /* Now reduce each set of four points down to one point.  This
+         * removes the carrier frequency and recovers the underlying
+         * intensity profile of each waveform. */
+        for (int j = 0; j < 4; j ++)
+        {
+            int * p = RawWaveforms[j]->Array();
+            int * q = Waveforms[j]->Array();
+            for (int i = 0; i < ADC_LENGTH; i += 4)
+            {
+                int x1 = *p++, x2 = *p++, x3 = *p++, x4 = *p++;
+                /* Scale the raw values so that they're compatible in
+                 * magnitude with turn-by-turn filtered values.  This means
+                 * that we can use the same scaling rules downstream.
+                 *    A raw ADC value is +-2^11, and by combining pairs we
+                 * get +-2^12.  Scaling by 2^18 gives us values in the range
+                 * +-2^30, which will be comfortable.  After cordic this
+                 * becomes 0..sqrt(2)*0.5822*2^30 or 0.823*2^30. */
+                *q++ = CordicMagnitude((x1-x3)<<18, (x2-x4)<<18);
+            }
+        }
+    }
+    return Ok;
 }

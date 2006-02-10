@@ -51,8 +51,14 @@
 #define LONG_WAVEFORM_SIZE      3040
 #define SHORT_WAVEFORM_SIZE     (LONG_WAVEFORM_SIZE/16)
 
-
-
+/* The total time for a long booster ramp waveform can be calculated from the
+ * basic machine parameters as follows. */
+#define RF_FREQUENCY    499654097       // Hertz, = c/0.6
+#define BOOSTER_BUNCHES 264             // RF intervals per booster turn
+#define DECIMATION      64              // Libera decimation factor
+#define RAMP_DURATION   \
+    ((1e3 * LONG_WAVEFORM_SIZE * DECIMATION * BOOSTER_BUNCHES) / \
+        RF_FREQUENCY)
 
 
 class BOOSTER : I_EVENT
@@ -62,8 +68,15 @@ public:
         LongWaveform(LONG_WAVEFORM_SIZE),
         ShortWaveformX(SHORT_WAVEFORM_SIZE),
         ShortWaveformY(SHORT_WAVEFORM_SIZE),
-        ShortWaveformS(SHORT_WAVEFORM_SIZE)
+        ShortWaveformS(SHORT_WAVEFORM_SIZE),
+        LongAxis(LONG_WAVEFORM_SIZE),
+        ShortAxis(SHORT_WAVEFORM_SIZE)
     {
+        /* Build the linear scales so that we can see booster data against a
+         * sensible time scale (in milliseconds). */
+        FillAxis(LongAxis,  LONG_WAVEFORM_SIZE,  RAMP_DURATION);
+        FillAxis(ShortAxis, SHORT_WAVEFORM_SIZE, RAMP_DURATION);
+        
         /* Publish the PVs associated with Booster data. */
         Publish_waveform("BN:WFA", LongWaveform.Waveform(0));
         Publish_waveform("BN:WFB", LongWaveform.Waveform(1));
@@ -78,12 +91,15 @@ public:
         Publish_waveform("BN:WFSY", ShortWaveformY);
         Publish_waveform("BN:WFSS", ShortWaveformS);
 
+        Publish_waveform("BN:AXIS", LongAxis);
+        Publish_waveform("BN:AXISS", ShortAxis);
+
         /* Publish the trigger.  This trigger will be signalled whenever our
          * data has updated. */
         Publish_bi("BN:TRIG", Trigger);
 
         /* Announce our interest in the trigger. */
-        RegisterEvent(*this, PRIORITY_BN);
+        RegisterTriggerEvent(*this, PRIORITY_BN);
     }
 
 
@@ -93,7 +109,7 @@ public:
     void OnEvent()
     {
         /* Capture the long waveform and reduce to proper values. */
-        LongWaveform.Capture(64);
+        LongWaveform.Capture(DECIMATION);
         LongWaveform.Cordic(10);        // Need to find how many bits needed!
         LongWaveform.ABCDtoXYQS();
 
@@ -125,11 +141,22 @@ private:
             Target[i] = Total;
         }
     }
+
+    /* Fill out each axis waveform with an appropriate linear scale running
+     * from 0 to Duration. */
+    void FillAxis(FLOAT_WAVEFORM &Axis, int Length, float Duration)
+    {
+        float *a = Axis.Array();
+        for (int i = 0; i < Length; i ++)
+            a[i] = (Duration * i) / (Length - 1);
+    }
     
     LIBERA_WAVEFORM LongWaveform;
     SIMPLE_WAVEFORM ShortWaveformX;
     SIMPLE_WAVEFORM ShortWaveformY;
     SIMPLE_WAVEFORM ShortWaveformS;
+    FLOAT_WAVEFORM LongAxis;
+    FLOAT_WAVEFORM ShortAxis;
     TRIGGER Trigger;
 };
 

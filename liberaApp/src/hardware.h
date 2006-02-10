@@ -76,21 +76,64 @@ struct LIBERA_DATA
     (sizeof(LIBERA_DATA) + (RowCount) * sizeof(LIBERA_ROW))
 
 
+#define ADC_LENGTH      1024
+typedef short ADC_ROW[4];
+struct ADC_DATA
+{
+    ADC_ROW Rows[ADC_LENGTH];
+};
+
+
+struct SA_DATA
+{
+    // Amplitudes
+    int Va, Vb, Vc, Vd;
+    // Sum Va + Vb + Vc + Vd
+    int Sum;
+    // Quadropole signal
+    int Q;
+    // Horizontal beam position
+    int X;
+    // Vertical beam position
+    int Y;
+    // Horiz. and vert. correction factors from the FA Application
+    int Cx, Cy;
+    // 6 values reserved for future use
+    int reserved[6];
+};
+
+
 /* The attenuators for Libera are controlled as an array of 8 settings, two
  * per input channel, each of which can be any value in the range 0..31 --
  * this corresponds to precisely this attenuation in dB. */
-typedef unsigned char ATTENUATORS[8];
+typedef unsigned int ATTENUATORS[8];
 
 
-/* The following event types can be returned by the event mechanism. */
-enum LIBERA_EVENT_ID
+/* The following event types can be returned by the event mechanism.   These
+ * are a digest of corresponding events in libera_event_id_t. */
+enum HARDWARE_EVENT_ID
 {
-    LIBERA_EVENT_CFG = 0,
-    LIBERA_EVENT_DD = 1,
-    LIBERA_EVENT_PM = 2,
-    LIBERA_EVENT_SA = 3,
-    LIBERA_EVENT_OVERFLOW = 4,
-    LIBERA_EVENT_TRIGGER = 5,
+    /* Internal device driver queue has overflowed.  This means that events
+     * have been lost, but frankly there's not a lot we can do about it. */
+    HARDWARE_EVENT_OVERFLOW  = 0,
+    /* Something has changed in the configuration.  It may be useful to
+     * monitor this to track values of switches and attenuators. */
+    HARDWARE_EVENT_CFG       = 1,
+    /* Slow acquisition sample available.  This should tick at 10Hz. */
+    HARDWARE_EVENT_SA        = 2,
+    /* Interlock event.  Machine interlock status change(?) */
+    HARDWARE_EVENT_INTERLOCK = 3,
+    /* Post mortem trigger.  Everything has come to a halt, now it's time to
+     * see why.  Does everything need to be reenabled after this??? */
+    HARDWARE_EVENT_PM        = 4,
+    /* Fast acquisition event.  What causes this, do we need it??? */
+    HARDWARE_EVENT_FA        = 5,
+    /* This seems to be the normal external trigger event. */
+    HARDWARE_EVENT_TRIGGET   = 6,
+    /* "SET Trigger trigger" -- what on earth is this??? */
+    HARDWARE_EVENT_TRIGSET   = 7,
+    /* And what on earth is this for? */
+    HARDWARE_EVENT_USER      = 31
 };
 
 
@@ -122,6 +165,12 @@ void TerminateHardware();
  *     At present only decimation values of 1 or 64 are suppported. */
 size_t ReadWaveform(int Decimation, size_t WaveformLength, LIBERA_DATA & Data);
 
+/* Reads a full 1024 point ADC waveform. */
+bool ReadAdcWaveform(ADC_DATA &Data);
+
+/* Reads a slow acquisition update. */
+bool ReadSlowAcquisition(SA_DATA &Data);
+
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                      Miscellaneous Support Routines.                      */
@@ -144,7 +193,7 @@ bool WriteSwitches(int switches);
  * its associated parameter information.  The caller should empty the queue
  * by calling this routine until it returns false before processing any
  * events. */
-bool ReadOneEvent(LIBERA_EVENT_ID &Id, int &Param);
+bool ReadOneEvent(HARDWARE_EVENT_ID &Id, int &Param);
 
 /* Enables delivery of events.  Until this is called ReadOneEvent() will
  * always return false. */
@@ -183,3 +232,9 @@ int EventSelector();
 /* An even more simplified version of TEST_RC, where the error string is
  * simply the function name. */
 #define TEST_(command, args...)  TEST_RC(#command, command, args)
+
+
+
+/* The following macro counts the number of leading zeros in the argument in
+ * and writes the result into clz. */
+#define CLZ(in, clz) __asm__("clz %0,%1" : "=r"(clz) : "r"(in))

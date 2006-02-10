@@ -69,3 +69,5 @@ caRepeater </dev/null >/dev/null 2>&1 &
 
 # Now run the ioc proper.
 ./bin/ioc -p/var/run/ioc.pid $INTERACTIVE st.cmd
+# If we crash, make sure we don't leave the pid file behind!
+rm -f /var/run/ioc.pid

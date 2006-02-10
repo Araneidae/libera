@@ -112,9 +112,9 @@ int CordicMagnitude(int x, int y, int Iterations)
     if (y < 0)  y = -y;
 
     /* The Cordic algorithm scales up the result by a factor of approximately
-     * 1.16 (multiply out (1+2^-2n) for n counting up from 1), so we prescale
-     * by dividing by two to avoid overflow.
-     *    The signed/unsigned dance is to avoid trouble with 0x80000000:
+     * 1.16 (multiply out sqrt(1+2^-2n) for n counting up from 1), so we
+     * prescale by dividing by two to avoid overflow.
+     *     The signed/unsigned dance is to avoid trouble with 0x80000000:
      * remember that (x,y) are supposed to be *unsigned* at this point! */
     x = (int) ((unsigned int) x >> 1);
     y = (int) ((unsigned int) y >> 1);

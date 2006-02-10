@@ -33,7 +33,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <db_access.h>
+#include <dbFldTypes.h>
 
 #include "drivers.h"
 #include "publish.h"
@@ -162,18 +162,20 @@ int DeltaToPosition(int Scaling, int Delta, int Intensity)
 
     /* First normalise S and M together.  This won't affect anything further.
      * It's a waste of time to try more than 8 rounds. */
-    for (int i = 0; S < 0x80000000  &&  i < 8; i ++)
-    {
-        S <<= 1;
-        M <<= 1;
-    }
+    int Shift;
+    CLZ(S, Shift);
+    S <<= Shift;
+    M <<= Shift;
 
     /* Also normalise M.  This allows us to maintain a dynamic precision of
      * up to 16 bits in the final result.  In this case we need to keep count
-     * as the final result is affected. */
-    int Shift = 9;
-    for (; M < 0x80000000  &&  Shift > 0; Shift --)
-        M <<= 1;
+     * as the final result is affected.  Here we can't shift by more than 9,
+     * as we need to correct this shift later. */
+    CLZ(M, Shift);
+    if (Shift > 9)  Shift = 9;
+    M <<= Shift;
+    /* Finally compute the remaining shift. */
+    Shift = 9 - Shift;
     
     /* Nearly there.  We now need to scale everything to ensure that we both
      * support the required dynamic range and the required precision.  We can
@@ -318,7 +320,7 @@ public:
         ATTENUATORS attenuators;
         if (ReadAttenuators(attenuators))
         {
-            const size_t LENGTH = sizeof(ATTENUATORS);
+            const size_t LENGTH = 8;    // Number of attenuators 
             if (length > LENGTH)  length = LENGTH;
             int * target = (int *) array;
             for (size_t i = 0; i < length; i ++)

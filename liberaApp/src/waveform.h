@@ -46,6 +46,22 @@ private:
 
 
 
+class FLOAT_WAVEFORM : public I_WAVEFORM
+{
+public:
+    FLOAT_WAVEFORM(size_t WaveformSize);
+
+    inline float * Array() { return Waveform; }
+    
+private:
+    size_t read(void *array, size_t length);
+    const size_t WaveformLength;
+    float * Waveform;
+};
+
+
+
+
 
 /* Support for waveforms captured from Libera. */
 
@@ -109,4 +125,32 @@ private:
      * This determines how much data is returned elsewhere. */
     size_t ActiveLength;
     LIBERA_DATA & Data;
+};
+
+
+/* Support for ADC rate waveform. */
+
+class ADC_WAVEFORM
+{
+public:
+    ADC_WAVEFORM();
+
+    /* Read a waveform from Libera. */
+    bool Capture();
+
+    /* Publishable interfaces to the captured raw ADC rate data and a reduced
+     * form of the same data. */
+    I_waveform & RawWaveform(int Index) { return * RawWaveforms[Index]; }
+    I_waveform & Waveform(int Index)    { return * Waveforms[Index]; }
+
+    /* Direct access to the underlying waveform data for waveforms. */
+    int * RawArray(int Index)  { return RawWaveforms[Index]->Array(); }
+    int * Array(int Index)     { return Waveforms[Index]->Array(); }
+    
+private:
+    /* We internally maintain both the original raw (1024 point) waveform and
+     * a version reduced by frequency shifting and resampling (256 point),
+     * for each of the four buttons. */
+    SIMPLE_WAVEFORM * RawWaveforms[4];
+    SIMPLE_WAVEFORM * Waveforms[4];
 };

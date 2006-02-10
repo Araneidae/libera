@@ -41,6 +41,7 @@ ioc_SRCS += trigger.cpp
 ioc_SRCS += firstTurn.cpp
 ioc_SRCS += booster.cpp
 ioc_SRCS += turnByTurn.cpp
+ioc_SRCS += slowAcquisition.cpp
 ioc_SRCS += waveform.cpp
 ioc_SRCS += cordic.cpp
 ioc_SRCS += convert.cpp

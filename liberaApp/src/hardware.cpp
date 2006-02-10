@@ -38,6 +38,7 @@
 #include <linux/unistd.h>
 
 #include "libera.h"
+#include "ebpp.h"
 #include "hardware.h"
 
 
@@ -72,7 +73,11 @@ int libera_cfg = -1;
 /* Libera DD (Direct Data) device, used to read waveforms. */
 int libera_dd = -1;
 /* Libera low level device, used to received event notification. */
-int libera_low = -1;
+int libera_event = -1;
+/* Libera ADC device, used to read ADC rate waveforms. */
+int libera_adc = -1;
+/* Libera SA (Slow Acquisition) device, used to receive 10Hz updates. */
+int libera_sa = -1;
 
 
 /* We record the currently set decimation setting here.  This allows us to
@@ -90,67 +95,80 @@ int CurrentDecimation;
 /*****************************************************************************/
 
 
+/* Libera driver configuration parameters are read and written in a slightly
+ * roundabout way: a common request structure (a pair of ints) consisting of
+ * a request code and the value to be read or written.  Request codes are
+ * shared between reads or writes, and the actual reading and writing
+ * operations are done through dedicated ioctl commands on the .cfg device. */
+
+bool ReadCfgValue(unsigned int RequestCode, unsigned int &Value)
+{
+    libera_cfg_request_t Request = { RequestCode, 0 };
+    bool Ok = TEST_RC("Unable to read configuration value",
+        ioctl, libera_cfg, LIBERA_IOC_GET_CFG, &Request);
+    Value = Request.val;
+    return Ok;
+}
+
+bool WriteCfgValue(unsigned int RequestCode, unsigned int Value)
+{
+    libera_cfg_request_t Request = { RequestCode, Value };
+    return TEST_RC("Unable to write configuration value",
+        ioctl, libera_cfg, LIBERA_IOC_SET_CFG, &Request);
+}
+
+
+
 /* We think of the attenuators in the ATTENUATORS array as setting values for
  * the first and second stages of channels 1 to 4, in the order
- *      ch1 1st, ch1 2nd, ch2 1st, ..., ch4 2nd .
- * Unfortunately, the ordering actually supported by the device driver is a
- * little different.  This array is used to map channels in this order into
- * driver channels.
- *                       0   1   2   3   4   5   6   7
- *                      c11 c12 c21 c22 c31 c32 c41 c42 */
-const int AttenMap[] = { 6,  7,  2,  3,  0,  1,  4,  5 };
+ *      ch1 1st, ch1 2nd, ch2 1st, ..., ch4 2nd . */
 
+const unsigned int AttenCfg[] = {
+    LIBERA_CFG_ATTN0, LIBERA_CFG_ATTN1, LIBERA_CFG_ATTN2, LIBERA_CFG_ATTN3, 
+    LIBERA_CFG_ATTN4, LIBERA_CFG_ATTN5, LIBERA_CFG_ATTN6, LIBERA_CFG_ATTN7
+};
 
-bool ReadAttenuators(ATTENUATORS attenuators)
+bool ReadAttenuators(ATTENUATORS Attenuators)
 {
-    ATTENUATORS remapped;
-    if (TEST_RC("Unable to read attenuators",
-        ioctl, libera_cfg, LIBERA_IOC_GET_ATTN, remapped))
-    {
-        for (int i = 0; i < 8; i ++)
-             attenuators[i] = remapped[AttenMap[i]];
-        return true;
-    }
-    else
-        return false;
+    bool Ok = true;
+    for (int i = 0; i < 8 && Ok; i ++)
+        Ok = ReadCfgValue(AttenCfg[i], Attenuators[i]);
+    return Ok;
 }
 
 
-bool WriteAttenuators(ATTENUATORS attenuators)
+bool WriteAttenuators(ATTENUATORS Attenuators)
 {
-    ATTENUATORS remapped;
-    for (int i = 0; i < 8; i ++)
+    bool Ok = true;
+    for (int i = 0; i < 8 && Ok; i ++)
     {
-        /* Simultaneously remap the attenuator settings and check that the
-         * values are in range. */
-        unsigned char a = attenuators[i];
-        if (a < 32)
-            remapped[AttenMap[i]] = a;
-        else
+        /* Check that the values are in range. */
+        if (Attenuators[i] >= 32)
         {
-            printf("Attenuator %d setting %d out of range\n", i, a);
-            return false;
+            printf("Attenuator %d setting %d out of range\n",
+                i, Attenuators[i]);
+            Ok = false;
         }
     }
-    return TEST_RC("Unable to write attenuators",
-        ioctl, libera_cfg, LIBERA_IOC_SET_ATTN, remapped);
+    for (int i = 0; i < 8 && Ok; i ++)
+        Ok = WriteCfgValue(AttenCfg[i], Attenuators[i]);
+    return Ok;
 }
 
-bool ReadSwitches(int &switches)
+bool ReadSwitches(int &Switches)
 {
-    return TEST_RC("Unable to read switch settings",
-        ioctl, libera_cfg, LIBERA_IOC_GET_SWITCH, &switches);
+    return ReadCfgValue(LIBERA_CFG_SWITCH, *(unsigned *)&Switches);
+    // Um.  Close your eyes for the ugly cast.
 }
 
 
-bool WriteSwitches(int switches)
+bool WriteSwitches(int Switches)
 {
-    if (0 <= switches  &&  switches < 16)
-        return TEST_RC("Unable to set switches",
-            ioctl, libera_cfg, LIBERA_IOC_SET_SWITCH, &switches);
+    if (0 <= Switches  &&  Switches < 16)
+        return WriteCfgValue(LIBERA_CFG_SWITCH, Switches);
     else
     {
-        printf("Switch value %d out of range\n", switches);
+        printf("Switch value %d out of range\n", Switches);
         return false;
     }
 }
@@ -205,22 +223,50 @@ size_t ReadWaveform(int Decimation, size_t WaveformLength, LIBERA_DATA & Data)
     if (!Ok)
         return 0;
 
-    /* Try and grab the requested amount of data.  Here Length is the number
-     * of waveform points, but we're really reading into a LIBERA_DATA
-     * structure consisting of a leading timestamp, and each waveform point
-     * is a row.  So here we calculate the desired data size. */
-    const ssize_t DataSize = LIBERA_DATA_SIZE(WaveformLength);
+    /* Read the data in two parts.  The waveform proper is read directly into
+     * the data part of the waveform; we then read the timestamp as a
+     * separate ioctl operation. */
+    const ssize_t DataSize = WaveformLength * sizeof(LIBERA_ROW);
     ssize_t bytes_read;
     TEST_IO(bytes_read, "Problem reading waveform",
-        read, libera_dd, &Data, DataSize);
+        read, libera_dd, &Data.Rows, DataSize);
     if (bytes_read != DataSize)
         printf("Couldn't read entire block: read %d\n", bytes_read);
+
+    TEST_RC("Problem reading timestamp",
+        ioctl, libera_dd, LIBERA_IOC_GET_DD_TSTAMP, &Data.Timestamp);
+    
     /* Convert bytes read into a number of rows. */
-    bytes_read -= sizeof(LIBERA_DATA);
     if (bytes_read <= 0)
         return 0;
     else
         return bytes_read / sizeof(LIBERA_ROW);
+}
+
+
+bool ReadAdcWaveform(ADC_DATA &Data)
+{
+    const ssize_t DataSize = ADC_LENGTH * sizeof(ADC_ROW);
+    ssize_t bytes_read;
+    return TEST_IO(bytes_read, "Problem reading ADC waveform",
+        read, libera_adc, &Data.Rows, DataSize)  &&
+        bytes_read == DataSize;
+}
+
+
+bool ReadSlowAcquisition(SA_DATA &Data)
+{
+    const ssize_t DataSize = sizeof(SA_DATA);
+    ssize_t bytes_read;
+    TEST_IO(bytes_read, "Problem reading SA data",
+        read, libera_sa, &Data, DataSize);
+    if (bytes_read == DataSize)
+        return true;
+    else
+    {
+        printf("Couldn't read entire block: read %d\n", bytes_read);
+        return false;
+    }
 }
 
 
@@ -238,10 +284,10 @@ size_t ReadWaveform(int Decimation, size_t WaveformLength, LIBERA_DATA & Data)
  * by calling this routine until it returns false before processing any
  * events. */
 
-bool ReadOneEvent(LIBERA_EVENT_ID &Id, int &Param)
+bool ReadOneEvent(HARDWARE_EVENT_ID &Id, int &Param)
 {
     libera_event_t event;
-    ssize_t bytes_read = read(libera_low, &event, sizeof(event));
+    ssize_t bytes_read = read(libera_event, &event, sizeof(event));
     if (bytes_read == 0  ||  (bytes_read == -1  &&  errno == EAGAIN))
         /* Nothing to read this time: the queue is empty. */
         return false;
@@ -258,9 +304,19 @@ bool ReadOneEvent(LIBERA_EVENT_ID &Id, int &Param)
         }
         else
         {
-            /* Good.  Return the event. */
-            Id = (LIBERA_EVENT_ID) event.msg_id;
-            Param = event.msg_param;
+            /* Good.  Return the event.
+             * In the current instantiation of the Libera driver we receive
+             * an event as a bit.  Here we convert that bit back into an
+             * event id.  If we receive more that one event in this way it
+             * will be lost! */
+            /* Count the leading zeros and convert the result into a count of
+             * trailing zero. */
+            CLZ(event.id, Id);
+            Id = (HARDWARE_EVENT_ID) (31 - Id);
+//printf("Event %08x => %d\n", event.id, Id);
+            Param = event.param;
+            if (event.id != 1 << Id)
+                printf("Unexpected event id %08x\n", event.id);
             return true;
         }
     }
@@ -274,10 +330,13 @@ bool ReadOneEvent(LIBERA_EVENT_ID &Id, int &Param)
 
 /* To be called on initialisation to enable delivery of events. */
 
+//bool OpenEventStream(size_t EventMask)  !!! Come back to this
 bool OpenEventStream()
 {
+    size_t EventMask = LIBERA_EVENT_TRIGGET | LIBERA_EVENT_SA;
+    /* Enable delivery of the events we're really interested in. */
     return TEST_RC("Unable to enable events",
-        ioctl, libera_low, LIBERA_LOW_SET_EVENT, 1);
+        ioctl, libera_event, LIBERA_EVENT_SET_MASK, &EventMask);
 }
 
 
@@ -287,7 +346,7 @@ bool OpenEventStream()
 
 int EventSelector()
 {
-    return libera_low;
+    return libera_event;
 }
 
 
@@ -295,8 +354,9 @@ int EventSelector()
 
 static void CloseEventStream()
 {
+    size_t EventMask = 0;
     TEST_RC("Unable to disable events",
-        ioctl, libera_low, LIBERA_LOW_SET_EVENT, 0);
+        ioctl, libera_event, LIBERA_EVENT_SET_MASK, &EventMask);
 }
 
 
@@ -322,8 +382,12 @@ bool InitialiseHardware()
             open, "/dev/libera.cfg", O_RDWR)  &&
         TEST_IO(libera_dd, "Unable to open libera.dd device",
             open, "/dev/libera.dd", O_RDONLY)  &&
-        TEST_IO(libera_low, "Unable to open event fifo",
-            open, "/dev/libera.low", O_RDWR | O_NONBLOCK)  &&
+        TEST_IO(libera_adc, "Unable to open libera.adc device",
+            open, "/dev/libera.adc", O_RDONLY)  &&
+        TEST_IO(libera_sa, "Unable to open libera.sa device",
+            open, "/dev/libera.sa", O_RDONLY)  &&
+        TEST_IO(libera_event, "Unable to open event fifo",
+            open, "/dev/libera.event", O_RDWR | O_NONBLOCK)  &&
         /* Start with the current settings of Libera read.  (This is not
          * strictly necessary, but harmless.) */
         TEST_RC("Unable to read decimation",
@@ -331,7 +395,7 @@ bool InitialiseHardware()
         /* Initialise the hardware and multiplexor switches into a good known
          * state. */
         WriteAttenuators(Attenuators)  &&
-        WriteSwitches(3);
+        WriteSwitches(0);
 }
 
 
@@ -339,10 +403,12 @@ bool InitialiseHardware()
 void TerminateHardware()
 {
     if (libera_dd != -1)   close(libera_dd);
+    if (libera_adc != -1)  close(libera_adc);
     if (libera_cfg != -1)  close(libera_cfg);
-    if (libera_low != -1)
+    if (libera_sa != -1)   close(libera_sa);
+    if (libera_event != -1)
     {
         CloseEventStream();
-        close(libera_low);
+        close(libera_event);
     }
 }
