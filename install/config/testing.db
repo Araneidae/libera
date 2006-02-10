@@ -7,30 +7,15 @@ record(dfanout, "$(DEVICE):INI:DIAG")
 }
 
 
-record(dfanout, "$(DEVICE):INI:KX")
+record(dfanout, "$(DEVICE):INI:K")
 {
-    field(VAL,  "10.6")
+    field(VAL,  "18")
     field(PINI, "YES")
     field(OMSL, "supervisory")
     field(OUTA, "$(DEVICE):CF:KX_S PP")
+    field(OUTB, "$(DEVICE):CF:KY_S PP")
+    field(OUTC, "$(DEVICE):CF:KQ_S PP")
 }
-
-record(dfanout, "$(DEVICE):INI:KY")
-{
-    field(VAL,  "11")
-    field(PINI, "YES")
-    field(OMSL, "supervisory")
-    field(OUTA, "$(DEVICE):CF:KY_S PP")
-}
-
-record(dfanout, "$(DEVICE):INI:KQ")
-{
-    field(VAL,  "10")
-    field(PINI, "YES")
-    field(OMSL, "supervisory")
-    field(OUTA, "$(DEVICE):CF:KQ_S PP")
-}
-
 
 record(dfanout, "$(DEVICE):INI:ATT1")
 {
@@ -42,7 +27,7 @@ record(dfanout, "$(DEVICE):INI:ATT1")
 
 record(dfanout, "$(DEVICE):INI:ATT2")
 {
-    field(VAL,  "0")
+    field(VAL,  "10")
     field(PINI, "YES")
     field(OMSL, "supervisory")
     field(OUTA, "$(DEVICE):CF:ATT2_S PP")

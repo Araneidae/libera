@@ -35,7 +35,7 @@ record(dfanout, "$(DEVICE):INI:ATT2")
 
 record(dfanout, "$(DEVICE):INI:SW")
 {
-    field(VAL,  "3")
+    field(VAL,  "0")
     field(PINI, "YES")
     field(OMSL, "supervisory")
     field(OUTA, "$(DEVICE):CF:SW_S PP")
