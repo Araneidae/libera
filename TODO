@@ -1,7 +1,5 @@
 Work to do
 
-* Support slow acquisition
-
 * Add controls for disabling unwanted functionality
 
 * Review event handling
@@ -21,3 +19,9 @@ Work to do
 * Use leventd for event source
 
 * Implement full CSPI hardware interface.
+
+* Review convert interface.  Separate out gain correction and ensure that this
+  is implemented for FT and SA.
+
+* Investigate migrating to soft floating point: use -msoft-float and recompile
+  libgcc.a.  This will affect EPICS.

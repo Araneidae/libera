@@ -194,7 +194,7 @@ I_waveform & LIBERA_WAVEFORM::Waveform(int Index)
 
 void LIBERA_WAVEFORM::Cordic(int Iterations)
 {
-    SinCosToABCD(Data.Rows, ActiveLength, Iterations);
+    SinCosToABCD(Data.Rows, ActiveLength);
 }
 
 
@@ -211,6 +211,8 @@ void LIBERA_WAVEFORM::ABCDtoXYQS()
 /*                                                                          */
 /****************************************************************************/
 
+/* Access to raw and unfiltered sample rate (117MHz) data as captured by the
+ * ADC. */
 
 
 ADC_WAVEFORM::ADC_WAVEFORM()
@@ -230,18 +232,18 @@ ADC_WAVEFORM::ADC_WAVEFORM()
  * from 12 to 32 bits, and transposed into the four raw waveforms.
  *
  * The next stage of processing takes advantage of a couple of important
- * features of the data being sampled.  The input data is RF (at
- * approximately 500MHz) and is undersampled (at approximately 117Mhz) so
- * that the centre frequency appears at approximately 1/4 the sampling
- * frequency.  To make this possible, the data is filtered through a narrow
- * band (approximately 10MHz bandwith) filter.
+ * features of the data being sampled.  The input data is RF (at approximately
+ * 500MHz) and is undersampled (at approximately 117Mhz) so that the centre
+ * frequency appears at close to 1/4 the sampling frequency.  To make this
+ * possible, the data is filtered through a narrow band (approximately 10MHz
+ * bandwith) filter.
  *
  * Thus the intensity profile of the incoming train can be recovered by the
  * following steps:
  *  - mix with the centre frequency (producing a complex IQ waveform) to
  *    bring the carrier frequency close to DC
  *  - low pass filter the data
- *  - compute the absolute magnitude of each data point.
+ *  - compute the absolute magnitude of the waveform.
  *
  * Furthermore, because the carrier frequency is so close to 1/4 sampling
  * frequency, mixing becomes a matter of multiplying successively by

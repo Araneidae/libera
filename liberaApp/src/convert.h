@@ -79,7 +79,7 @@ int DeltaToPosition(int Scaling, int Delta, int Intensity);
  *
  * On exit the first four entries in each row have been translated into button
  * intensities. */
-void SinCosToABCD(LIBERA_ROW * Rows, size_t Length, int Iterations);
+void SinCosToABCD(LIBERA_ROW * Rows, size_t Length);
 
 
 /* Computes XYSQ values from ABCD button values. */

@@ -34,4 +34,4 @@
  * returned is scaled by a factor of approximately 0.5822 times the true
  * magnitude.  For our application this factor can be ignored.
  *    Two significant bits are generated per iteration. */
-int CordicMagnitude(int x, int y, int Iterations=11);
+int CordicMagnitude(int x, int y);

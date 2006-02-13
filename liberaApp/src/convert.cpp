@@ -160,8 +160,8 @@ int DeltaToPosition(int Scaling, int Delta, int Intensity)
      * very meaningful anyway. */
     if (M >= S)  return 0;
 
-    /* First normalise S and M together.  This won't affect anything further.
-     * It's a waste of time to try more than 8 rounds. */
+    /* First normalise S and M together.  This won't affect anything further,
+     * and ensures we use as many bits as possible. */
     int Shift;
     CLZ(S, Shift);
     S <<= Shift;
@@ -224,15 +224,15 @@ int DeltaToPosition(int Scaling, int Delta, int Intensity)
 
 /* Compute magnitude of each button and scale by gain factor. */
 
-void SinCosToABCD(LIBERA_ROW * Rows, size_t Length, int Iterations)
+void SinCosToABCD(LIBERA_ROW * Rows, size_t Length)
 {
     for (size_t i = 0; i < Length; i ++)
     {
         LIBERA_ROW & Row = Rows[i];
-        Row[0] = SCALE_GAIN(G_A, CordicMagnitude(Row[0], Row[1], Iterations));
-        Row[1] = SCALE_GAIN(G_B, CordicMagnitude(Row[2], Row[3], Iterations));
-        Row[2] = SCALE_GAIN(G_C, CordicMagnitude(Row[4], Row[5], Iterations));
-        Row[3] = SCALE_GAIN(G_D, CordicMagnitude(Row[6], Row[7], Iterations));
+        Row[0] = SCALE_GAIN(G_A, CordicMagnitude(Row[0], Row[1]));
+        Row[1] = SCALE_GAIN(G_B, CordicMagnitude(Row[2], Row[3]));
+        Row[2] = SCALE_GAIN(G_C, CordicMagnitude(Row[4], Row[5]));
+        Row[3] = SCALE_GAIN(G_D, CordicMagnitude(Row[6], Row[7]));
     }
 }
 

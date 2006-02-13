@@ -84,24 +84,6 @@ struct ADC_DATA
 };
 
 
-struct SA_DATA
-{
-    // Amplitudes
-    int Va, Vb, Vc, Vd;
-    // Sum Va + Vb + Vc + Vd
-    int Sum;
-    // Quadropole signal
-    int Q;
-    // Horizontal beam position
-    int X;
-    // Vertical beam position
-    int Y;
-    // Horiz. and vert. correction factors from the FA Application
-    int Cx, Cy;
-    // 6 values reserved for future use
-    int reserved[6];
-};
-
 
 /* The attenuators for Libera are controlled as an array of 8 settings, two
  * per input channel, each of which can be any value in the range 0..31 --
@@ -169,7 +151,7 @@ size_t ReadWaveform(int Decimation, size_t WaveformLength, LIBERA_DATA & Data);
 bool ReadAdcWaveform(ADC_DATA &Data);
 
 /* Reads a slow acquisition update. */
-bool ReadSlowAcquisition(SA_DATA &Data);
+bool ReadSlowAcquisition(int &A, int &B, int &C, int &D);
 
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */

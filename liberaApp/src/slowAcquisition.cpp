@@ -80,15 +80,15 @@ private:
     {
         while (ThreadRunning)
         {
-            SA_DATA Sa;
-            if (ReadSlowAcquisition(Sa))
+            LIBERA_ROW Row;
+            if (ReadSlowAcquisition(Row[0], Row[1], Row[2], Row[3]))
             {
-                LIBERA_ROW Row;
-                A = Sa.Va;  B = Sa.Vb;  C = Sa.Vc;  D = Sa.Vc;
-                Row[0] = Sa.Va;  Row[1] = Sa.Vb;
-                Row[2] = Sa.Vc;  Row[3] = Sa.Vd;  
-                ABCDtoXYQS(&Row, 1);    /* Compute X,Y,Q,S */
+                ABCDtoXYQS(&Row, 1);
                 
+                A = Row[0];
+                B = Row[1];
+                C = Row[2];
+                D = Row[3];
                 X = 1e-6 * Row[4];
                 Y = 1e-6 * Row[5];
                 Q = 1e-6 * Row[6];

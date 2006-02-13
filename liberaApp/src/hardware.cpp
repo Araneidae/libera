@@ -254,14 +254,21 @@ bool ReadAdcWaveform(ADC_DATA &Data)
 }
 
 
-bool ReadSlowAcquisition(SA_DATA &Data)
+bool ReadSlowAcquisition(int &A, int &B, int &C, int &D)
 {
-    const ssize_t DataSize = sizeof(SA_DATA);
+    libera_atom_sa_t Data;
+    const ssize_t DataSize = sizeof(libera_atom_sa_t);
     ssize_t bytes_read;
     TEST_IO(bytes_read, "Problem reading SA data",
         read, libera_sa, &Data, DataSize);
     if (bytes_read == DataSize)
+    {
+        A = Data.Va;
+        B = Data.Vb;
+        C = Data.Vc;
+        D = Data.Vd;  
         return true;
+    }
     else
     {
         printf("Couldn't read entire block: read %d\n", bytes_read);

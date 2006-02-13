@@ -105,7 +105,7 @@
 
 
 
-int CordicMagnitude(int x, int y, int Iterations)
+int CordicMagnitude(int x, int y)
 {
     /* Get the vector into the first quadrant of the plane. */
     if (x < 0)  x = -x;
@@ -143,14 +143,74 @@ int CordicMagnitude(int x, int y, int Iterations)
      *    but this is at the the heart of why the CORDIC algorithm works so
      *    well.
      * 2. So long as we start with x>=y and take a = (1/2, 1/4, 1/8, ...)
-     *    then the magnitude of y will rapidly go to zero. */
-    for (int i = 1; i <= Iterations; i ++)
-    {
-        int oldx = x;
-        x += y >> i;
-        y -= oldx >> i;
-        if (y < 0)  y = -y;
-    }
+     *    then the magnitude of y will rapidly go to zero. 
+     *
+     * The basic loop to implement this is of the following form:
+     * 
+     *  for (int i = 1; i <= ITERATIONS; i ++)
+     *  {
+     *      int oldy = y;
+     *      y -= x >> i;
+     *      x += oldy >> i;
+     *      if (y < 0)  y = -y;
+     *  }
+     *
+     * where we choose ITERATIONS for the number of significant bits we want
+     * to generate.  In our application ITERATIONS=12, yielding 24
+     * significant bits, is more than ample.
+     *    However, as this loop may be executed some 10^15 times during the
+     * lifetime of Diamond, and it consumes a significant amount of
+     * processing, further optimisation is appropriate.  Here we have
+     * implemented three separate optimisations with a cumulative performance
+     * improvement of 63% over the loop above, giving a running time for this
+     * routine of approximately 135ns.
+     *    The following optimisations have been implemented here:
+     *    
+     * Loop Unrolling:
+     *    This is the most obvious optimisation with the biggest saving, and
+     *    has saved over 50% of execution time (185ns).
+     * Removing unnecessary cmp instruction:
+     *    It seems the compiler is not clever enough to use the fact that
+     *    subs sets the condition code, and so an unnecessary cmp instruction
+     *    is generated to compute y=abs(y).  This optimisation gains a
+     *    further 30ns.
+     * Optimising assembler:
+     *    Further processing time is saved if the condition code is given
+     *    time to propagate before being used: we do this by generating the
+     *    following sequence of instructions in the inner loop:
+     *        subs    t, y, x, lsr #i   // t = y - x >> i; set cc
+     *        add     x, x, y, lsr #i   // x += y >> i;
+     *        rsblt   t, t, #0          // t = abs(t)
+     *    and then reassign t to y.
+     *       Here unfortunately we run into compiler quirks: depending on
+     *    precisely how the code above is written the reassignment y=t
+     *    generates an extra mov instruction or is implemented by rearranging
+     *    registers.  Ideally we would rely on compiler register assignment,
+     *    but for safety I have merged two steps of the loop into one to
+     *    avoid asking the compiler to manage the registers.
+     *
+     * Thus the loop step below implements two steps of the inner loop, which
+     * can therefore update x and y in place with three instructions per step
+     * for a total running cost of about 135ns. */
+    #define CORDIC_STEP(i, j) \
+        __asm__( \
+            "subs    %[t], %[y], %[x], lsr #" #i "\n\t" \
+            "add     %[x], %[x], %[y], lsr #" #i "\n\t" \
+            "rsblt   %[t], %[t], #0\n\t" \
+            "subs    %[y], %[t], %[x], lsr #" #j "\n\t" \
+            "add     %[x], %[x], %[t], lsr #" #j "\n\t" \
+            "rsblt   %[y], %[y], #0" \
+            : [x] "+r"(x),  [y] "+r"(y), [t] "=r"(t) \
+            : \
+            : "cc")
+
+    int t;
+    CORDIC_STEP( 1, 2);
+    CORDIC_STEP( 3, 4);
+    CORDIC_STEP( 5, 6);
+    CORDIC_STEP( 7, 8);
+    CORDIC_STEP( 9,10);
+    CORDIC_STEP(11,12);
 
     /* In our application the remaining scaling factor is not important, so
      * we just return the reduced data directly. */
