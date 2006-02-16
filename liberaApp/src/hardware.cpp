@@ -209,7 +209,7 @@ static bool SetDecimation(int Decimation)
 
 
 
-size_t ReadWaveform(int Decimation, size_t WaveformLength, LIBERA_DATA & Data)
+size_t ReadWaveform(int Decimation, size_t WaveformLength, LIBERA_ROW * Data)
 {
     /* First set the requested decimation and then seek directly to the
      * trigger.  We'll read all data following directly after the trigger
@@ -229,13 +229,10 @@ size_t ReadWaveform(int Decimation, size_t WaveformLength, LIBERA_DATA & Data)
     const ssize_t DataSize = WaveformLength * sizeof(LIBERA_ROW);
     ssize_t bytes_read;
     TEST_IO(bytes_read, "Problem reading waveform",
-        read, libera_dd, &Data.Rows, DataSize);
+        read, libera_dd, Data, DataSize);
     if (bytes_read != DataSize)
         printf("Couldn't read entire block: read %d\n", bytes_read);
 
-    TEST_RC("Problem reading timestamp",
-        ioctl, libera_dd, LIBERA_IOC_GET_DD_TSTAMP, &Data.Timestamp);
-    
     /* Convert bytes read into a number of rows. */
     if (bytes_read <= 0)
         return 0;
@@ -254,7 +251,7 @@ bool ReadAdcWaveform(ADC_DATA &Data)
 }
 
 
-bool ReadSlowAcquisition(int &A, int &B, int &C, int &D)
+bool ReadSlowAcquisition(SA_DATA &SaData)
 {
     libera_atom_sa_t Data;
     const ssize_t DataSize = sizeof(libera_atom_sa_t);
@@ -263,10 +260,10 @@ bool ReadSlowAcquisition(int &A, int &B, int &C, int &D)
         read, libera_sa, &Data, DataSize);
     if (bytes_read == DataSize)
     {
-        A = Data.Va;
-        B = Data.Vb;
-        C = Data.Vc;
-        D = Data.Vd;  
+        SaData.A = Data.Va;
+        SaData.B = Data.Vb;
+        SaData.C = Data.Vc;
+        SaData.D = Data.Vd;  
         return true;
     }
     else

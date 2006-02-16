@@ -128,7 +128,7 @@ private:
 
 LIBERA_WAVEFORM::LIBERA_WAVEFORM(size_t WaveformSize) :
     WaveformSize(WaveformSize),
-    Data(*(LIBERA_DATA *) new char[LIBERA_DATA_SIZE(WaveformSize)])
+    Data(new LIBERA_ROW[WaveformSize])
 {
     CurrentLength = WaveformSize;
     ActiveLength = 0;
@@ -159,11 +159,8 @@ void LIBERA_WAVEFORM::CaptureFrom(LIBERA_WAVEFORM & Waveform, size_t Offset)
     if (ActiveLength > CurrentLength)
         ActiveLength = CurrentLength;
 
-    /* Copy the timestamp and our data area of interest: these are
-     * necessarily separate operations, as Offset may be non zero. */
-    Data.Timestamp = Waveform.Data.Timestamp;
-    memcpy(&Data.Rows, &Waveform.Data.Rows[Offset],
-        ActiveLength * sizeof(LIBERA_ROW));
+    /* Copy over the area of interest. */
+    memcpy(Data, &Waveform.Data[Offset], ActiveLength * sizeof(LIBERA_ROW));
 }
 
 
@@ -176,7 +173,7 @@ size_t LIBERA_WAVEFORM::Read(
     if (Offset + Length > ActiveLength)
         Length = ActiveLength - Offset;
     for (size_t i = 0; i < Length; i ++)
-        Target[i] = Data.Rows[Offset + i][Index];
+        Target[i] = Data[Offset + i][Index];
     return Length;
 }
 
@@ -189,13 +186,13 @@ I_waveform & LIBERA_WAVEFORM::Waveform(int Index)
 
 void LIBERA_WAVEFORM::Cordic()
 {
-    SinCosToABCD(Data.Rows, ActiveLength);
+    SinCosToABCD(Data, ActiveLength);
 }
 
 
 void LIBERA_WAVEFORM::ABCDtoXYQS()
 {
-    ::ABCDtoXYQS(Data.Rows, ActiveLength);
+    ::ABCDtoXYQS(Data, ActiveLength);
 }
 
 

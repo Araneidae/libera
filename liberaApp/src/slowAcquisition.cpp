@@ -82,9 +82,14 @@ private:
         /* To do: synchronise with thread shutdown. */
         while (ThreadRunning)
         {
-            LIBERA_ROW Row;
-            if (ReadSlowAcquisition(Row[0], Row[1], Row[2], Row[3]))
+            SA_DATA Sa;
+            if (ReadSlowAcquisition(Sa))
             {
+                LIBERA_ROW Row;
+                Row[0] = Sa.A;
+                Row[1] = Sa.B;
+                Row[2] = Sa.C;
+                Row[3] = Sa.D;
                 ABCDtoXYQS(&Row, 1);
                 
                 A = Row[0];

@@ -124,7 +124,7 @@ private:
     /* The length as actually captured by the most recent Capture[From].
      * This determines how much data is returned elsewhere. */
     size_t ActiveLength;
-    LIBERA_DATA & Data;
+    LIBERA_ROW * Data;
 };
 
 

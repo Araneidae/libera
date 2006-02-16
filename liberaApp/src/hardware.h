@@ -56,26 +56,27 @@
  * abstraction which has to be unwound here. */
 
 
-
-struct LIBERA_TIMESTAMP
-{
-    struct timespec st;
-    unsigned long long int mt;
-};
-
-/* The data returned by Libera comes back as an array of rows, 8 doublewords
- * per row, preceded by a timestamp. */
+/* A row of "data on demand" Libera data consists of eight integers
+ * containing quadrature data for each of the four buttons thus:
+ *      Button A cos
+ *      Button A sin
+ *      Button B cos
+ *      Button B sin
+ *      Button C cos
+ *      Button C sin
+ *      Button D cos
+ *      Button D sin
+ * Each (cos,sin) pair must be converted to magnitude before further
+ * processing.
+ *     This data can be read at machine revolution clock frequency, or
+ * decimated to 1/64th. */
 typedef int LIBERA_ROW[8];
-struct LIBERA_DATA
-{
-    LIBERA_TIMESTAMP Timestamp;
-    LIBERA_ROW Rows[0];
-};
-
-#define LIBERA_DATA_SIZE(RowCount) \
-    (sizeof(LIBERA_DATA) + (RowCount) * sizeof(LIBERA_ROW))
 
 
+/* The ADC data is read directly from the ADC converter at the sample rate of
+ * 117MHz.  Each row consists of four 12-bit signed values (not sign extended
+ * in the current release of the driver), one for each button.  ADC data is
+ * always read in 1024 row segments. */
 #define ADC_LENGTH      1024
 typedef short ADC_ROW[4];
 struct ADC_DATA
@@ -83,6 +84,12 @@ struct ADC_DATA
     ADC_ROW Rows[ADC_LENGTH];
 };
 
+
+/* Slow acquisition data is read as four filtered button values. */
+struct SA_DATA
+{
+    int A, B, C, D;
+};
 
 
 /* The attenuators for Libera are controlled as an array of 8 settings, two
@@ -147,13 +154,13 @@ void TerminateHardware();
  * decimation into the given block of data.  Returns the number of rows
  * actually read.
  *     At present only decimation values of 1 or 64 are suppported. */
-size_t ReadWaveform(int Decimation, size_t WaveformLength, LIBERA_DATA & Data);
+size_t ReadWaveform(int Decimation, size_t WaveformLength, LIBERA_ROW * Data);
 
 /* Reads a full 1024 point ADC waveform. */
 bool ReadAdcWaveform(ADC_DATA &Data);
 
 /* Reads a slow acquisition update. */
-bool ReadSlowAcquisition(int &A, int &B, int &C, int &D);
+bool ReadSlowAcquisition(SA_DATA &Data);
 
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
