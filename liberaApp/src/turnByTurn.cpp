@@ -51,12 +51,12 @@
 #define LONG_WAVEFORM_LENGTH    200000
 
 /* Length of readout waveform. */
-#define SHORT_WAVEFORM_LENGTH   1024
+#define SHORT_WAVEFORM_LENGTH   (2*1024)
 
 /* Don't allow freely running retriggering of turn-by-turn data when the
  * capture length is longer than this limit: it is too demanding on the IOC
  * and prevents other activities from operating normally. */
-#define FREE_RUN_LIMIT          1024
+#define FREE_RUN_LIMIT          SHORT_WAVEFORM_LENGTH
 
 
 class TURN_BY_TURN : I_EVENT
@@ -70,9 +70,7 @@ public:
     {
         ShortOffset = 0;
         /* Make the default waveform length something more reasonable. */
-        LongWaveform.SetLength(1024);
-        ShortWaveform.SetLength(1024);
-        IqWaveform.SetLength(1024);
+        LongWaveform.SetLength(SHORT_WAVEFORM_LENGTH);
         /* Don't trigger until asked to. */
         Armed = false;
         

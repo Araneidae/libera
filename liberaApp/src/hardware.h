@@ -57,15 +57,12 @@
 
 
 /* A row of "data on demand" Libera data consists of eight integers
- * containing quadrature data for each of the four buttons thus:
- *      Button A cos
- *      Button A sin
- *      Button B cos
- *      Button B sin
- *      Button C cos
- *      Button C sin
- *      Button D cos
- *      Button D sin
+ * containing quadrature data (cos/sin pairs) for each of the four buttons
+ * thus: 
+ *      0, 1    A * (cos,sin)
+ *      2, 3    B * (cos,sin)
+ *      4, 5    C * (cos,sin)
+ *      6, 7    D * (cos,sin)
  * Each (cos,sin) pair must be converted to magnitude before further
  * processing.
  *     This data can be read at machine revolution clock frequency, or

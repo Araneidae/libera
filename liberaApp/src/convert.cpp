@@ -141,6 +141,15 @@ bool Diagonal = true;
  * prescaling to ensure that we get as close to 16 bits final precision in
  * the final result. */
 
+
+/* Generic utility for computing X,Y,Q from a Scaling factor K, the computed
+ * Delta M and a total Intensity S.  This computes
+ *      (K * M) / S .
+ * There is an assumption (which is *not* checked) that the Scaling factor is
+ * strictly smaller than 2^25: this corresponds to an overall scaling factor
+ * of 32mm.  If K is too large then the results returned will be rubbish, as
+ * internal overflow will occur. */
+
 int DeltaToPosition(int Scaling, int Delta, int Intensity)
 {
     bool Negative = false;

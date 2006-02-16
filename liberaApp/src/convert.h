@@ -60,14 +60,33 @@
  * The final X,Y values will be written in units of nm. */
 
 
-/* Generic utility for computing X,Y,Q from a Scaling factor K, the computed
- * Delta M and a total Intensity S.  This computes
- *      (K * M) / S .
- * There is an assumption (which is *not* checked) that the Scaling factor is
- * strictly smaller than 2^25: this corresponds to an overall scaling factor
- * of 32mm.  If K is too large then the results returned will be rubbish, as
- * internal overflow will occur. */
-int DeltaToPosition(int Scaling, int Delta, int Intensity);
+
+/* The generic data processing chain consists of the following steps:
+ * 
+ *                     Correct
+ *         Cordic       Gain        Convert
+ *      IQ ------> ABCD -----> ABCD ------> XYSQ(nm) 
+ */
+
+#if 0
+typedef LIBERA_ROW      IQ_DATA;
+typedef SA_DATA         ABCD_DATA;
+struct XYSQnm_DATA
+{
+    int X, Y, S, Q;
+};
+struct XYSQmm_DATA
+{
+    float X, Y, Q, SL;
+    int S;
+};
+
+
+
+void IQtoABCDXYSQ(
+    IQ_DATA * IQ, ABCD_DATA * ABCD, XYSQ_DATA * XYSQ, size_t Length);
+
+#endif
 
 /* Converts rows as read directly from Libera into button intensities.  On
  * input have rows thus:

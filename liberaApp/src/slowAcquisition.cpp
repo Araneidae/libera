@@ -49,10 +49,10 @@ class SLOW_ACQUISITION
 public:
     SLOW_ACQUISITION() 
     {
-        Publish_ai("SA:A", A);
-        Publish_ai("SA:B", B);
-        Publish_ai("SA:C", C);
-        Publish_ai("SA:D", D);
+        Publish_longin("SA:A", ABCD.A);
+        Publish_longin("SA:B", ABCD.B);
+        Publish_longin("SA:C", ABCD.C);
+        Publish_longin("SA:D", ABCD.D);
         Publish_ai("SA:X", X);
         Publish_ai("SA:Y", Y);
         Publish_ai("SA:S", S);
@@ -82,20 +82,15 @@ private:
         /* To do: synchronise with thread shutdown. */
         while (ThreadRunning)
         {
-            SA_DATA Sa;
-            if (ReadSlowAcquisition(Sa))
+            if (ReadSlowAcquisition(ABCD))
             {
                 LIBERA_ROW Row;
-                Row[0] = Sa.A;
-                Row[1] = Sa.B;
-                Row[2] = Sa.C;
-                Row[3] = Sa.D;
+                Row[0] = ABCD.A;
+                Row[1] = ABCD.B;
+                Row[2] = ABCD.C;
+                Row[3] = ABCD.D;
                 ABCDtoXYQS(&Row, 1);
                 
-                A = Row[0];
-                B = Row[1];
-                C = Row[2];
-                D = Row[3];
                 X = nmTOmm(Row[4]);
                 Y = nmTOmm(Row[5]);
                 Q = nmTOmm(Row[6]);
@@ -110,7 +105,7 @@ private:
     
     TRIGGER Trigger;
 
-    double A, B, C, D;
+    SA_DATA ABCD;
     double X, Y, S, Q;
 };
 

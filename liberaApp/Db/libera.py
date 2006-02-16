@@ -177,6 +177,9 @@ def Booster():
 # request.  Typically used for tune measurements.  Up to 200,000 points can
 # be captured in one request.
 def TurnByTurn():
+    LONG_LENGTH = 200000
+    SHORT_LENGTH = 2 * 1024
+    
     # Number of points successfully captured by the last trigger.
     captured = Libera.longin('TT:CAPTURED')
     # Write a one to request a refill of the buffer.
@@ -205,19 +208,19 @@ def TurnByTurn():
         ZNAM = 'Normal', ONAM = 'Free Run')
 
     waveforms = [
-        Waveform('TT:WF%s' % button, 1024)
+        Waveform('TT:WF%s' % button, SHORT_LENGTH)
         for button in
             list('ABCDXYQS') + [b + a for b in 'ABCD' for a in 'IQ']]
             
-    longInOut('TT:LENGTH', LOPR = 1, HOPR = 1024)
-    caplenIn, caplenOut = longInOut('TT:CAPLEN', LOPR = 1, HOPR = 200000)
+    longInOut('TT:LENGTH', LOPR = 1, HOPR = SHORT_LENGTH)
+    caplenIn, caplenOut = longInOut('TT:CAPLEN', LOPR = 1, HOPR = LONG_LENGTH)
     # A slightly tricksy hack: the FREERUN flag can be reset in two
     # circumstances -- when explicitly set to false, but also when the
     # capture length becomes too large.
     caplenIn.FLNK = freerunIn
 
     Libera.longout('TT:OFFSET_S', 'TT:OFFSET',
-        OMSL = 'supervisory', LOPR = 0, HOPR = 200000)
+        OMSL = 'supervisory', LOPR = 0, HOPR = LONG_LENGTH)
     offset = Libera.longin('TT:OFFSET', PINI = 'YES')
 
     Libera.bi('TT:TRIG',
@@ -253,7 +256,8 @@ def Config():
 
 def SlowAcquisition():
     sa = [Libera.ai('SA:' + name, MDEL = -1, PREC = 4, EGU = 'mm')
-        for name in 'ABCDXYSQ']
+        for name in 'XYSQ'] + [
+        Libera.longin('SA:' + name) for name in 'ABCD']
     Libera.bi('SA:TRIG',
         SCAN = 'I/O Intr',
         FLNK = create_fanout('SA:FAN', *sa))
