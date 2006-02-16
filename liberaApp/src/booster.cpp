@@ -110,7 +110,7 @@ public:
     {
         /* Capture the long waveform and reduce to proper values. */
         LongWaveform.Capture(DECIMATION);
-        LongWaveform.Cordic(10);        // Need to find how many bits needed!
+        LongWaveform.Cordic();
         LongWaveform.ABCDtoXYQS();
 
         /* Extract the short XY waveforms. */

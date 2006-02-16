@@ -25,3 +25,5 @@ Work to do
 
 * Investigate migrating to soft floating point: use -msoft-float and recompile
   libgcc.a.  This will affect EPICS.
+
+* Interlock waveform readout with waveform update.

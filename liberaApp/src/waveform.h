@@ -37,7 +37,7 @@ public:
     SIMPLE_WAVEFORM(size_t WaveformSize);
 
     inline int * Array() { return Waveform; }
-    
+
 private:
     size_t read(void *array, size_t length);
     const size_t WaveformLength;
@@ -78,7 +78,7 @@ public:
 
     /* Run a pass of Cordic over the data to reduce sin/cos pairs to absolute
      * button signal values. */
-    void Cordic(int Iterations=20);
+    void Cordic();
 
     /* Compute XYQS arrays from the raw button values. */
     void ABCDtoXYQS();
@@ -135,7 +135,13 @@ class ADC_WAVEFORM
 public:
     ADC_WAVEFORM();
 
-    /* Read a waveform from Libera. */
+    /* Read a waveform from Libera.  The raw data (1024 sample unprocessed
+     * signed 12-bit * waveforms) are stored in the four RawWaveform()
+     * waveforms (one for each button).
+     * 
+     * At the same time the four waveforms are frequency shifted, resampled
+     * and Cordic reduced to produce four 256 sample Waveform() waveforms
+     * containing the intensity envelope of the incoming signal. */
     bool Capture();
 
     /* Publishable interfaces to the captured raw ADC rate data and a reduced

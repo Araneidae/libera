@@ -39,6 +39,7 @@
 #include "publish.h"
 #include "hardware.h"
 #include "cordic.h"
+#include "support.h"
 
 #include "convert.h"
 
@@ -162,8 +163,7 @@ int DeltaToPosition(int Scaling, int Delta, int Intensity)
 
     /* First normalise S and M together.  This won't affect anything further,
      * and ensures we use as many bits as possible. */
-    int Shift;
-    CLZ(S, Shift);
+    int Shift = CLZ(S);
     S <<= Shift;
     M <<= Shift;
 
@@ -171,7 +171,7 @@ int DeltaToPosition(int Scaling, int Delta, int Intensity)
      * up to 16 bits in the final result.  In this case we need to keep count
      * as the final result is affected.  Here we can't shift by more than 9,
      * as we need to correct this shift later. */
-    CLZ(M, Shift);
+    Shift = CLZ(M);
     if (Shift > 9)  Shift = 9;
     M <<= Shift;
     /* Finally compute the remaining shift. */
@@ -379,7 +379,8 @@ bool SetSwitches(int Value, void*)
 /****************************************************************************/
 
 /* Class to publish a writeable int to EPICS to appear as both an ai and ao
- * value. */
+ * value.  When read and written the value is automatically rescaled between
+ * double and integer. */
 
 class CONFIG_DOUBLE : public I_ai, public I_ao
 {

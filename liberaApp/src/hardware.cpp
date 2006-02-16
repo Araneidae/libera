@@ -40,7 +40,7 @@
 #include "libera.h"
 #include "ebpp.h"
 #include "hardware.h"
-
+#include "support.h"
 
 
 
@@ -318,9 +318,7 @@ bool ReadOneEvent(HARDWARE_EVENT_ID &Id, int &Param)
              * will be lost! */
             /* Count the leading zeros and convert the result into a count of
              * trailing zero. */
-            CLZ(event.id, Id);
-            Id = (HARDWARE_EVENT_ID) (31 - Id);
-//printf("Event %08x => %d\n", event.id, Id);
+            Id = (HARDWARE_EVENT_ID) (31 - CLZ(event.id));
             Param = event.param;
             if (event.id != 1 << Id)
                 printf("Unexpected event id %08x\n", event.id);
@@ -340,6 +338,8 @@ bool ReadOneEvent(HARDWARE_EVENT_ID &Id, int &Param)
 //bool OpenEventStream(size_t EventMask)  !!! Come back to this
 bool OpenEventStream()
 {
+    /* Not a great deal of point in asking for the SA event, as it never
+     * arrives: a place-holder in case it does one day. */
     size_t EventMask = LIBERA_EVENT_TRIGGET | LIBERA_EVENT_SA;
     /* Enable delivery of the events we're really interested in. */
     return TEST_RC("Unable to enable events",

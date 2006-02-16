@@ -39,6 +39,7 @@
 #include "events.h"
 #include "waveform.h"
 #include "convert.h"
+#include "support.h"
 
 #include "firstTurn.h"
 
@@ -75,18 +76,21 @@ public:
         /* The computed maximum ADC values (used to detect overflow). */
         Publish_longin("FT:MAXADC", MaxAdc);
 
-        /* The raw waveforms are provided for help with trigger placement and
-         * other diagnostic operations. */
-        /* ??? Can say a bit more here. */
+        /* The raw waveforms allow access to the completely unprocessed data
+         * as read from the ADC.  This is only useful for low level
+         * investigations. */
         Publish_waveform("FT:RAWA", AdcWaveform.RawWaveform(0));
         Publish_waveform("FT:RAWB", AdcWaveform.RawWaveform(1));
         Publish_waveform("FT:RAWC", AdcWaveform.RawWaveform(2));
         Publish_waveform("FT:RAWD", AdcWaveform.RawWaveform(3));
-        
-        Publish_waveform("FT:WFA", AdcWaveform.Waveform(0));
-        Publish_waveform("FT:WFB", AdcWaveform.Waveform(1));
-        Publish_waveform("FT:WFC", AdcWaveform.Waveform(2));
-        Publish_waveform("FT:WFD", AdcWaveform.Waveform(3));
+
+        /* Each of these waveforms provides an intensity profile of the
+         * electron beam pickup (button) intensity at a bandwidth of about
+         * 10MHz with 256 samples at 34ns intervals (covering 8.7 us). */
+        Publish_waveform("FT:WFA",  AdcWaveform.Waveform(0));
+        Publish_waveform("FT:WFB",  AdcWaveform.Waveform(1));
+        Publish_waveform("FT:WFC",  AdcWaveform.Waveform(2));
+        Publish_waveform("FT:WFD",  AdcWaveform.Waveform(3));
         
         /* Finally the trigger used to notify events.  The database wires this
          * up so that the all the variables above are processed when a trigger
@@ -94,7 +98,8 @@ public:
          * the waveforms are updated before the trigger is updated.   */
         Publish_bi("FT:TRIG", Trigger);
 
-        /* Also publish access to the offset and length controls. */
+        /* Also publish access to the offset and length controls for the
+         * averaging window. */
         Publish_longin("FT:OFF", Offset);
         Publish_longin("FT:LEN", Length);
         PUBLISH_METHOD(longout, "FT:OFF", SetOffset);
@@ -128,9 +133,9 @@ public:
 
         /* For the moment just pull out the positions again and convert
          * directly to mm. */
-        X = 1e-6 * Row[4];
-        Y = 1e-6 * Row[5];
-        Q = 1e-6 * Row[6];
+        X = nmTOmm(Row[4]);
+        Y = nmTOmm(Row[5]);
+        Q = nmTOmm(Row[6]);
 
         /* Finally tell EPICS there's stuff to read. */
         Trigger.Ready();

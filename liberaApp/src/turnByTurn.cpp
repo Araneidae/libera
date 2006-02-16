@@ -65,16 +65,23 @@ public:
     TURN_BY_TURN() :
         LongWaveform(LONG_WAVEFORM_LENGTH),
         ShortWaveform(SHORT_WAVEFORM_LENGTH),
+        IqWaveform(SHORT_WAVEFORM_LENGTH),
         LongTrigger(false)
     {
         ShortOffset = 0;
         /* Make the default waveform length something more reasonable. */
         LongWaveform.SetLength(1024);
         ShortWaveform.SetLength(1024);
+        IqWaveform.SetLength(1024);
         /* Don't trigger until asked to. */
         Armed = false;
         
         /* Publish the PVs associated with Turn by Turn data. */
+
+        /* The basic windowed waveform views on the entire turn by turn
+         * buffer.  Each of these provides a view of a sub-array of the
+         * captured waveform, with offset and length controlled by the OFFSET
+         * and LENGTH fields. */
         Publish_waveform("TT:WFA", ShortWaveform.Waveform(0));
         Publish_waveform("TT:WFB", ShortWaveform.Waveform(1));
         Publish_waveform("TT:WFC", ShortWaveform.Waveform(2));
@@ -83,6 +90,19 @@ public:
         Publish_waveform("TT:WFY", ShortWaveform.Waveform(5));
         Publish_waveform("TT:WFQ", ShortWaveform.Waveform(6));
         Publish_waveform("TT:WFS", ShortWaveform.Waveform(7));
+
+        /* Two waveforms providing access to the raw I and Q turn by turn
+         * data for each button. */
+        Publish_waveform("TT:WFAI", IqWaveform.Waveform(0));
+        Publish_waveform("TT:WFAQ", IqWaveform.Waveform(1));
+        Publish_waveform("TT:WFBI", IqWaveform.Waveform(2));
+        Publish_waveform("TT:WFBQ", IqWaveform.Waveform(3));
+        Publish_waveform("TT:WFCI", IqWaveform.Waveform(4));
+        Publish_waveform("TT:WFCQ", IqWaveform.Waveform(5));
+        Publish_waveform("TT:WFDI", IqWaveform.Waveform(6));
+        Publish_waveform("TT:WFDQ", IqWaveform.Waveform(7));
+
+        /* Control fields for managing capture and readout. */
         PUBLISH_METHOD(longout, "TT:CAPLEN", SetCaptureLength);
         PUBLISH_METHOD(longin,  "TT:CAPLEN", GetCaptureLength);
         PUBLISH_METHOD(longin,  "TT:CAPTURED", GetCapturedLength);
@@ -92,7 +112,6 @@ public:
         PUBLISH_METHOD(longin,  "TT:LENGTH", GetReadoutLength);
         PUBLISH_METHOD(bo, "TT:FREERUN", SetFreeRunning);
         Publish_bi("TT:FREERUN", FreeRunning);
-        
 
         /* Turn by turn triggering is rather complicated, and needs to occur
          * in two stages.  The idea is that only a single shot of turn by
@@ -120,8 +139,11 @@ public:
             /* Capture the full turn-by-turn waveform of the requested
              * length. */
             LongWaveform.Capture();
+
+            /* Let EPICS know that this has updated. */
             LongTrigger.Write(true);
 
+            /* Also bring the short waveforms up to date. */
             ProcessShortWaveform();
         }
     }
@@ -176,6 +198,7 @@ private:
         {
             bool Process = Length > (int) ShortWaveform.GetLength();
             ShortWaveform.SetLength(Length);
+            IqWaveform.SetLength(Length);
             /* Only process the short waveform if it has grown in length.
              * Otherwise there's nothing to do. */
             if (Process)
@@ -242,8 +265,12 @@ private:
         /* We copy our desired segment from the long waveform and do all the
          * usual processing. */
         ShortWaveform.CaptureFrom(LongWaveform, ShortOffset);
-        ShortWaveform.Cordic(8);
+        ShortWaveform.Cordic();
         ShortWaveform.ABCDtoXYQS();
+
+        /* The IQ waveforms are also a copy of a long waveform segment, but
+         * completely raw and unprocessed. */
+        IqWaveform.CaptureFrom(LongWaveform, ShortOffset);
 
         /* Let EPICS know there's stuff to read. */
         ShortTrigger.Ready();
@@ -252,6 +279,8 @@ private:
     
     LIBERA_WAVEFORM LongWaveform;
     LIBERA_WAVEFORM ShortWaveform;
+    LIBERA_WAVEFORM IqWaveform;
+    
     TRIGGER LongTrigger;
     TRIGGER ShortTrigger;
     /* This flag is set to enable long waveform capture on the next trigger.

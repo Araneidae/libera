@@ -47,6 +47,7 @@ ioc_SRCS += cordic.cpp
 ioc_SRCS += convert.cpp
 ioc_SRCS += hardware.cpp
 ioc_SRCS += events.cpp
+ioc_SRCS += support.cpp
 
 
 ioc_LIBS += $(EPICS_BASE_IOC_LIBS)
@@ -62,3 +63,7 @@ include $(TOP)/configure/RULES
 #----------------------------------------
 #  ADD RULES AFTER THIS LINE
 
+support.o: divide-lookup.h
+
+divide-lookup.h: ../divide-lookup.py
+	python ../divide-lookup.py >divide-lookup.h

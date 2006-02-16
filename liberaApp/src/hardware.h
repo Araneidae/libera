@@ -101,7 +101,9 @@ enum HARDWARE_EVENT_ID
     /* Something has changed in the configuration.  It may be useful to
      * monitor this to track values of switches and attenuators. */
     HARDWARE_EVENT_CFG       = 1,
-    /* Slow acquisition sample available.  This should tick at 10Hz. */
+    /* Slow acquisition sample available.  This should tick at 10Hz.
+     * Unfortunately it appears that, at least with the current version of
+     * the driver, this event never arrives! */
     HARDWARE_EVENT_SA        = 2,
     /* Interlock event.  Machine interlock status change(?) */
     HARDWARE_EVENT_INTERLOCK = 3,
@@ -214,9 +216,3 @@ int EventSelector();
 /* An even more simplified version of TEST_RC, where the error string is
  * simply the function name. */
 #define TEST_(command, args...)  TEST_RC(#command, command, args)
-
-
-
-/* The following macro counts the number of leading zeros in the argument in
- * and writes the result into clz. */
-#define CLZ(in, clz) __asm__("clz %0,%1" : "=r"(clz) : "r"(in))

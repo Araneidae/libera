@@ -206,7 +206,8 @@ def TurnByTurn():
 
     waveforms = [
         Waveform('TT:WF%s' % button, 1024)
-        for button in 'ABCDXYQS']
+        for button in
+            list('ABCDXYQS') + [b + a for b in 'ABCD' for a in 'IQ']]
             
     longInOut('TT:LENGTH', LOPR = 1, HOPR = 1024)
     caplenIn, caplenOut = longInOut('TT:CAPLEN', LOPR = 1, HOPR = 200000)
@@ -283,7 +284,8 @@ def Fast():
 FirstTurn()
 Booster()
 TurnByTurn()
-Config()
 SlowAcquisition()
+
+Config()
 
 WriteRecords(sys.argv[1])

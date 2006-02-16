@@ -145,11 +145,6 @@ void LIBERA_WAVEFORM::SetLength(size_t NewLength)
 void LIBERA_WAVEFORM::Capture(int Decimation)
 {
     ActiveLength = ReadWaveform(Decimation, CurrentLength, Data);
-    if (ActiveLength > CurrentLength)
-    {   // We can lose this test soon enough!  Maybe need some asserts...
-        printf("Whaa?!\n");     
-        ActiveLength = CurrentLength;
-    }
 }
 
 
@@ -192,7 +187,7 @@ I_waveform & LIBERA_WAVEFORM::Waveform(int Index)
 }
 
 
-void LIBERA_WAVEFORM::Cordic(int Iterations)
+void LIBERA_WAVEFORM::Cordic()
 {
     SinCosToABCD(Data.Rows, ActiveLength);
 }
@@ -232,11 +227,11 @@ ADC_WAVEFORM::ADC_WAVEFORM()
  * from 12 to 32 bits, and transposed into the four raw waveforms.
  *
  * The next stage of processing takes advantage of a couple of important
- * features of the data being sampled.  The input data is RF (at approximately
- * 500MHz) and is undersampled (at approximately 117Mhz) so that the centre
- * frequency appears at close to 1/4 the sampling frequency.  To make this
- * possible, the data is filtered through a narrow band (approximately 10MHz
- * bandwith) filter.
+ * features of the data being sampled.  The input signal is RF (at
+ * approximately 500MHz) and is undersampled (at approximately 117Mhz) so that
+ * the centre frequency appears at close to 1/4 the sampling frequency.  To
+ * make this possible, the signal is filtered through a narrow band
+ * (approximately 10MHz bandwith) filter.
  *
  * Thus the intensity profile of the incoming train can be recovered by the
  * following steps:
@@ -265,6 +260,7 @@ bool ADC_WAVEFORM::Capture()
         int * a[4];
         for (int j = 0; j < 4; j ++)
             a[j] = RawWaveforms[j]->Array();
+        
         /* First sign extend each waveform point, extend to 32-bits and
          * transpose to a more useful orientation. */
         for (int i = 0; i < ADC_LENGTH; i ++)

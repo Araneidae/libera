@@ -38,6 +38,7 @@
 #include "trigger.h"
 #include "hardware.h"
 #include "convert.h"
+#include "support.h"
 
 #include "slowAcquisition.h"
 
@@ -78,6 +79,7 @@ private:
 
     void Thread()
     {
+        /* To do: synchronise with thread shutdown. */
         while (ThreadRunning)
         {
             LIBERA_ROW Row;
@@ -89,18 +91,14 @@ private:
                 B = Row[1];
                 C = Row[2];
                 D = Row[3];
-                X = 1e-6 * Row[4];
-                Y = 1e-6 * Row[5];
-                Q = 1e-6 * Row[6];
+                X = nmTOmm(Row[4]);
+                Y = nmTOmm(Row[5]);
+                Q = nmTOmm(Row[6]);
                 S = Row[7];
                 Trigger.Ready();
             }
-            else
-                printf("Can't read SA\n");
         }
     }
-
-
 
     bool ThreadOk;
     bool ThreadRunning;
