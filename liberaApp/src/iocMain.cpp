@@ -31,9 +31,11 @@
  * for a standalone daemon ioc. */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
 #include <semaphore.h>
+#include <string.h>
 
 #include <iocsh.h>
 
@@ -60,6 +62,15 @@ static bool RunIocShell = true;
  * shutdown. */
 static sem_t ShutdownSemaphore;
 
+
+/* Configuration settable parameters. */
+
+/* Maximum length of long turn by turn buffer. */
+static int LongTurnByTurnLength = 200000;
+static int ShortTurnByTurnLength = 2048;
+static int TurnByTurnWindowLength = 16384;
+/* Length of 1024 decimated buffer. */
+static int DecimatedShortLength = 190;
 
 
 /* Prints interactive startup message as recommended by GPL. */
@@ -133,7 +144,13 @@ void Usage(const char *IocName)
 "    -h                 Writes out this usage description.\n"
 "    -p <pid-file>      Writes pid to <pid-file>.\n"
 "    -n                 Run non-interactively without an IOC shell\n"
-"    -v                 Writes version information\n", IocName);
+"    -v                 Writes version information\n"
+"    -c<key>=<value>    Configure run time parameter.  <key> can be:\n"
+"       TL      Length of long turn-by-turn buffer\n"
+"       TT      Length of short turn-by-turn buffer\n"
+"       TW      Length of turn-by-turn readout window\n"
+"       DD      Length of /1024 decimated data buffer\n",
+        IocName);
 }
 
 
@@ -161,10 +178,10 @@ bool InitialiseLibera()
         InitialiseFirstTurn()  &&
         /* Turn by turn is designed for long waveform capture at revolution
          * clock frequencies. */
-        InitialiseTurnByTurn()  &&
+        InitialiseTurnByTurn(LongTurnByTurnLength, ShortTurnByTurnLength)  &&
         /* Booster operation is designed for viewing the entire booster ramp
          * at reduced resolution. */
-        InitialiseBooster()  &&
+        InitialiseBooster(DecimatedShortLength)  &&
         /* Slow acquisition returns highly filtered positions at 10Hz. */
         InitialiseSlowAcquisition();
 }
@@ -181,6 +198,7 @@ void TerminateLibera()
     if (PidFileName != NULL)
         unlink(PidFileName);
     TerminateEventReceiver();
+    TerminateSlowAcquisition();
     TerminateHardware();
 }
 
@@ -209,6 +227,66 @@ bool WritePid(const char * FileName)
 }
 
 
+/* This routine parses a configuration setting.  This will be of the form
+ *
+ *      <key>=<value>
+ *
+ * where <key> identifies which value is set and <value> is an integer. */
+
+bool ParseConfigInt(char *optarg)
+{
+    static const struct
+    {
+        const char * Name;
+        int * Target;
+        int Low, High;
+    } Lookup[] = {
+        { "TL", & LongTurnByTurnLength,   1, 500000 },  // Up to 16M
+        { "TT", & ShortTurnByTurnLength,  1, 8192 },
+        { "TW", & TurnByTurnWindowLength, 1, 65536 },   // Up to 8M
+        { "DD", & DecimatedShortLength,   1, 1000 },
+    };
+
+    /* Parse the configuration setting into <key>=<integer>. */
+    char * eq = strchr(optarg, '=');
+    if (eq == NULL)
+    {
+        printf("Ill formed config definition: \"%s\"\n", optarg);
+        return false;
+    }
+    *eq++ = '\0';
+    char * end;
+    int Value = strtol(eq, &end, 0);
+    if (*eq == '\0'  ||  *end != '\0')
+    {
+        printf("Configuration value not a number: \"%s=%s\"\n", optarg, eq);
+        return false;
+    }
+    
+    /* Figure out who it belongs to! */
+    for (size_t i = 0; i < sizeof(Lookup) / sizeof(Lookup[0]); i ++)
+    {
+        if (strcmp(optarg, Lookup[i].Name) == 0)
+        {
+            if (Lookup[i].Low <= Value  &&  Value <= Lookup[i].High)
+            {
+                *Lookup[i].Target = Value;
+                return true;
+            }
+            else
+            {
+                printf("Unreasonable value: \"%s=%s\"\n", optarg, eq);
+                return false;
+            }
+        }
+    }
+
+    /* Nope, never heard of it. */
+    printf("Unknown configuration value \"%s\"\n", optarg);
+    return false;
+}
+
+
 /* Process any options supported by the ioc.  At present we support:
  *
  *      -h              Print out usage
@@ -221,12 +299,13 @@ bool ProcessOptions(int &argc, char ** &argv)
     bool Ok = true;
     while (Ok)
     {
-        switch (getopt(argc, argv, "+p:hvn"))
+        switch (getopt(argc, argv, "+p:nc:hv"))
         {
-            case 'p':   Ok = WritePid(optarg);  break;
-            case 'h':   Usage(argv[0]);         return false;
-            case 'v':   StartupMessage();       return false;
-            case 'n':   SetNonInteractive();    break;
+            case 'p':   Ok = WritePid(optarg);          break;
+            case 'n':   SetNonInteractive();            break;
+            case 'c':   Ok = ParseConfigInt(optarg);    break;
+            case 'h':   Usage(argv[0]);                 return false;
+            case 'v':   StartupMessage();               return false;
             case '?':
             default:
                 printf("Try `%s -h` for usage\n", argv[0]);

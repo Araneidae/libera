@@ -43,34 +43,21 @@
 #include "turnByTurn.h"
 
 
-/* This defines the maximum single shot of turn-by-turn data that we can
- * capture.  200,000 points is enough to capture an entire booster ramp:
- * 100ms at 1.89MHz.
- *    Unfortunately it seems that Libera isn't capable of delivering this
- * normally! */
-#define LONG_WAVEFORM_LENGTH    200000
-
-/* Length of readout waveform. */
-#define SHORT_WAVEFORM_LENGTH   (2*1024)
-
-/* Don't allow freely running retriggering of turn-by-turn data when the
- * capture length is longer than this limit: it is too demanding on the IOC
- * and prevents other activities from operating normally. */
-#define FREE_RUN_LIMIT          SHORT_WAVEFORM_LENGTH
-
 
 class TURN_BY_TURN : I_EVENT
 {
 public:
-    TURN_BY_TURN() :
-        LongWaveform(LONG_WAVEFORM_LENGTH),
-        ShortWaveform(SHORT_WAVEFORM_LENGTH),
-        IqWaveform(SHORT_WAVEFORM_LENGTH),
+    TURN_BY_TURN(int LongWaveformLength, int ShortWaveformLength) :
+        LongWaveformLength(LongWaveformLength),
+        ShortWaveformLength(ShortWaveformLength),
+        LongWaveform(LongWaveformLength),
+        ShortWaveform(ShortWaveformLength),
+        IqWaveform(ShortWaveformLength),
         LongTrigger(false)
     {
         ShortOffset = 0;
         /* Make the default waveform length something more reasonable. */
-        LongWaveform.SetLength(SHORT_WAVEFORM_LENGTH);
+        LongWaveform.SetLength(ShortWaveformLength);
         /* Don't trigger until asked to. */
         Armed = false;
         
@@ -148,11 +135,13 @@ public:
 
     
 private:
+    TURN_BY_TURN();     // Needed for PUBLISH_METHOD hacks
+    
     /* Waveform length control.  This can be dynamically changed through the
      * EPICS interface. */
     bool SetCaptureLength(int Length)
     {
-        if (FreeRunning  &&  Length > FREE_RUN_LIMIT)
+        if (FreeRunning  &&  Length > ShortWaveformLength)
             /* Ensure free running is disabled if length is large. */
             FreeRunning = false;
         LongWaveform.SetLength(Length);
@@ -172,7 +161,7 @@ private:
         /* Allow the offset to be set anywhere within the full long waveform,
          * not just within its current length.  It's harmless and friendly to
          * allow this. */
-        if (0 <= Offset  &&  Offset < LONG_WAVEFORM_LENGTH)
+        if (0 <= Offset  &&  Offset < LongWaveformLength)
         {
             /* Minor optimisation, but ProcessShortWaveform() is pretty
              * expensive. */
@@ -192,7 +181,7 @@ private:
     
     bool SetReadoutLength(int Length)
     {
-        if (0 < Length  &&  Length <= SHORT_WAVEFORM_LENGTH)
+        if (0 < Length  &&  Length <= ShortWaveformLength)
         {
             bool Process = Length > (int) ShortWaveform.GetLength();
             ShortWaveform.SetLength(Length);
@@ -224,7 +213,7 @@ private:
 
     bool SetFreeRunning(bool Enable)
     {
-        if (!Enable  ||  LongWaveform.GetLength() <= FREE_RUN_LIMIT)
+        if (!Enable  ||  (int)LongWaveform.GetLength() <= ShortWaveformLength)
         {
             FreeRunning = Enable;
             return true;
@@ -274,6 +263,9 @@ private:
         ShortTrigger.Ready();
     }
     
+
+    const int LongWaveformLength;
+    const int ShortWaveformLength;
     
     LIBERA_WAVEFORM LongWaveform;
     LIBERA_WAVEFORM ShortWaveform;
@@ -298,8 +290,9 @@ private:
 
 TURN_BY_TURN * TurnByTurn = NULL;
 
-bool InitialiseTurnByTurn()
+bool InitialiseTurnByTurn(
+    int LongWaveformLength, int ShortWaveformLength)
 {
-    TurnByTurn = new TURN_BY_TURN();
+    TurnByTurn = new TURN_BY_TURN(LongWaveformLength, ShortWaveformLength);
     return true;
 }

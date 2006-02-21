@@ -4,8 +4,6 @@ Work to do
 
 * Review event handling
 
-* Define LOPR and HOPR values for all records.
-
 * Implement autosave and restore
 
 * Review configuration handling
@@ -27,3 +25,5 @@ Work to do
   libgcc.a.  This will affect EPICS.
 
 * Interlock waveform readout with waveform update.
+
+* Remove hard-coded RF frequency in booster.cpp

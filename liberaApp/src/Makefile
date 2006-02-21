@@ -63,7 +63,12 @@ include $(TOP)/configure/RULES
 #----------------------------------------
 #  ADD RULES AFTER THIS LINE
 
+# The support module uses a pre-built lookup table.
 support.o: divide-lookup.h
 
 divide-lookup.h: ../divide-lookup.py
 	python ../divide-lookup.py >divide-lookup.h
+
+
+# iocMain should have the current version information defined in CONFIG.
+iocMain.o: $(TOP)/install/CONFIG

@@ -28,46 +28,108 @@
 #      michael.abbott@diamond.ac.uk
 
 # Startup script for Libera EPICS ioc.
+
+
+# ----------------------------------------------------------------------------
+# Support routines
+
+# Export named parameter to libera.db definitions.
+#
+#   LiberaParameter <name> <value>
+#   LiberaParameter <name>
+#
+# If <value> is omitted the $<name> is used.
+#
+export LIBERA_MACROS=''
+LiberaParameter()
+{
+    local value
+    if (($# < 2)); then
+        eval value=\"\$$1\"
+    else
+        value="$2"
+    fi
+    [ -n "$LIBERA_MACROS" ]  &&  LIBERA_MACROS="$LIBERA_MACROS",
+    LIBERA_MACROS="$LIBERA_MACROS$1=$value"
+}
+
+
+# Construct IOC parameter string array
+#
+#   IocParameter <flag>
+#   IocParameter <flag> <value>
+declare -a IOC_PARAMETERS
+IocParameter()
+{
+    IOC_PARAMETERS[${#IOC_PARAMETERS[@]}]="$1$2"
+}
+
+
+# ----------------------------------------------------------------------------
+
+# Use the ioc home directory as the startup directory.
 cd "$(dirname "$0")"
 
-
-# Pick up the location of the epics files.
+# Pick up the IOC specific configuration parameters together with the
+# location of the EPICS files.
 . /etc/sysconfig/epics_ioc
+
 export EPICS_BASE
-
-
 export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$EPICS_BASE/lib"
 export PATH="$PATH:$EPICS_BASE/bin"
 export EPICS_CA_MAX_ARRAY_BYTES=1000000
 export DEVICE="$(hostname)"
 
+PIDFILE=/var/run/ioc.pid
+
+
 INTERACTIVE=
-while getopts "d:n" option; do
+while getopts "d:nfh" option; do
     case "$option" in
-    d)  DEVICE="$OPTARG";;
-    n)  INTERACTIVE=-n ;;
-    *)  cat <<'EOF' >&2
-Invalid option
+    d)  DEVICE="$OPTARG" ;;
+    n)  IocParameter -n ;;
+    f)  rm -f "$PIDFILE" ;;
+    h)  cat <<'EOF' 
+Usage: runioc [options]
     -d <device>:  use supplied device name instead of hostname
     -n            run non-interactive without an IOC shell
+    -f            run even if pid file already present
 EOF
-        exit 1;;
+        exit 0 ;;
+    *)  echo 2>&1 'Invalid option: try -h for help'
+        exit 1 ;;
     esac
 done
 
 
-# Ensure that leventd isn't still running: at the moment we have a resource
-# collision with this process.
-if [ -e /var/run/leventd.pid ]; then
-    kill $(cat /var/run/leventd.pid)
+# Don't run if the ioc.pid file is present: this is a simple technique to
+# prevent us interfering with an already running instance.
+if [ -e "$PIDFILE" ]; then
+    echo 2>&1 'PID file found: check epics is not already running'
+    exit 1
 fi
 
+# Ensure that leventd isn't still running: at the moment we have a resource
+# collision with this process.
+[ -e /var/run/leventd.pid ]  &&  kill $(cat /var/run/leventd.pid)
 
 # Start the repeater first and background it properly to avoid possible
 # conflicts (for instance, it can hold important file handles open!)
 caRepeater </dev/null >/dev/null 2>&1 &
 
+# Export the database parameters needed to configure libera.db
+LiberaParameter DEVICE
+LiberaParameter BN_SHORT $((IOC_BN_LENGTH))
+LiberaParameter BN_LONG  $((16*IOC_BN_LENGTH))
+LiberaParameter TT_LONG  $((IOC_TT_LENGTH))
+#LiberaParameter TT_SHORT $((IOC_TT_SHORT_LENGTH))
+
+IocParameter -p "$PIDFILE"
+IocParameter -cTL= $((IOC_TT_LENGTH))
+IocParameter -cDD= $((IOC_BN_LENGTH))
+#IocParameter -cTT= $((IOC_TT_SHORT_LENGTH))
 # Now run the ioc proper.
-./bin/ioc -p/var/run/ioc.pid $INTERACTIVE st.cmd
+./bin/ioc "${IOC_PARAMETERS[@]}" st.cmd
+
 # If we crash, make sure we don't leave the pid file behind!
 rm -f /var/run/ioc.pid

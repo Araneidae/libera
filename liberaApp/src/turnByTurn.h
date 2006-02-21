@@ -27,4 +27,4 @@
  */
 
 
-bool InitialiseTurnByTurn();
+bool InitialiseTurnByTurn(int LongWaveformLength, int ShortWaveformLength);

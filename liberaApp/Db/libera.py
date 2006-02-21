@@ -28,57 +28,19 @@
 # Python script for building Libera database
 
 import sys
-import os
 from math import *
 
-import epics
-epics.Configure(recordnames=epics.TemplateRecordNames())
- 
+# It is important to import support before importing epics, as the support
+# module initialises epics (and determined which symbols it exports to *!)
+from support import Libera
 from epics import *
 
-# Ensure that we can find the Libera dbd files.  The home directory is where
-# the top level Libera directory has been placed.
-HomeDir = os.path.realpath(
-    os.path.join(os.path.dirname(sys.argv[0]), '../../..'))
-LibVersion('Libera', home=HomeDir)
 
 
-
-
-# This class wraps the creation of records which talk directly to the
-# Libera device driver.
-class Libera(hardware.Device):
-    @classmethod
-    def LoadLibrary(cls):
-        cls.LoadDbdFile('dbd/libera.dbd')
-
-    class makeRecord:
-        def __init__(self, builder, addr_name):
-            self.builder = getattr(records, builder)
-            self.addr_name = addr_name
-
-        def __call__(self, name, address=None, **fields):
-            if address is None:
-                address = name
-            record = self.builder(name, **fields)
-            if not GetSimulation():
-                record.DTYP = 'Libera'
-                setattr(record, self.addr_name, address)
-            return record
-
-    @classmethod
-    def init(cls):
-        for name, addr in [
-                ('longin',   'INP'), ('longout',  'OUT'),
-                ('ai',       'INP'), ('ao',       'OUT'),
-                ('bi',       'INP'), ('bo',       'OUT'),
-                ('waveform', 'INP')]:
-            setattr(cls, name, cls.makeRecord(name, addr))
-
-Libera.init()
-Libera()
-
-
+# ----------------------------------------------------------------------------
+#           Record Generation Support
+# ----------------------------------------------------------------------------
+        
 
 # Functions for creating bound pairs of set/readback records.
 
@@ -115,79 +77,167 @@ def Waveform(name, length, FTVL='LONG', **fields):
         FTVL = FTVL,
         **fields)
 
+
+# Boilerplate record generation.  Here is where the various types of records
+# that can be generated are defined.
+# 
+# ChannelName = None
+# def SetChannelName(name):
+#     global ChannelName
+#     ChannelName = name
+# def Name(button):
+#     return '%s:%s' % (ChannelName, button)
+
+MAX_INT = 2**31 - 1
+MAX_nm  = 10 * 10**6         # 10^7 nm = 10 mm
+MAX_mm  = 1e-6 * MAX_nm
+MAX_S   = MAX_INT
+
+def RAW_ADC(length):
+    return [
+        Waveform('RAW' + button, length,
+            LOPR = -2048, HOPR = 2047)
+        for button in 'ABCD']
+
+def IQ_wf(length):
+    return [
+        Waveform('WF' + button + axis, length,
+            LOPR = -MAX_S, HOPR = MAX_S)
+        for button in 'ABCD' for axis in 'IQ']
+
+def ABCD_wf(length):
+    return [
+        Waveform('WF' + button, length,
+            LOPR = 0, HOPR = MAX_S)
+        for button in 'ABCD']
+
+def ABCD_():
+    return [
+        Libera.longin(button,
+            MDEL = -1,
+            LOPR = 0, HOPR = MAX_S)
+        for button in 'ABCD']
+
+def XYQS_wf(length, prefix='WF'):
+    return [
+        Waveform(prefix + position, length,
+            LOPR = -MAX_nm, HOPR = MAX_nm, EGU = 'nm')
+        for position in 'XYQ'] + [
+        Waveform(prefix + 'S', length,
+            LOPR = 0, HOPR = MAX_S)]
+
+def XYQS_(prec=1, logMax=0):
+    sl = [Libera.longin('S', MDEL = -1)]
+    if logMax:
+        sl.append(records.calc('SL',
+            CALC = '20*(LOG(A)-%g)' % logMax,
+            INPA = sl[0],
+            MDEL = -1,
+            LOPR = -50,   HOPR = 0,
+            EGU  = 'dB',  PREC = 0))
+    return [
+        Libera.ai(position,
+            MDEL = -1,
+            LOPR = 0,     HOPR = MAX_mm,
+            PREC = prec,  EGU  = 'mm')
+        for position in 'XYQ'] + sl
+        
+        
+
+def Enable():
+    boolInOut('ENABLE',
+        ZNAM = 'Disabled',
+        ONAM = 'Enabled')
+
+def Trigger(*positions):
+    # The DONE record must be processed after all other triggered records are
+    # processed: this is used as an interlock to synchronise with the Libera
+    # driver.
+    done = Libera.bo('DONE')
+    Libera.bi('TRIG',
+        SCAN = 'I/O Intr',
+        FLNK = create_fanout('FAN', *positions + (done,)))
+
+        
+# ----------------------------------------------------------------------------
+#           Libera Data Capture Mode Definitions
+# ----------------------------------------------------------------------------
         
 
 # First turn snapshot records.  Access to position data immediately following
 # the trigger for use on transfer paths and during injection.
 def FirstTurn():
-    waveforms = [
-        Waveform('FT:WF%s' % button, 256)
-        for button in 'ABCD'] + [
-        Waveform('FT:RAW%s' % button, 1024)
-        for button in 'ABCD']
+    LONG_LENGTH = 1024
+    SHORT_LENGTH = LONG_LENGTH / 4
 
-    position_S = Libera.longin('FT:S')
-    positions = \
-        [position_S] + \
-        [Libera.longin('FT:%s' % position) for position in 'ABCD'] + \
-        [Libera.ai('FT:%s' % position, PREC = 1, EGU  = 'mm')
-            for position in 'XYQ'] + \
-        [Libera.longin('FT:MAXADC',
-            LOPR = 0,        HOPR = 2048,
-            HSV  = 'MINOR',  HIGH = 1024,                   # -6dB
-            HHSV = 'MAJOR',  HIHI = int(1024*sqrt(2)), )]   # -3dB
+    SetChannelName('FT')
+    Enable()
+    
+    maxadc = Libera.longin('MAXADC',
+        LOPR = 0,        HOPR = 2048,
+        HSV  = 'MINOR',  HIGH = 1024,                   # -6dB
+        HHSV = 'MAJOR',  HIHI = int(1024*sqrt(2)))      # -3dB
 
-    # The maximum possible first turn intensity is determined by the
-    # calculation in waveform.cpp:ADC_WAVEFORM::Capture() where the raw ADC
-    # value (+-2^11) is rescaled into the range 0..sqrt(2)*0.5822*2^30.  Here
-    # 0.5822 is the cordic correction factor.
-    logMax = log10(2**30 * 0.582217 * sqrt(2))
-    sl = records.calc('FT:SL',
-        CALC = '20*(LOG(A)-%g)' % logMax,
-        INPA = position_S,
-        EGU  = 'dB',  PREC = 0)
-            
-    Libera.bi('FT:TRIG',
-        SCAN = 'I/O Intr',
-        FLNK = create_fanout('FT:FAN', *waveforms + positions + [sl]))
+    Trigger(*
+        # Raw wavefors as read from the ADC rate buffer
+        RAW_ADC(LONG_LENGTH) + [maxadc] +
+        # ADC data reduced by 1/4 by recombination
+        ABCD_wf(SHORT_LENGTH) +
+        # Synthesised button positions from windowed averages
+        ABCD_() + 
+        # Final computed positions with logarithmic scale.
+        XYQS_(logMax = log10(2**30 * 0.582217 * sqrt(2))))
 
-    longInOut('FT:OFF', LOPR = 0, HOPR = 1023)
-    longInOut('FT:LEN', LOPR = 1, HOPR = 1024)
+    # Sample window control
+    longInOut('OFF', LOPR = 0, HOPR = SHORT_LENGTH - 1)
+    longInOut('LEN', LOPR = 1, HOPR = SHORT_LENGTH)
+
+    UnsetChannelName()
 
 
 # Booster ramp support records.  Decimated waveforms for overview of entire
 # 100ms booster ramp.
 def Booster():
-    waveforms = \
-        [Waveform('BN:WF%s' % button, 3040) for button in 'ABCDXYSQ'] + \
-        [Waveform('BN:WFS%s' % button, 190) for button in 'XYS'] 
+    LONG_LENGTH  = Parameter('BN_LONG')     # 3040
+    SHORT_LENGTH = Parameter('BN_SHORT')    # BN_LONG / 16
 
-    Libera.bi('BN:TRIG',
-        SCAN = 'I/O Intr',
-        FLNK = create_fanout('BN:FAN', *waveforms))
+    SetChannelName('BN')    # <==== will be DD soon
+    Enable()
+    
+    Trigger(*
+        # Raw decimated /64 button values
+        ABCD_wf(LONG_LENGTH) +
+        # Decimated /64 positions
+        XYQS_wf(LONG_LENGTH) +
+        # Decimated /1024 positions
+        XYQS_wf(SHORT_LENGTH, 'WFS'))
 
     # Axes for user friendly graphs, used to label the WF and WFS waveforms.
     # Each labels the time axis in milliseconds.
-    Waveform('BN:AXIS', 3040, 'FLOAT', PINI='YES')
-    Waveform('BN:AXISS', 190, 'FLOAT', PINI='YES')
-        
+    Waveform('AXIS',  LONG_LENGTH,  'FLOAT', PINI='YES')
+    Waveform('AXISS', SHORT_LENGTH, 'FLOAT', PINI='YES')
 
+    UnsetChannelName()
+        
 
 # Turn-by-turn snapshot records.  Access to long waveforms captured on
 # request.  Typically used for tune measurements.  Up to 200,000 points can
 # be captured in one request.
 def TurnByTurn():
-    LONG_LENGTH = 200000
-    SHORT_LENGTH = 2 * 1024
+    LONG_LENGTH = Parameter('TT_LONG')
+    SHORT_LENGTH = 2048
+    
+    SetChannelName('TT')    # <=== Soon to be split into TT and LT
+    Enable()
     
     # Number of points successfully captured by the last trigger.
-    captured = Libera.longin('TT:CAPTURED')
+    captured = Libera.longin('CAPTURED')
     # Write a one to request a refill of the buffer.
-    arm = Libera.bo('TT:ARM',
+    arm = Libera.bo('ARM',
         ZNAM = 'Not armed',
         ONAM = 'Trigger enabled')
     # This indicates whether the buffer has been filled.
-    ready = Libera.bi('TT:READY',
+    ready = Libera.bi('READY',
         SCAN = 'I/O Intr',
         PINI = 'YES',
         ZNAM = 'No waveform',
@@ -195,79 +245,86 @@ def TurnByTurn():
     # When the ready record makes a transition into the ready state re-enable
     # the arm record by setting it to zero.
     rearm = records.calcout(
-        'TT:REARM',
+        'REARM',
         OUT  = arm,
         INPA = ready,
         CALC = '!A',
         OOPT = 'Transition To Zero',
         DOPT = 'Use CALC')
-    ready.FLNK = create_fanout('TT:FANA', rearm, captured)
+    ready.FLNK = create_fanout('FANA', rearm, captured)
 
     # Note: need to update FREERUN when caputure length changes...
-    freerunIn, freerunOut = boolInOut('TT:FREERUN',
+    freerunIn, freerunOut = boolInOut('FREERUN',
         ZNAM = 'Normal', ONAM = 'Free Run')
 
-    waveforms = [
-        Waveform('TT:WF%s' % button, SHORT_LENGTH)
-        for button in
-            list('ABCDXYQS') + [b + a for b in 'ABCD' for a in 'IQ']]
-            
-    longInOut('TT:LENGTH', LOPR = 1, HOPR = SHORT_LENGTH)
-    caplenIn, caplenOut = longInOut('TT:CAPLEN', LOPR = 1, HOPR = LONG_LENGTH)
+    longInOut('LENGTH', LOPR = 1, HOPR = SHORT_LENGTH)
+    caplenIn, caplenOut = longInOut('CAPLEN', LOPR = 1, HOPR = LONG_LENGTH)
     # A slightly tricksy hack: the FREERUN flag can be reset in two
     # circumstances -- when explicitly set to false, but also when the
     # capture length becomes too large.
     caplenIn.FLNK = freerunIn
 
-    Libera.longout('TT:OFFSET_S', 'TT:OFFSET',
+    Libera.longout('OFFSET_S', 'OFFSET',
         OMSL = 'supervisory', LOPR = 0, HOPR = LONG_LENGTH)
-    offset = Libera.longin('TT:OFFSET', PINI = 'YES')
+    offset = Libera.longin('OFFSET', PINI = 'YES')
 
-    Libera.bi('TT:TRIG',
-        SCAN = 'I/O Intr',
-        FLNK = create_fanout('TT:FANB', *waveforms + [offset]),
-        DESC = 'Trigger FT waveform capture')
+    Trigger(*
+        # Raw I and Q values
+        IQ_wf(SHORT_LENGTH) + 
+        # Button values
+        ABCD_wf(SHORT_LENGTH) +
+        # Computed positions
+        XYQS_wf(SHORT_LENGTH) +
+        [offset])
+
+    UnsetChannelName()
 
     
+# Slow acquisition: position updates at 10Hz.
+def SlowAcquisition():
+    SetChannelName('SA')
+    Enable()
+    Trigger(*ABCD_() + XYQS_())
+    UnsetChannelName()
+
+
+
+# ----------------------------------------------------------------------------
+#           Configuration
+# ----------------------------------------------------------------------------
+        
 
 # Configuration control records.  Used for setting button or stripline
 # geometry and 
 def Config():
-    boolInOut('CF:DIAG', ZNAM = 'VERTICAL', ONAM = 'DIAGONAL')
-    aInOut('CF:KX', 0, 32,   PREC = 4, EGU = 'mm')
-    aInOut('CF:KY', 0, 32,   PREC = 4, EGU = 'mm')
-    aInOut('CF:KQ', 0, 32,   PREC = 4, EGU = 'mm')
-    aInOut('CF:X0', -16, 16, PREC = 4, EGU = 'mm')
-    aInOut('CF:Y0', -16, 16, PREC = 4, EGU = 'mm')
-    aInOut('CF:GA', 0, 1.5, VAL = 1, PREC = 4)
-    aInOut('CF:GB', 0, 1.5, VAL = 1, PREC = 4)
-    aInOut('CF:GC', 0, 1.5, VAL = 1, PREC = 4)
-    aInOut('CF:GD', 0, 1.5, VAL = 1, PREC = 4)
+    SetChannelName('CF')
+    boolInOut('DIAG', ZNAM = 'VERTICAL', ONAM = 'DIAGONAL')
+    aInOut('KX', 0, 32,   PREC = 4, EGU = 'mm')
+    aInOut('KY', 0, 32,   PREC = 4, EGU = 'mm')
+    aInOut('KQ', 0, 32,   PREC = 4, EGU = 'mm')
+    aInOut('X0', -16, 16, PREC = 4, EGU = 'mm')
+    aInOut('Y0', -16, 16, PREC = 4, EGU = 'mm')
+    aInOut('GA', 0, 1.5, VAL = 1, PREC = 4)
+    aInOut('GB', 0, 1.5, VAL = 1, PREC = 4)
+    aInOut('GC', 0, 1.5, VAL = 1, PREC = 4)
+    aInOut('GD', 0, 1.5, VAL = 1, PREC = 4)
 
-    attenwf = Libera.waveform('CF:ATTWF',
+    attenwf = Libera.waveform('ATTWF',
         NELM = 8, FTVL = 'LONG', PINI = 'YES')
-    Libera.longout('CF:ATT1_S', 'CF:ATT1',
+    Libera.longout('ATT1_S', 'ATT1',
         OMSL = 'supervisory', LOPR = 0, HOPR = 31, FLNK = attenwf)
-    Libera.longout('CF:ATT2_S', 'CF:ATT2',
+    Libera.longout('ATT2_S', 'ATT2',
         OMSL = 'supervisory', LOPR = 0, HOPR = 31, FLNK = attenwf)
 
-    longInOut('CF:SW', LOPR = 0, HOPR = 15)
-
-
-def SlowAcquisition():
-    sa = [Libera.ai('SA:' + name, MDEL = -1, PREC = 4, EGU = 'mm')
-        for name in 'XYSQ'] + [
-        Libera.longin('SA:' + name) for name in 'ABCD']
-    Libera.bi('SA:TRIG',
-        SCAN = 'I/O Intr',
-        FLNK = create_fanout('SA:FAN', *sa))
-
+    longInOut('SW', LOPR = 0, HOPR = 15)
+    UnsetChannelName()
 
 
 # Not yet used ...
 #   These interfaces will probably change drastically.
 
 def Fast():
+    SetChannelName('FF')
     waveforms = [
         Libera.waveform(
             'FAST:WF' + name,
@@ -280,6 +337,7 @@ def Fast():
         SCAN = 'I/O Intr',
         DESC = 'Fast feedback trigger')
     trigger.FLNK = records.create_fanout('FAST:FAN', waveforms)
+    UnsetChannelName()
 
 
 

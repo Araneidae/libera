@@ -63,7 +63,8 @@ cat <<EOF >"$TARGET"/epics_ioc  &&
 EPICS_BASE="$EPICS_TARGET"
 LIBERA_IOC="$DRIVER_TARGET"/runioc
 EOF
-# All symbols ending _IOC will be passed through to the target IOC.
-grep '^[[:alnum:]_]*_IOC=' "$SOURCE"/install/CONFIG >>"$TARGET"/epics_ioc  &&
+# All symbols definitions starting IOC_ will be passed through to the target
+# IOC to configure run-time operation.
+grep '^IOC_[[:alnum:]_]*=' "$SOURCE"/install/CONFIG >>"$TARGET"/epics_ioc  &&
 
 echo Epics files installed in "$TARGET".

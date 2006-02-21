@@ -6,7 +6,7 @@ ioc_registerRecordDeviceDriver(pdbbase)
 
 # Load the records
 dbLoadRecords("db/sensors.db", "DEVICE=${DEVICE}")
-dbLoadRecords("db/libera.db",  "DEVICE=${DEVICE}")
+dbLoadRecords("db/libera.db", "${LIBERA_MACROS}")
 
 dbLoadRecords("config/${DEVICE}.db", "DEVICE=${DEVICE}")
 

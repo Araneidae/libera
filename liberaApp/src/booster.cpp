@@ -42,14 +42,7 @@
 #include "booster.h"
 
 
-/* The booster long waveform must be long enough to accomodate a complete
- * booster acceleration ramp lasting 100ms at a sample rate of turn-by-turn
- * frequency decimated by 64: this corresponds to 2957 points.
- *    Also, to help with computation of the short waveform, we would like
- * this count to be a multiple of 16.  For the sake of relatively round
- * numbers we take value 3040 and 190 respectively. */
-#define LONG_WAVEFORM_SIZE      3040
-#define SHORT_WAVEFORM_SIZE     (LONG_WAVEFORM_SIZE/16)
+/* ???? The RF frequency is hard coded here.  Remove this. */
 
 /* The total time for a long booster ramp waveform can be calculated from the
  * basic machine parameters as follows. */
@@ -57,25 +50,27 @@
 #define BOOSTER_BUNCHES 264             // RF intervals per booster turn
 #define DECIMATION      64              // Libera decimation factor
 #define RAMP_DURATION   \
-    ((1e3 * LONG_WAVEFORM_SIZE * DECIMATION * BOOSTER_BUNCHES) / \
+    ((1e3 * LongWaveformLength * DECIMATION * BOOSTER_BUNCHES) / \
         RF_FREQUENCY)
 
 
 class BOOSTER : I_EVENT
 {
 public:
-    BOOSTER() :
-        LongWaveform(LONG_WAVEFORM_SIZE),
-        ShortWaveformX(SHORT_WAVEFORM_SIZE),
-        ShortWaveformY(SHORT_WAVEFORM_SIZE),
-        ShortWaveformS(SHORT_WAVEFORM_SIZE),
-        LongAxis(LONG_WAVEFORM_SIZE),
-        ShortAxis(SHORT_WAVEFORM_SIZE)
+    BOOSTER(int ShortWaveformLength) :
+        ShortWaveformLength(ShortWaveformLength),
+        LongWaveformLength(16*ShortWaveformLength),
+        LongWaveform(LongWaveformLength),
+        ShortWaveformX(ShortWaveformLength),
+        ShortWaveformY(ShortWaveformLength),
+        ShortWaveformS(ShortWaveformLength),
+        LongAxis(LongWaveformLength),
+        ShortAxis(ShortWaveformLength)
     {
         /* Build the linear scales so that we can see booster data against a
          * sensible time scale (in milliseconds). */
-        FillAxis(LongAxis,  LONG_WAVEFORM_SIZE,  RAMP_DURATION);
-        FillAxis(ShortAxis, SHORT_WAVEFORM_SIZE, RAMP_DURATION);
+        FillAxis(LongAxis,  LongWaveformLength,  RAMP_DURATION);
+        FillAxis(ShortAxis, ShortWaveformLength, RAMP_DURATION);
         
         /* Publish the PVs associated with Booster data. */
         Publish_waveform("BN:WFA", LongWaveform.Waveform(0));
@@ -130,10 +125,10 @@ private:
         /* For simplicity we grab the raw data to be reduced into a local
          * buffer.  This costs 3040*4 bytes and a little time to copy the
          * memory. */
-        int Buffer[LONG_WAVEFORM_SIZE];
-        LongWaveform.Read(Index, Buffer, 0, LONG_WAVEFORM_SIZE);
+        int Buffer[LongWaveformLength];
+        LongWaveform.Read(Index, Buffer, 0, LongWaveformLength);
         int * Target = Waveform.Array();
-        for (int i = 0; i < SHORT_WAVEFORM_SIZE; i += 1)
+        for (int i = 0; i < ShortWaveformLength; i += 1)
         {
             int Total = 0;
             for (int j = 0; j < 16; j ++)
@@ -150,6 +145,9 @@ private:
         for (int i = 0; i < Length; i ++)
             a[i] = (Duration * i) / (Length - 1);
     }
+
+    const int ShortWaveformLength;
+    const int LongWaveformLength;
     
     LIBERA_WAVEFORM LongWaveform;
     SIMPLE_WAVEFORM ShortWaveformX;
@@ -164,8 +162,8 @@ private:
 
 BOOSTER * Booster = NULL;
 
-bool InitialiseBooster()
+bool InitialiseBooster(int ShortWaveformLength)
 {
-    Booster = new BOOSTER();
+    Booster = new BOOSTER(ShortWaveformLength);
     return true;
 }

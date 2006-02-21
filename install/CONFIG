@@ -15,7 +15,23 @@ EPICS_TARGET=/mnt/nfs/testing/epics
 # This is where the IOC driver files are installed.
 DRIVER_TARGET=/mnt/nfs/testing/ioc
 
+
+# ----------------------------------------------------------------------------
+#
+# The remaining definitions are IOC specific parameters used to configure the
+# running of the IOC.
+
+
 # If this symbol is empty then the IOC will run in a screen: screen must be
 # installed on Libera for this to work.  Otherwise the IOC will run as a
 # daemon with output redirected to this file.
-LOG_IOC=/var/log/ioc
+IOC_LOG=/var/log/ioc
+
+# Length of Booster ramp to be monitored in units of 1024 turn-by-turn
+# samples.
+IOC_BN_LENGTH=190
+
+# Maximum number of points to be captured in a single long turn-by-turn
+# waveform.  This will consume 32 bytes per point, so don't set it too long!
+IOC_TT_LENGTH=200000
+

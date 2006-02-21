@@ -44,13 +44,13 @@ case "$1" in
             echo -n " - already running?"
             print_status failure
         else
-            if [ -z "$LOG_IOC" ]; then
+            if [ -z "$IOC_LOG" ]; then
                 # If no IOC log file specified then run in a screen.
                 screen -dmS epics "$LIBERA_IOC"
             else
                 # If a log file is specified then run as a daemon with all
                 # output sent to this file.
-                "$LIBERA_IOC" -n >"$LOG_IOC" 2>&1 &
+                "$LIBERA_IOC" -n >"$IOC_LOG" 2>&1 </dev/null &
             fi
             evaluate_retval
         fi

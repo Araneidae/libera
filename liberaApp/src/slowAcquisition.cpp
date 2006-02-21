@@ -32,6 +32,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
+//#include <signal.h>
 
 #include "drivers.h"
 #include "publish.h"
@@ -41,7 +42,6 @@
 #include "support.h"
 
 #include "slowAcquisition.h"
-
 
 
 class SLOW_ACQUISITION
@@ -55,7 +55,7 @@ public:
         Publish_longin("SA:D", ABCD.D);
         Publish_ai("SA:X", X);
         Publish_ai("SA:Y", Y);
-        Publish_ai("SA:S", S);
+        Publish_longin("SA:S", S);
         Publish_ai("SA:Q", Q);
 
         /* Publish the trigger.  This trigger will be signalled whenever our
@@ -64,8 +64,24 @@ public:
 
         /* Start the slow acquisition thread. */
         ThreadRunning = true;
-        pthread_t ThreadId;
-        ThreadOk = TEST_(pthread_create, &ThreadId, NULL, StartThread, this);
+//        ThreadPid = -1;
+        ThreadRunning = TEST_(
+            pthread_create, &ThreadId, NULL, StartThread, this);
+    }
+
+    /* Terminates the thread and synchronises with its shutdown. */
+    void Terminate()
+    {
+        if (ThreadRunning)
+        {
+            ThreadRunning = false;
+            /* It would be good to signal or otherwise interrupt the thread
+             * at this point ... this is less than satisfactory.  The problem
+             * is that if ReadSlowAcquisition blocks for whatever reason then
+             * we may never get past this point. */
+//            if (ThreadPid != -1)  kill(ThreadPid, SIGQUIT);
+            TEST_(pthread_join, ThreadId, NULL);
+        }
     }
 
 
@@ -79,7 +95,8 @@ private:
 
     void Thread()
     {
-        /* To do: synchronise with thread shutdown. */
+//        ThreadPid = getpid();
+        /* We simply run until asked to stop. */
         while (ThreadRunning)
         {
             if (ReadSlowAcquisition(ABCD))
@@ -100,13 +117,15 @@ private:
         }
     }
 
-    bool ThreadOk;
+    pthread_t ThreadId;
+//    pid_t ThreadPid;
     bool ThreadRunning;
     
     TRIGGER Trigger;
 
     SA_DATA ABCD;
-    double X, Y, S, Q;
+    double X, Y, Q;
+    int S;
 };
 
 
@@ -119,10 +138,10 @@ bool InitialiseSlowAcquisition()
     return true;
 }
 
-#if 0
+
 void TerminateSlowAcquisition()
 {
     if (SlowAcquisition != NULL)
         SlowAcquisition->Terminate();
 }
-#endif
+
