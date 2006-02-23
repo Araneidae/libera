@@ -106,7 +106,7 @@ public:
          * that a waveform has been read into memory. */
         PUBLISH_METHOD(bo, "TT:ARM", SetArm);
         Publish_bi("TT:READY", LongTrigger);
-        Publish_bi("TT:TRIG", ShortTrigger);
+        Interlock.Publish("TT");
 
         /* Announce our interest in the trigger. */
         RegisterTriggerEvent(*this, PRIORITY_TT);
@@ -244,11 +244,11 @@ private:
     /* This routine updates the short waveform.  This should be called
      * whenever the long waveform has been read, whenever the offset is
      * changed, and whenever the short waveform grows longer (recalculation
-     * is pointless when it shrinks!)
-     *     This code almost certainly needs to be interlocked, as it can be
-     * called from both the event thread and an ioc thread. */
+     * is pointless when it shrinks!) */
     void ProcessShortWaveform()
     {
+        Interlock.Wait();
+        
         /* We copy our desired segment from the long waveform and do all the
          * usual processing. */
         ShortWaveform.CaptureFrom(LongWaveform, ShortOffset);
@@ -260,7 +260,7 @@ private:
         IqWaveform.CaptureFrom(LongWaveform, ShortOffset);
 
         /* Let EPICS know there's stuff to read. */
-        ShortTrigger.Ready();
+        Interlock.Ready();
     }
     
 
@@ -272,7 +272,8 @@ private:
     LIBERA_WAVEFORM IqWaveform;
     
     TRIGGER LongTrigger;
-    TRIGGER ShortTrigger;
+    INTERLOCK Interlock;
+    
     /* This flag is set to enable long waveform capture on the next trigger.
      * It will then be reset, ensuring that only one capture occurs per
      * arming request. */

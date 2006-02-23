@@ -96,7 +96,7 @@ public:
          * up so that the all the variables above are processed when a trigger
          * has occured.  This code is then responsible for ensuring that all
          * the waveforms are updated before the trigger is updated.   */
-        Publish_bi("FT:TRIG", Trigger);
+        Interlock.Publish("FT");
 
         /* Also publish access to the offset and length controls for the
          * averaging window. */
@@ -115,6 +115,8 @@ public:
      * and all associated values are computed. */
     void OnEvent()
     {
+        Interlock.Wait();
+        
         /* Capture a fresh ADC waveform and compute the maximum raw ADC
          * button value: this allows input overload to be detected. */
         AdcWaveform.Capture();
@@ -138,7 +140,7 @@ public:
         Q = nmTOmm(Row[6]);
 
         /* Finally tell EPICS there's stuff to read. */
-        Trigger.Ready();
+        Interlock.Ready();
     }
 
     
@@ -231,8 +233,8 @@ private:
     /* Maximum raw ADC across all four buttons. */
     int MaxAdc;
 
-    /* This is used to inform EPICS of our updated. */
-    TRIGGER Trigger;
+    /* Epics trigger and interlock. */
+    INTERLOCK Interlock;
 };
 
 

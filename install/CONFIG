@@ -35,3 +35,5 @@ IOC_BN_LENGTH=190
 # waveform.  This will consume 32 bytes per point, so don't set it too long!
 IOC_TT_LENGTH=200000
 
+# Turn by turn readout window length.
+IOC_TW_LENGTH=2048

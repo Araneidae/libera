@@ -89,9 +89,8 @@ public:
         Publish_waveform("BN:AXIS", LongAxis);
         Publish_waveform("BN:AXISS", ShortAxis);
 
-        /* Publish the trigger.  This trigger will be signalled whenever our
-         * data has updated. */
-        Publish_bi("BN:TRIG", Trigger);
+        /* Trigger and interlock. */
+        Interlock.Publish("BN");
 
         /* Announce our interest in the trigger. */
         RegisterTriggerEvent(*this, PRIORITY_BN);
@@ -103,6 +102,8 @@ public:
      * and all associated values are computed. */
     void OnEvent()
     {
+        Interlock.Wait();
+        
         /* Capture the long waveform and reduce to proper values. */
         LongWaveform.Capture(DECIMATION);
         LongWaveform.Cordic();
@@ -113,8 +114,7 @@ public:
         ProcessShortWaveform(ShortWaveformY, 5);
         ProcessShortWaveform(ShortWaveformS, 7);
 
-        /* Let EPICS know there's stuff to read. */
-        Trigger.Ready();
+        Interlock.Ready();
     }
 
     
@@ -155,7 +155,7 @@ private:
     SIMPLE_WAVEFORM ShortWaveformS;
     FLOAT_WAVEFORM LongAxis;
     FLOAT_WAVEFORM ShortAxis;
-    TRIGGER Trigger;
+    INTERLOCK Interlock;
 };
 
 

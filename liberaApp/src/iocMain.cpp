@@ -43,6 +43,8 @@
 #include "booster.h"
 #include "turnByTurn.h"
 #include "slowAcquisition.h"
+#include "drivers.h"
+#include "trigger.h"
 
 #include "events.h"
 #include "hardware.h"
@@ -71,6 +73,8 @@ static int ShortTurnByTurnLength = 2048;
 static int TurnByTurnWindowLength = 16384;
 /* Length of 1024 decimated buffer. */
 static int DecimatedShortLength = 190;
+
+static bool Use_leventd = false;
 
 
 /* Prints interactive startup message as recommended by GPL. */
@@ -145,11 +149,14 @@ void Usage(const char *IocName)
 "    -p <pid-file>      Writes pid to <pid-file>.\n"
 "    -n                 Run non-interactively without an IOC shell\n"
 "    -v                 Writes version information\n"
+"    -e                 Use leventd for event deliver\n"
 "    -c<key>=<value>    Configure run time parameter.  <key> can be:\n"
-"       TL      Length of long turn-by-turn buffer\n"
+"       LT      Length of long turn-by-turn buffer\n"
 "       TT      Length of short turn-by-turn buffer\n"
 "       TW      Length of turn-by-turn readout window\n"
-"       DD      Length of /1024 decimated data buffer\n",
+"       DD      Length of /1024 decimated data buffer\n"
+"\n"
+"Note: This IOC application should normally be run from within runioc.\n",
         IocName);
 }
 
@@ -162,9 +169,11 @@ bool InitialiseLibera()
     return
         /* Set up exit hander. */
         InitialiseAtExit()  &&
-        
+
+        /* Ensure the trigger interlock mechanism is working. */
+        InitialiseTriggers()  &&
         /* Initialise the connections to the Libera device. */
-        InitialiseHardware()  &&
+        InitialiseHardware(Use_leventd)  &&
         /* Initialise conversion code.  This needs to be done fairly early as
          * it is used globally. */
         InitialiseConvert()  &&
@@ -178,7 +187,7 @@ bool InitialiseLibera()
         InitialiseFirstTurn()  &&
         /* Turn by turn is designed for long waveform capture at revolution
          * clock frequencies. */
-        InitialiseTurnByTurn(LongTurnByTurnLength, ShortTurnByTurnLength)  &&
+        InitialiseTurnByTurn(LongTurnByTurnLength, TurnByTurnWindowLength)  &&
         /* Booster operation is designed for viewing the entire booster ramp
          * at reduced resolution. */
         InitialiseBooster(DecimatedShortLength)  &&
@@ -194,12 +203,13 @@ bool InitialiseLibera()
 
 void TerminateLibera()
 {
-    /* On orderly shutdown remove the pid file if we created it. */
-    if (PidFileName != NULL)
-        unlink(PidFileName);
     TerminateEventReceiver();
     TerminateSlowAcquisition();
     TerminateHardware();
+    /* On orderly shutdown remove the pid file if we created it.  Do this
+     * last of all. */
+    if (PidFileName != NULL)
+        unlink(PidFileName);
 }
 
 
@@ -241,9 +251,9 @@ bool ParseConfigInt(char *optarg)
         int * Target;
         int Low, High;
     } Lookup[] = {
-        { "TL", & LongTurnByTurnLength,   1, 500000 },  // Up to 16M
+        { "LT", & LongTurnByTurnLength,   1, 500000 },  // Up to 16M bytes
         { "TT", & ShortTurnByTurnLength,  1, 8192 },
-        { "TW", & TurnByTurnWindowLength, 1, 65536 },   // Up to 8M
+        { "TW", & TurnByTurnWindowLength, 1, 65536 },   // Up to 8M bytes
         { "DD", & DecimatedShortLength,   1, 1000 },
     };
 
@@ -299,13 +309,14 @@ bool ProcessOptions(int &argc, char ** &argv)
     bool Ok = true;
     while (Ok)
     {
-        switch (getopt(argc, argv, "+p:nc:hv"))
+        switch (getopt(argc, argv, "+p:nc:hev"))
         {
             case 'p':   Ok = WritePid(optarg);          break;
             case 'n':   SetNonInteractive();            break;
             case 'c':   Ok = ParseConfigInt(optarg);    break;
             case 'h':   Usage(argv[0]);                 return false;
             case 'v':   StartupMessage();               return false;
+            case 'e':   Use_leventd = true;             break;
             case '?':
             default:
                 printf("Try `%s -h` for usage\n", argv[0]);
@@ -335,7 +346,8 @@ int main(int argc, char *argv[])
     for (; Ok  &&  argc > 0; argc--)
         Ok = iocsh(*argv++) == 0;
 
-    /* Run the entire IOC with a live IOC shell. */
+    /* Run the entire IOC with a live IOC shell, or just block with the IOC
+     * running in the background. */
     if (Ok)
     {
         StartupMessage();

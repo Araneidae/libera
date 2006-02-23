@@ -14,8 +14,6 @@ Work to do
 
 * Create proper documentation
 
-* Use leventd for event source
-
 * Implement full CSPI hardware interface.
 
 * Review convert interface.  Separate out gain correction and ensure that this
@@ -24,6 +22,9 @@ Work to do
 * Investigate migrating to soft floating point: use -msoft-float and recompile
   libgcc.a.  This will affect EPICS.
 
-* Interlock waveform readout with waveform update.
-
 * Remove hard-coded RF frequency in booster.cpp
+
+
+Notes:
+
+- Event handling is all over the place!

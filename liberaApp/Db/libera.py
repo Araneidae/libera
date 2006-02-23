@@ -224,8 +224,8 @@ def Booster():
 # request.  Typically used for tune measurements.  Up to 200,000 points can
 # be captured in one request.
 def TurnByTurn():
-    LONG_LENGTH = Parameter('TT_LONG')
-    SHORT_LENGTH = 2048
+    LONG_LENGTH  = Parameter('TT_LONG')
+    SHORT_LENGTH = Parameter('TT_SHORT')
     
     SetChannelName('TT')    # <=== Soon to be split into TT and LT
     Enable()

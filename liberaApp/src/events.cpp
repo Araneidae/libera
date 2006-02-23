@@ -170,7 +170,6 @@ public:
 
         /* Now try to start the thread. */
         ThreadRunning = Ok  &&
-            OpenEventStream()  &&
             TEST_(pthread_create, &ThreadId, NULL, StartThread, this);
         if (ThreadRunning)
         {
@@ -181,7 +180,6 @@ public:
             Param.__sched_priority = 20;
             TEST_(pthread_setschedparam, ThreadId, SCHED_RR, &Param);
 #endif
-//            printf("Started Event Receiver\n");
         }
             
         return ThreadRunning;
@@ -200,8 +198,6 @@ public:
             TEST_IO(written, "Unable to write to stop pipe",
                 write, ThreadStop[1], &stop, 1);
             TEST_(pthread_join, ThreadId, NULL);
-
-//            printf("Event Receiver Done\n");
         }
         
         if (ThreadStop[0] != -1)
@@ -316,7 +312,7 @@ private:
 };
 
 
-EVENT_RECEIVER * EventReceiver = NULL;
+static EVENT_RECEIVER * EventReceiver = NULL;
 
 
 bool InitialiseEventReceiver()

@@ -26,6 +26,7 @@
  *      michael.abbott@diamond.ac.uk
  */
 
+#include <semaphore.h>
 
 /* Simple trigger event notification to EPICS. */
 
@@ -38,7 +39,7 @@ public:
     TRIGGER(bool InitialValue=true);
 
     /* This method is used to signal EPICS that this trigger is ready. */
-    void Ready();
+    bool Ready();
 
     /* This changes the trigger value and also signals EPICS. */
     void Write(bool NewValue);
@@ -57,4 +58,70 @@ private:
 };
 
 
+/* This class implements synchronisation with epics by publishing two
+ * records, named "TRIG" and "DONE".  The database should be configured to
+ * use these thus:
+ *
+ *      record(bi, "TRIG")
+ *      {
+ *          field(SCAN, "I/O Intr")
+ *          field(FLNK, "FANOUT")
+ *      }
+ *      record(fanout, "FANOUT")
+ *      {
+ *          field(LNK1, "first-record")     # Process all associated
+ *          ...                             # records here
+ *          field(LNKn, "DONE")
+ *      }
+ *      record(bo, "DONE") { }
+ *
+ * In other words, TRIG should initiate processing on all records in its
+ * group and then DONE should be processed to indicate that all processing is
+ * complete.  The Libera epics driver will then block between signalling TRIG
+ * and receiving receipt of DONE to ensure that the record processing block
+ * retrieves a consistent set of data.
+ *
+ * The underling driver code should be of the form
+ *
+ *      while(running)
+ *      {
+ *          wait for event;
+ *          Interlock.Wait();
+ *          process data for epics;
+ *          Interlock.Ready()
+ *      }
+ *
+ * Note that Wait()ing is the first action: this is quite important. */
 
+class INTERLOCK
+{
+public:
+    INTERLOCK();
+
+    /* This method actually publishes the trigger and done records. */
+    void Publish(const char * Prefix);
+
+    /* This signals EPICS that there is data to be read and sets the
+     * interlock up ready to be read. */
+    void Ready();
+
+    /* This blocks until EPICS reports back by processing the DONE record.
+     * The first call must be made before calling Ready() and will wait for
+     * EPICS to finish initialising. */
+    void Wait();
+
+    /* Private really: don't use externally. */
+    static void EpicsReady();
+
+private:
+    bool ReportDone(bool);
+
+    TRIGGER Trigger;
+    sem_t Interlock;
+    INTERLOCK *Next;
+    static INTERLOCK *InterlockList;
+};
+
+
+/* This needs to be called for initial startup synchronisation. */
+bool InitialiseTriggers();

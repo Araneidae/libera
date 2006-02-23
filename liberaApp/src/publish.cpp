@@ -45,6 +45,18 @@
 #include "publish.h"
 
 
+
+/* Simple helper routine for building published names.  As we never have to
+ * worry about end of lifetime, this is pretty easy. */
+const char * Concat(const char * Prefix, const char * Suffix)
+{
+    char * Result = new char[strlen(Prefix) + strlen(Suffix) + 1];
+    strcpy(Result, Prefix);
+    strcat(Result, Suffix);
+    return Result;
+}
+
+
 /****************************************************************************/
 /*                                                                          */
 /*                         Generic Publish by Name                          */

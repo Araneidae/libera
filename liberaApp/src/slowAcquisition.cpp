@@ -27,12 +27,10 @@
  */
 
 
-/* Implementation of Booster data support. */
+/* Implementation of 10Hz "slow acquisition" data. */
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <pthread.h>
-//#include <signal.h>
 
 #include "drivers.h"
 #include "publish.h"
@@ -40,14 +38,15 @@
 #include "hardware.h"
 #include "convert.h"
 #include "support.h"
+#include "thread.h"
 
 #include "slowAcquisition.h"
 
 
-class SLOW_ACQUISITION
+class SLOW_ACQUISITION : public THREAD
 {
 public:
-    SLOW_ACQUISITION() 
+    SLOW_ACQUISITION()
     {
         Publish_longin("SA:A", ABCD.A);
         Publish_longin("SA:B", ABCD.B);
@@ -60,45 +59,22 @@ public:
 
         /* Publish the trigger.  This trigger will be signalled whenever our
          * data has updated. */
-        Publish_bi("SA:TRIG", Trigger);
-
-        /* Start the slow acquisition thread. */
-        ThreadRunning = true;
-//        ThreadPid = -1;
-        ThreadRunning = TEST_(
-            pthread_create, &ThreadId, NULL, StartThread, this);
+        Interlock.Publish("SA");
     }
 
-    /* Terminates the thread and synchronises with its shutdown. */
-    void Terminate()
-    {
-        if (ThreadRunning)
-        {
-            ThreadRunning = false;
-            /* It would be good to signal or otherwise interrupt the thread
-             * at this point ... this is less than satisfactory.  The problem
-             * is that if ReadSlowAcquisition blocks for whatever reason then
-             * we may never get past this point. */
-//            if (ThreadPid != -1)  kill(ThreadPid, SIGQUIT);
-            TEST_(pthread_join, ThreadId, NULL);
-        }
-    }
-
-
-private:
     
-    static void * StartThread(void * Context)
-    {
-        ((SLOW_ACQUISITION *) Context)->Thread();
-        return NULL;
-    }
+private:
 
     void Thread()
     {
-//        ThreadPid = getpid();
-        /* We simply run until asked to stop. */
-        while (ThreadRunning)
+        StartupOk();
+
+        /* We simply run until asked to stop.  Unfortunately we have no way
+         * to interrupt ReadSlowAcquisition(), so we might lock up if that
+         * stops responding. */
+        while (Running())
         {
+            Interlock.Wait();
             if (ReadSlowAcquisition(ABCD))
             {
                 LIBERA_ROW Row;
@@ -112,16 +88,12 @@ private:
                 Y = nmTOmm(Row[5]);
                 Q = nmTOmm(Row[6]);
                 S = Row[7];
-                Trigger.Ready();
             }
+            Interlock.Ready();
         }
     }
-
-    pthread_t ThreadId;
-//    pid_t ThreadPid;
-    bool ThreadRunning;
     
-    TRIGGER Trigger;
+    INTERLOCK Interlock;
 
     SA_DATA ABCD;
     double X, Y, Q;
@@ -130,12 +102,12 @@ private:
 
 
 
-SLOW_ACQUISITION * SlowAcquisition = NULL;
+static SLOW_ACQUISITION * SlowAcquisition = NULL;
 
 bool InitialiseSlowAcquisition()
 {
     SlowAcquisition = new SLOW_ACQUISITION();
-    return true;
+    return SlowAcquisition->StartThread();
 }
 
 
@@ -144,4 +116,3 @@ void TerminateSlowAcquisition()
     if (SlowAcquisition != NULL)
         SlowAcquisition->Terminate();
 }
-

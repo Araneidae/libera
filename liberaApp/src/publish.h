@@ -172,3 +172,7 @@ DECLARE_FUNCTION_WRAPPER(bo, bool, write);
 
 #define PUBLISH_FUNCTION(record, name, function, context) \
     Publish_##record(name, * new WRAPPER_##record(function, context))
+
+
+/* Helper routine for concatenating strings. */
+const char * Concat(const char * Prefix, const char * Suffix);

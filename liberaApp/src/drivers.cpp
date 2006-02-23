@@ -93,10 +93,15 @@ public:
     
     /* Callback routine called (possibly in signal handler context, or in an
      * arbitrary thread) to notify that I/O Intr processing should occur. */
-    void IoIntr()
+    bool IoIntr()
     {
-        if (ioscanpvt != NULL)
+        if (ioscanpvt == NULL)
+            return false;
+        else
+        {
             scanIoRequest(ioscanpvt);
+            return true;
+        }
     }
 
     /* Used by record implementation to implement get_ioint functionality. */

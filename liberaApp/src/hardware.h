@@ -135,7 +135,7 @@ enum HARDWARE_EVENT_ID
 /* To be called once on startup to initialise connection to Libera device.
  * If this routine fails (and returns false) then no further operations can
  * be done and system startup should fail. */
-bool InitialiseHardware();
+bool InitialiseHardware(bool SetUse_leventd);
 
 /* To be called on shutdown to release all connections to Libera. */
 void TerminateHardware();

@@ -42,8 +42,12 @@ class I_INTR
 public:
     /* This routine can be called asynchronously (for example, in response to
      * a signal) at any time after EnableIoIntr() has been called to trigger
-     * subsequent processing of the associated record. */
-    virtual void IoIntr() = 0;
+     * subsequent processing of the associated record.
+     *    True is returned iff the signal has actually been passed through to
+     * EPICS.  A return of false indicates that either EPICS is not
+     * configured to use interrupts on this record, or that this record has
+     * not yet bee initialised. */
+    virtual bool IoIntr() = 0;
 };
 
 

@@ -37,11 +37,17 @@
 #include <sys/ioctl.h>
 #include <linux/unistd.h>
 
-#include "libera.h"
-#include "ebpp.h"
+#include "libera.h"     // Libera device driver header
+#include "ebpp.h"       // ditto
+
 #include "hardware.h"
 #include "support.h"
 
+#define USE_LEVENTD
+
+//#ifdef USE_LEVENTD
+#include "hardware_events.h"
+//#endif
 
 
 /* ReadWaveform is defined to use _llseek which we implement here as a system
@@ -69,21 +75,19 @@ static int _llseek(
 
 /* Libera configuration device, used to interrogate the switches, attenuators
  * and other general configuration settings. */
-int libera_cfg = -1;
+static int libera_cfg = -1;
 /* Libera DD (Direct Data) device, used to read waveforms. */
-int libera_dd = -1;
-/* Libera low level device, used to received event notification. */
-int libera_event = -1;
+static int libera_dd = -1;
 /* Libera ADC device, used to read ADC rate waveforms. */
-int libera_adc = -1;
+static int libera_adc = -1;
 /* Libera SA (Slow Acquisition) device, used to receive 10Hz updates. */
-int libera_sa = -1;
+static int libera_sa = -1;
 
 
 /* We record the currently set decimation setting here.  This allows us to
  * avoid writing a new decimation setting if it is unchanged (whether this
  * saves anything is questionable, though). */
-int CurrentDecimation;
+static int CurrentDecimation;
 
 
 
@@ -158,7 +162,6 @@ bool WriteAttenuators(ATTENUATORS Attenuators)
 bool ReadSwitches(int &Switches)
 {
     return ReadCfgValue(LIBERA_CFG_SWITCH, *(unsigned *)&Switches);
-    // Um.  Close your eyes for the ugly cast.
 }
 
 
@@ -282,6 +285,13 @@ bool ReadSlowAcquisition(SA_DATA &SaData)
 /*****************************************************************************/
 
 
+static bool Use_leventd = false;
+
+/* Libera low level device, used to received event notification. */
+static int libera_event = -1;
+//#ifdef USE_LEVENTD
+static int event_source = -1;
+//#endif
 
 /* Reads one event from the event queue and decode it into an event id and
  * its associated parameter information.  The caller should empty the queue
@@ -338,9 +348,30 @@ bool OpenEventStream()
     /* Not a great deal of point in asking for the SA event, as it never
      * arrives: a place-holder in case it does one day. */
     size_t EventMask = LIBERA_EVENT_TRIGGET | LIBERA_EVENT_SA;
-    /* Enable delivery of the events we're really interested in. */
-    return TEST_RC("Unable to enable events",
-        ioctl, libera_event, LIBERA_EVENT_SET_MASK, &EventMask);
+
+    if (Use_leventd)
+    {
+//#ifdef USE_LEVENTD
+        int Pipes[2];
+        if (TEST_(pipe, Pipes)  &&
+            TEST_(fcntl, Pipes[0], F_SETFL, O_NONBLOCK))
+        {
+            libera_event = Pipes[0];
+            event_source = Pipes[1];
+            return StartEventHandler(EventMask, event_source);
+        }
+        else
+            return false;
+    }
+    else
+//#else
+        /* Enable delivery of the events we're really interested in. */
+        return
+            TEST_IO(libera_event, "Unable to open event fifo",
+                open, "/dev/libera.event", O_RDWR | O_NONBLOCK)  &&
+            TEST_RC("Unable to enable events",
+                ioctl, libera_event, LIBERA_EVENT_SET_MASK, &EventMask);
+//#endif
 }
 
 
@@ -358,9 +389,24 @@ int EventSelector()
 
 static void CloseEventStream()
 {
-    size_t EventMask = 0;
-    TEST_RC("Unable to disable events",
-        ioctl, libera_event, LIBERA_EVENT_SET_MASK, &EventMask);
+//#ifdef USE_LEVENTD
+    if (Use_leventd)
+    {
+        StopEventHandler();
+        if (event_source != -1)  close(event_source);
+    }
+    else
+    {
+//#else
+        if (libera_event != -1)
+        {
+            size_t EventMask = 0;
+            TEST_RC("Unable to disable events",
+                ioctl, libera_event, LIBERA_EVENT_SET_MASK, &EventMask);
+        }
+    }
+//#endif
+    if (libera_event != -1)  close(libera_event);
 }
 
 
@@ -372,14 +418,16 @@ static void CloseEventStream()
 /*****************************************************************************/
 
 
-bool InitialiseHardware()
+bool InitialiseHardware(bool SetUse_leventd)
 {
+    Use_leventd = SetUse_leventd;
+    
     /* A default attenuator setting of 20/20 (40 dB total) ensures a safe
      * starting point on initialisation. */
     ATTENUATORS Attenuators;
     for (int i = 0; i < 8; i ++)  Attenuators[i] = 20;
     
-    return
+    bool Result =
         /* Permanently open the hardware devices used to communicate with
          * Libera. */
         TEST_IO(libera_cfg, "Unable to open libera.cfg device",
@@ -390,8 +438,6 @@ bool InitialiseHardware()
             open, "/dev/libera.adc", O_RDONLY)  &&
         TEST_IO(libera_sa, "Unable to open libera.sa device",
             open, "/dev/libera.sa", O_RDONLY)  &&
-        TEST_IO(libera_event, "Unable to open event fifo",
-            open, "/dev/libera.event", O_RDWR | O_NONBLOCK)  &&
         /* Start with the current settings of Libera read.  (This is not
          * strictly necessary, but harmless.) */
         TEST_RC("Unable to read decimation",
@@ -399,20 +445,18 @@ bool InitialiseHardware()
         /* Initialise the hardware and multiplexor switches into a good known
          * state. */
         WriteAttenuators(Attenuators)  &&
-        WriteSwitches(0);
+        WriteSwitches(0)  &&
+        OpenEventStream();
+    return Result;
 }
 
 
 /* To be called on shutdown to release all connections to Libera. */
 void TerminateHardware()
 {
-    if (libera_dd != -1)   close(libera_dd);
-    if (libera_adc != -1)  close(libera_adc);
-    if (libera_cfg != -1)  close(libera_cfg);
-    if (libera_sa != -1)   close(libera_sa);
-    if (libera_event != -1)
-    {
-        CloseEventStream();
-        close(libera_event);
-    }
+    CloseEventStream();
+    if (libera_dd != -1)     close(libera_dd);
+    if (libera_adc != -1)    close(libera_adc);
+    if (libera_cfg != -1)    close(libera_cfg);
+    if (libera_sa != -1)     close(libera_sa);
 }

@@ -82,18 +82,20 @@ export DEVICE="$(hostname)"
 
 PIDFILE=/var/run/ioc.pid
 
-
-INTERACTIVE=
-while getopts "d:nfh" option; do
+USE_LEVENTD=
+while getopts "d:nfeh" option; do
     case "$option" in
     d)  DEVICE="$OPTARG" ;;
-    n)  IocParameter -n ;;
+    n)  IocParameter -n  ;;
     f)  rm -f "$PIDFILE" ;;
+    e)  USE_LEVENTD=1
+        IocParameter -e  ;;
     h)  cat <<'EOF' 
 Usage: runioc [options]
     -d <device>:  use supplied device name instead of hostname
     -n            run non-interactive without an IOC shell
     -f            run even if pid file already present
+    -e            use leventd, start if not already running
 EOF
         exit 0 ;;
     *)  echo 2>&1 'Invalid option: try -h for help'
@@ -111,7 +113,11 @@ fi
 
 # Ensure that leventd isn't still running: at the moment we have a resource
 # collision with this process.
-[ -e /var/run/leventd.pid ]  &&  kill $(cat /var/run/leventd.pid)
+if ((USE_LEVENTD)); then
+    [ -e /var/run/leventd.pid ]  ||  /opt/bin/leventd
+else
+    [ -e /var/run/leventd.pid ]  &&  kill $(cat /var/run/leventd.pid)
+fi
 
 # Start the repeater first and background it properly to avoid possible
 # conflicts (for instance, it can hold important file handles open!)
@@ -122,12 +128,12 @@ LiberaParameter DEVICE
 LiberaParameter BN_SHORT $((IOC_BN_LENGTH))
 LiberaParameter BN_LONG  $((16*IOC_BN_LENGTH))
 LiberaParameter TT_LONG  $((IOC_TT_LENGTH))
-#LiberaParameter TT_SHORT $((IOC_TT_SHORT_LENGTH))
+LiberaParameter TT_SHORT $((IOC_TW_LENGTH))
 
 IocParameter -p "$PIDFILE"
-IocParameter -cTL= $((IOC_TT_LENGTH))
+IocParameter -cLT= $((IOC_TT_LENGTH))
 IocParameter -cDD= $((IOC_BN_LENGTH))
-#IocParameter -cTT= $((IOC_TT_SHORT_LENGTH))
+IocParameter -cTW= $((IOC_TW_LENGTH))
 # Now run the ioc proper.
 ./bin/ioc "${IOC_PARAMETERS[@]}" st.cmd
 
