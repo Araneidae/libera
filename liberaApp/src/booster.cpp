@@ -31,13 +31,16 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stddef.h>
 
 #include "drivers.h"
 #include "publish.h"
 #include "trigger.h"
 #include "hardware.h"
 #include "events.h"
+#include "convert.h"
 #include "waveform.h"
+#include "support.h"
 
 #include "booster.h"
 
@@ -60,10 +63,10 @@ public:
     BOOSTER(int ShortWaveformLength) :
         ShortWaveformLength(ShortWaveformLength),
         LongWaveformLength(16*ShortWaveformLength),
-        LongWaveform(LongWaveformLength),
-        ShortWaveformX(ShortWaveformLength),
-        ShortWaveformY(ShortWaveformLength),
-        ShortWaveformS(ShortWaveformLength),
+        LongIq(LongWaveformLength),
+        LongAbcd(LongWaveformLength),
+        LongXyqs(LongWaveformLength),
+        ShortXyqs(ShortWaveformLength),
         LongAxis(LongWaveformLength),
         ShortAxis(ShortWaveformLength)
     {
@@ -73,18 +76,9 @@ public:
         FillAxis(ShortAxis, ShortWaveformLength, RAMP_DURATION);
         
         /* Publish the PVs associated with Booster data. */
-        Publish_waveform("BN:WFA", LongWaveform.Waveform(0));
-        Publish_waveform("BN:WFB", LongWaveform.Waveform(1));
-        Publish_waveform("BN:WFC", LongWaveform.Waveform(2));
-        Publish_waveform("BN:WFD", LongWaveform.Waveform(3));
-        Publish_waveform("BN:WFX", LongWaveform.Waveform(4));
-        Publish_waveform("BN:WFY", LongWaveform.Waveform(5));
-        Publish_waveform("BN:WFQ", LongWaveform.Waveform(6));
-        Publish_waveform("BN:WFS", LongWaveform.Waveform(7));
-
-        Publish_waveform("BN:WFSX", ShortWaveformX);
-        Publish_waveform("BN:WFSY", ShortWaveformY);
-        Publish_waveform("BN:WFSS", ShortWaveformS);
+        LongAbcd.Publish("BN");
+        LongXyqs.Publish("BN");
+        ShortXyqs.PublishShort("BN");
 
         Publish_waveform("BN:AXIS", LongAxis);
         Publish_waveform("BN:AXISS", ShortAxis);
@@ -103,37 +97,40 @@ public:
     void OnEvent()
     {
         Interlock.Wait();
-        
-        /* Capture the long waveform and reduce to proper values. */
-        LongWaveform.Capture(DECIMATION);
-        LongWaveform.Cordic();
-        LongWaveform.ABCDtoXYQS();
 
-        /* Extract the short XY waveforms. */
-        ProcessShortWaveform(ShortWaveformX, 4);
-        ProcessShortWaveform(ShortWaveformY, 5);
-        ProcessShortWaveform(ShortWaveformS, 7);
+        LongIq.Capture(DECIMATION);
+        LongAbcd.CaptureCordic(LongIq);
+        LongXyqs.CaptureConvert(LongAbcd);
+        ProcessShortWaveforms();
 
         Interlock.Ready();
     }
 
     
 private:
-    /* Extract short waveform information. */
-    void ProcessShortWaveform(SIMPLE_WAVEFORM & Waveform, int Index)
+    void ProcessShortWaveforms()
     {
-        /* For simplicity we grab the raw data to be reduced into a local
-         * buffer.  This costs 3040*4 bytes and a little time to copy the
-         * memory. */
-        int Buffer[LongWaveformLength];
-        LongWaveform.Read(Index, Buffer, 0, LongWaveformLength);
-        int * Target = Waveform.Array();
-        for (int i = 0; i < ShortWaveformLength; i += 1)
+        /* Work through all of the fields in the ABCD waveform block and
+         * compute a block average over each 16 points in the long waveform.
+         * We write this as the fully decimated short waveform, producing a
+         * total decimation of 1:1024. */
+        const int Fields[] = { FIELD_A, FIELD_B, FIELD_C, FIELD_D };
+        for (size_t i = 0; i < ARRAY_SIZE(Fields); i ++)
         {
-            int Total = 0;
-            for (int j = 0; j < 16; j ++)
-                Total += Buffer[16*i + j] >> 4;
-            Target[i] = Total;
+            const int Field = Fields[i];
+            int Long[LongWaveformLength];
+            int Short[ShortWaveformLength];
+            LongXyqs.Read(Field, Long, LongWaveformLength);
+            /* Work through each long waveform averaging together 16
+             * successive points to form one short waveform point. */
+            for (int j = 0; j < ShortWaveformLength; j ++)
+            {
+                int Total = 0;
+                for (int k = 0; k < 16; k ++)
+                    Total += Long[16*j + k] >> 4;
+                Short[j] = Total;
+            }
+            ShortXyqs.Write(Field, Short, ShortWaveformLength);
         }
     }
 
@@ -146,15 +143,23 @@ private:
             a[i] = (Duration * i) / (Length - 1);
     }
 
+    /* Startup configurable dimensions. */
     const int ShortWaveformLength;
     const int LongWaveformLength;
-    
-    LIBERA_WAVEFORM LongWaveform;
-    SIMPLE_WAVEFORM ShortWaveformX;
-    SIMPLE_WAVEFORM ShortWaveformY;
-    SIMPLE_WAVEFORM ShortWaveformS;
+
+    /* A full length waveform is captured in IQ form and convert to button
+     * values and positions.  From this positions are averaged to produce a
+     * short waveform of positions, with effectively one position per 1024
+     * turns. */
+    IQ_WAVEFORMS LongIq;
+    ABCD_WAVEFORMS LongAbcd;
+    XYQS_WAVEFORMS LongXyqs;
+    XYQS_WAVEFORMS ShortXyqs;
+    /* The two axis waveforms are used to help the display of long and short
+     * waveforms in EDM by providing a time axis graduated in milliseconds. */
     FLOAT_WAVEFORM LongAxis;
     FLOAT_WAVEFORM ShortAxis;
+    /* Interlock for communication with EPICS. */
     INTERLOCK Interlock;
 };
 

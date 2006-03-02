@@ -42,9 +42,12 @@
 #include "firstTurn.h"
 #include "booster.h"
 #include "turnByTurn.h"
+#include "freeRun.h"
 #include "slowAcquisition.h"
+#include "postmortem.h"
 #include "drivers.h"
 #include "trigger.h"
+#include "support.h"
 
 #include "events.h"
 #include "hardware.h"
@@ -68,9 +71,10 @@ static sem_t ShutdownSemaphore;
 /* Configuration settable parameters. */
 
 /* Maximum length of long turn by turn buffer. */
-static int LongTurnByTurnLength = 200000;
-static int ShortTurnByTurnLength = 2048;
+static int LongTurnByTurnLength = 196608;       // 12 * default window length
 static int TurnByTurnWindowLength = 16384;
+/* Free running window length. */
+static int FreeRunLength = 2048;
 /* Length of 1024 decimated buffer. */
 static int DecimatedShortLength = 190;
 
@@ -188,9 +192,15 @@ bool InitialiseLibera()
         /* Turn by turn is designed for long waveform capture at revolution
          * clock frequencies. */
         InitialiseTurnByTurn(LongTurnByTurnLength, TurnByTurnWindowLength)  &&
+        /* Free run also captures turn by turn waveforms, but of a shorter
+         * length that can be captured continously. */
+        InitialiseFreeRun(FreeRunLength)  &&
         /* Booster operation is designed for viewing the entire booster ramp
          * at reduced resolution. */
         InitialiseBooster(DecimatedShortLength)  &&
+        /* Postmortem operation is only triggered on a postmortem event and
+         * captures the last 16K events before the event. */
+        InitialisePostmortem()  &&
         /* Slow acquisition returns highly filtered positions at 10Hz. */
         InitialiseSlowAcquisition();
 }
@@ -251,10 +261,10 @@ bool ParseConfigInt(char *optarg)
         int * Target;
         int Low, High;
     } Lookup[] = {
-        { "LT", & LongTurnByTurnLength,   1, 500000 },  // Up to 16M bytes
-        { "TT", & ShortTurnByTurnLength,  1, 8192 },
+        { "TT", & LongTurnByTurnLength,   1, 500000 },  // Up to 16M bytes
         { "TW", & TurnByTurnWindowLength, 1, 65536 },   // Up to 8M bytes
-        { "DD", & DecimatedShortLength,   1, 1000 },
+        { "FR", & FreeRunLength,          1, 8192 },
+        { "BN", & DecimatedShortLength,   1, 500 },
     };
 
     /* Parse the configuration setting into <key>=<integer>. */
@@ -274,7 +284,7 @@ bool ParseConfigInt(char *optarg)
     }
     
     /* Figure out who it belongs to! */
-    for (size_t i = 0; i < sizeof(Lookup) / sizeof(Lookup[0]); i ++)
+    for (size_t i = 0; i < ARRAY_SIZE(Lookup); i ++)
     {
         if (strcmp(optarg, Lookup[i].Name) == 0)
         {

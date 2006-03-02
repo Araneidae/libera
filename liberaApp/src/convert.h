@@ -39,70 +39,70 @@
  *      4, 5    C * (cos,sin)
  *      6, 7    D * (cos,sin)
  *
- * After Cordic reduction the absolute button values are written into the
- * first four slots thus:
- *      0       A
- *      1       B
- *      2       C
- *      3       D
- * The Cordic scaling factor (approximately 0.8284 after prescaling) is
- * included in these values, as it will vanish at the next stage.
+ * A CORDIC algorithm is used to rapidly compute button signal magnitudes for
+ * buttons A to D.  These button values are then used to compute X and Y
+ * positions as well total intensity S and a "skew" factor Q.
  *
- * The next stage is to compute X and Y values together with S and Q.  The
- * values are placed in the remaining four slots thus:
- *      4       X
- *      5       Y
- *      6       Q
- *      7       S
- *
- * At all stages the scalling of these values is managed to ensure that as
- * many bits of precision are preserved without overflowing a 32-bit int.
- * The final X,Y values will be written in units of nm. */
-
-
-
-/* The generic data processing chain consists of the following steps:
+ * All arithmetic is done with 32 bit integers and with attention paid at all
+ * times to performance: these conversions are performed *frequently*! 
+ * The final X,Y values are written in units of nm: this gives both an
+ * adequate dynamic range (several metres!) and precision.
  * 
- *                     Correct
- *         Cordic       Gain        Convert
- *      IQ ------> ABCD -----> ABCD ------> XYSQ(nm) 
+ * The generic data processing chain consists of the following steps:
+ * 
+ *         Cordic       Convert          Scale
+ *      IQ ------> ABCD ------> XYSQ(nm) -----> XYSQ(mm)
+ *
  */
 
-#if 0
-typedef LIBERA_ROW      IQ_DATA;
-typedef SA_DATA         ABCD_DATA;
-struct XYSQnm_DATA
+/* Raw IQ data.  This is identical in layout to the LIBERA_ROW structure. */
+struct IQ_ROW
 {
-    int X, Y, S, Q;
+    int AI, AQ;
+    int BI, BQ;
+    int CI, CQ;
+    int DI, DQ;
 };
-struct XYSQmm_DATA
+
+/* Button values. */
+typedef SA_DATA         ABCD_ROW;
+
+/* Computed X, Y values in nm. */
+struct XYQS_ROW
 {
-    float X, Y, Q, SL;
+    int X, Y, Q, S;
+};
+
+/* X, Y values scaled to mm. */
+struct XYQSmm_ROW
+{
+    double X, Y, Q;  // SL;  Maybe at some point...
     int S;
 };
 
-
-
-void IQtoABCDXYSQ(
-    IQ_DATA * IQ, ABCD_DATA * ABCD, XYSQ_DATA * XYSQ, size_t Length);
-
+/* Some field identifiers used for indexes into the structures above. */
+#ifdef offsetof
+/* At present we only use offsets into ABCD. */
+#define FIELD_A         offsetof(ABCD_ROW, A)
+#define FIELD_B         offsetof(ABCD_ROW, B)
+#define FIELD_C         offsetof(ABCD_ROW, C)
+#define FIELD_D         offsetof(ABCD_ROW, D)
 #endif
 
-/* Converts rows as read directly from Libera into button intensities.  On
- * input have rows thus:
- *                      Cos     Sin
- *      Button A         0       1              Number is index into Rows[i]
- *             B         2       3
- *             C         4       5
- *             D         6       7
- *
- * On exit the first four entries in each row have been translated into button
- * intensities. */
-void SinCosToABCD(LIBERA_ROW * Rows, size_t Length);
 
+/* Converts Count rows of IQ data into ABCD format by applying Cordic
+ * conversion on each I,Q pair. */
+void IQtoABCD(const IQ_ROW *IQ, ABCD_ROW *ABCD, int Count);
 
-/* Computes XYSQ values from ABCD button values. */
-void ABCDtoXYQS(LIBERA_ROW * Row, size_t Length);
+/* Converts Count rows of ABCD button data into XYQS position and intensity
+ * data via the configured conversion function. */
+void ABCDtoXYQS(const ABCD_ROW *ABCD, XYQS_ROW *XYQS, int Count);
+
+/* Rescales one row XYQS data from nm to mm. */
+void XYQStomm(const XYQS_ROW &XYQSnm, XYQSmm_ROW &XYQSmm);
+
+/* Combined single row ABCD to XYQSmm conversion. */
+void ABCDtoXYQSmm(const ABCD_ROW &ABCD, XYQSmm_ROW &XYQSmm);
 
 
 /* Publishes conversion control PVs to EPICS. */

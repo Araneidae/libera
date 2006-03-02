@@ -37,8 +37,8 @@
 #include "trigger.h"
 #include "hardware.h"
 #include "events.h"
-#include "waveform.h"
 #include "convert.h"
+#include "waveform.h"
 #include "support.h"
 
 #include "firstTurn.h"
@@ -57,21 +57,18 @@ public:
          * within the waveform.
          *    By default we set the window to cover approximately two bunches
          * at booster clock frequency.  This allows a sensible signal to be
-         * read without tight adjustment of the timing. */
+         * read without tight adjustment of the timing.  At the Libera sample
+         * clock rate of approximately 117MHz, and with four raw ADC points
+         * per processed sample, each point corresponds to approximately
+         * 34ns. */
         Offset = 5;
         SetLength(31);
         
         /* Publish the PVs associated with First Turn data. */
         
-        /* The computed X, Y, Q, S values. */
-        Publish_longin("FT:A", Row[0]);
-        Publish_longin("FT:B", Row[1]);
-        Publish_longin("FT:C", Row[2]);
-        Publish_longin("FT:D", Row[3]);
-        Publish_ai("FT:X", X);
-        Publish_ai("FT:Y", Y);
-        Publish_ai("FT:Q", Q);
-        Publish_longin("FT:S", Row[7]);
+        /* Computed button averages and associated button values. */
+        Publish_ABCD("FT", ABCD);
+        Publish_XYQS("FT", XYQS);
 
         /* The computed maximum ADC values (used to detect overflow). */
         Publish_longin("FT:MAXADC", MaxAdc);
@@ -120,24 +117,16 @@ public:
         /* Capture a fresh ADC waveform and compute the maximum raw ADC
          * button value: this allows input overload to be detected. */
         AdcWaveform.Capture();
-        MaxAdc = Maximum(0, 0);
-        MaxAdc = Maximum(1, MaxAdc);
-        MaxAdc = Maximum(2, MaxAdc);
-        MaxAdc = Maximum(3, MaxAdc);
+        MaxAdc = Maximum();
 
-        /* Prepare the button data into a LIBERA_ROW that we can use standard
-         * conversion functions.  Average the waveforms to compute A-D. */
-        Row[0] = Average(0);    /* Button A */
-        Row[1] = Average(1);    /*        B */
-        Row[2] = Average(2);    /*        C */
-        Row[3] = Average(3);    /*        D */
-        ABCDtoXYQS(&Row, 1);    /* Compute X,Y,Q,S */
-
-        /* For the moment just pull out the positions again and convert
-         * directly to mm. */
-        X = nmTOmm(Row[4]);
-        Y = nmTOmm(Row[5]);
-        Q = nmTOmm(Row[6]);
+        /* Compute the button values as an average within the selected window
+         * of the processed ADC data. */
+        ABCD.A = Average(0);
+        ABCD.B = Average(1);
+        ABCD.C = Average(2);
+        ABCD.D = Average(3);
+        /* Convert button values to XYQS values. */
+        ABCDtoXYQSmm(ABCD, XYQS);
 
         /* Finally tell EPICS there's stuff to read. */
         Interlock.Ready();
@@ -168,16 +157,19 @@ private:
         return ((long long) Total * AverageScale) >> 23;
     }
 
-    /* Accumulates maximum raw ADC value for selected button. */
-    int Maximum(int Index, int Start)
+    /* Accumulates maximum raw ADC value over entire ADC waveform. */
+    int Maximum()
     {
-        int * Data = AdcWaveform.RawArray(Index);
-        int Maximum = Start;
-        for (int i = 0; i < ADC_LENGTH; i ++)
+        int Maximum = 0;
+        for (int Index = 0; Index < 4; Index ++)
         {
-            int x = Data[i];
-            if (x > Maximum)   Maximum = x;
-            if (-x > Maximum)  Maximum = -x;
+            int * Data = AdcWaveform.RawArray(Index);
+            for (int i = 0; i < ADC_LENGTH; i ++)
+            {
+                int x = Data[i];
+                if (x > Maximum)   Maximum = x;
+                if (-x > Maximum)  Maximum = -x;
+            }
         }
         return Maximum;
     }
@@ -218,17 +210,18 @@ private:
     
     ADC_WAVEFORM AdcWaveform;
 
-    /* Control variables for averaging. */
+    /* Control variables for averaging defining the offset into processed ADC
+     * buffer and the length of the averaging window. */
     int Offset;
     int Length;
     /* This is set to 2^29/Length: this allows us to compute the average of
      * Length points with a simple double-word multiplication. */
     int AverageScale;
     
-    /* Computed state.  The Row is averaged from the selection of points, and
-     * the appropriate elements are published to epics. */
-    LIBERA_ROW Row;
-    double X, Y, Q;
+    /* Computed state.  The button values are averaged from the selection of
+     * points, and the appropriate elements are published to epics. */
+    ABCD_ROW ABCD;
+    XYQSmm_ROW XYQS;
 
     /* Maximum raw ADC across all four buttons. */
     int MaxAdc;

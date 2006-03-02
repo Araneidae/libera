@@ -37,8 +37,8 @@
 #include "trigger.h"
 #include "hardware.h"
 #include "convert.h"
-#include "support.h"
 #include "thread.h"
+#include "waveform.h"
 
 #include "slowAcquisition.h"
 
@@ -48,23 +48,15 @@ class SLOW_ACQUISITION : public THREAD
 public:
     SLOW_ACQUISITION()
     {
-        Publish_longin("SA:A", ABCD.A);
-        Publish_longin("SA:B", ABCD.B);
-        Publish_longin("SA:C", ABCD.C);
-        Publish_longin("SA:D", ABCD.D);
-        Publish_ai("SA:X", X);
-        Publish_ai("SA:Y", Y);
-        Publish_longin("SA:S", S);
-        Publish_ai("SA:Q", Q);
+        Publish_ABCD("SA", ABCD);
+        Publish_XYQS("SA", XYQS);
 
         /* Publish the trigger.  This trigger will be signalled whenever our
          * data has updated. */
         Interlock.Publish("SA");
     }
 
-    
 private:
-
     void Thread()
     {
         StartupOk();
@@ -76,28 +68,15 @@ private:
         {
             Interlock.Wait();
             if (ReadSlowAcquisition(ABCD))
-            {
-                LIBERA_ROW Row;
-                Row[0] = ABCD.A;
-                Row[1] = ABCD.B;
-                Row[2] = ABCD.C;
-                Row[3] = ABCD.D;
-                ABCDtoXYQS(&Row, 1);
-                
-                X = nmTOmm(Row[4]);
-                Y = nmTOmm(Row[5]);
-                Q = nmTOmm(Row[6]);
-                S = Row[7];
-            }
+                ABCDtoXYQSmm(ABCD, XYQS);
             Interlock.Ready();
         }
     }
     
     INTERLOCK Interlock;
 
-    SA_DATA ABCD;
-    double X, Y, Q;
-    int S;
+    ABCD_ROW ABCD;
+    XYQSmm_ROW XYQS;
 };
 
 

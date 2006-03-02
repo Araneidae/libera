@@ -118,7 +118,7 @@ enum HARDWARE_EVENT_ID
     HARDWARE_EVENT_FA        = 5,
     /* This seems to be the normal external trigger event. */
     HARDWARE_EVENT_TRIGGET   = 6,
-    /* "SET Trigger trigger" -- what on earth is this??? */
+    /* "SET Trigger trigger" -- used for clock synchronisation. */
     HARDWARE_EVENT_TRIGSET   = 7,
     /* And what on earth is this for? */
     HARDWARE_EVENT_USER      = 31
@@ -152,6 +152,9 @@ void TerminateHardware();
  * actually read.
  *     At present only decimation values of 1 or 64 are suppported. */
 size_t ReadWaveform(int Decimation, size_t WaveformLength, LIBERA_ROW * Data);
+
+/* Reads the postmortem buffer. */
+size_t ReadPostmortem(size_t WaveformLength, LIBERA_ROW * Data);
 
 /* Reads a full 1024 point ADC waveform. */
 bool ReadAdcWaveform(ADC_DATA &Data);

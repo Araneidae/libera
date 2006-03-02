@@ -111,7 +111,7 @@ files are included with this distribution.
 
 1.  Extract the libera device driver definitions file thus:
     $ cd $LIBERA_EPICS
-    $ tar xzf <path-to>/libera-driver-1.00.tgz
+    $ tar xzf path-to-tar-file/libera-driver-1.00.tgz
 
 2.  Edit $LIBERA_EPICS/configure/RELEASE so that EPICS_BASE points to
 $EPICS_BASE.

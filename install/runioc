@@ -82,20 +82,19 @@ export DEVICE="$(hostname)"
 
 PIDFILE=/var/run/ioc.pid
 
-USE_LEVENTD=
+USE_LEVENTD=1
 while getopts "d:nfeh" option; do
     case "$option" in
     d)  DEVICE="$OPTARG" ;;
     n)  IocParameter -n  ;;
     f)  rm -f "$PIDFILE" ;;
-    e)  USE_LEVENTD=1
-        IocParameter -e  ;;
+    e)  USE_LEVENTD=0    ;;
     h)  cat <<'EOF' 
 Usage: runioc [options]
     -d <device>:  use supplied device name instead of hostname
     -n            run non-interactive without an IOC shell
     -f            run even if pid file already present
-    -e            use leventd, start if not already running
+    -e            don't use leventd, stop if already running
 EOF
         exit 0 ;;
     *)  echo 2>&1 'Invalid option: try -h for help'
@@ -115,6 +114,7 @@ fi
 # collision with this process.
 if ((USE_LEVENTD)); then
     [ -e /var/run/leventd.pid ]  ||  /opt/bin/leventd
+    IocParameter -e
 else
     [ -e /var/run/leventd.pid ]  &&  kill $(cat /var/run/leventd.pid)
 fi
@@ -125,15 +125,17 @@ caRepeater </dev/null >/dev/null 2>&1 &
 
 # Export the database parameters needed to configure libera.db
 LiberaParameter DEVICE
-LiberaParameter BN_SHORT $((IOC_BN_LENGTH))
-LiberaParameter BN_LONG  $((16*IOC_BN_LENGTH))
-LiberaParameter TT_LONG  $((IOC_TT_LENGTH))
-LiberaParameter TT_SHORT $((IOC_TW_LENGTH))
+LiberaParameter BN_SHORT  $((IOC_BN_LENGTH))
+LiberaParameter BN_LONG   $((16*IOC_BN_LENGTH))
+LiberaParameter TT_LONG   $((IOC_TT_LENGTH))
+LiberaParameter TT_WINDOW $((IOC_TT_WINDOW))
+LiberaParameter FR_LENGTH $((IOC_FR_LENGTH))
 
 IocParameter -p "$PIDFILE"
-IocParameter -cLT= $((IOC_TT_LENGTH))
-IocParameter -cDD= $((IOC_BN_LENGTH))
-IocParameter -cTW= $((IOC_TW_LENGTH))
+IocParameter -cBN= $((IOC_BN_LENGTH))
+IocParameter -cTT= $((IOC_TT_LENGTH))
+IocParameter -cTW= $((IOC_TT_WINDOW))
+IocParameter -cFR= $((IOC_FR_LENGTH))
 # Now run the ioc proper.
 ./bin/ioc "${IOC_PARAMETERS[@]}" st.cmd
 

@@ -142,12 +142,14 @@ void INTERLOCK::Ready()
 
 void INTERLOCK::Wait()
 {
-    int Value; sem_getvalue(&Interlock, &Value);
     sem_wait(&Interlock);
 }
 
 
-/* This will be called when process is done.  Release the interlock. */
+/* This will be called when process is done.  Release the interlock.
+ * This is normally called when DONE is processed, which should only be after
+ * a chain of processing initiated by processing TRIG has completed.  It will
+ * also be called when EPICS has finished initialisation. */
 
 bool INTERLOCK::ReportDone(bool Done)
 {

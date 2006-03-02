@@ -43,11 +43,7 @@
 #include "hardware.h"
 #include "support.h"
 
-#define USE_LEVENTD
-
-//#ifdef USE_LEVENTD
 #include "hardware_events.h"
-//#endif
 
 
 /* ReadWaveform is defined to use _llseek which we implement here as a system
@@ -82,6 +78,8 @@ static int libera_dd = -1;
 static int libera_adc = -1;
 /* Libera SA (Slow Acquisition) device, used to receive 10Hz updates. */
 static int libera_sa = -1;
+/*  Libera PM (Postmortem) device, used for postmortem triggered data. */
+static int libera_pm = -1;
 
 
 /* We record the currently set decimation setting here.  This allows us to
@@ -210,6 +208,26 @@ static bool SetDecimation(int Decimation)
 /*****************************************************************************/
 
 
+/* Helper routine to read a block of libera data. */
+
+static size_t ReadLiberaRows(
+    int File, size_t WaveformLength, LIBERA_ROW * Data)
+{
+    /* Read all the requested data and return how many complete rows we
+     * actually managed to read. */
+    const ssize_t DataSize = WaveformLength * sizeof(LIBERA_ROW);
+    ssize_t bytes_read;
+    TEST_IO(bytes_read, "Problem reading waveform",
+        read, File, Data, DataSize);
+    if (bytes_read != DataSize)
+        printf("Couldn't read entire block: read %d\n", bytes_read);
+
+    /* Convert bytes read into a number of rows. */
+    if (bytes_read <= 0)
+        return 0;
+    else
+        return bytes_read / sizeof(LIBERA_ROW);
+}
 
 
 size_t ReadWaveform(int Decimation, size_t WaveformLength, LIBERA_ROW * Data)
@@ -223,24 +241,18 @@ size_t ReadWaveform(int Decimation, size_t WaveformLength, LIBERA_ROW * Data)
         SetDecimation(Decimation)  &&
         TEST_RC("Unable to seek to trigger point",
             _llseek, libera_dd, 0, 0, &unused, SEEK_END);
-    if (!Ok)
-        return 0;
 
-    /* Read the data in two parts.  The waveform proper is read directly into
-     * the data part of the waveform; we then read the timestamp as a
-     * separate ioctl operation. */
-    const ssize_t DataSize = WaveformLength * sizeof(LIBERA_ROW);
-    ssize_t bytes_read;
-    TEST_IO(bytes_read, "Problem reading waveform",
-        read, libera_dd, Data, DataSize);
-    if (bytes_read != DataSize)
-        printf("Couldn't read entire block: read %d\n", bytes_read);
-
-    /* Convert bytes read into a number of rows. */
-    if (bytes_read <= 0)
-        return 0;
+    if (Ok)
+        return ReadLiberaRows(libera_dd, WaveformLength, Data);
     else
-        return bytes_read / sizeof(LIBERA_ROW);
+        return 0;
+}
+
+
+size_t ReadPostmortem(size_t WaveformLength, LIBERA_ROW * Data)
+{
+    /* Postmortem data is automatically at the correct seek point. */
+    return ReadLiberaRows(libera_pm, WaveformLength, Data);
 }
 
 
@@ -289,9 +301,7 @@ static bool Use_leventd = false;
 
 /* Libera low level device, used to received event notification. */
 static int libera_event = -1;
-//#ifdef USE_LEVENTD
 static int event_source = -1;
-//#endif
 
 /* Reads one event from the event queue and decode it into an event id and
  * its associated parameter information.  The caller should empty the queue
@@ -345,13 +355,12 @@ bool ReadOneEvent(HARDWARE_EVENT_ID &Id, int &Param)
 //bool OpenEventStream(size_t EventMask)  !!! Come back to this
 bool OpenEventStream()
 {
-    /* Not a great deal of point in asking for the SA event, as it never
-     * arrives: a place-holder in case it does one day. */
-    size_t EventMask = LIBERA_EVENT_TRIGGET | LIBERA_EVENT_SA;
+    /* Receive both standard trigger and PM events. */
+    size_t EventMask = LIBERA_EVENT_TRIGGET; // | LIBERA_EVENT_PM;
 
     if (Use_leventd)
     {
-//#ifdef USE_LEVENTD
+        printf("Using leventd\n");
         int Pipes[2];
         if (TEST_(pipe, Pipes)  &&
             TEST_(fcntl, Pipes[0], F_SETFL, O_NONBLOCK))
@@ -364,14 +373,15 @@ bool OpenEventStream()
             return false;
     }
     else
-//#else
+    {
+        printf("Using direct event connection\n");
         /* Enable delivery of the events we're really interested in. */
         return
             TEST_IO(libera_event, "Unable to open event fifo",
                 open, "/dev/libera.event", O_RDWR | O_NONBLOCK)  &&
             TEST_RC("Unable to enable events",
                 ioctl, libera_event, LIBERA_EVENT_SET_MASK, &EventMask);
-//#endif
+    }
 }
 
 
@@ -389,7 +399,6 @@ int EventSelector()
 
 static void CloseEventStream()
 {
-//#ifdef USE_LEVENTD
     if (Use_leventd)
     {
         StopEventHandler();
@@ -397,7 +406,6 @@ static void CloseEventStream()
     }
     else
     {
-//#else
         if (libera_event != -1)
         {
             size_t EventMask = 0;
@@ -405,7 +413,6 @@ static void CloseEventStream()
                 ioctl, libera_event, LIBERA_EVENT_SET_MASK, &EventMask);
         }
     }
-//#endif
     if (libera_event != -1)  close(libera_event);
 }
 
@@ -428,24 +435,27 @@ bool InitialiseHardware(bool SetUse_leventd)
     for (int i = 0; i < 8; i ++)  Attenuators[i] = 20;
     
     bool Result =
-        /* Permanently open the hardware devices used to communicate with
-         * Libera. */
+        /* Initialise the hardware and multiplexor switches into a good known
+         * state: do this as soon as possible! */
         TEST_IO(libera_cfg, "Unable to open libera.cfg device",
             open, "/dev/libera.cfg", O_RDWR)  &&
+        WriteAttenuators(Attenuators)  &&
+        WriteSwitches(0)  &&
+        /* Open the rest of the hardware devices needed to communicate with
+         * Libera. */
         TEST_IO(libera_dd, "Unable to open libera.dd device",
             open, "/dev/libera.dd", O_RDONLY)  &&
         TEST_IO(libera_adc, "Unable to open libera.adc device",
             open, "/dev/libera.adc", O_RDONLY)  &&
         TEST_IO(libera_sa, "Unable to open libera.sa device",
             open, "/dev/libera.sa", O_RDONLY)  &&
+        TEST_IO(libera_pm, "Unable to open libera.pm device",
+            open, "/dev/libera.pm", O_RDONLY)  &&
         /* Start with the current settings of Libera read.  (This is not
          * strictly necessary, but harmless.) */
         TEST_RC("Unable to read decimation",
             ioctl, libera_dd, LIBERA_IOC_GET_DEC, &CurrentDecimation)  &&
-        /* Initialise the hardware and multiplexor switches into a good known
-         * state. */
-        WriteAttenuators(Attenuators)  &&
-        WriteSwitches(0)  &&
+        /* Finally start receiving events. */
         OpenEventStream();
     return Result;
 }
@@ -459,4 +469,5 @@ void TerminateHardware()
     if (libera_adc != -1)    close(libera_adc);
     if (libera_cfg != -1)    close(libera_cfg);
     if (libera_sa != -1)     close(libera_sa);
+    if (libera_pm != -1)     close(libera_pm);
 }

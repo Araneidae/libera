@@ -335,7 +335,7 @@ void RegisterTriggerEvent(I_EVENT &Event, int Priority)
 }
 
 
-void RegisterSlowAcquisitionEvent(I_EVENT &Event)
+void RegisterPostmortemEvent(I_EVENT &Event, int Priority)
 {
-    EventReceiver->Register(Event, HARDWARE_EVENT_SA, PRIORITY_SA);
+    EventReceiver->Register(Event, HARDWARE_EVENT_PM, Priority);
 }

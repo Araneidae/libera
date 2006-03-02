@@ -41,23 +41,28 @@ ioc_SRCS += trigger.cpp
 ioc_SRCS += firstTurn.cpp
 ioc_SRCS += booster.cpp
 ioc_SRCS += turnByTurn.cpp
+ioc_SRCS += freeRun.cpp
 ioc_SRCS += slowAcquisition.cpp
+ioc_SRCS += postmortem.cpp
 ioc_SRCS += waveform.cpp
 ioc_SRCS += cordic.cpp
 ioc_SRCS += convert.cpp
-ioc_SRCS += hardware.cpp
+#ioc_SRCS += hardware.cpp
+ioc_SRCS += hardware_cspi.cpp
 ioc_SRCS += events.cpp
 ioc_SRCS += support.cpp
 
 ioc_SRCS += thread.cpp
-ioc_SRCS += hardware_events.cpp
+#ioc_SRCS += hardware_events.cpp
 
 
-ioc_LIBS += $(EPICS_BASE_IOC_LIBS)
+ioc_LIBS += $(EPICS_BASE_IOC_LIBS) 
 
 
 # Point to the Libera device driver include, libera.h.
-USR_INCLUDES += -I$(TOP)/driver
+USR_INCLUDES += -I$(TOP)/driver -I$(TOP)/cspi
+USR_LIBS += cspi
+cspi_DIR = $(CSPI)
 
 
 #===========================

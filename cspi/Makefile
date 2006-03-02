@@ -1,0 +1,238 @@
+# $Id: Makefile,v 1.25 2006/01/05 09:16:37 miha Exp $
+#
+# Copyright (C) 2004, 2005 Instrumentation Technologies
+# See the COPYING file for copying conditions.
+#
+#
+# GNU Makefile to build the CSPI library.
+# If you have GNU Make installed, type 
+#
+#   make
+#   make install
+#   make clean
+#
+# on the command line to build and install the CSPI library.
+# To change the default parameters, edit the configuration
+# section below.
+#
+
+# 
+# -------- configuration section: start --------
+#
+
+#
+# TARGET: Set to EBPP or BBFP.
+#
+export TARGET = EBPP
+
+#
+# drvdir: Where to look for Libera GNU/Linux driver .h files.
+#
+drvdir = ../driver
+
+#
+# DEBUG: Debug level. Set to non-zero for debug build or
+# anything else (zero or commented) for non-debug build.
+# Note: CPPFLAGS is appended the DEBUG and NDEBUG flag in
+# debug and non-debug build, respectively.
+#
+DEBUG = 0
+
+#
+# CROSS_COMPILE: Cross compiler prefix to prepend to CC.
+#
+CROSS_COMPILE = arm-linux-
+
+#
+# CC: The command to invoke C compiler.
+#
+CC = gcc 
+
+#
+# CFLAGS: Options to pass to the C compiler.
+#
+CFLAGS = -std=gnu99 -Wall
+
+#
+# CPPFLAGS: Options to pass to the preprocessor.
+#
+CPPFLAGS = -D$(TARGET) -DCORDIC_IGNORE_GAIN -I$(drvdir)
+
+#
+# AR: The command to invoke the archiver program.
+#
+AR = ar
+
+#
+# ARFLAGS: Options to pass to the AR utility.
+#
+ARFLAGS = -rcs
+
+#
+# INSTALL: The pathname of the 'install' command for installing 
+# a file into the system.
+#
+INSTALL = /usr/bin/install
+
+#
+# prefix: A prefix used in constructing the installation 
+# pathnames below.
+#
+prefix = /opt
+
+#
+# includedir: The directory to install header files in.
+#
+includedir = $(prefix)/include
+
+#
+# libdir: The directory to install the library in.
+#
+libdir = $(prefix)/lib
+
+#
+# bindir: The directory to install the binaries in.
+#
+bindir = $(prefix)/bin
+
+#
+# -------- configuration section: end --------
+#
+
+docdir := ../doc
+testdir := ./test
+
+vpath %.h $(drvdir)
+
+CC := $(CROSS_COMPILE)$(CC)
+AR := $(CROSS_COMPILE)$(AR)
+
+# Release version
+RELEASE_VERSION := $(shell /bin/date +%Y%m%d)
+CPPFLAGS += -DRELEASE_VERSION=$(RELEASE_VERSION)
+
+# Debugging and optimization flags
+ifndef DEBUG
+	DEBUG = 0
+endif
+ifeq ($(DEBUG),0)
+	CFLAGS += -O2
+	CPPFLAGS += -DNDEBUG
+else
+	CFLAGS += -O -g		# "-O" is needed to expand inlines
+	CPPFLAGS += -DDEBUG=$(DEBUG)
+endif
+
+SRCS = cordic.c pool.c cspi.c
+OBJS = $(SRCS:%.c=%.o)
+
+ifeq ($(TARGET),EBPP)
+	SRCS += ebpp.c
+endif
+ifeq ($(TARGET),BBFP)
+	SRCS += bbfp.c
+endif
+
+
+.PHONY : all cspi test doc install install-dirs install-sbc src bin clean clean_except_docs dep
+
+
+all: -lcspi leventd test
+
+
+# alias
+cspi: -lcspi
+
+
+-lcspi: $(OBJS)
+	@echo Making cspi library for target $(TARGET)
+	$(AR) $(ARFLAGS) libcspi.a $^
+
+
+leventd: eventd.o
+	$(CC) $(LDFLAGS) -o $@ $<
+
+
+$(OBJS) eventd.o: .depend
+
+
+test:
+	@echo Making test
+	cd $(testdir) && $(MAKE)
+
+
+doc:
+	cd $(docdir) && doxygen >/dev/null
+	cd $(docdir)/latex && $(MAKE) >/dev/null
+	mv $(docdir)/latex/refman.pdf $(docdir)/cspi-reference-$(RELEASE_VERSION).pdf
+
+
+install-dirs:
+	@echo Making install-dirs
+	$(INSTALL) -d -o root -g root $(includedir) $(libdir) $(bindir)
+
+
+install-sbc: install-dirs
+	@echo Making install-sbc
+	$(CROSS_COMPILE)strip leventd
+	$(INSTALL) -m 755 -o root -g root leventd $(bindir)
+	# Get absolute prefix path to pass to the sub-make
+	cd $(testdir) && $(MAKE) prefix=$(shell cd $(prefix) && pwd) install
+
+
+install: install-dirs install-sbc
+	@echo Making install
+	$(INSTALL) -m 644 -o root -g root cspi.h $(includedir)
+	$(INSTALL) -m 644 -o root -g root libcspi.a $(libdir)
+
+
+# SRC package
+S_NAME       := $(notdir $(shell cd .. ; pwd))
+S_NAME_VER   := $(S_NAME)-$(RELEASE_VERSION)
+S_ARCHIVE    := $(S_NAME_VER).tar.gz
+src: clean doc
+	@if [ ! -d ../../$(S_NAME_VER) ]; \
+	then \
+		echo -e "Creating SRC package ../../$(S_ARCHIVE)"; \
+		$(RM) -r $(docdir)/latex; \
+		cd ../..; cp -a $(S_NAME) $(S_NAME_VER); \
+		$(RM) -r `find $(S_NAME_VER) -path '*CVS' -prune`; \
+		tar -cvzf $(S_ARCHIVE) $(S_NAME_VER); \
+		$(RM) -r $(S_NAME_VER) ; cd -; \
+		sync; \
+	else \
+		echo -e "Cannot create SRC package: ../../$(S_NAME_VER) exists."; \
+	fi
+
+
+# BIN package
+B_NAME       := $(S_NAME)
+B_NAME_VER   := $(B_NAME)-$(RELEASE_VERSION)
+B_ARCHIVE    := $(B_NAME_VER)-bin.tar.gz
+bin: clean all
+	$(MAKE) prefix=../tmp/$(patsubst /%,%,$(prefix)) install-sbc
+	@echo -e "Creating BIN package in ../../$(B_ARCHIVE)"; \
+	cd ../tmp; tar -cvzf ../../$(B_ARCHIVE) . ; \
+	cd -; \
+	$(RM) -r ../tmp; \
+	sync;
+
+
+clean:
+	@echo Making clean
+	-$(RM) *~ *.o *.a .depend leventd
+	-$(RM) -r ../bin
+	-$(RM) -r $(docdir)/cspi-reference*.pdf $(docdir)/latex $(docdir)/html
+	cd $(testdir) && $(MAKE) clean
+
+
+dep .depend:
+	@echo Making dep and .depend
+	$(CC) -MM $(CPPFLAGS) *.c >.depend
+
+
+ifeq (.depend, $(wildcard .depend))
+include .depend
+endif
+
+# EOF

@@ -120,7 +120,13 @@
  * 
  *           61       61-s                  s
  * Thus Y = 2  / X = 2    / Xin, where X = 2 Xin is the result of normalising
- * the input argument Xin. */
+ * the input argument Xin.  We also know that Y has between 29 and 30 bits,
+ * ie:
+ *           61-s
+ *          2            29         30       31-s         32-s
+ *      Y = ----- ,     2   < Y <= 2  ,     2     <= X < 2    .
+ *            X
+ */
 
 unsigned int Reciprocal(unsigned int X, int &shift)
 {
@@ -139,6 +145,8 @@ unsigned int Reciprocal(unsigned int X, int &shift)
 }
 
 
+#if 0
+/* This code is currently useless... */
 
 /* This routine quickly computes 1e-6 * x without using floating point
  * arithmetic.  This allows us to convert integer nanometre positions to
@@ -163,15 +171,17 @@ unsigned int Reciprocal(unsigned int X, int &shift)
  *
  * Assembling this value is described step by step below. */
 
-/* Unfortunately, in the current instantiation of the driver, the final step
- * (returning the floating point result) generates the instruction
+/* Unfortunately, in the current instantiation of the driver, the simple act
+ * of returning a floating point result generates the instruction
  *
  *      ldfs    f0, ...
  *
  * to load floating point register f0 with the result.  Unfortunately, this
- * register does not exist!  This adds around 2000ns to the running time. */
+ * register does not exist!  This adds around 2000ns to the running time.
+ *    We work around this by returning the result by reference!  No floating
+ * point registers were troubled by this code. */
 
-float nmTOmm(int nm)
+void nmTOmm(int nm, float &mm_float)
 {
     /* K = 2^51 * 1e-6.  This is the largest multiplier that will fit in a 32
      * bit word. */
@@ -213,5 +223,8 @@ float nmTOmm(int nm)
     }
 
     /* Return the resulting bit pattern as a float. */
-    return * (float *) & mm;
+    * (int *) & mm_float = mm;
+//    return * (float *) & mm;
 }
+#endif
+

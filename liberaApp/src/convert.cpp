@@ -111,144 +111,56 @@ bool Diagonal = true;
 /*****************************************************************************/
 
 
-/* The calculation here is a rather delicate matter.  We have already
- * computed the total button intensities 
- *      Intensity = S = A + B + C + D
- * and the appropriate X/Y offset calculation
- *      Delta = M = A - B - C + D or A + B - C - D .
- * We are also given a scaling factor
- *      Scaling = K
- * which determines the nominal offset corresponding to M = S.  Naively we
- * simply want to return
- *
- *      Position = (K * M) / S .
- *
- * The given values have already been scaled appropriately: automatic gain
- * control should normally maintain S somewhere close to 2^30, and the
- * scaling factor is in units of distance.
- *     Our geometry puts K close to 20mm, and as positions will be returned
- * as integers scaled to nm this means that K is close to 2^24.
- *
- * The obvious approach is to return
- *      (int) (((long long) a * b) / c) ,
- * but there are two reasons why this isn't done:
- *  -  Division on the ARM is relatively costly, and in particular double
- *     length division is doubly expensive;
- *  -  The gcc 3.3.3 implementation of 64 bit division (a call to __divdi3)
- *     seems to be comprehensively broken: it causes crashes!
- *
- * We therefore rely on 32/32 bit division together with a lot of careful
- * prescaling to ensure that we get as close to 16 bits final precision in
- * the final result. */
+/* The total intensity for each button is the magnitude of its IQ data: we
+ * perform the reduction using cordic for which we have a very fast algorithm
+ * available. */
 
-
-/* Generic utility for computing X,Y,Q from a Scaling factor K, the computed
- * Delta M and a total Intensity S.  This computes
- *      (K * M) / S .
- * There is an assumption (which is *not* checked) that the Scaling factor is
- * strictly smaller than 2^25: this corresponds to an overall scaling factor
- * of 32mm.  If K is too large then the results returned will be rubbish, as
- * internal overflow will occur. */
-
-int DeltaToPosition(int Scaling, int Delta, int Intensity)
+void IQtoABCD(const IQ_ROW *IQ, ABCD_ROW *ABCD, int Count)
 {
-    bool Negative = false;
-    if (Delta < 0)
+    for (int i = 0; i < Count; i ++)
     {
-        Negative = true;
-        Delta = - Delta;
-    }
-
-    /* Now work with unsigned longs throughout.  We're pushing the boundaries
-     * of the words throughout, so this is necessary. */
-    unsigned int K = Scaling;
-    unsigned int M = Delta;
-    unsigned int S = Intensity;
-
-    /* If M is larger than S then we might as well overflow right away.  On
-     * overflow we might as well return 0: it's harmless, and the value isn't
-     * very meaningful anyway. */
-    if (M >= S)  return 0;
-
-    /* First normalise S and M together.  This won't affect anything further,
-     * and ensures we use as many bits as possible. */
-    int Shift = CLZ(S);
-    S <<= Shift;
-    M <<= Shift;
-
-    /* Also normalise M.  This allows us to maintain a dynamic precision of
-     * up to 16 bits in the final result.  In this case we need to keep count
-     * as the final result is affected.  Here we can't shift by more than 9,
-     * as we need to correct this shift later. */
-    Shift = CLZ(M);
-    if (Shift > 9)  Shift = 9;
-    M <<= Shift;
-    /* Finally compute the remaining shift. */
-    Shift = 9 - Shift;
-    
-    /* Nearly there.  We now need to scale everything to ensure that we both
-     * support the required dynamic range and the required precision.  We can
-     * hope for at most 16 bits of precision in the result when doing 32 bit
-     * division, as the precision needs to be shared between divisor and
-     * dividend.  Our constraints are:
-     *
-     *  X       Want at least 0.1um precision
-     *          Maximum scale is around +- 4mm
-     *  K       This scaling factor can be bounded by 2^24 and needs little
-     *          precision
-     *  M       We have scaled M to be close to S
-     *
-     * We need to ensure that K*M < 2^32 and that S is 16 bits long.  Our
-     * limits on K and M are 2^25 and 2^32 respectively, so we need to take 25
-     * bits away from KM.  We split them almost equally, as M has more to
-     * spare and K doesn't need them: we still have 20 bits left for M.
-     *
-     * In anticipation of this we've already prescaled M by some factor k=9-s
-     * where s is the shift remaining.  We now compute
-     *
-     *                -13     k-12
-     *           s   2   K * 2    M    s-13+k-12+16 KM
-     *      X = 2  * -------------- = 2             -- = KM/S
-     *                    -16                       S
-     *                   2   S
-     */
-    K >>= 13;
-    M >>= 12;
-    S >>= 16;
-
-    /* If S has evaporated then we're in danger of overflow. */
-    if (S < ((unsigned int) 1 << Shift))  return 0;
-    
-    unsigned int X = (K * M + (S >> 1)) / S;
-    X <<= Shift;
-    
-    if (Negative)
-        return - (int) X;
-    else
-        return (int) X;
-}
-
-
-
-
-/* Compute magnitude of each button and scale by gain factor. */
-
-void SinCosToABCD(LIBERA_ROW * Rows, size_t Length)
-{
-    for (size_t i = 0; i < Length; i ++)
-    {
-        LIBERA_ROW & Row = Rows[i];
-        Row[0] = SCALE_GAIN(G_A, CordicMagnitude(Row[0], Row[1]));
-        Row[1] = SCALE_GAIN(G_B, CordicMagnitude(Row[2], Row[3]));
-        Row[2] = SCALE_GAIN(G_C, CordicMagnitude(Row[4], Row[5]));
-        Row[3] = SCALE_GAIN(G_D, CordicMagnitude(Row[6], Row[7]));
+        const IQ_ROW & iq = IQ[i];
+        ABCD_ROW & abcd = ABCD[i];
+        abcd.A = CordicMagnitude(iq.AI, iq.AQ);
+        abcd.B = CordicMagnitude(iq.BI, iq.BQ);
+        abcd.C = CordicMagnitude(iq.CI, iq.CQ);
+        abcd.D = CordicMagnitude(iq.DI, iq.DQ);
     }
 }
 
 
 
-/* The underlying model for the transfer of electron beam intensity to
- * buttons simplifies to a model where we can write
+/* Computes K * M / S without loss of precision.  We use
+ * our knowledge of the arguments to do this work as efficiently as possible.
+ *
+ * Firstly we know that InvS = 2^(60-shift)/S and that S < 2^(31-shift).
+ * However, we also know that |M| <= S (this is a simple consequence of S
+ * being a sum of non-negative values and M being a sum of differences), so
+ * in particular also |M| < 2^(31-shift) and so we can safely get rid of the
+ * shift in InvS by giving it to M!
+ *
+ * We have now transformed K * M / S to 2^(60-shift) * K * M * InvS and then
+ * to 2^60 * K * (2^-shift * M) * InvS.  Note finally that the scaling
+ * constant K can be safely bounded by 2^27 ~~ 128mm and so we can
+ * with excellent efficiency compute
+ *
+ *                 K * M    -64     4        shift
+ *      Position = ----- = 2    * (2  K) * (2      M) * InvS
+ *                   S
+ * 
+ * In fact we gain slightly more head-room on K by computing K*InvS as an
+ * *unsigned* multiply: an upper bound on K of over 0.25m seems ample! */
+
+static int DeltaToPosition(int K, int M, int InvS, int shift)
+{
+    return MulSS(MulUU(K << 4, InvS), M << shift);
+}
+
+
+/* Converts Count rows of ABCD button data into XYQS position and intensity
+ * data via the configured conversion function.  The underlying model for the
+ * transfer of electron beam intensity to buttons simplifies to a model where
+ * we can write
  *
  *              Vertical                        Diagonal
  *              
@@ -268,40 +180,82 @@ void SinCosToABCD(LIBERA_ROW * Rows, size_t Length)
  * and thus
  *              X = 2*K * (B - D) / S           X = K * (A - B - C + D) / S
  *              Y = 2*K * (A - C) / S           X = K * (A + B - C - D) / S .
- *
- * This routine performs these calculations on an array of rows, reading the
- * button values A, B, C, D from entries 0 to 3 and writing X, Y, Q, S into
- * entries 4 to 7 respectively. */
+ */
 
-void ABCDtoXYQS(LIBERA_ROW * Rows, size_t Length)
+void ABCDtoXYQS(const ABCD_ROW *ABCD, XYQS_ROW *XYQS, int Count)
 {
-    for (size_t i = 0; i < Length; i ++)
+    for (int i = 0; i < Count; i ++)
     {
-        LIBERA_ROW & Row = Rows[i];
-        
-        /* Extract the four button values.  Scale by 1/4 to avoid any hazard
-         * of overflow in what follows. */
-        int A = Row[0] >> 2;
-        int B = Row[1] >> 2;
-        int C = Row[2] >> 2;
-        int D = Row[3] >> 2;
+        const ABCD_ROW & abcd = ABCD[i];
+        XYQS_ROW & xyqs = XYQS[i];
+
+        /* First compute the total intensity S.  To avoid overflow we
+         * prescale by 4.  This can involve loss of bits when the intensity
+         * is extremely low, but in fact the bottom bits are pretty well pure
+         * noise and can be cheaply discarded.
+         *    The button values A,B,C,D are known to line in the range 0 to
+         * 2^31 - 1 so we similarly know that 0 <= S < 2^31. */
+        int A = abcd.A >> 2;
+        int B = abcd.B >> 2;
+        int C = abcd.C >> 2;
+        int D = abcd.D >> 2;
         int S = A + B + C + D;
 
+        /* Now compute the positions according to the model.  As this is an
+         * inner loop function we take some time to optimise its execution by
+         * precomputing as much as possible.
+         *    Start by precomputing 1/S, or more precisely, a scaled version
+         * of 1/S.  (InvS,shift) = Reciprocal(S) returns InvS=2^(61-shift)/S,
+         * where shift is a bit normalisation count on S, ie
+         *      2^31 <= 2^shift * S < 2^32.
+         * From the observation above we know that shift >= 1, and it is
+         * convenient for the subsequent call to DeltaToPosition to adjust
+         * things so that
+         *
+         *      InvS = 2^(60-shift) / S
+         *      2^(30-shift) <= S < 2^(31-shift)
+         */
+        int shift;
+        int InvS = Reciprocal(S, shift);
+        shift -= 1;
+        /* Compute X and Y according to the currently selected detector
+         * orientation.  There seem to be no particularly meaningful
+         * computation of Q in vertical orientation, so we use the diagonal
+         * orientation computation for this factor. */
         if (Diagonal)
         {
-            Row[4] = DeltaToPosition(K_X, A - B - C + D, S) - X_0;
-            Row[5] = DeltaToPosition(K_Y, A + B - C - D, S) - Y_0;
+            xyqs.X = DeltaToPosition(K_X, A - B - C + D, InvS, shift) - X_0;
+            xyqs.Y = DeltaToPosition(K_Y, A + B - C - D, InvS, shift) - Y_0;
         }
         else
         {
-            Row[4] = DeltaToPosition(K_X, B - D, S) << 1 - X_0;
-            Row[5] = DeltaToPosition(K_Y, A - C, S) << 1 - Y_0;
+            xyqs.X = DeltaToPosition(K_X, B - D, InvS, shift) << 1 - X_0;
+            xyqs.Y = DeltaToPosition(K_Y, A - C, InvS, shift) << 1 - Y_0;
         }
-
-        Row[6] = DeltaToPosition(K_Q, A - B + C - D, S);
-        Row[7] = S;
+        xyqs.Q = DeltaToPosition(K_Q, A - B + C - D, InvS, shift);
+        xyqs.S = S;
     }
 }
+
+
+
+/* Rescales one row XYQS data from nm to mm. */
+void XYQStomm(const XYQS_ROW &XYQSnm, XYQSmm_ROW &XYQSmm)
+{
+    XYQSmm.X = nmTOmm(XYQSnm.X);
+    XYQSmm.Y = nmTOmm(XYQSnm.Y);
+    XYQSmm.Q = nmTOmm(XYQSnm.Q);
+    XYQSmm.S = XYQSnm.S;
+}
+
+
+void ABCDtoXYQSmm(const ABCD_ROW &ABCD, XYQSmm_ROW &XYQSmm)
+{
+    XYQS_ROW XYQSnm;
+    ABCDtoXYQS(&ABCD, &XYQSnm, 1);
+    XYQStomm(XYQSnm, XYQSmm);
+}
+
 
 
 

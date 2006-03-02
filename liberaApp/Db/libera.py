@@ -145,6 +145,7 @@ def XYQS_(prec=1, logMax=0):
         
 
 def Enable():
+    return      # Not yet implemented
     boolInOut('ENABLE',
         ZNAM = 'Disabled',
         ONAM = 'Enabled')
@@ -198,10 +199,10 @@ def FirstTurn():
 # Booster ramp support records.  Decimated waveforms for overview of entire
 # 100ms booster ramp.
 def Booster():
-    LONG_LENGTH  = Parameter('BN_LONG')     # 3040
-    SHORT_LENGTH = Parameter('BN_SHORT')    # BN_LONG / 16
+    SHORT_LENGTH = Parameter('BN_SHORT')    # 190  = BN_LONG / 16
+    LONG_LENGTH  = Parameter('BN_LONG')     # 3040 = BN_SHORT * 16
 
-    SetChannelName('BN')    # <==== will be DD soon
+    SetChannelName('BN')
     Enable()
     
     Trigger(*
@@ -218,14 +219,40 @@ def Booster():
     Waveform('AXISS', SHORT_LENGTH, 'FLOAT', PINI='YES')
 
     UnsetChannelName()
+
+
+# Free running short (typically 2048) turn-by-turn buffer.  
+def FreeRunning():
+    LENGTH = Parameter('FR_LENGTH')
+    
+    SetChannelName('FR')
+    Enable()
+
+    # In this mode we provide all the available data: raw IQ, buttons and
+    # computed positions.
+    Trigger(*IQ_wf(LENGTH) + ABCD_wf(LENGTH) + XYQS_wf(LENGTH))
+    
+    UnsetChannelName()
+        
+
+# Postmortem fixed length buffer.  This mode is always enabled.
+def Postmortem():
+    LENGTH = 16384
+    
+    SetChannelName('PM')
+
+    # All turn-by-turn data is provided.
+    Trigger(*IQ_wf(LENGTH) + ABCD_wf(LENGTH) + XYQS_wf(LENGTH))
+    
+    UnsetChannelName()
         
 
 # Turn-by-turn snapshot records.  Access to long waveforms captured on
 # request.  Typically used for tune measurements.  Up to 200,000 points can
 # be captured in one request.
 def TurnByTurn():
-    LONG_LENGTH  = Parameter('TT_LONG')
-    SHORT_LENGTH = Parameter('TT_SHORT')
+    LONG_LENGTH   = Parameter('TT_LONG')
+    WINDOW_LENGTH = Parameter('TT_WINDOW')
     
     SetChannelName('TT')    # <=== Soon to be split into TT and LT
     Enable()
@@ -253,28 +280,24 @@ def TurnByTurn():
         DOPT = 'Use CALC')
     ready.FLNK = create_fanout('FANA', rearm, captured)
 
-    # Note: need to update FREERUN when caputure length changes...
-    freerunIn, freerunOut = boolInOut('FREERUN',
-        ZNAM = 'Normal', ONAM = 'Free Run')
-
-    longInOut('LENGTH', LOPR = 1, HOPR = SHORT_LENGTH)
-    caplenIn, caplenOut = longInOut('CAPLEN', LOPR = 1, HOPR = LONG_LENGTH)
-    # A slightly tricksy hack: the FREERUN flag can be reset in two
-    # circumstances -- when explicitly set to false, but also when the
-    # capture length becomes too large.
-    caplenIn.FLNK = freerunIn
-
+    # Readout window and total capture length
+    longInOut('LENGTH', LOPR = 1, HOPR = WINDOW_LENGTH)
+    longInOut('CAPLEN', LOPR = 1, HOPR = LONG_LENGTH)
+    # Readout window offset.  Here we break the usual chain where OFFSET
+    # would update as soon as OFFSET_S is written: instead, offset won't
+    # update until all the waveforms have been processed.  This allows OFFSET
+    # to be used as a readout interlock.
     Libera.longout('OFFSET_S', 'OFFSET',
         OMSL = 'supervisory', LOPR = 0, HOPR = LONG_LENGTH)
     offset = Libera.longin('OFFSET', PINI = 'YES')
 
     Trigger(*
         # Raw I and Q values
-        IQ_wf(SHORT_LENGTH) + 
+        IQ_wf(WINDOW_LENGTH) + 
         # Button values
-        ABCD_wf(SHORT_LENGTH) +
+        ABCD_wf(WINDOW_LENGTH) +
         # Computed positions
-        XYQS_wf(SHORT_LENGTH) +
+        XYQS_wf(WINDOW_LENGTH) +
         [offset])
 
     UnsetChannelName()
@@ -299,15 +322,15 @@ def SlowAcquisition():
 def Config():
     SetChannelName('CF')
     boolInOut('DIAG', ZNAM = 'VERTICAL', ONAM = 'DIAGONAL')
-    aInOut('KX', 0, 32,   PREC = 4, EGU = 'mm')
-    aInOut('KY', 0, 32,   PREC = 4, EGU = 'mm')
-    aInOut('KQ', 0, 32,   PREC = 4, EGU = 'mm')
-    aInOut('X0', -16, 16, PREC = 4, EGU = 'mm')
-    aInOut('Y0', -16, 16, PREC = 4, EGU = 'mm')
-    aInOut('GA', 0, 1.5, VAL = 1, PREC = 4)
-    aInOut('GB', 0, 1.5, VAL = 1, PREC = 4)
-    aInOut('GC', 0, 1.5, VAL = 1, PREC = 4)
-    aInOut('GD', 0, 1.5, VAL = 1, PREC = 4)
+    aInOut('KX', 0, 32,   PREC = 4, EGU  = 'mm')
+    aInOut('KY', 0, 32,   PREC = 4, EGU  = 'mm')
+    aInOut('KQ', 0, 32,   PREC = 4, EGU  = 'mm')
+    aInOut('X0', -16, 16, PREC = 4, EGU  = 'mm')
+    aInOut('Y0', -16, 16, PREC = 4, EGU  = 'mm')
+    aInOut('GA', 0, 1.5,  VAL  = 1, PREC = 4)
+    aInOut('GB', 0, 1.5,  VAL  = 1, PREC = 4)
+    aInOut('GC', 0, 1.5,  VAL  = 1, PREC = 4)
+    aInOut('GD', 0, 1.5,  VAL  = 1, PREC = 4)
 
     attenwf = Libera.waveform('ATTWF',
         NELM = 8, FTVL = 'LONG', PINI = 'YES')
@@ -345,8 +368,10 @@ def Fast():
     
 FirstTurn()
 Booster()
+FreeRunning()
 TurnByTurn()
 SlowAcquisition()
+Postmortem()
 
 Config()
 

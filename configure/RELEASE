@@ -18,3 +18,4 @@ TEMPLATE_TOP=$(EPICS_BASE)/templates/makeBaseApp/top
 EPICS_BASE=/home/epics/R3.14.8.2/base
 #EPICS_BASE=/scratch/testing/base-3.14.7
 
+CSPI=$(TOP)/cspi

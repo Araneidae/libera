@@ -33,7 +33,10 @@ IOC_BN_LENGTH=190
 
 # Maximum number of points to be captured in a single long turn-by-turn
 # waveform.  This will consume 32 bytes per point, so don't set it too long!
-IOC_TT_LENGTH=200000
+IOC_TT_LENGTH=196608
 
 # Turn by turn readout window length.
-IOC_TW_LENGTH=2048
+IOC_TT_WINDOW=16384
+
+# Turn by turn small waveform length (continuously updating TT data).
+IOC_FR_LENGTH=2048

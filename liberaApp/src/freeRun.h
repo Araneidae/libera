@@ -27,31 +27,4 @@
  */
 
 
-/* Libera events handling interface. */
-
-bool InitialiseEventReceiver();
-
-void TerminateEventReceiver();
-
-
-/* Libera event registration.  Note that this callback method will be called
- * on a separate event receiver thread. */
-class I_EVENT
-{
-public:
-    virtual void OnEvent() = 0;
-};
-
-void RegisterTriggerEvent(I_EVENT &Event, int Priority);
-void RegisterPostmortemEvent(I_EVENT &Event, int Priority);
-
-
-
-/* Sensible event priorities for Libera event subscribers. */
-
-#define PRIORITY_FT     1       // First Turn should go first
-#define PRIORITY_SA     2       // Slow acquisition gets second place
-#define PRIORITY_BN     10      // Decimated booster mode
-#define PRIORITY_FR     100     // Free running mode
-#define PRIORITY_TT     5       // Turn-by-turn takes forever but goes early
-#define PRIORITY_PM     0       // Postmortem wins, every time.
+bool InitialiseFreeRun(int WaveformLength);

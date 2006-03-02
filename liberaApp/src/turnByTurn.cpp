@@ -38,6 +38,7 @@
 #include "trigger.h"
 #include "hardware.h"
 #include "events.h"
+#include "convert.h"
 #include "waveform.h"
 
 #include "turnByTurn.h"
@@ -47,56 +48,42 @@
 class TURN_BY_TURN : I_EVENT
 {
 public:
-    TURN_BY_TURN(int LongWaveformLength, int ShortWaveformLength) :
+    TURN_BY_TURN(int LongWaveformLength, int WindowWaveformLength) :
         LongWaveformLength(LongWaveformLength),
-        ShortWaveformLength(ShortWaveformLength),
+        WindowWaveformLength(WindowWaveformLength),
         LongWaveform(LongWaveformLength),
-        ShortWaveform(ShortWaveformLength),
-        IqWaveform(ShortWaveformLength),
+        WindowIq(WindowWaveformLength),
+        WindowAbcd(WindowWaveformLength),
+        WindowXyqs(WindowWaveformLength),
         LongTrigger(false)
     {
-        ShortOffset = 0;
-        /* Make the default waveform length something more reasonable. */
-        LongWaveform.SetLength(ShortWaveformLength);
+        WindowOffset = 0;
+        WindowLength = WindowWaveformLength;
+        /* Make the default capture length equal to one window. */
+        LongWaveform.SetLength(WindowWaveformLength);
         /* Don't trigger until asked to. */
         Armed = false;
         
         /* Publish the PVs associated with Turn by Turn data. */
 
+        /* Two waveforms providing access to the raw I and Q turn by turn
+         * data for each button. */
+        WindowIq.Publish("TT");
         /* The basic windowed waveform views on the entire turn by turn
          * buffer.  Each of these provides a view of a sub-array of the
          * captured waveform, with offset and length controlled by the OFFSET
          * and LENGTH fields. */
-        Publish_waveform("TT:WFA", ShortWaveform.Waveform(0));
-        Publish_waveform("TT:WFB", ShortWaveform.Waveform(1));
-        Publish_waveform("TT:WFC", ShortWaveform.Waveform(2));
-        Publish_waveform("TT:WFD", ShortWaveform.Waveform(3));
-        Publish_waveform("TT:WFX", ShortWaveform.Waveform(4));
-        Publish_waveform("TT:WFY", ShortWaveform.Waveform(5));
-        Publish_waveform("TT:WFQ", ShortWaveform.Waveform(6));
-        Publish_waveform("TT:WFS", ShortWaveform.Waveform(7));
-
-        /* Two waveforms providing access to the raw I and Q turn by turn
-         * data for each button. */
-        Publish_waveform("TT:WFAI", IqWaveform.Waveform(0));
-        Publish_waveform("TT:WFAQ", IqWaveform.Waveform(1));
-        Publish_waveform("TT:WFBI", IqWaveform.Waveform(2));
-        Publish_waveform("TT:WFBQ", IqWaveform.Waveform(3));
-        Publish_waveform("TT:WFCI", IqWaveform.Waveform(4));
-        Publish_waveform("TT:WFCQ", IqWaveform.Waveform(5));
-        Publish_waveform("TT:WFDI", IqWaveform.Waveform(6));
-        Publish_waveform("TT:WFDQ", IqWaveform.Waveform(7));
+        WindowAbcd.Publish("TT");
+        WindowXyqs.Publish("TT");
 
         /* Control fields for managing capture and readout. */
-        PUBLISH_METHOD(longout, "TT:CAPLEN", SetCaptureLength);
-        PUBLISH_METHOD(longin,  "TT:CAPLEN", GetCaptureLength);
+        PUBLISH_METHOD(longout, "TT:CAPLEN",   SetCaptureLength);
+        PUBLISH_METHOD(longin,  "TT:CAPLEN",   GetCaptureLength);
         PUBLISH_METHOD(longin,  "TT:CAPTURED", GetCapturedLength);
-        PUBLISH_METHOD(longout, "TT:OFFSET", SetReadoutOffset);
-        Publish_longin("TT:OFFSET", ShortOffset);
-        PUBLISH_METHOD(longout, "TT:LENGTH", SetReadoutLength);
-        PUBLISH_METHOD(longin,  "TT:LENGTH", GetReadoutLength);
-        PUBLISH_METHOD(bo, "TT:FREERUN", SetFreeRunning);
-        Publish_bi("TT:FREERUN", FreeRunning);
+        PUBLISH_METHOD(longout, "TT:OFFSET",   SetWindowOffset);
+        PUBLISH_METHOD(longout, "TT:LENGTH",   SetWindowLength);
+        Publish_longin("TT:OFFSET", WindowOffset);
+        Publish_longin("TT:LENGTH", WindowLength);
 
         /* Turn by turn triggering is rather complicated, and needs to occur
          * in two stages.  The idea is that only a single shot of turn by
@@ -115,21 +102,24 @@ public:
 
     /* This code is called, possibly indirectly, in response to a trigger
      * event to read and process a First Turn waveform.  The waveform is read
-     * and all associated values are computed. */
+     * and all associated values are computed.
+     *    We only process if armed. */
     void OnEvent()
     {
-        if (Armed || FreeRunning)
+        if (Armed)
         {
             Armed = false;
-            /* Capture the full turn-by-turn waveform of the requested
-             * length. */
-            LongWaveform.Capture();
+            /* Capture the full turn-by-turn undecimated waveform of the
+             * requested length. */
+            LongWaveform.Capture(1);
+
+            /* Also bring the short waveforms up to date.  Do this before
+             * updating the long trigger so that the reader knows there is
+             * valid data to read. */
+            ProcessShortWaveform();
 
             /* Let EPICS know that this has updated. */
             LongTrigger.Write(true);
-
-            /* Also bring the short waveforms up to date. */
-            ProcessShortWaveform();
         }
     }
 
@@ -141,9 +131,6 @@ private:
      * EPICS interface. */
     bool SetCaptureLength(int Length)
     {
-        if (FreeRunning  &&  Length > ShortWaveformLength)
-            /* Ensure free running is disabled if length is large. */
-            FreeRunning = false;
         LongWaveform.SetLength(Length);
         return true;
     }
@@ -156,7 +143,7 @@ private:
 
     /* Waveform readout control: both position and length of the waveforms
      * can be controlled. */
-    bool SetReadoutOffset(int Offset)
+    bool SetWindowOffset(int Offset)
     {
         /* Allow the offset to be set anywhere within the full long waveform,
          * not just within its current length.  It's harmless and friendly to
@@ -165,9 +152,9 @@ private:
         {
             /* Minor optimisation, but ProcessShortWaveform() is pretty
              * expensive. */
-            if (ShortOffset != Offset)
+            if (WindowOffset != Offset)
             {
-                ShortOffset = Offset;
+                WindowOffset = Offset;
                 ProcessShortWaveform();
             }
             return true;
@@ -179,13 +166,15 @@ private:
         }
     }
     
-    bool SetReadoutLength(int Length)
+    bool SetWindowLength(int Length)
     {
-        if (0 < Length  &&  Length <= ShortWaveformLength)
+        if (0 < Length  &&  Length <= WindowWaveformLength)
         {
-            bool Process = Length > (int) ShortWaveform.GetLength();
-            ShortWaveform.SetLength(Length);
-            IqWaveform.SetLength(Length);
+            bool Process = Length > WindowLength;
+            WindowIq.SetLength(Length);
+            WindowAbcd.SetLength(Length);
+            WindowXyqs.SetLength(Length);
+            WindowLength = Length;
             /* Only process the short waveform if it has grown in length.
              * Otherwise there's nothing to do. */
             if (Process)
@@ -199,30 +188,10 @@ private:
         }
     }
     
-    bool GetReadoutLength(int &Length)
-    {
-        Length = ShortWaveform.GetLength();
-        return true;
-    }
-
     bool GetCapturedLength(int &Length)
     {
         Length = LongWaveform.WorkingLength();
         return true;
-    }
-
-    bool SetFreeRunning(bool Enable)
-    {
-        if (!Enable  ||  (int)LongWaveform.GetLength() <= ShortWaveformLength)
-        {
-            FreeRunning = Enable;
-            return true;
-        }
-        else
-        {
-            printf("Can't enable free running at current length\n");
-            return false;
-        }
     }
 
 
@@ -248,16 +217,12 @@ private:
     void ProcessShortWaveform()
     {
         Interlock.Wait();
-        
+
         /* We copy our desired segment from the long waveform and do all the
          * usual processing. */
-        ShortWaveform.CaptureFrom(LongWaveform, ShortOffset);
-        ShortWaveform.Cordic();
-        ShortWaveform.ABCDtoXYQS();
-
-        /* The IQ waveforms are also a copy of a long waveform segment, but
-         * completely raw and unprocessed. */
-        IqWaveform.CaptureFrom(LongWaveform, ShortOffset);
+        WindowIq.CaptureFrom(LongWaveform, WindowOffset);
+        WindowAbcd.CaptureCordic(WindowIq);
+        WindowXyqs.CaptureConvert(WindowAbcd);
 
         /* Let EPICS know there's stuff to read. */
         Interlock.Ready();
@@ -265,12 +230,21 @@ private:
     
 
     const int LongWaveformLength;
-    const int ShortWaveformLength;
-    
-    LIBERA_WAVEFORM LongWaveform;
-    LIBERA_WAVEFORM ShortWaveform;
-    LIBERA_WAVEFORM IqWaveform;
-    
+    const int WindowWaveformLength;
+
+    /* The captured waveforms. */
+
+    /* Long unprocessed waveform as captured. */
+    IQ_WAVEFORMS LongWaveform;
+
+    /* Window into the captured waveform: these three blocks of waveforms are
+     * all published to EPICS. */
+    IQ_WAVEFORMS WindowIq;
+    ABCD_WAVEFORMS WindowAbcd;
+    XYQS_WAVEFORMS WindowXyqs;
+
+    /* Trigger for long waveform capture and EPICS interlock for updating the
+     * window waaveforms. */
     TRIGGER LongTrigger;
     INTERLOCK Interlock;
     
@@ -280,11 +254,10 @@ private:
     bool Armed;
     /* This is the offset into the long waveform for which short waveforms
      * will be returned. */
-    int ShortOffset;
-    /* If this flag is set then waveform capture will occur repeatedly even
-     * when not armed.  This flag cannot be set when the waveform capture
-     * length is too large to avoid overloading the processor. */
-    bool FreeRunning;
+    int WindowOffset;
+    /* This is the currently selected window length.  It is also maintained
+     * as the working length of the three window waveform blocks. */
+    int WindowLength;
 };
 
 
@@ -292,8 +265,8 @@ private:
 TURN_BY_TURN * TurnByTurn = NULL;
 
 bool InitialiseTurnByTurn(
-    int LongWaveformLength, int ShortWaveformLength)
+    int LongWaveformLength, int WindowWaveformLength)
 {
-    TurnByTurn = new TURN_BY_TURN(LongWaveformLength, ShortWaveformLength);
+    TurnByTurn = new TURN_BY_TURN(LongWaveformLength, WindowWaveformLength);
     return true;
 }

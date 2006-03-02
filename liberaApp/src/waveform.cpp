@@ -33,6 +33,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stddef.h>
 
 #include <dbFldTypes.h>
 
@@ -40,9 +41,9 @@
 #include "hardware.h"
 #include "convert.h"
 #include "cordic.h"
+#include "publish.h"
 
 #include "waveform.h"
-
 
 
 
@@ -53,147 +54,37 @@
 /*                                                                          */
 /****************************************************************************/
 
-/* A couple of helper classes implementing I_waveform interfaces. */
 
+/* A simple one dimensional waveform with direct EPICS implementation.
+ * Arrays of both ints and floats are supported, so we unify these two types
+ * into a single template. */
 
-/* This implements a simple one dimensional waveform with a direct EPICS
- * implementation. */
-
-SIMPLE_WAVEFORM::SIMPLE_WAVEFORM(size_t WaveformLength) :
-    I_WAVEFORM(DBF_LONG),
+template<class T>
+SIMPLE_WAVEFORM<T>::SIMPLE_WAVEFORM(int TypeMark, size_t WaveformLength) :
+    I_WAVEFORM(TypeMark),
     WaveformLength(WaveformLength),
-    Waveform(new int[WaveformLength])
+    Waveform(new T[WaveformLength])
 {
 }
 
 
-size_t SIMPLE_WAVEFORM::read(void *array, size_t length)
+template<class T> size_t SIMPLE_WAVEFORM<T>::read(void *array, size_t length)
 {
     if (length > WaveformLength)  length = WaveformLength;
-    memcpy(array, Waveform, sizeof(int) * length);
+    memcpy(array, Waveform, sizeof(T) * length);
     return length;
 }
 
+INT_WAVEFORM::INT_WAVEFORM(size_t WaveformSize) :
+    SIMPLE_WAVEFORM<int>(DBF_LONG, WaveformSize) { }
 
-FLOAT_WAVEFORM::FLOAT_WAVEFORM(size_t WaveformLength) :
-    I_WAVEFORM(DBF_FLOAT),
-    WaveformLength(WaveformLength),
-    Waveform(new float[WaveformLength])
-{
-}
+FLOAT_WAVEFORM::FLOAT_WAVEFORM(size_t WaveformSize) :
+    SIMPLE_WAVEFORM<float>(DBF_FLOAT, WaveformSize) { }
 
 
-size_t FLOAT_WAVEFORM::read(void *array, size_t length)
-{
-    if (length > WaveformLength)  length = WaveformLength;
-    memcpy(array, Waveform, sizeof(float) * length);
-    return length;
-}
+template SIMPLE_WAVEFORM<int>;
+template SIMPLE_WAVEFORM<float>;
 
-
-
-/* Implements EPICS access to a single column of a LIBERA_WAVEFORM. */
-
-class READ_WAVEFORM : public I_WAVEFORM
-{
-public:
-    READ_WAVEFORM(LIBERA_WAVEFORM & Waveform, int Index) :
-        I_WAVEFORM(DBF_LONG),
-        Waveform(Waveform),
-        Index(Index)
-    {
-    }
-
-    size_t read(void *array, size_t Length)
-    {
-        return Waveform.Read(Index, (int *) array, 0, Length);
-    }
-    
-
-private:
-    LIBERA_WAVEFORM & Waveform;
-    const int Index;
-};
-
-
-
-
-/****************************************************************************/
-/*                                                                          */
-/*                          class LIBERA_WAVEFORM                           */
-/*                                                                          */
-/****************************************************************************/
-
-
-
-LIBERA_WAVEFORM::LIBERA_WAVEFORM(size_t WaveformSize) :
-    WaveformSize(WaveformSize),
-    Data(new LIBERA_ROW[WaveformSize])
-{
-    CurrentLength = WaveformSize;
-    ActiveLength = 0;
-}
-
-
-void LIBERA_WAVEFORM::SetLength(size_t NewLength)
-{
-    if (NewLength > WaveformSize)  NewLength = WaveformSize;
-    CurrentLength = NewLength;
-}
-
-
-void LIBERA_WAVEFORM::Capture(int Decimation)
-{
-    ActiveLength = ReadWaveform(Decimation, CurrentLength, Data);
-}
-
-
-void LIBERA_WAVEFORM::CaptureFrom(LIBERA_WAVEFORM & Waveform, size_t Offset)
-{
-    /* Use as much of the other waveform as we can fit into our currently
-     * selected length, also taking into account our desired offset into the
-     * source. */
-    if (Offset > Waveform.ActiveLength)
-        Offset = Waveform.ActiveLength;
-    ActiveLength = Waveform.ActiveLength - Offset;
-    if (ActiveLength > CurrentLength)
-        ActiveLength = CurrentLength;
-
-    /* Copy over the area of interest. */
-    memcpy(Data, &Waveform.Data[Offset], ActiveLength * sizeof(LIBERA_ROW));
-}
-
-
-size_t LIBERA_WAVEFORM::Read(
-    int Index, int * Target, size_t Offset, size_t Length)
-{
-    /* Ensure we don't read beyond the waveform we have. */
-    if (Offset > ActiveLength)
-        Offset = ActiveLength;
-    if (Offset + Length > ActiveLength)
-        Length = ActiveLength - Offset;
-    for (size_t i = 0; i < Length; i ++)
-        Target[i] = Data[Offset + i][Index];
-    return Length;
-}
-
-
-I_waveform & LIBERA_WAVEFORM::Waveform(int Index)
-{
-    return * new READ_WAVEFORM(*this, Index);
-}
-
-
-void LIBERA_WAVEFORM::Cordic()
-{
-    SinCosToABCD(Data, ActiveLength);
-}
-
-
-void LIBERA_WAVEFORM::ABCDtoXYQS()
-{
-    ::ABCDtoXYQS(Data, ActiveLength);
-}
 
 
 
@@ -214,8 +105,8 @@ ADC_WAVEFORM::ADC_WAVEFORM()
      * same data frequency shifted and resampled down to 256 points. */
     for (int i = 0; i < 4; i ++)
     {
-        RawWaveforms[i] = new SIMPLE_WAVEFORM(ADC_LENGTH);
-        Waveforms[i]    = new SIMPLE_WAVEFORM(ADC_LENGTH/4);
+        RawWaveforms[i] = new INT_WAVEFORM(ADC_LENGTH);
+        Waveforms[i]    = new INT_WAVEFORM(ADC_LENGTH/4);
     }
 }
 
@@ -286,4 +177,258 @@ bool ADC_WAVEFORM::Capture()
         }
     }
     return Ok;
+}
+
+
+
+/****************************************************************************/
+/*                                                                          */
+/*                         Generic Waveform Support                         */
+/*                                                                          */
+/****************************************************************************/
+
+
+/* Implements EPICS access to a single column of a waveform.  Works by
+ * remembering the waveforms block and which column is required and then
+ * simply wraps the Read() method into an I_waveform read() method. */
+
+template<class T> class COLUMN_WAVEFORM : public I_WAVEFORM
+{
+public:
+    COLUMN_WAVEFORM(WAVEFORMS<T> & Waveforms, size_t Field) :
+        I_WAVEFORM(DBF_LONG),
+        Waveforms(Waveforms),
+        Field(Field)
+    {
+    }
+
+    size_t read(void *Array, size_t Length)
+    {
+        return Waveforms.Read(Field, (int*) Array, Length);
+    }
+    
+private:
+    WAVEFORMS<T> & Waveforms;
+    const size_t Field;
+};
+
+
+
+/* A WAVEFORMS class defines a block of row oriented waveforms: these are
+ * typically processed row-by-row but read out in columns.  We support three
+ * different types of row: raw IQ data (button data in quadrature), button
+ * ABCD intensity values and decoded XYQS positions.
+ *
+ * Each waveforms block also maintains a desired length (which may be less
+ * than the maximum waveform size, for example when capturing long
+ * turn-by-turn waveforms) and also an "active" working length which records
+ * how many points have actually been capture into this block. */
+
+
+template<class T>
+WAVEFORMS<T>::WAVEFORMS(size_t WaveformSize) :
+    WaveformSize(WaveformSize),
+    Data(new T[WaveformSize])
+{
+    CurrentLength = WaveformSize;
+    ActiveLength = 0;
+}
+
+
+template<class T>
+void WAVEFORMS<T>::SetLength(size_t NewLength)
+{
+    /* First ensure that the requested length is no longer than we actually
+     * have room for. */
+    if (NewLength > WaveformSize)
+        NewLength = WaveformSize;
+    CurrentLength = NewLength;
+    /* Also truncate the active length to track the requested length. */
+    if (ActiveLength > CurrentLength)
+        ActiveLength = CurrentLength;
+}
+
+
+template<class T>
+size_t WAVEFORMS<T>::Read(size_t Field, int * Target, size_t Length)
+{
+    /* Adjust the length we'll return according to how much data we actually
+     * have in hand. */
+    Length = CaptureLength(0, Length);
+    char * Source = ((char *) Data) + Field;
+    for (size_t i = 0; i < Length; i ++)
+    {
+        Target[i] = *(int *) Source;
+        Source += sizeof(T);
+    }
+    return Length;
+}
+
+
+template<class T>
+void WAVEFORMS<T>::Write(size_t Field, const int * Source, size_t Length)
+{
+    /* Make sure we don't try to write more than we have room for. */
+    if (Length > CurrentLength)
+        Length = CurrentLength;
+        
+    char * Target = ((char *) Data) + Field;
+    for (size_t i = 0; i < Length; i ++)
+    {
+        *(int*)Target = Source[i];
+        Target += sizeof(T);
+    }
+    ActiveLength = Length;
+}
+
+
+template<class T>
+size_t WAVEFORMS<T>::CaptureLength(size_t Offset, size_t Length)
+{
+    /* Use as much of the other waveform as we can fit into our currently
+     * selected length, also taking into account our desired offset into the
+     * source. */
+    if (Offset >= ActiveLength)
+        return 0;
+    else
+    {
+        if (Offset + Length > ActiveLength)
+            Length = ActiveLength - Offset;
+        return Length;
+    }
+}
+
+
+/* Helper routine for publishing a column of the waveforms block to EPICS.
+ * Uses the COLUMN_WAVEFORM class to build the appropriate access method. */
+
+template<class T>
+void WAVEFORMS<T>::PublishColumn(
+    const char * Prefix, const char * Name, size_t Field)
+{
+    Publish_waveform(
+        Concat(Prefix, Name),
+        *new COLUMN_WAVEFORM<T>(*this, Field));
+}
+
+#define PUBLISH_COLUMN(Name, Field) \
+    PublishColumn(Prefix, Name, offsetof(typeof(*Data), Field))
+
+
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                           IQ Waveform Support                             */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+void WAVEFORMS<IQ_ROW>::Publish(const char * Prefix)
+{
+    PUBLISH_COLUMN(":WFAI", AI);
+    PUBLISH_COLUMN(":WFAQ", AQ);
+    PUBLISH_COLUMN(":WFBI", BI);
+    PUBLISH_COLUMN(":WFBQ", BQ);
+    PUBLISH_COLUMN(":WFCI", CI);
+    PUBLISH_COLUMN(":WFCQ", CQ);
+    PUBLISH_COLUMN(":WFDI", DI);
+    PUBLISH_COLUMN(":WFDQ", DQ);
+}
+
+
+void IQ_WAVEFORMS::Capture(int Decimation)
+{
+    ActiveLength = ReadWaveform(
+        Decimation, CurrentLength, (LIBERA_ROW *) Data);
+}
+
+void IQ_WAVEFORMS::CapturePostmortem()
+{
+    ActiveLength = ReadPostmortem(CurrentLength, (LIBERA_ROW *) Data);
+}
+
+void IQ_WAVEFORMS::CaptureFrom(IQ_WAVEFORMS & Source, size_t Offset)
+{
+    ActiveLength = Source.CaptureLength(Offset, CurrentLength);
+    memcpy(Data, Source.Data + Offset, ActiveLength * sizeof(*Data));
+}
+
+
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                          ABCD Waveform Support                            */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+void WAVEFORMS<ABCD_ROW>::Publish(const char * Prefix)
+{
+    PUBLISH_COLUMN(":WFA", A);
+    PUBLISH_COLUMN(":WFB", B);
+    PUBLISH_COLUMN(":WFC", C);
+    PUBLISH_COLUMN(":WFD", D);
+}
+
+void ABCD_WAVEFORMS::CaptureCordic(IQ_WAVEFORMS & Source)
+{
+    ActiveLength = Source.CaptureLength(0, CurrentLength);
+    IQtoABCD(Source.Data, Data, ActiveLength);
+}
+
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                          XYQS Waveform Support                            */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+void WAVEFORMS<XYQS_ROW>::Publish(const char * Prefix)
+{
+    PUBLISH_COLUMN(":WFX", X);
+    PUBLISH_COLUMN(":WFY", Y);
+    PUBLISH_COLUMN(":WFQ", Q);
+    PUBLISH_COLUMN(":WFS", S);
+}
+
+void XYQS_WAVEFORMS::PublishShort(const char * Prefix)
+{
+    PUBLISH_COLUMN(":WFSX", X);
+    PUBLISH_COLUMN(":WFSY", Y);
+    PUBLISH_COLUMN(":WFSQ", Q);
+    PUBLISH_COLUMN(":WFSS", S);
+}
+
+void XYQS_WAVEFORMS::CaptureConvert(ABCD_WAVEFORMS &Source)
+{
+    ActiveLength = Source.CaptureLength(0, CurrentLength);
+    ABCDtoXYQS(Source.Data, Data, ActiveLength);
+}
+
+
+
+/* Ensure that instances of all the templates we've just talked about
+ * actually exist.  This approach also means that we don't have to copy all
+ * the template definitions into the header file, which is good. */
+template class WAVEFORMS<IQ_ROW>;
+template class WAVEFORMS<ABCD_ROW>;
+template class WAVEFORMS<XYQS_ROW>;
+
+
+
+
+/****************************************************************************/
+/*                                                                          */
+/*                         Single Row Publishing                            */
+/*                                                                          */
+/****************************************************************************/
+
+/* Slightly out of place here... */
+
+void Publish_ABCD(const char * Prefix, ABCD_ROW &ABCD)
+{
+    Publish_longin(Concat(Prefix, ":A"), ABCD.A);
+    Publish_longin(Concat(Prefix, ":B"), ABCD.B);
+    Publish_longin(Concat(Prefix, ":C"), ABCD.C);
+    Publish_longin(Concat(Prefix, ":D"), ABCD.D);
+}
+
+void Publish_XYQS(const char * Prefix, XYQSmm_ROW &XYQS)
+{
+    Publish_ai(Concat(Prefix, ":X"), XYQS.X);
+    Publish_ai(Concat(Prefix, ":Y"), XYQS.Y);
+    Publish_ai(Concat(Prefix, ":Q"), XYQS.Q);
+    Publish_longin(Concat(Prefix, ":S"), XYQS.S);
 }

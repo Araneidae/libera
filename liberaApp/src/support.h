@@ -82,9 +82,21 @@ __attribute__((always_inline)) inline int MulUS(unsigned int x, int y)
 
 
 /* Returns 2^61 / X after normalising X by shift amount shift (so, strictly
- * speaking, returns 2^(61-shift)/X together with shift). */
+ * speaking, returns 2^(61-shift)/X together with shift).  The value returned
+ * is in the range 2^29 to 2^30. */
 unsigned int Reciprocal(unsigned int X, int &shift);
 
 
-/* Fast conversion of integer value in nm to floating point value in mm. */
-float nmTOmm(int nm);
+#if 0
+/* Fast conversion of integer value in nm to floating point value in mm.  Not
+ * actually so useful at the moment... */
+void nmTOmm(int nm, float &mm);
+#endif
+/* Not so fast return of a double as actually expected by EPICS. */
+inline double nmTOmm(int nm) { return 1e-6 * nm; }
+
+
+/* A rather randomly placed helper routine.  This and its equivalents are
+ * defined all over the place, but there doesn't appear to be a definitive
+ * definition anywhere. */
+#define ARRAY_SIZE(a)   (sizeof(a)/sizeof((a)[0]))

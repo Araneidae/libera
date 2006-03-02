@@ -119,6 +119,7 @@ private:
     TRIGGER Trigger;
     sem_t Interlock;
     INTERLOCK *Next;
+    
     static INTERLOCK *InterlockList;
 };
 

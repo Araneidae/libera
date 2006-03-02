@@ -29,103 +29,32 @@
 
 /* Waveform processing support classes and routines. */
 
-
 /* A very simple waveform with direct EPICS support. */
-class SIMPLE_WAVEFORM : public I_WAVEFORM
+template<class T> class SIMPLE_WAVEFORM : public I_WAVEFORM
 {
 public:
-    SIMPLE_WAVEFORM(size_t WaveformSize);
+    SIMPLE_WAVEFORM(int TypeMark, size_t WaveformSize);
 
-    inline int * Array() { return Waveform; }
+    inline T * Array() { return Waveform; }
 
 private:
     size_t read(void *array, size_t length);
     const size_t WaveformLength;
-    int * Waveform;
+    T * Waveform;
 };
 
+class INT_WAVEFORM : public SIMPLE_WAVEFORM<int>
+{
+public:
+    INT_WAVEFORM(size_t WaveformSize);
+};
 
-
-class FLOAT_WAVEFORM : public I_WAVEFORM
+class FLOAT_WAVEFORM : public SIMPLE_WAVEFORM<float>
 {
 public:
     FLOAT_WAVEFORM(size_t WaveformSize);
-
-    inline float * Array() { return Waveform; }
-    
-private:
-    size_t read(void *array, size_t length);
-    const size_t WaveformLength;
-    float * Waveform;
 };
 
-
-
-
-
-/* Support for waveforms captured from Libera. */
-
-class LIBERA_WAVEFORM
-{
-public:
-    LIBERA_WAVEFORM(size_t WaveformSize);
-
-    /* Read a waveform from Libera at the requested decimation. */
-    void Capture(int Decimation=1);
-
-    /* Read a waveform by copying data from another waveform. */
-    void CaptureFrom(LIBERA_WAVEFORM & Waveform, size_t Offset);
-
-    /* Run a pass of Cordic over the data to reduce sin/cos pairs to absolute
-     * button signal values. */
-    void Cordic();
-
-    /* Compute XYQS arrays from the raw button values. */
-    void ABCDtoXYQS();
-
-    /* Extracts one column from the interanl waveform into the given target
-     * array.  Index selects the column, and may be one of (assuming the
-     * appropriate functions Cordic and ABCDtoXYQS above have been called):
-     *          0       Button A value
-     *          1       Button B value
-     *          2       Button C value
-     *          3       Button D value
-     *          4       X position
-     *          5       Y position
-     *          6       Skew value Q
-     *          7       Total intensity S
-     * Offset selects the offset into the waveform where reading will begin
-     * and Length requests the number of rows to be read. 
-     *     The number of rows actually read is returned: this may be less
-     * than GetLength() returns. */
-    size_t Read(int Index, int * Target, size_t Offset, size_t Length);
-
-    /* Returns an I_waveform suitable for publishing to EPICS the selected
-     * column of the waveform. */
-    I_waveform & Waveform(int Index);
-
-    /* Interrogate the length of this waveform. */
-    size_t GetLength() { return CurrentLength; }
-
-    /* This changes the active length of the waveform: all other operations
-     * will then operate only on the initial segment of length NewLength. */
-    void SetLength(size_t NewLength);
-
-    /* Interrogate the working length: this is the number of rows
-     * successfully captured. */
-    size_t WorkingLength() { return ActiveLength; }
-    
-    
-private:
-    /* The maximum waveform size: space actually allocated. */
-    const size_t WaveformSize;
-    /* The requested current working length. */
-    size_t CurrentLength;
-    /* The length as actually captured by the most recent Capture[From].
-     * This determines how much data is returned elsewhere. */
-    size_t ActiveLength;
-    LIBERA_ROW * Data;
-};
 
 
 /* Support for ADC rate waveform. */
@@ -157,6 +86,103 @@ private:
     /* We internally maintain both the original raw (1024 point) waveform and
      * a version reduced by frequency shifting and resampling (256 point),
      * for each of the four buttons. */
-    SIMPLE_WAVEFORM * RawWaveforms[4];
-    SIMPLE_WAVEFORM * Waveforms[4];
+    INT_WAVEFORM * RawWaveforms[4];
+    INT_WAVEFORM * Waveforms[4];
 };
+
+
+
+template<class T> class WAVEFORMS
+{
+public:
+    WAVEFORMS(size_t WaveformLength);
+
+    /* Publishes all of the fields associated with this waveform to EPICS
+     * using the given prefix. */
+    void Publish(const char * Prefix);
+    
+    /* This changes the active length of the waveform: all other operations
+     * will then operate only on the initial segment of length NewLength. */
+    void SetLength(size_t NewLength);
+    
+    /* Interrogate the set length of this waveform: this is the desired
+     * length as set through the EPICS interface. */
+    size_t GetLength() { return CurrentLength; }
+
+    /* Interrogate the working length: this is the number of rows
+     * successfully captured. */
+    size_t WorkingLength() { return ActiveLength; }
+    /* A helper routine for the working length: returns the length of
+     * waveform that actually fits at the requested offset, truncating
+     * Length as appropriate so that Offset+Length<=ActiveLength. */
+    size_t CaptureLength(size_t Offset, size_t Length);
+
+    /* Reads a column from the block of waveforms, returns the number of
+     * points actually read.  The Field must be the offset of the selected
+     * field into the datatype T. */
+    size_t Read(size_t Field, int * Target, size_t Length);
+
+    /* Overwrites a single column in the waveform, setting the active length
+     * to the number of points written. */
+    void Write(size_t Field, const int * Source, size_t Length);
+    
+
+protected:
+    void PublishColumn(
+        const char * Prefix, const char * Name, size_t Field);
+
+    
+    /* The maximum waveform size: space actually allocated. */
+    const size_t WaveformSize;
+    /* The requested current working length. */
+    size_t CurrentLength;
+    /* The length as actually captured by the most recent Capture[From].
+     * This determines how much data is returned elsewhere. */
+    size_t ActiveLength;
+    /* The waveform itself. */
+    T * const Data;
+
+    /* Some tiresome problems with C++ access management.  Anything that
+     * looks across instances needs special helper declarations here. */
+    friend class ABCD_WAVEFORMS;
+    friend class XYQS_WAVEFORMS;
+};
+
+
+class IQ_WAVEFORMS : public WAVEFORMS<IQ_ROW>
+{
+public:
+    IQ_WAVEFORMS(size_t Length) : WAVEFORMS<IQ_ROW>(Length) { }
+    /* Capture the currently selected active length of waveform from the data
+     * source. */
+    void Capture(int Decimation);
+    /* Capture the postmortem buffer. */
+    void CapturePostmortem();
+    /* Capture a copy of the selected waveform. */
+    void CaptureFrom(IQ_WAVEFORMS & Source, size_t Offset);
+};
+
+class ABCD_WAVEFORMS : public WAVEFORMS<ABCD_ROW>
+{
+public:
+    ABCD_WAVEFORMS(size_t Length) : WAVEFORMS<ABCD_ROW>(Length) { }
+    
+    /* Capture button values from given IQ waveform. */
+    void CaptureCordic(IQ_WAVEFORMS & Source);
+};
+
+class XYQS_WAVEFORMS : public WAVEFORMS<XYQS_ROW>
+{
+public:
+    XYQS_WAVEFORMS(size_t Length) : WAVEFORMS<XYQS_ROW>(Length) { }
+
+    /* Publish short form names. */
+    void PublishShort(const char * Prefix);
+    /* Capture positions from button values. */
+    void CaptureConvert(ABCD_WAVEFORMS &Source);
+};
+
+
+/* Misplaced publish routines. */
+void Publish_ABCD(const char * Prefix, ABCD_ROW &ABCD);
+void Publish_XYQS(const char * Prefix, XYQSmm_ROW &XYQS);
