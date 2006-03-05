@@ -56,13 +56,12 @@ ioc_SRCS += thread.cpp
 #ioc_SRCS += hardware_events.cpp
 
 
+ioc_LIBS += cspi
 ioc_LIBS += $(EPICS_BASE_IOC_LIBS) 
 
 
-# Point to the Libera device driver include, libera.h.
-USR_INCLUDES += -I$(TOP)/driver -I$(TOP)/cspi
-USR_LIBS += cspi
-cspi_DIR = $(CSPI)
+# Point to the Libera device driver include, libera.h and cspi.h.
+USR_INCLUDES += -I$(TOP)/driver -I$(CSPI)
 
 
 #===========================
