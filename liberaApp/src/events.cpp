@@ -36,6 +36,9 @@
 #include <sys/select.h>
 #include <pthread.h>
 
+#define EBPP
+#include "cspi.h"
+
 #include "hardware.h"
 #include "events.h"
 
@@ -266,7 +269,7 @@ private:
         HARDWARE_EVENT_ID EventId;
         while (Receivers.StepIteration(iEvent, EventId))
         {
-            if (IncomingEvents & (1 << EventId))
+            if (IncomingEvents & EventId)
                 iEvent->OnEvent();
         }
     }
@@ -283,17 +286,8 @@ private:
         HARDWARE_EVENT_ID Id;
         int Param;
         while (ReadOneEvent(Id, Param))
-        {
-            /* Ideally each event should set a bit in the incoming event
-             * mask.  Check what we can. */
-            if (Id < 0  ||  32 <= Id)
-                printf("Invalid event id %d\n", Id);
-            else
-            {
-                int Event = 1 << Id;
-                IncomingEvents |= Event;
-            }
-        }
+            /* Record this event. */
+            IncomingEvents |= Id;
         return IncomingEvents;
     }
 

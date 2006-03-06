@@ -37,23 +37,6 @@
 /*                                                                           */
 /*****************************************************************************/
 
-/* The data structure declarations here are essentially duplicates of
- * corresponding definitions in libera.h.  This is done to avoid having to
- * #include libera.h throughout this code.
- *
- * The correspondence between definitions in this file and CSPI/Libera
- * definitions is as follows:
- *
- * LIBERA_TIMESTAMP     Near copy of libera_timestamp_t, libera.h
- * LIBERA_ROW           Derived from libera_dd_atomic_t, libera.h
- *                      and CSPI_DD_ATOM, cspi.h
- * LIBERA_DATA          Inferred from cspi_read_ex, cspi.c
- * ATTENUATORS          Inferred from set_envparam, get_envparam, cspi.c
- * LIBERA_EVENT_ID      Renamed copy of libera_nm_t, libera.h
- *
- * Note that only two definitions are direct copies (with renaming to avoid
- * name clashes inside hardware.cpp), as CSPI provide a certain degree of
- * abstraction which has to be unwound here. */
 
 
 /* A row of "data on demand" Libera data consists of eight integers
@@ -95,36 +78,6 @@ struct SA_DATA
 typedef unsigned int ATTENUATORS[8];
 
 
-/* The following event types can be returned by the event mechanism.   These
- * are a digest of corresponding events in libera_event_id_t. */
-enum HARDWARE_EVENT_ID
-{
-    /* Internal device driver queue has overflowed.  This means that events
-     * have been lost, but frankly there's not a lot we can do about it. */
-    HARDWARE_EVENT_OVERFLOW  = 0,
-    /* Something has changed in the configuration.  It may be useful to
-     * monitor this to track values of switches and attenuators. */
-    HARDWARE_EVENT_CFG       = 1,
-    /* Slow acquisition sample available.  This should tick at 10Hz.
-     * Unfortunately it appears that, at least with the current version of
-     * the driver, this event never arrives! */
-    HARDWARE_EVENT_SA        = 2,
-    /* Interlock event.  Machine interlock status change(?) */
-    HARDWARE_EVENT_INTERLOCK = 3,
-    /* Post mortem trigger.  Everything has come to a halt, now it's time to
-     * see why.  Does everything need to be reenabled after this??? */
-    HARDWARE_EVENT_PM        = 4,
-    /* Fast acquisition event.  What causes this, do we need it??? */
-    HARDWARE_EVENT_FA        = 5,
-    /* This seems to be the normal external trigger event. */
-    HARDWARE_EVENT_TRIGGET   = 6,
-    /* "SET Trigger trigger" -- used for clock synchronisation. */
-    HARDWARE_EVENT_TRIGSET   = 7,
-    /* And what on earth is this for? */
-    HARDWARE_EVENT_USER      = 31
-};
-
-
 
 /*****************************************************************************/
 /*                                                                           */
@@ -135,7 +88,7 @@ enum HARDWARE_EVENT_ID
 /* To be called once on startup to initialise connection to Libera device.
  * If this routine fails (and returns false) then no further operations can
  * be done and system startup should fail. */
-bool InitialiseHardware(bool SetUse_leventd);
+bool InitialiseHardware();
 
 /* To be called on shutdown to release all connections to Libera. */
 void TerminateHardware();
@@ -169,7 +122,7 @@ bool ReadSlowAcquisition(SA_DATA &Data);
 
 /* Routines to read and write attenuator settings. */
 bool ReadAttenuators(ATTENUATORS attenuators);
-bool WriteAttenuators(ATTENUATORS attenuators);
+bool WriteAttenuators(const ATTENUATORS attenuators);
 
 /* Read and write switch settings. */
 bool ReadSwitches(int &switches);
@@ -180,19 +133,37 @@ bool WriteSwitches(int switches);
 /*                        Direct Event Connection                            */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+#ifdef _CSPI_H
+/* The following event types can be returned by the event mechanism.  These
+ * are a digest of corresponding events in libera_event_id_t, or equivalently,
+ * CSPI_EVENTMASK in cspi.h.  We conditionally include these definitions here
+ * to avoid including cspi.h outside the core hardware.cpp file. */
+enum HARDWARE_EVENT_ID
+{
+    /* Something has changed in the configuration.  It may be useful to
+     * monitor this to track values of switches and attenuators. */
+    HARDWARE_EVENT_CFG       = CSPI_EVENT_CFG,
+    /* Slow acquisition sample available.  This should tick at 10Hz.
+     * Unfortunately it appears that, at least with the current version of
+     * the driver, this event never arrives! */
+    HARDWARE_EVENT_SA        = CSPI_EVENT_SA,
+    /* Postmortem event.  A fixed 16K sample buffer is available. */
+    HARDWARE_EVENT_PM        = CSPI_EVENT_PM,
+    /* Normal triggered data is available. */
+    HARDWARE_EVENT_TRIGGET   = CSPI_EVENT_TRIGGET
+};
+
+
 /* Reads one event from the event queue and decodes it into an event id and
  * its associated parameter information.  The caller should empty the queue
  * by calling this routine until it returns false before processing any
  * events. */
 bool ReadOneEvent(HARDWARE_EVENT_ID &Id, int &Param);
 
-/* Enables delivery of events.  Until this is called ReadOneEvent() will
- * always return false. */
-bool OpenEventStream();
-
 /* This value can be used in a select() call to discover when ReadOneEvent()
  * should be called. */
 int EventSelector();
+#endif
 
 
 

@@ -78,7 +78,6 @@ static int FreeRunLength = 2048;
 /* Length of 1024 decimated buffer. */
 static int DecimatedShortLength = 190;
 
-static bool Use_leventd = false;
 
 
 /* Prints interactive startup message as recommended by GPL. */
@@ -153,7 +152,6 @@ void Usage(const char *IocName)
 "    -p <pid-file>      Writes pid to <pid-file>.\n"
 "    -n                 Run non-interactively without an IOC shell\n"
 "    -v                 Writes version information\n"
-"    -e                 Use leventd for event deliver\n"
 "    -c<key>=<value>    Configure run time parameter.  <key> can be:\n"
 "       LT      Length of long turn-by-turn buffer\n"
 "       TT      Length of short turn-by-turn buffer\n"
@@ -177,7 +175,7 @@ bool InitialiseLibera()
         /* Ensure the trigger interlock mechanism is working. */
         InitialiseTriggers()  &&
         /* Initialise the connections to the Libera device. */
-        InitialiseHardware(Use_leventd)  &&
+        InitialiseHardware()  &&
         /* Initialise conversion code.  This needs to be done fairly early as
          * it is used globally. */
         InitialiseConvert()  &&
@@ -319,14 +317,13 @@ bool ProcessOptions(int &argc, char ** &argv)
     bool Ok = true;
     while (Ok)
     {
-        switch (getopt(argc, argv, "+p:nc:hev"))
+        switch (getopt(argc, argv, "+p:nc:hv"))
         {
             case 'p':   Ok = WritePid(optarg);          break;
             case 'n':   SetNonInteractive();            break;
             case 'c':   Ok = ParseConfigInt(optarg);    break;
             case 'h':   Usage(argv[0]);                 return false;
             case 'v':   StartupMessage();               return false;
-            case 'e':   Use_leventd = true;             break;
             case '?':
             default:
                 printf("Try `%s -h` for usage\n", argv[0]);

@@ -82,22 +82,19 @@ export DEVICE="$(hostname)"
 
 PIDFILE=/var/run/ioc.pid
 
-USE_LEVENTD=1
-while getopts "d:nfeh" option; do
+while getopts "d:nfh" option; do
     case "$option" in
     d)  DEVICE="$OPTARG" ;;
     n)  IocParameter -n  ;;
     f)  rm -f "$PIDFILE" ;;
-    e)  USE_LEVENTD=0    ;;
     h)  cat <<'EOF' 
 Usage: runioc [options]
     -d <device>:  use supplied device name instead of hostname
     -n            run non-interactive without an IOC shell
     -f            run even if pid file already present
-    -e            don't use leventd, stop if already running
 EOF
         exit 0 ;;
-    *)  echo 2>&1 'Invalid option: try -h for help'
+    *)  echo >&2 'Invalid option: try -h for help'
         exit 1 ;;
     esac
 done
@@ -106,18 +103,10 @@ done
 # Don't run if the ioc.pid file is present: this is a simple technique to
 # prevent us interfering with an already running instance.
 if [ -e "$PIDFILE" ]; then
-    echo 2>&1 'PID file found: check epics is not already running'
+    echo >&2 'PID file found: check epics is not already running'
     exit 1
 fi
 
-# Ensure that leventd isn't still running: at the moment we have a resource
-# collision with this process.
-if ((USE_LEVENTD)); then
-    [ -e /var/run/leventd.pid ]  ||  /opt/bin/leventd
-    IocParameter -e
-else
-    [ -e /var/run/leventd.pid ]  &&  kill $(cat /var/run/leventd.pid)
-fi
 
 # Start the repeater first and background it properly to avoid possible
 # conflicts (for instance, it can hold important file handles open!)
@@ -140,4 +129,4 @@ IocParameter -cFR= $((IOC_FR_LENGTH))
 ./bin/ioc "${IOC_PARAMETERS[@]}" st.cmd
 
 # If we crash, make sure we don't leave the pid file behind!
-rm -f /var/run/ioc.pid
+rm -f "$PIDFILE"

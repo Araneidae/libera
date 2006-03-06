@@ -27,8 +27,7 @@
  */
 
 
-/* Core device driver interface routines for access to Libera device. */
-
+/* Libera device interface reimplemented through CSPI. */
 
 #include <stdio.h>
 #include <errno.h>
@@ -37,27 +36,19 @@
 #include <sys/ioctl.h>
 #include <linux/unistd.h>
 
-#include "libera.h"     // Libera device driver header
-#include "ebpp.h"       // ditto
+#define EBPP
+#include "cspi.h"
 
+#include "thread.h"
 #include "hardware.h"
 #include "support.h"
 
-#include "hardware_events.h"
 
-
-/* ReadWaveform is defined to use _llseek which we implement here as a system
- * call.  Hopefully we can get rid of this by moving to lseek: we don't really
- * need long long offsets! */
-static int _llseek(
-    unsigned int fd,
-    unsigned long offset_high,  unsigned long offset_low,
-    long long * result, unsigned int origin)
-{
-    return syscall(__NR__llseek, fd, offset_high, offset_low, result, origin);
-}
-
-
+#define CSPI_(command, args...) \
+    ( { int error = (command)(args); \
+        if (error != CSPI_OK) \
+            printf("CSPI error in %s: %s\n", #command, cspi_strerror(error)); \
+        error == CSPI_OK; } )
 
 
 /*****************************************************************************/
@@ -66,27 +57,20 @@ static int _llseek(
 /*                                                                           */
 /*****************************************************************************/
 
-/* The following file handles are held open for the duration of the operation
- * of this driver. */
+/* The following handles manage our connection to CSPI. */
 
-/* Libera configuration device, used to interrogate the switches, attenuators
- * and other general configuration settings. */
-static int libera_cfg = -1;
-/* Libera DD (Direct Data) device, used to read waveforms. */
-static int libera_dd = -1;
-/* Libera ADC device, used to read ADC rate waveforms. */
-static int libera_adc = -1;
-/* Libera SA (Slow Acquisition) device, used to receive 10Hz updates. */
-static int libera_sa = -1;
-/*  Libera PM (Postmortem) device, used for postmortem triggered data. */
-static int libera_pm = -1;
-
-
-/* We record the currently set decimation setting here.  This allows us to
- * avoid writing a new decimation setting if it is unchanged (whether this
- * saves anything is questionable, though). */
-static int CurrentDecimation;
-
+/* This is the main environment handle needed for establishing the initial
+ * connection and to manage the other active connections. */
+static CSPIHENV CspiEnv = NULL;
+/* Connection to ADC rate buffer. */
+static CSPIHCON CspiConAdc = NULL;
+/* Connection to turn-by-turn or decimated data buffer, also known as the
+ * "data on demand" (DD) data source. */
+static CSPIHCON CspiConDd = NULL;
+/* Connection to slow acquisition data source, updating at just over 10Hz. */
+static CSPIHCON CspiConSa = NULL;
+/* Connection to 16384 point postmortem buffer. */
+static CSPIHCON CspiConPm = NULL;
 
 
 
@@ -97,106 +81,42 @@ static int CurrentDecimation;
 /*****************************************************************************/
 
 
-/* Libera driver configuration parameters are read and written in a slightly
- * roundabout way: a common request structure (a pair of ints) consisting of
- * a request code and the value to be read or written.  Request codes are
- * shared between reads or writes, and the actual reading and writing
- * operations are done through dedicated ioctl commands on the .cfg device. */
-
-bool ReadCfgValue(unsigned int RequestCode, unsigned int &Value)
-{
-    libera_cfg_request_t Request = { RequestCode, 0 };
-    bool Ok = TEST_RC("Unable to read configuration value",
-        ioctl, libera_cfg, LIBERA_IOC_GET_CFG, &Request);
-    Value = Request.val;
-    return Ok;
-}
-
-bool WriteCfgValue(unsigned int RequestCode, unsigned int Value)
-{
-    libera_cfg_request_t Request = { RequestCode, Value };
-    return TEST_RC("Unable to write configuration value",
-        ioctl, libera_cfg, LIBERA_IOC_SET_CFG, &Request);
-}
-
-
-
 /* We think of the attenuators in the ATTENUATORS array as setting values for
  * the first and second stages of channels 1 to 4, in the order
  *      ch1 1st, ch1 2nd, ch2 1st, ..., ch4 2nd . */
 
-const unsigned int AttenCfg[] = {
-    LIBERA_CFG_ATTN0, LIBERA_CFG_ATTN1, LIBERA_CFG_ATTN2, LIBERA_CFG_ATTN3, 
-    LIBERA_CFG_ATTN4, LIBERA_CFG_ATTN5, LIBERA_CFG_ATTN6, LIBERA_CFG_ATTN7
-};
-
 bool ReadAttenuators(ATTENUATORS Attenuators)
 {
-    bool Ok = true;
-    for (int i = 0; i < 8 && Ok; i ++)
-        Ok = ReadCfgValue(AttenCfg[i], Attenuators[i]);
+    CSPI_ENVPARAMS EnvParams;
+    bool Ok = CSPI_(cspi_getenvparam, CspiEnv, &EnvParams, CSPI_ENV_ATTN);
+    if (Ok)
+        for (int i = 0; i < CSPI_MAXATTN; i ++)
+            Attenuators[i] = EnvParams.attn[i];
     return Ok;
 }
 
-
-bool WriteAttenuators(ATTENUATORS Attenuators)
+bool WriteAttenuators(const ATTENUATORS Attenuators)
 {
-    bool Ok = true;
-    for (int i = 0; i < 8 && Ok; i ++)
-    {
-        /* Check that the values are in range. */
-        if (Attenuators[i] >= 32)
-        {
-            printf("Attenuator %d setting %d out of range\n",
-                i, Attenuators[i]);
-            Ok = false;
-        }
-    }
-    for (int i = 0; i < 8 && Ok; i ++)
-        Ok = WriteCfgValue(AttenCfg[i], Attenuators[i]);
-    return Ok;
+    CSPI_ENVPARAMS EnvParams;
+    for (int i = 0; i < CSPI_MAXATTN; i ++)
+        EnvParams.attn[i] = Attenuators[i];
+    return CSPI_(cspi_setenvparam, CspiEnv, &EnvParams, CSPI_ENV_ATTN);
 }
 
 bool ReadSwitches(int &Switches)
 {
-    return ReadCfgValue(LIBERA_CFG_SWITCH, *(unsigned *)&Switches);
+    CSPI_ENVPARAMS EnvParams;
+    bool Ok = CSPI_(cspi_getenvparam, CspiEnv, &EnvParams, CSPI_ENV_SWITCH);
+    if (Ok)
+        Switches = EnvParams.switches;
+    return Ok;
 }
-
 
 bool WriteSwitches(int Switches)
 {
-    if (0 <= Switches  &&  Switches < 16)
-        return WriteCfgValue(LIBERA_CFG_SWITCH, Switches);
-    else
-    {
-        printf("Switch value %d out of range\n", Switches);
-        return false;
-    }
-}
-
-
-
-/* Used to control decimation settings on the DD device. */
-
-static bool SetDecimation(int Decimation)
-{
-    /* Check the decimation request is valid. */
-    if (Decimation != 1  &&  Decimation != 64)
-    {
-        printf("Invalid decimation %d\n", Decimation);
-        return false;
-    }
-
-    /* Don't bother if that setting is already in place. */
-    if (Decimation == CurrentDecimation)
-        return true;
-
-    /* Tell the hardware. */
-    bool Ok = TEST_RC("Unable to write decimation",
-         ioctl, libera_dd, LIBERA_IOC_SET_DEC, &Decimation);
-    if (Ok)
-        CurrentDecimation = Decimation;
-    return Ok;
+    CSPI_ENVPARAMS EnvParams;
+    EnvParams.switches = Switches;
+    return CSPI_(cspi_setenvparam, CspiEnv, &EnvParams, CSPI_ENV_SWITCH);
 }
 
 
@@ -208,42 +128,23 @@ static bool SetDecimation(int Decimation)
 /*****************************************************************************/
 
 
-/* Helper routine to read a block of libera data. */
-
-static size_t ReadLiberaRows(
-    int File, size_t WaveformLength, LIBERA_ROW * Data)
-{
-    /* Read all the requested data and return how many complete rows we
-     * actually managed to read. */
-    const ssize_t DataSize = WaveformLength * sizeof(LIBERA_ROW);
-    ssize_t bytes_read;
-    TEST_IO(bytes_read, "Problem reading waveform",
-        read, File, Data, DataSize);
-    if (bytes_read != DataSize)
-        printf("Couldn't read entire block: read %d\n", bytes_read);
-
-    /* Convert bytes read into a number of rows. */
-    if (bytes_read <= 0)
-        return 0;
-    else
-        return bytes_read / sizeof(LIBERA_ROW);
-}
-
-
 size_t ReadWaveform(int Decimation, size_t WaveformLength, LIBERA_ROW * Data)
 {
-    /* First set the requested decimation and then seek directly to the
-     * trigger.  We'll read all data following directly after the trigger
-     * point.
-     *     The trigger point is defined as SEEK_END. */
-    long long unused;
+    CSPI_CONPARAMS_DD ConParams;
+    ConParams.dec = Decimation;
+    unsigned long long Offset = 0;
+    size_t Read;
     bool Ok =
-        SetDecimation(Decimation)  &&
-        TEST_RC("Unable to seek to trigger point",
-            _llseek, libera_dd, 0, 0, &unused, SEEK_END);
+        // Set the decimation mode
+        CSPI_(cspi_setconparam, CspiConDd,
+            (CSPI_CONPARAMS *)&ConParams, CSPI_CON_DEC)  &&
+        // Seek to the trigger point
+        CSPI_(cspi_seek, CspiConDd, &Offset, CSPI_SEEK_TR)  &&
+        // Read the data
+        CSPI_(cspi_read_ex, CspiConDd, Data, WaveformLength, &Read, NULL);
 
     if (Ok)
-        return ReadLiberaRows(libera_dd, WaveformLength, Data);
+        return Read;
     else
         return 0;
 }
@@ -251,41 +152,36 @@ size_t ReadWaveform(int Decimation, size_t WaveformLength, LIBERA_ROW * Data)
 
 size_t ReadPostmortem(size_t WaveformLength, LIBERA_ROW * Data)
 {
-    /* Postmortem data is automatically at the correct seek point. */
-    return ReadLiberaRows(libera_pm, WaveformLength, Data);
+    size_t Read;
+    if (CSPI_(cspi_read_ex, CspiConPm, Data, 16384, &Read, NULL))
+        return Read;
+    else
+        return 0;
 }
 
 
 bool ReadAdcWaveform(ADC_DATA &Data)
 {
-    const ssize_t DataSize = ADC_LENGTH * sizeof(ADC_ROW);
-    ssize_t bytes_read;
-    return TEST_IO(bytes_read, "Problem reading ADC waveform",
-        read, libera_adc, &Data.Rows, DataSize)  &&
-        bytes_read == DataSize;
+    size_t Read;
+    return
+        CSPI_(cspi_read_ex, CspiConAdc, &Data, 1024, &Read, NULL)  &&
+        Read == 1024;
 }
 
 
 bool ReadSlowAcquisition(SA_DATA &SaData)
 {
-    libera_atom_sa_t Data;
-    const ssize_t DataSize = sizeof(libera_atom_sa_t);
-    ssize_t bytes_read;
-    TEST_IO(bytes_read, "Problem reading SA data",
-        read, libera_sa, &Data, DataSize);
-    if (bytes_read == DataSize)
+    CSPI_SA_ATOM Result;
+    if (CSPI_(cspi_get, CspiConSa, &Result))
     {
-        SaData.A = Data.Va;
-        SaData.B = Data.Vb;
-        SaData.C = Data.Vc;
-        SaData.D = Data.Vd;  
+        SaData.A = Result.Va;
+        SaData.B = Result.Vb;
+        SaData.C = Result.Vc;
+        SaData.D = Result.Vd;
         return true;
     }
     else
-    {
-        printf("Couldn't read entire block: read %d\n", bytes_read);
         return false;
-    }
 }
 
 
@@ -295,9 +191,6 @@ bool ReadSlowAcquisition(SA_DATA &SaData)
 /*                        Direct Event Connection                            */
 /*                                                                           */
 /*****************************************************************************/
-
-
-static bool Use_leventd = false;
 
 /* Libera low level device, used to received event notification. */
 static int libera_event = -1;
@@ -328,17 +221,9 @@ bool ReadOneEvent(HARDWARE_EVENT_ID &Id, int &Param)
         }
         else
         {
-            /* Good.  Return the event.
-             * In the current instantiation of the Libera driver we receive
-             * an event as a bit.  Here we convert that bit back into an
-             * event id.  If we receive more that one event in this way it
-             * will be lost! */
-            /* Count the leading zeros and convert the result into a count of
-             * trailing zero. */
-            Id = (HARDWARE_EVENT_ID) (31 - CLZ(event.id));
+            /* Good.  Return the event. */
+            Id = (HARDWARE_EVENT_ID) event.id;
             Param = event.param;
-            if (event.id != 1 << Id)
-                printf("Unexpected event id %08x\n", event.id);
             return true;
         }
     }
@@ -350,38 +235,80 @@ bool ReadOneEvent(HARDWARE_EVENT_ID &Id, int &Param)
 }
 
 
+
+/* This thread exists purely to receive the leventd signals.  I'm not willing
+ * to subject my main thread to signals in case they have unlookedfor and
+ * disagreeable side effect (mainly, code out of my control which does not
+ * properly check for EINTR or unresumable operations). */
+
+class LEVENTD_THREAD : public THREAD
+{
+public:
+    LEVENTD_THREAD()
+    {
+    }
+    
+private:
+    void Thread()
+    {
+        CSPIHCON EventSource;
+        CSPI_CONPARAMS ConParams;
+        ConParams.event_mask = CSPI_EVENT_TRIGGET | LIBERA_EVENT_PM;
+        ConParams.handler = CspiSignal;
+        bool Ok =
+            CSPI_(cspi_allochandle, CSPI_HANDLE_CON, CspiEnv, &EventSource)  &&
+            CSPI_(cspi_setconparam, EventSource, &ConParams,
+                CSPI_CON_EVENTMASK | CSPI_CON_HANDLER);
+        
+        /* If all is well then report success and then just sit and wait for
+         * shutdown: all the real work now happens in the background. */
+        if (Ok)
+        {
+            StartupOk();
+            printf("Leventd thread running\n");
+            TEST_(sem_wait, &Shutdown);
+        }
+
+        CSPI_(cspi_freehandle, CSPI_HANDLE_CON, EventSource);
+    }
+
+    /* Signal handler.  Needs to be static, alas. */
+    static int CspiSignal(CSPI_EVENT *Event)
+    {
+        int written = write(event_source, &Event->hdr, sizeof(Event->hdr));
+        /* Difficult to report problems here, actually.  We're inside a
+         * signal handler! */
+        if (written != sizeof(Event))
+            /* Well? */ ;
+        return 1;
+    }
+
+    void OnTerminate()
+    {
+        TEST_(sem_post, &Shutdown);
+    }
+
+    sem_t Shutdown;
+};
+
+
+static LEVENTD_THREAD * LeventdThread = NULL;
+
 /* To be called on initialisation to enable delivery of events. */
 
-//bool OpenEventStream(size_t EventMask)  !!! Come back to this
-bool OpenEventStream()
+static bool OpenEventStream()
 {
-    /* Receive both standard trigger and PM events. */
-    size_t EventMask = LIBERA_EVENT_TRIGGET; // | LIBERA_EVENT_PM;
-
-    if (Use_leventd)
+    int Pipes[2];
+    if (TEST_(pipe, Pipes)  &&
+        TEST_(fcntl, Pipes[0], F_SETFL, O_NONBLOCK))
     {
-        printf("Using leventd\n");
-        int Pipes[2];
-        if (TEST_(pipe, Pipes)  &&
-            TEST_(fcntl, Pipes[0], F_SETFL, O_NONBLOCK))
-        {
-            libera_event = Pipes[0];
-            event_source = Pipes[1];
-            return StartEventHandler(EventMask, event_source);
-        }
-        else
-            return false;
+        libera_event = Pipes[0];
+        event_source = Pipes[1];
+        LeventdThread = new LEVENTD_THREAD();
+        return LeventdThread->StartThread();
     }
     else
-    {
-        printf("Using direct event connection\n");
-        /* Enable delivery of the events we're really interested in. */
-        return
-            TEST_IO(libera_event, "Unable to open event fifo",
-                open, "/dev/libera.event", O_RDWR | O_NONBLOCK)  &&
-            TEST_RC("Unable to enable events",
-                ioctl, libera_event, LIBERA_EVENT_SET_MASK, &EventMask);
-    }
+        return false;
 }
 
 
@@ -399,20 +326,9 @@ int EventSelector()
 
 static void CloseEventStream()
 {
-    if (Use_leventd)
-    {
-        StopEventHandler();
-        if (event_source != -1)  close(event_source);
-    }
-    else
-    {
-        if (libera_event != -1)
-        {
-            size_t EventMask = 0;
-            TEST_RC("Unable to disable events",
-                ioctl, libera_event, LIBERA_EVENT_SET_MASK, &EventMask);
-        }
-    }
+    if (LeventdThread != NULL)
+        LeventdThread->Terminate();
+    if (event_source != -1)  close(event_source);
     if (libera_event != -1)  close(libera_event);
 }
 
@@ -425,49 +341,57 @@ static void CloseEventStream()
 /*****************************************************************************/
 
 
-bool InitialiseHardware(bool SetUse_leventd)
+static bool InitialiseConnection(CSPIHCON &Connection, int Mode)
 {
-    Use_leventd = SetUse_leventd;
-    
-    /* A default attenuator setting of 20/20 (40 dB total) ensures a safe
-     * starting point on initialisation. */
-    ATTENUATORS Attenuators;
-    for (int i = 0; i < 8; i ++)  Attenuators[i] = 20;
-    
-    bool Result =
-        /* Initialise the hardware and multiplexor switches into a good known
-         * state: do this as soon as possible! */
-        TEST_IO(libera_cfg, "Unable to open libera.cfg device",
-            open, "/dev/libera.cfg", O_RDWR)  &&
-        WriteAttenuators(Attenuators)  &&
-        WriteSwitches(0)  &&
-        /* Open the rest of the hardware devices needed to communicate with
-         * Libera. */
-        TEST_IO(libera_dd, "Unable to open libera.dd device",
-            open, "/dev/libera.dd", O_RDONLY)  &&
-        TEST_IO(libera_adc, "Unable to open libera.adc device",
-            open, "/dev/libera.adc", O_RDONLY)  &&
-        TEST_IO(libera_sa, "Unable to open libera.sa device",
-            open, "/dev/libera.sa", O_RDONLY)  &&
-        TEST_IO(libera_pm, "Unable to open libera.pm device",
-            open, "/dev/libera.pm", O_RDONLY)  &&
-        /* Start with the current settings of Libera read.  (This is not
-         * strictly necessary, but harmless.) */
-        TEST_RC("Unable to read decimation",
-            ioctl, libera_dd, LIBERA_IOC_GET_DEC, &CurrentDecimation)  &&
-        /* Finally start receiving events. */
-        OpenEventStream();
-    return Result;
+    CSPI_CONPARAMS ConParams;
+    ConParams.mode = Mode;
+    return 
+        CSPI_(cspi_allochandle, CSPI_HANDLE_CON, CspiEnv, &Connection)  &&
+        CSPI_(cspi_setconparam, Connection, &ConParams, CSPI_CON_MODE)  &&
+        CSPI_(cspi_connect, Connection);
 }
 
+
+bool InitialiseHardware()
+{
+    /* A default attenuator setting of 20/20 (40 dB total) ensures a safe
+     * starting point on initialisation. */
+    static const ATTENUATORS DefaultAttenuators =
+        { 20, 20, 20, 20, 20, 20, 20, 20 };
+
+    CSPI_LIBPARAMS LibParams;
+    LibParams.superuser = 1;    // Allow us to change settings!
+    return
+        /* First ensure that the library allows us to change settings! */
+        CSPI_(cspi_setlibparam, &LibParams, CSPI_LIB_SUPERUSER)  &&
+        /* Open the CSPI environment and then open CSPI handles for each of
+         * the data channels we need. */
+        CSPI_(cspi_allochandle, CSPI_HANDLE_ENV, 0, &CspiEnv)  &&
+        InitialiseConnection(CspiConAdc, CSPI_MODE_ADC)  &&
+        InitialiseConnection(CspiConDd, CSPI_MODE_DD)  &&
+        InitialiseConnection(CspiConSa, CSPI_MODE_SA)  &&
+        InitialiseConnection(CspiConPm, CSPI_MODE_PM)  &&
+        /* Set the attenuators and switches into a sensible default state. */
+        WriteAttenuators(DefaultAttenuators)  &&
+        WriteSwitches(0)  &&
+        /* Finally start receiving events. */
+        OpenEventStream();
+}
+
+
+static void TerminateConnection(CSPIHCON Connection)
+{
+    CSPI_(cspi_disconnect, Connection);
+    CSPI_(cspi_freehandle, CSPI_HANDLE_CON, Connection);
+}
 
 /* To be called on shutdown to release all connections to Libera. */
 void TerminateHardware()
 {
     CloseEventStream();
-    if (libera_dd != -1)     close(libera_dd);
-    if (libera_adc != -1)    close(libera_adc);
-    if (libera_cfg != -1)    close(libera_cfg);
-    if (libera_sa != -1)     close(libera_sa);
-    if (libera_pm != -1)     close(libera_pm);
+    TerminateConnection(CspiConPm);
+    TerminateConnection(CspiConDd);
+    TerminateConnection(CspiConSa);
+    TerminateConnection(CspiConAdc);
+    CSPI_(cspi_freehandle, CSPI_HANDLE_ENV, CspiEnv);
 }

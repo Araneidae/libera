@@ -47,18 +47,13 @@ ioc_SRCS += postmortem.cpp
 ioc_SRCS += waveform.cpp
 ioc_SRCS += cordic.cpp
 ioc_SRCS += convert.cpp
-#ioc_SRCS += hardware.cpp
-ioc_SRCS += hardware_cspi.cpp
+ioc_SRCS += hardware.cpp
 ioc_SRCS += events.cpp
 ioc_SRCS += support.cpp
-
 ioc_SRCS += thread.cpp
-#ioc_SRCS += hardware_events.cpp
-
 
 ioc_LIBS += cspi
 ioc_LIBS += $(EPICS_BASE_IOC_LIBS) 
-
 
 # Point to the Libera device driver include, libera.h and cspi.h.
 USR_INCLUDES += -I$(TOP)/driver -I$(CSPI)
