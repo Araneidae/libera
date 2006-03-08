@@ -95,7 +95,7 @@ private:
 
 
 
-FREE_RUN * FreeRun = NULL;
+static FREE_RUN * FreeRun = NULL;
 
 bool InitialiseFreeRun(int WaveformLength)
 {

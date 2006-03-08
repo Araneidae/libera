@@ -98,7 +98,7 @@ private:
 
 
 
-POSTMORTEM * Postmortem = NULL;
+static POSTMORTEM * Postmortem = NULL;
 
 bool InitialisePostmortem()
 {

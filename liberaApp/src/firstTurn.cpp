@@ -332,7 +332,7 @@ private:
 
 
 
-FIRST_TURN * FirstTurn = NULL;
+static FIRST_TURN * FirstTurn = NULL;
 
 bool InitialiseFirstTurn()
 {

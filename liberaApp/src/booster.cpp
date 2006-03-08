@@ -159,7 +159,7 @@ private:
 
 
 
-BOOSTER * Booster = NULL;
+static BOOSTER * Booster = NULL;
 
 bool InitialiseBooster(int ShortWaveformLength, float FRev)
 {

@@ -174,7 +174,7 @@ void INTERLOCK::EpicsReady()
 INTERLOCK * INTERLOCK::InterlockList = NULL;
 
 
-void InterlockInitHook(initHookState State)
+static void InterlockInitHook(initHookState State)
 {
     if (State == initHookAtEnd)
         INTERLOCK::EpicsReady();

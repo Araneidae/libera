@@ -72,5 +72,10 @@ divide-lookup.h: ../divide-lookup.py
 	python ../divide-lookup.py >divide-lookup.h
 
 
+# Force iocMain to be rebuilt every time
+iocMain.o: EMPTY
+EMPTY:
+
+
 # iocMain should have the current version information defined in CONFIG.
 iocMain.o: $(TOP)/install/CONFIG

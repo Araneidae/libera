@@ -264,7 +264,7 @@ private:
 
 
 
-TURN_BY_TURN * TurnByTurn = NULL;
+static TURN_BY_TURN * TurnByTurn = NULL;
 
 bool InitialiseTurnByTurn(
     int LongWaveformLength, int WindowWaveformLength)

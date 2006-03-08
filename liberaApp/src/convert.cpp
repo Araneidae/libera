@@ -60,19 +60,19 @@
  *     These values are in units of nm and cannot be set larger than 32mm
  * without causing numerical overflow later on in the processing chain! */
 
-int K_X = 10000000;    // 10mm: largely reasonable defaults
-int K_Y = 10000000;
-int K_Q = 10000000;
+static int K_X = 10000000;    // 10mm: largely reasonable defaults
+static int K_Y = 10000000;
+static int K_Q = 10000000;
 
 /* Electron beam zero point offsets.  These are used to adjust the nominal
  * zero point returned.  These are stored in nm. */
-int X_0 = 0;
-int Y_0 = 0;
+static int X_0 = 0;
+static int Y_0 = 0;
 
 /* Button gain adjustments.  By default we start with gain of 1.  See
  * SCALE_GAIN macro below. */
 #define DEFAULT_GAIN    (1 << 30)
-int ChannelGain[4] =
+static int ChannelGain[4] =
     { DEFAULT_GAIN, DEFAULT_GAIN, DEFAULT_GAIN, DEFAULT_GAIN };
 #define GAIN_SCALE (1.0 / DEFAULT_GAIN)
 
@@ -97,7 +97,7 @@ int ChannelGain[4] =
  * The vertical configuration can arise when buttons or striplines are
  * arranged around a circular vacuum vessel in a linear accelerator or
  * transfer path. */
-bool Diagonal = true;
+static bool Diagonal = true;
 
 
 
@@ -302,7 +302,7 @@ public:
 };
 
 
-bool SetAtten(int Value, void * Context)
+static bool SetAtten(int Value, void * Context)
 {
     const int Offset = (int) Context;
     if (0 <= Value  &&  Value < 32)
@@ -325,7 +325,7 @@ bool SetAtten(int Value, void * Context)
 }
 
 
-bool GetAtten(int &Value, void * Context)
+static bool GetAtten(int &Value, void * Context)
 {
     const int Offset = (int) Context;
     ATTENUATORS attenuators;
@@ -340,14 +340,14 @@ bool GetAtten(int &Value, void * Context)
 
 
 
-bool GetSwitches(int &Value, void*)
+static bool GetSwitches(int &Value, void*)
 {
     return ReadSwitches(Value);
 }
 
 
 
-bool SetSwitches(int Value, void*)
+static bool SetSwitches(int Value, void*)
 {
     return WriteSwitches(Value);
 }

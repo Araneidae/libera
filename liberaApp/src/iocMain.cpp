@@ -54,7 +54,6 @@
 #include "convert.h"
 
 
-
 /* This variable records the PID file: if successfully written then it will
  * be removed when terminated. */
 static const char * PidFileName = NULL;
@@ -86,11 +85,14 @@ static float RevolutionFrequency = 1892629.155;
 
 /* Prints interactive startup message as recommended by GPL. */
 
-void StartupMessage()
+static void StartupMessage()
 {
     printf(
-"Libera EPICS Driver, Version " LIBERA_VERSION ",\n"
-"Copyright (C) 2005-2006 Michael Abbott, Diamond Light Source\n"
+"\n"
+"Libera EPICS Driver, Version " LIBERA_VERSION
+        ".  Built: " __TIME__ " on "  __DATE__ ".\n"
+"\n"
+"Copyright (C) 2005-2006 Michael Abbott, Diamond Light Source.\n"
 "This program comes with ABSOLUTELY NO WARRANTY.  This is free software,\n"
 "and you are welcome to redistribute it under certain conditions.\n"
 "For details see the GPL or the attached file COPYING.\n");
@@ -106,7 +108,7 @@ void StartupMessage()
  * only call async-safe functions.  This rather restricts what we're allowed
  * to do! */
 
-void AtExit(int signal)
+static void AtExit(int signal)
 {
     if (RunIocShell)
         /* If the IOC shell is running then closing stdin is sufficient to
@@ -118,7 +120,7 @@ void AtExit(int signal)
         sem_post(&ShutdownSemaphore);
 }
 
-bool InitialiseAtExit()
+static bool InitialiseAtExit()
 {
     struct sigaction action;
     action.sa_handler = AtExit;
@@ -144,7 +146,7 @@ static void SetNonInteractive()
 
 /* Prints usage message in response to -h option. */
 
-void Usage(const char *IocName)
+static void Usage(const char *IocName)
 {
     printf(
 "Usage: %s [-p <pid-file>] <scripts>\n"
@@ -170,7 +172,7 @@ void Usage(const char *IocName)
 /* The Libera driver is started by starting all of its constituent components
  * in turn.  Here is the natural place for these to be defined. */
 
-bool InitialiseLibera()
+static bool InitialiseLibera()
 {
     return
         /* Set up exit hander. */
@@ -213,7 +215,7 @@ bool InitialiseLibera()
  * way, otherwise we'll crash) and closing our connections to the Libera
  * driver (to be tidy). */
 
-void TerminateLibera()
+static void TerminateLibera()
 {
     TerminateEventReceiver();
     TerminateSlowAcquisition();
@@ -228,7 +230,7 @@ void TerminateLibera()
 
 /* Write the PID of this process to the given file. */
 
-bool WritePid(const char * FileName)
+static bool WritePid(const char * FileName)
 {
     FILE * output = fopen(FileName, "w");
     if (output == NULL)
@@ -255,7 +257,7 @@ bool WritePid(const char * FileName)
  *
  * where <key> identifies which value is set and <value> is an integer. */
 
-bool ParseConfigInt(char *optarg)
+static bool ParseConfigInt(char *optarg)
 {
     static const struct
     {
@@ -311,7 +313,7 @@ bool ParseConfigInt(char *optarg)
 
 /* Parses a floating point number, reports if invalid. */
 
-bool ParseFloat(const char *optarg, float &Target)
+static bool ParseFloat(const char *optarg, float &Target)
 {
     char *end;
     Target = strtod(optarg, &end);
@@ -332,7 +334,7 @@ bool ParseFloat(const char *optarg, float &Target)
  *
  * argc and argv are updated to point past the options. */
 
-bool ProcessOptions(int &argc, char ** &argv)
+static bool ProcessOptions(int &argc, char ** &argv)
 {
     bool Ok = true;
     while (Ok)
