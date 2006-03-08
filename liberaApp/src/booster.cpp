@@ -45,22 +45,13 @@
 #include "booster.h"
 
 
-/* ???? The RF frequency is hard coded here.  Remove this. */
-
-/* The total time for a long booster ramp waveform can be calculated from the
- * basic machine parameters as follows. */
-#define RF_FREQUENCY    499654097       // Hertz, = c/0.6
-#define BOOSTER_BUNCHES 264             // RF intervals per booster turn
 #define DECIMATION      64              // Libera decimation factor
-#define RAMP_DURATION   \
-    ((1e3 * LongWaveformLength * DECIMATION * BOOSTER_BUNCHES) / \
-        RF_FREQUENCY)
 
 
 class BOOSTER : I_EVENT
 {
 public:
-    BOOSTER(int ShortWaveformLength) :
+    BOOSTER(int ShortWaveformLength, float FRev) :
         ShortWaveformLength(ShortWaveformLength),
         LongWaveformLength(16*ShortWaveformLength),
         LongIq(LongWaveformLength),
@@ -71,14 +62,17 @@ public:
         ShortAxis(ShortWaveformLength)
     {
         /* Build the linear scales so that we can see booster data against a
-         * sensible time scale (in milliseconds). */
-        FillAxis(LongAxis,  LongWaveformLength,  RAMP_DURATION);
-        FillAxis(ShortAxis, ShortWaveformLength, RAMP_DURATION);
+         * sensible time scale (in milliseconds).
+         *    Each point in the short waveform corresponds to 1024 points at
+         * revolution frequency, hence the calculation below. */
+        float RampDuration = 1024 * 1e3 * ShortWaveformLength / FRev;
+        FillAxis(LongAxis,  LongWaveformLength,  RampDuration);
+        FillAxis(ShortAxis, ShortWaveformLength, RampDuration);
         
         /* Publish the PVs associated with Booster data. */
         LongAbcd.Publish("BN");
         LongXyqs.Publish("BN");
-        ShortXyqs.PublishShort("BN");
+        ShortXyqs.Publish("BN", "WFS");
 
         Publish_waveform("BN:AXIS", LongAxis);
         Publish_waveform("BN:AXISS", ShortAxis);
@@ -167,8 +161,8 @@ private:
 
 BOOSTER * Booster = NULL;
 
-bool InitialiseBooster(int ShortWaveformLength)
+bool InitialiseBooster(int ShortWaveformLength, float FRev)
 {
-    Booster = new BOOSTER(ShortWaveformLength);
+    Booster = new BOOSTER(ShortWaveformLength, FRev);
     return true;
 }

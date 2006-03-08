@@ -32,6 +32,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <unistd.h>
+#include <string.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <linux/unistd.h>
@@ -42,6 +43,10 @@
 #include "thread.h"
 #include "hardware.h"
 #include "support.h"
+
+
+/* Disable PM support for the moment: it seems particularly broken! */
+#undef ENABLE_PM
 
 
 #define CSPI_(command, args...) \
@@ -79,6 +84,17 @@ static CSPIHCON CspiConPm = NULL;
 /*                      Miscellaneous Support Routines.                      */
 /*                                                                           */
 /*****************************************************************************/
+
+
+/* This array translates switch positions into button permutations. */
+
+static const PERMUTATION PermutationLookup[16] =
+{
+    { 0, 1, 2, 3 },  { 0, 2, 1, 3 },  { 3, 1, 2, 0 },  { 3, 2, 1, 0 },
+    { 0, 1, 3, 2 },  { 0, 2, 3, 1 },  { 3, 1, 0, 2 },  { 3, 2, 0, 1 },
+    { 1, 0, 2, 3 },  { 2, 0, 1, 3 },  { 1, 3, 2, 0 },  { 2, 3, 1, 0 },
+    { 1, 0, 3, 2 },  { 2, 0, 3, 1 },  { 1, 3, 0, 2 },  { 2, 3, 0, 1 }
+};
 
 
 /* We think of the attenuators in the ATTENUATORS array as setting values for
@@ -162,10 +178,16 @@ size_t ReadPostmortem(size_t WaveformLength, LIBERA_ROW * Data)
 
 bool ReadAdcWaveform(ADC_DATA &Data)
 {
+    int Switches;
     size_t Read;
-    return
-        CSPI_(cspi_read_ex, CspiConAdc, &Data, 1024, &Read, NULL)  &&
+    bool Ok =
+        ReadSwitches(Switches)  &&
+        CSPI_(cspi_read_ex, CspiConAdc, &Data.Rows, 1024, &Read, NULL)  &&
         Read == 1024;
+    if (Ok)
+        memcpy(Data.Permutation, PermutationLookup[Switches],
+            sizeof(Data.Permutation));
+    return Ok;
 }
 
 
@@ -253,7 +275,10 @@ private:
     {
         CSPIHCON EventSource;
         CSPI_CONPARAMS ConParams;
-        ConParams.event_mask = CSPI_EVENT_TRIGGET | LIBERA_EVENT_PM;
+        ConParams.event_mask = CSPI_EVENT_TRIGGET;
+#ifdef ENABLE_PM
+        ConParams.event_mask |= LIBERA_EVENT_PM;
+#endif
         ConParams.handler = CspiSignal;
         bool Ok =
             CSPI_(cspi_allochandle, CSPI_HANDLE_CON, CspiEnv, &EventSource)  &&
@@ -370,7 +395,9 @@ bool InitialiseHardware()
         InitialiseConnection(CspiConAdc, CSPI_MODE_ADC)  &&
         InitialiseConnection(CspiConDd, CSPI_MODE_DD)  &&
         InitialiseConnection(CspiConSa, CSPI_MODE_SA)  &&
+#ifdef ENABLE_PM
         InitialiseConnection(CspiConPm, CSPI_MODE_PM)  &&
+#endif
         /* Set the attenuators and switches into a sensible default state. */
         WriteAttenuators(DefaultAttenuators)  &&
         WriteSwitches(0)  &&
@@ -381,8 +408,11 @@ bool InitialiseHardware()
 
 static void TerminateConnection(CSPIHCON Connection)
 {
-    CSPI_(cspi_disconnect, Connection);
-    CSPI_(cspi_freehandle, CSPI_HANDLE_CON, Connection);
+    if (Connection != NULL)
+    {
+        CSPI_(cspi_disconnect, Connection);
+        CSPI_(cspi_freehandle, CSPI_HANDLE_CON, Connection);
+    }
 }
 
 /* To be called on shutdown to release all connections to Libera. */

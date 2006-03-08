@@ -58,9 +58,13 @@ typedef int LIBERA_ROW[8];
  * in the current release of the driver), one for each button.  ADC data is
  * always read in 1024 row segments. */
 #define ADC_LENGTH      1024
+typedef unsigned int PERMUTATION[4];
 typedef short ADC_ROW[4];
 struct ADC_DATA
 {
+    /* Button permutation corrresponding to current switch position. */
+    PERMUTATION Permutation;
+    /* Raw ADC data as read. */
     ADC_ROW Rows[ADC_LENGTH];
 };
 
@@ -76,6 +80,7 @@ struct SA_DATA
  * per input channel, each of which can be any value in the range 0..31 --
  * this corresponds to precisely this attenuation in dB. */
 typedef unsigned int ATTENUATORS[8];
+
 
 
 

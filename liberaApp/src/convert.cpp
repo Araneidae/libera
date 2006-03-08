@@ -72,10 +72,8 @@ int Y_0 = 0;
 /* Button gain adjustments.  By default we start with gain of 1.  See
  * SCALE_GAIN macro below. */
 #define DEFAULT_GAIN    (1 << 30)
-int G_A = DEFAULT_GAIN;
-int G_B = DEFAULT_GAIN;
-int G_C = DEFAULT_GAIN;
-int G_D = DEFAULT_GAIN;
+int ChannelGain[4] =
+    { DEFAULT_GAIN, DEFAULT_GAIN, DEFAULT_GAIN, DEFAULT_GAIN };
 #define GAIN_SCALE (1.0 / DEFAULT_GAIN)
 
 /* Rescales value by gain factor making use of the GAIN_OFFSET defined above.
@@ -258,6 +256,14 @@ void ABCDtoXYQSmm(const ABCD_ROW &ABCD, XYQSmm_ROW &XYQSmm)
 
 
 
+void GainCorrect(int Channel, int *Column, int Count)
+{
+    int Gain = ChannelGain[Channel];
+    for (int i = 0; i < Count; i ++)
+        Column[i] = SCALE_GAIN(Gain, Column[i]);
+}
+
+
 
 /****************************************************************************/
 /*                                                                          */
@@ -408,10 +414,10 @@ bool InitialiseConvert()
     PUBLISH_DOUBLE("CF:KQ", K_Q, 0, BOUND, SCALE);
     PUBLISH_DOUBLE("CF:X0", X_0, -BOUND/2, BOUND/2, SCALE);
     PUBLISH_DOUBLE("CF:Y0", Y_0, -BOUND/2, BOUND/2, SCALE);
-    PUBLISH_DOUBLE("CF:GA", G_A, 0, GAIN_BOUND, GAIN_SCALE);
-    PUBLISH_DOUBLE("CF:GB", G_B, 0, GAIN_BOUND, GAIN_SCALE);
-    PUBLISH_DOUBLE("CF:GC", G_C, 0, GAIN_BOUND, GAIN_SCALE);
-    PUBLISH_DOUBLE("CF:GD", G_D, 0, GAIN_BOUND, GAIN_SCALE);
+    PUBLISH_DOUBLE("CF:GA", ChannelGain[0], 0, GAIN_BOUND, GAIN_SCALE);
+    PUBLISH_DOUBLE("CF:GB", ChannelGain[1], 0, GAIN_BOUND, GAIN_SCALE);
+    PUBLISH_DOUBLE("CF:GC", ChannelGain[2], 0, GAIN_BOUND, GAIN_SCALE);
+    PUBLISH_DOUBLE("CF:GD", ChannelGain[3], 0, GAIN_BOUND, GAIN_SCALE);
 
     Publish_waveform("CF:ATTWF", *new GET_ATTEN_WAVEFORM);
     PUBLISH_FUNCTION(longout, "CF:ATT1", SetAtten, (void*)0);

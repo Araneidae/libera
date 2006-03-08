@@ -57,40 +57,13 @@ public:
 
 
 
-/* Support for ADC rate waveform. */
-
-class ADC_WAVEFORM
-{
-public:
-    ADC_WAVEFORM();
-
-    /* Read a waveform from Libera.  The raw data (1024 sample unprocessed
-     * signed 12-bit * waveforms) are stored in the four RawWaveform()
-     * waveforms (one for each button).
-     * 
-     * At the same time the four waveforms are frequency shifted, resampled
-     * and Cordic reduced to produce four 256 sample Waveform() waveforms
-     * containing the intensity envelope of the incoming signal. */
-    bool Capture();
-
-    /* Publishable interfaces to the captured raw ADC rate data and a reduced
-     * form of the same data. */
-    I_waveform & RawWaveform(int Index) { return * RawWaveforms[Index]; }
-    I_waveform & Waveform(int Index)    { return * Waveforms[Index]; }
-
-    /* Direct access to the underlying waveform data for waveforms. */
-    int * RawArray(int Index)  { return RawWaveforms[Index]->Array(); }
-    int * Array(int Index)     { return Waveforms[Index]->Array(); }
-    
-private:
-    /* We internally maintain both the original raw (1024 point) waveform and
-     * a version reduced by frequency shifting and resampling (256 point),
-     * for each of the four buttons. */
-    INT_WAVEFORM * RawWaveforms[4];
-    INT_WAVEFORM * Waveforms[4];
-};
-
-
+/* Generic waveform set class.  This class is used to gather together several
+ * waveforms into a single structure.  The following instances of this
+ * template are defined:
+ *      IQ_WAVEFORMS    Used for raw IQ data as read from Libera
+ *      ABCD_WAVEFORMS  Used for button values, reduced from IQ via cordic
+ *      XYQS_WAVEFORMS  Used for computed electron beam positions.
+ */
 
 template<class T> class WAVEFORMS
 {
@@ -99,7 +72,7 @@ public:
 
     /* Publishes all of the fields associated with this waveform to EPICS
      * using the given prefix. */
-    void Publish(const char * Prefix);
+    void Publish(const char * Prefix, const char *SubName="WF");
     
     /* This changes the active length of the waveform: all other operations
      * will then operate only on the initial segment of length NewLength. */
@@ -126,7 +99,11 @@ public:
      * to the number of points written. */
     void Write(size_t Field, const int * Source, size_t Length);
     
+    /* Capture a waveform by copying from an existing instance of the same
+     * waveform. */
+    void CaptureFrom(WAVEFORMS<T> & Source, size_t Offset);
 
+    
 protected:
     void PublishColumn(
         const char * Prefix, const char * Name, size_t Field);
@@ -153,20 +130,19 @@ class IQ_WAVEFORMS : public WAVEFORMS<IQ_ROW>
 {
 public:
     IQ_WAVEFORMS(size_t Length) : WAVEFORMS<IQ_ROW>(Length) { }
+    
     /* Capture the currently selected active length of waveform from the data
      * source. */
     void Capture(int Decimation);
     /* Capture the postmortem buffer. */
     void CapturePostmortem();
-    /* Capture a copy of the selected waveform. */
-    void CaptureFrom(IQ_WAVEFORMS & Source, size_t Offset);
 };
 
 class ABCD_WAVEFORMS : public WAVEFORMS<ABCD_ROW>
 {
 public:
     ABCD_WAVEFORMS(size_t Length) : WAVEFORMS<ABCD_ROW>(Length) { }
-    
+
     /* Capture button values from given IQ waveform. */
     void CaptureCordic(IQ_WAVEFORMS & Source);
 };
@@ -176,13 +152,11 @@ class XYQS_WAVEFORMS : public WAVEFORMS<XYQS_ROW>
 public:
     XYQS_WAVEFORMS(size_t Length) : WAVEFORMS<XYQS_ROW>(Length) { }
 
-    /* Publish short form names. */
-    void PublishShort(const char * Prefix);
     /* Capture positions from button values. */
     void CaptureConvert(ABCD_WAVEFORMS &Source);
 };
 
 
-/* Misplaced publish routines. */
+/* Slightly misplaced publish routines. */
 void Publish_ABCD(const char * Prefix, ABCD_ROW &ABCD);
 void Publish_XYQS(const char * Prefix, XYQSmm_ROW &XYQS);

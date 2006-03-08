@@ -43,14 +43,8 @@
 export LIBERA_MACROS=''
 LiberaParameter()
 {
-    local value
-    if (($# < 2)); then
-        eval value=\"\$$1\"
-    else
-        value="$2"
-    fi
     [ -n "$LIBERA_MACROS" ]  &&  LIBERA_MACROS="$LIBERA_MACROS",
-    LIBERA_MACROS="$LIBERA_MACROS$1=$value"
+    LIBERA_MACROS="$LIBERA_MACROS$1=$2"
 }
 
 
@@ -74,6 +68,11 @@ cd "$(dirname "$0")"
 # location of the EPICS files.
 . /etc/sysconfig/epics_ioc
 
+# Pick up the revolution frequency from the libera configuration file.  Do it
+# this way to avoid picking up the entire file content.  Probably harmless,
+# but reduces the number of things we need to keep track of.
+eval $(grep '^FREV=' /etc/sysconfig/libera)
+
 export EPICS_BASE
 export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$EPICS_BASE/lib"
 export PATH="$PATH:$EPICS_BASE/bin"
@@ -82,6 +81,7 @@ export DEVICE="$(hostname)"
 
 PIDFILE=/var/run/ioc.pid
 
+# Check for arguments
 while getopts "d:nfh" option; do
     case "$option" in
     d)  DEVICE="$OPTARG" ;;
@@ -98,6 +98,12 @@ EOF
         exit 1 ;;
     esac
 done
+# No extra arguments allowed
+if (($# >= OPTIND)); then
+    echo >&2 'Invalid arguments: try -h for help'
+    exit 1
+fi
+
 
 
 # Don't run if the ioc.pid file is present: this is a simple technique to
@@ -113,7 +119,7 @@ fi
 caRepeater </dev/null >/dev/null 2>&1 &
 
 # Export the database parameters needed to configure libera.db
-LiberaParameter DEVICE
+LiberaParameter DEVICE    "$DEVICE"
 LiberaParameter BN_SHORT  $((IOC_BN_LENGTH))
 LiberaParameter BN_LONG   $((16*IOC_BN_LENGTH))
 LiberaParameter TT_LONG   $((IOC_TT_LENGTH))
@@ -125,6 +131,7 @@ IocParameter -cBN= $((IOC_BN_LENGTH))
 IocParameter -cTT= $((IOC_TT_LENGTH))
 IocParameter -cTW= $((IOC_TT_WINDOW))
 IocParameter -cFR= $((IOC_FR_LENGTH))
+IocParameter -f    $FREV
 # Now run the ioc proper.
 ./bin/ioc "${IOC_PARAMETERS[@]}" st.cmd
 

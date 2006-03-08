@@ -90,99 +90,6 @@ template SIMPLE_WAVEFORM<float>;
 
 /****************************************************************************/
 /*                                                                          */
-/*                            class ADC_WAVEFORM                            */
-/*                                                                          */
-/****************************************************************************/
-
-/* Access to raw and unfiltered sample rate (117MHz) data as captured by the
- * ADC. */
-
-
-ADC_WAVEFORM::ADC_WAVEFORM()
-{
-    /* Initialise waveforms for all four buttons.  We maintain two waveforms
-     * for each button: the raw 1024 samples as read from the ADC, and the
-     * same data frequency shifted and resampled down to 256 points. */
-    for (int i = 0; i < 4; i ++)
-    {
-        RawWaveforms[i] = new INT_WAVEFORM(ADC_LENGTH);
-        Waveforms[i]    = new INT_WAVEFORM(ADC_LENGTH/4);
-    }
-}
-
-
-/* Read a waveform from Libera.   The raw ADC data is read, sign extended
- * from 12 to 32 bits, and transposed into the four raw waveforms.
- *
- * The next stage of processing takes advantage of a couple of important
- * features of the data being sampled.  The input signal is RF (at
- * approximately 500MHz) and is undersampled (at approximately 117Mhz) so that
- * the centre frequency appears at close to 1/4 the sampling frequency.  To
- * make this possible, the signal is filtered through a narrow band
- * (approximately 10MHz bandwith) filter.
- *
- * Thus the intensity profile of the incoming train can be recovered by the
- * following steps:
- *  - mix with the centre frequency (producing a complex IQ waveform) to
- *    bring the carrier frequency close to DC
- *  - low pass filter the data
- *  - compute the absolute magnitude of the waveform.
- *
- * Furthermore, because the carrier frequency is so close to 1/4 sampling
- * frequency, mixing becomes a matter of multiplying successively by
- * exp(2*pi*i*n), in other words, by the sequence
- *      1,  i,  -1,  -i,  1,  ...
- * and if we then low pass filter by averaging four points together before
- * computing the magnitude, we can reduce the data stream
- *      x1, x2, x3, x4, x5, ...
- * to the stream
- *      |(x1-x3,x2-x4)|, |(x5-x7,x6-x8)|, ...
- */
-
-bool ADC_WAVEFORM::Capture()
-{
-    ADC_DATA RawData;
-    bool Ok = ReadAdcWaveform(RawData);
-    if (Ok)
-    {
-        int * a[4];
-        for (int j = 0; j < 4; j ++)
-            a[j] = RawWaveforms[j]->Array();
-        
-        /* First sign extend each waveform point, extend to 32-bits and
-         * transpose to a more useful orientation. */
-        for (int i = 0; i < ADC_LENGTH; i ++)
-            for (int j = 0; j < 4; j ++)
-                a[j][i] = ((int) RawData.Rows[i][j] << 20) >> 20;
-        
-        /* Now reduce each set of four points down to one point.  This
-         * removes the carrier frequency and recovers the underlying
-         * intensity profile of each waveform. */
-        for (int j = 0; j < 4; j ++)
-        {
-            int * p = RawWaveforms[j]->Array();
-            int * q = Waveforms[j]->Array();
-            for (int i = 0; i < ADC_LENGTH; i += 4)
-            {
-                int x1 = *p++, x2 = *p++, x3 = *p++, x4 = *p++;
-                /* Scale the raw values so that they're compatible in
-                 * magnitude with turn-by-turn filtered values.  This means
-                 * that we can use the same scaling rules downstream.
-                 *    A raw ADC value is +-2^11, and by combining pairs we
-                 * get +-2^12.  Scaling by 2^18 gives us values in the range
-                 * +-2^30, which will be comfortable.  After cordic this
-                 * becomes 0..sqrt(2)*0.5822*2^30 or 0.823*2^30. */
-                *q++ = CordicMagnitude((x1-x3)<<18, (x2-x4)<<18);
-            }
-        }
-    }
-    return Ok;
-}
-
-
-
-/****************************************************************************/
-/*                                                                          */
 /*                         Generic Waveform Support                         */
 /*                                                                          */
 /****************************************************************************/
@@ -298,6 +205,13 @@ size_t WAVEFORMS<T>::CaptureLength(size_t Offset, size_t Length)
     }
 }
 
+template<class T>
+void WAVEFORMS<T>::CaptureFrom(WAVEFORMS<T> & Source, size_t Offset)
+{
+    ActiveLength = Source.CaptureLength(Offset, CurrentLength);
+    memcpy(Data, Source.Data + Offset, ActiveLength * sizeof(*Data));
+}
+
 
 /* Helper routine for publishing a column of the waveforms block to EPICS.
  * Uses the COLUMN_WAVEFORM class to build the appropriate access method. */
@@ -312,7 +226,11 @@ void WAVEFORMS<T>::PublishColumn(
 }
 
 #define PUBLISH_COLUMN(Name, Field) \
-    PublishColumn(Prefix, Name, offsetof(typeof(*Data), Field))
+    PublishColumn(PrefixString, Name, offsetof(typeof(*Data), Field))
+
+#define PREPARE_PUBLISH(Prefix, SubName) \
+    char PrefixString[100]; \
+    snprintf(PrefixString, sizeof(PrefixString), "%s:%s", Prefix, SubName)
 
 
 
@@ -320,16 +238,17 @@ void WAVEFORMS<T>::PublishColumn(
 /*                           IQ Waveform Support                             */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-void WAVEFORMS<IQ_ROW>::Publish(const char * Prefix)
+void WAVEFORMS<IQ_ROW>::Publish(const char * Prefix, const char *SubName)
 {
-    PUBLISH_COLUMN(":WFAI", AI);
-    PUBLISH_COLUMN(":WFAQ", AQ);
-    PUBLISH_COLUMN(":WFBI", BI);
-    PUBLISH_COLUMN(":WFBQ", BQ);
-    PUBLISH_COLUMN(":WFCI", CI);
-    PUBLISH_COLUMN(":WFCQ", CQ);
-    PUBLISH_COLUMN(":WFDI", DI);
-    PUBLISH_COLUMN(":WFDQ", DQ);
+    PREPARE_PUBLISH(Prefix, SubName);
+    PUBLISH_COLUMN("AI", AI);
+    PUBLISH_COLUMN("AQ", AQ);
+    PUBLISH_COLUMN("BI", BI);
+    PUBLISH_COLUMN("BQ", BQ);
+    PUBLISH_COLUMN("CI", CI);
+    PUBLISH_COLUMN("CQ", CQ);
+    PUBLISH_COLUMN("DI", DI);
+    PUBLISH_COLUMN("DQ", DQ);
 }
 
 
@@ -344,24 +263,19 @@ void IQ_WAVEFORMS::CapturePostmortem()
     ActiveLength = ReadPostmortem(CurrentLength, (LIBERA_ROW *) Data);
 }
 
-void IQ_WAVEFORMS::CaptureFrom(IQ_WAVEFORMS & Source, size_t Offset)
-{
-    ActiveLength = Source.CaptureLength(Offset, CurrentLength);
-    memcpy(Data, Source.Data + Offset, ActiveLength * sizeof(*Data));
-}
-
 
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                          ABCD Waveform Support                            */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-void WAVEFORMS<ABCD_ROW>::Publish(const char * Prefix)
+void WAVEFORMS<ABCD_ROW>::Publish(const char * Prefix, const char *SubName)
 {
-    PUBLISH_COLUMN(":WFA", A);
-    PUBLISH_COLUMN(":WFB", B);
-    PUBLISH_COLUMN(":WFC", C);
-    PUBLISH_COLUMN(":WFD", D);
+    PREPARE_PUBLISH(Prefix, SubName);
+    PUBLISH_COLUMN("A", A);
+    PUBLISH_COLUMN("B", B);
+    PUBLISH_COLUMN("C", C);
+    PUBLISH_COLUMN("D", D);
 }
 
 void ABCD_WAVEFORMS::CaptureCordic(IQ_WAVEFORMS & Source)
@@ -375,20 +289,13 @@ void ABCD_WAVEFORMS::CaptureCordic(IQ_WAVEFORMS & Source)
 /*                          XYQS Waveform Support                            */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-void WAVEFORMS<XYQS_ROW>::Publish(const char * Prefix)
+void WAVEFORMS<XYQS_ROW>::Publish(const char * Prefix, const char *SubName)
 {
-    PUBLISH_COLUMN(":WFX", X);
-    PUBLISH_COLUMN(":WFY", Y);
-    PUBLISH_COLUMN(":WFQ", Q);
-    PUBLISH_COLUMN(":WFS", S);
-}
-
-void XYQS_WAVEFORMS::PublishShort(const char * Prefix)
-{
-    PUBLISH_COLUMN(":WFSX", X);
-    PUBLISH_COLUMN(":WFSY", Y);
-    PUBLISH_COLUMN(":WFSQ", Q);
-    PUBLISH_COLUMN(":WFSS", S);
+    PREPARE_PUBLISH(Prefix, SubName);
+    PUBLISH_COLUMN("X", X);
+    PUBLISH_COLUMN("Y", Y);
+    PUBLISH_COLUMN("Q", Q);
+    PUBLISH_COLUMN("S", S);
 }
 
 void XYQS_WAVEFORMS::CaptureConvert(ABCD_WAVEFORMS &Source)
@@ -427,8 +334,8 @@ void Publish_ABCD(const char * Prefix, ABCD_ROW &ABCD)
 
 void Publish_XYQS(const char * Prefix, XYQSmm_ROW &XYQS)
 {
-    Publish_ai(Concat(Prefix, ":X"), XYQS.X);
-    Publish_ai(Concat(Prefix, ":Y"), XYQS.Y);
-    Publish_ai(Concat(Prefix, ":Q"), XYQS.Q);
+    Publish_ai    (Concat(Prefix, ":X"), XYQS.X);
+    Publish_ai    (Concat(Prefix, ":Y"), XYQS.Y);
+    Publish_ai    (Concat(Prefix, ":Q"), XYQS.Q);
     Publish_longin(Concat(Prefix, ":S"), XYQS.S);
 }

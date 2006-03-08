@@ -78,6 +78,10 @@ static int FreeRunLength = 2048;
 /* Length of 1024 decimated buffer. */
 static int DecimatedShortLength = 190;
 
+/* Synchrotron revolution frequency.  Used for labelling decimated data.
+ * This default frequency is the Diamond booster frequency. */
+static float RevolutionFrequency = 1892629.155;
+
 
 
 /* Prints interactive startup message as recommended by GPL. */
@@ -195,7 +199,7 @@ bool InitialiseLibera()
         InitialiseFreeRun(FreeRunLength)  &&
         /* Booster operation is designed for viewing the entire booster ramp
          * at reduced resolution. */
-        InitialiseBooster(DecimatedShortLength)  &&
+        InitialiseBooster(DecimatedShortLength, RevolutionFrequency)  &&
         /* Postmortem operation is only triggered on a postmortem event and
          * captures the last 16K events before the event. */
         InitialisePostmortem()  &&
@@ -305,6 +309,22 @@ bool ParseConfigInt(char *optarg)
 }
 
 
+/* Parses a floating point number, reports if invalid. */
+
+bool ParseFloat(const char *optarg, float &Target)
+{
+    char *end;
+    Target = strtod(optarg, &end);
+    if (*optarg == '\0'  ||  *end != '\0')
+    {
+        printf("Not a floating point number: \"%s\"\n", optarg);
+        return false;
+    }
+    else
+        return true;
+}
+
+
 /* Process any options supported by the ioc.  At present we support:
  *
  *      -h              Print out usage
@@ -317,11 +337,13 @@ bool ProcessOptions(int &argc, char ** &argv)
     bool Ok = true;
     while (Ok)
     {
-        switch (getopt(argc, argv, "+p:nc:hv"))
+        switch (getopt(argc, argv, "+p:nc:f:hv"))
         {
             case 'p':   Ok = WritePid(optarg);          break;
             case 'n':   SetNonInteractive();            break;
             case 'c':   Ok = ParseConfigInt(optarg);    break;
+            case 'f':
+                Ok = ParseFloat(optarg, RevolutionFrequency);  break;
             case 'h':   Usage(argv[0]);                 return false;
             case 'v':   StartupMessage();               return false;
             case '?':

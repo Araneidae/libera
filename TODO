@@ -10,21 +10,8 @@ Work to do
 
 * Try to create proper release process
 
-* Update hardware description document
-
 * Create proper documentation
-
-* Implement full CSPI hardware interface.
-
-* Review convert interface.  Separate out gain correction and ensure that this
-  is implemented for FT and SA.
 
 * Investigate migrating to soft floating point: use -msoft-float and recompile
   libgcc.a.  This will affect EPICS.
 
-* Remove hard-coded RF frequency in booster.cpp
-
-
-Notes:
-
-- Event handling is all over the place!

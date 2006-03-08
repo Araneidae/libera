@@ -28,4 +28,4 @@
 
 
 /* Booster waveform support. */
-bool InitialiseBooster(int ShortWaveformLength);
+bool InitialiseBooster(int ShortWaveformLength, float FRev);
