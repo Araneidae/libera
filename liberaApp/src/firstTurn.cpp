@@ -183,8 +183,8 @@ public:
          * averaging window. */
         Publish_longin("FT:OFF", Offset);
         Publish_longin("FT:LEN", Length);
-        PUBLISH_METHOD(longout, "FT:OFF", SetOffset);
-        PUBLISH_METHOD(longout, "FT:LEN", SetLength);
+        PUBLISH_METHOD_OUT(longout, "FT:OFF", SetOffset, Offset);
+        PUBLISH_METHOD_OUT(longout, "FT:LEN", SetLength, Length);
 
         /* Announce our interest in the trigger event from libera. */
         RegisterTriggerEvent(*this, PRIORITY_FT);

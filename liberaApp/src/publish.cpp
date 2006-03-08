@@ -154,13 +154,13 @@ public:
     PUBLISH_READ(const T &Variable, const char *Name) :
         Variable(Variable), Name(Name)
     {
-//        printf("Publish %s: %p\n", Name, &Variable);
+        PRINTF("Publish %s: %p\n", Name, &Variable);
     }
 
     /* Implement the read method of the I_READER interface. */
     bool read(T & Value)
     {
-//        printf("Read %s: %d\n", Name, (int)  Variable);
+        PRINTF("Read %s: %d\n", Name, (int)  Variable);
         Value = Variable;
         return true;
     }
@@ -171,10 +171,11 @@ private:
 };
 
 
-#define DEFINE_PUBLISH_VAR_IN(record, type) \
-    DECLARE_PUBLISH_VAR_IN(record, type) \
+#define DEFINE_PUBLISH_VAR_IN(record) \
+    DECLARE_PUBLISH_VAR_IN(record) \
     { \
-        Publish_##record(Name, *new PUBLISH_READ<type>(Variable, Name)); \
+        Publish_##record(Name, \
+            *new PUBLISH_READ<TYPEOF(record)>(Variable, Name)); \
     } 
 
 
@@ -184,6 +185,13 @@ template<class T> class PUBLISH_WRITE : public I_WRITER<T>
 {
 public:
     PUBLISH_WRITE(T &Variable) : Variable(Variable) { }
+
+    /* For the init method just read the current value of the variable! */
+    bool init(T &Result)
+    {
+        Result = Variable;
+        return true;
+    }
 
     /* Implement the write method of the I_WRITER interface. */
     bool write(T Value)
@@ -197,18 +205,19 @@ private:
 };
 
 
-#define DEFINE_PUBLISH_VAR_OUT(record, type) \
-    DECLARE_PUBLISH_VAR_OUT(record, type) \
+#define DEFINE_PUBLISH_VAR_OUT(record) \
+    DECLARE_PUBLISH_VAR_OUT(record) \
     { \
-        Publish_##record(Name, *new PUBLISH_WRITE<type>(Variable)); \
+        Publish_##record(Name, \
+            *new PUBLISH_WRITE<TYPEOF(record)>(Variable)); \
     } 
 
 
 
-DEFINE_PUBLISH_VAR_IN(longin, int);
-DEFINE_PUBLISH_VAR_IN(ai, double);
-DEFINE_PUBLISH_VAR_IN(bi, bool);
+DEFINE_PUBLISH_VAR_IN(longin);
+DEFINE_PUBLISH_VAR_IN(ai);
+DEFINE_PUBLISH_VAR_IN(bi);
 
-DEFINE_PUBLISH_VAR_OUT(longout, int);
-DEFINE_PUBLISH_VAR_OUT(ao, double);
-DEFINE_PUBLISH_VAR_OUT(bo, bool);
+DEFINE_PUBLISH_VAR_OUT(longout);
+DEFINE_PUBLISH_VAR_OUT(ao);
+DEFINE_PUBLISH_VAR_OUT(bo);

@@ -1,5 +1,8 @@
 Work to do
 
+Short term
+==========
+
 * Add controls for disabling unwanted functionality
 
 * Review event handling
@@ -9,6 +12,9 @@ Work to do
 * Review configuration handling
 
 * Try to create proper release process
+
+Long term
+=========
 
 * Create proper documentation
 

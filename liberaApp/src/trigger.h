@@ -116,6 +116,7 @@ public:
 private:
     bool ReportDone(bool);
 
+    bool Value;
     TRIGGER Trigger;
     sem_t Interlock;
     INTERLOCK *Next;

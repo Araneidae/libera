@@ -62,8 +62,10 @@
 #include "publish.h"
 
 
-#define OK 0
-#define ERROR 1
+/* Epics processing return codes. */
+#define OK              0
+#define ERROR           1
+#define NO_CONVERT      2       // Special code for ai/ao conversion
 
 
 
@@ -157,7 +159,7 @@ bool I_WAVEFORM::BindRecord(dbCommon * p)
 /* Common I/O Intr scanning support: uses the fact that pr->dpvt always
  * contains the appropriate GetIoInt implementation. */
 
-static long get_ioint_ (int, dbCommon *pr, IOSCANPVT *pIoscanpvt) 
+static long get_ioint_(int, dbCommon *pr, IOSCANPVT *pIoscanpvt) 
 { 
     RECORD_BASE * base = (RECORD_BASE *) pr->dpvt; 
     if (base == NULL) 
@@ -174,7 +176,7 @@ static long get_ioint_ (int, dbCommon *pr, IOSCANPVT *pIoscanpvt)
 /* Common record initialisation.  Performs the appropriate record
  * initialisation once the record implementation has been found. */
 
-static long init_record_(
+static bool init_record_(
     const char * RecordType, const char * Name,
     dbCommon *pr, I_RECORD *iRecord)
 {
@@ -183,17 +185,17 @@ static long init_record_(
     if (iRecord == NULL)
     {
         printf("Libera record %s:%s not found\n", RecordType, Name);
-        return ERROR;
+        return false;
     }
     else if (!iRecord->BindRecord(pr))
     {
         printf("Error binding libera record %s:%s\n", RecordType, Name);
-        return ERROR;
+        return false;
     }
     else
     {
         pr->dpvt = new RECORD_BASE(*iRecord);
-        return OK;
+        return true;
     }
 }
 
@@ -210,9 +212,35 @@ static long init_record_(
     static long init_record_##record(record##Record *pr) \
     { \
         const char * Name = pr->inOrOut.value.constantStr; \
-        return init_record_( \
-            #record, Name, (dbCommon *) pr, Search_##record(Name)); \
+        if (init_record_( \
+            #record, Name, (dbCommon *) pr, Search_##record(Name))) \
+            POST_INIT_##inOrOut(record, pr) \
+        else \
+            return ERROR; \
     }
+
+
+/* For inp records there is no special post initialisation processing. */
+#define POST_INIT_inp(record, pr)   return OK;
+
+/* For out records we need to read the current underlying device value as
+ * part of initialisation.  The precise processing performed depends on the
+ * record type: this is hooked in by defining POST_INIT_##record. */
+#define POST_INIT_out(record, pr) \
+    { \
+        GET_RECORD(record, pr, iRecord); \
+        int ReturnCode = POST_INIT_##record; \
+        SET_ALARM(pr, READ, iRecord); \
+        recGblResetAlarms(pr); \
+        return ReturnCode; \
+    }
+
+/* This is the boiler-plate post-initialisation code for an output record.
+ * The current value is read (typically into val or rval) and an appropriate
+ * return code (either OK or NO_CONVERT) is returned from init_record. */
+#define POST_INIT(ReturnCode) \
+    ( pr->udf = ! iRecord->init(pr->val), \
+      ReturnCode )
 
 
 #define DEFINE_DEVICE(record, inOrOut, length, args...) \
@@ -229,6 +257,7 @@ static long init_record_(
     epicsExportAddress(dset, record##Libera)
 
 
+/* Helper code for extracting the appropriate I_record from the record. */
 #define GET_RECORD(record, pr, var) \
     RECORD_BASE * base = (RECORD_BASE *) pr->dpvt; \
     if (base == NULL) \
@@ -237,6 +266,7 @@ static long init_record_(
 
 #define SET_ALARM(pr, ACTION, iRecord) \
     recGblSetSevr(pr, ACTION##_ALARM, iRecord->AlarmStatus())
+
 
 
 /* Standard boiler-plate default record processing action.  The val field is
@@ -262,14 +292,22 @@ static long init_record_(
 /* Record specific access support. */
 
 
+/* Post-initialisation processing for output records is defined here. */
+#define POST_INIT_ao        POST_INIT(NO_CONVERT)
+#define POST_INIT_longout   POST_INIT(OK)
+#define POST_INIT_bo \
+    ( { bool Flag; \
+        pr->udf = iRecord->init(Flag); \
+        pr->rval = Flag; \
+        OK; } )
+
+
 /* Mostly we can use simple boilerplate for the process routines. */
 
 DEFINE_DEFAULT_PROCESS(longin, read, READ)
 DEFINE_DEFAULT_PROCESS(longout, write, WRITE)
 DEFINE_DEFAULT_PROCESS(ao, write, WRITE)
 DEFINE_DEFAULT_PROCESS(bo, write, WRITE)
-
-
 
 /* The following three routines need slightly special handling. */
 
@@ -282,9 +320,9 @@ static long read_ai(aiRecord *pr)
      * construction of val from rval.  We therefore have to set udf ourselves
      * (emulating what is done in aiRecord.c:convert) and return 2 to suppress
      * conversion. */
-    pr->udf = isnan(pr->val);
+    pr->udf = !finite(pr->val);
     SET_ALARM(pr, READ, i_ai);
-    return Ok ? 2 : ERROR;
+    return Ok ? NO_CONVERT : ERROR;
 }
 
 

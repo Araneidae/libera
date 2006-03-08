@@ -28,11 +28,24 @@
 
 
 /* This handles the publishing of variables and other internal state as EPICS
- * process variables. */
+ * process variables.
+ *
+ * The code here is a scary mix of macros and templates: the goal is to make
+ * the job of publishing values to EPICS as smooth as possible by hiding as
+ * much of the nasty stuff as possible here. */
 
 
 
-/* Publication for generic read and write methods. */
+/*****************************************************************************/
+/*                                                                           */
+/*                        Publish EPICS Interfaces                           */
+/*                                                                           */
+/*****************************************************************************/
+
+/* Publication for generic read and write methods.  Every EPICS parameter is
+ * announced through a suitable Publish_##record method and located through
+ * the corresponding Search_ method. */
+
 
 /* This macro is used to declare general purpose EPICS variable publishing
  * methods for publishing an I_<record> interface by name. */
@@ -44,7 +57,6 @@
  * Libera record support. */
 #define DECLARE_SEARCH(record) \
     I_##record * Search_##record(const char *Name)
-
 
 
 /* Declaration of Publish_<record> methods for each supported record type.
@@ -70,42 +82,49 @@ DECLARE_SEARCH(waveform);
 
 
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+/*****************************************************************************/
+/*                                                                           */
 /*                        Publish Simple Variables                           */
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                           */
+/*****************************************************************************/
 
 /* For the special case of variables which are just read or written in-place
  * with no further action, we also provide publish routines to support this. */
 
-#define DECLARE_PUBLISH_VAR_IN(record, type) \
-    void Publish_##record(const char * Name, type &Variable)
+#define DECLARE_PUBLISH_VAR_IN(record) \
+    void Publish_##record(const char * Name, TYPEOF(record) &Variable)
 
-#define DECLARE_PUBLISH_VAR_OUT(record, type) \
-    void Publish_##record(const char * Name, type &Variable)
+#define DECLARE_PUBLISH_VAR_OUT(record) \
+    void Publish_##record(const char * Name, TYPEOF(record) &Variable)
 
 
 /* Declaration of Publish_<record> methods for simple variable PV access.  For
  * each of these the record implementation simply returns the current value. */
-DECLARE_PUBLISH_VAR_IN(longin, int);
-DECLARE_PUBLISH_VAR_IN(ai, double);
-DECLARE_PUBLISH_VAR_IN(bi, bool);
+DECLARE_PUBLISH_VAR_IN(longin);
+DECLARE_PUBLISH_VAR_IN(ai);
+DECLARE_PUBLISH_VAR_IN(bi);
 
-DECLARE_PUBLISH_VAR_OUT(longout, int);
-DECLARE_PUBLISH_VAR_OUT(ao, double);
-DECLARE_PUBLISH_VAR_OUT(bo, bool);
+DECLARE_PUBLISH_VAR_OUT(longout);
+DECLARE_PUBLISH_VAR_OUT(ao);
+DECLARE_PUBLISH_VAR_OUT(bo);
 
 
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*****************************************************************************/
+/*                                                                           */
 /*                    Publish Support Class and Macros                       */
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                           */
+/*****************************************************************************/
 
 /* The following code supports the reading and writing of simple single
  * values (all except waveform) through the use of access routines.   To
  * simplify the use of the Publish_ methods we have to jump through some
  * rather tricky C++ hoops below: indeed, some of this code is right on (or
  * maybe over) the edge of what the compiler will swallow.
- *    This is all because C++ doesn't understand closures. */
+ *    A large chunk of the nastyness here is because C++ doesn't understand
+ * closures.  */
+
 
 /* Support class to actually implement the appropriate interface.
  * Unfortunately we need one of these for each interface we're going to
@@ -114,27 +133,47 @@ DECLARE_PUBLISH_VAR_OUT(bo, bool);
  * pointer to the function that's actually going to implement the reading or
  * writing, and calls this function to implement the required EPICS support
  * interface. */
-#define DECLARE_CLOSURE(record, type, action) \
-    template<class T> class CLOSURE_##record : public I_##record \
-    { \
-    public: \
-        CLOSURE_##record(T&t, bool (T::*f)(type)) : t(t), f(f) {} \
-        bool action(type arg) { return (t.*f)(arg); } \
-    private: \
-        T & t; \
-        bool (T::*f)(type); \
+template<class T, class R>
+class CLOSURE_IN : public I_READER<R> 
+{ 
+public: 
+    CLOSURE_IN(T&t, bool (T::*f)(R&)) : t(t), f(f) {} 
+    bool read(R& arg) { return (t.*f)(arg); } 
+private: 
+    T & t; 
+    bool (T::*f)(R&); 
+};
+
+template<class T, class R>
+class CLOSURE_OUT : public I_WRITER<R> 
+{ 
+public: 
+    CLOSURE_OUT(T&t, bool (T::*f)(R), bool (T::*i)(R&)) :
+        t(t), i(i), f(f), v(NULL) {}
+    CLOSURE_OUT(T&t, bool (T::*f)(R), R T::*v) :
+        t(t), i(NULL), f(f), v(v) {}
+    bool init(R& arg)
+    {
+        if (v == NULL)
+            return (t.*i)(arg);
+        else
+        {
+            arg = t.*v;
+            return true;
+        }
     }
+    bool write(R arg) { return (t.*f)(arg); } 
+private: 
+    T & t; 
+    bool (T::*i)(R&);
+    bool (T::*f)(R);
+    R T::*v;
+};
 
-DECLARE_CLOSURE(longin, int&, read);
-DECLARE_CLOSURE(longout, int, write);
-DECLARE_CLOSURE(ai, double&, read);
-DECLARE_CLOSURE(ao, double, write);
-DECLARE_CLOSURE(bi, bool&, read);
-DECLARE_CLOSURE(bo, bool, write);
 
-/* This is the evil bit.  The cute macro at the end needs to know the type of
- * `this`, and normally typeof(this) does the trick: but not when taking the
- * address of a member function!
+/* This bit is evil.  The cute macros below need to know the type of `this`,
+ * and normally typeof(this) does the trick: but not when taking the address
+ * of a member function!
  *     For this macro to work it is necessary that the class T have a default
  * constructor.  However, it isn't required to be accessible or even to be
  * implemented: a private unimplemented declaration suffices! */
@@ -142,36 +181,62 @@ template<class T> class ID : public T { };
 
 /* This rather naughtly macro assumes that it is always used to publish
  * methods of the calling class. */
-#define PUBLISH_METHOD(record, name, method) \
+#define PUBLISH_METHOD_IN(record, name, method) \
     Publish_##record(name, \
-        * new CLOSURE_##record<typeof(*this)>( \
-            *(this), & ID<typeof(*this)>::method))
+        * new CLOSURE_IN<typeof(*this), TYPEOF(record)>( \
+            *(this), &ID<typeof(*this)>::method))
+
+#define PUBLISH_METHOD_OUT(record, name, method, init) \
+    Publish_##record(name, \
+        * new CLOSURE_OUT<typeof(*this), TYPEOF(record)>( \
+            *(this), &ID<typeof(*this)>::method, &ID<typeof(*this)>::init))
+
+#define PUBLISH_METHOD_IN_OUT( \
+        record_in, record_out, name, method_read, method_write) \
+    PUBLISH_METHOD_IN(record_in, name, method_read); \
+    PUBLISH_METHOD_OUT(record_out, name, method_write, method_read)
 
 
 /* We can play the same game for unbound functions, though of course here the
  * story is somewhat simpler. */
 
-#define DECLARE_FUNCTION_WRAPPER(record, type, action) \
-    class WRAPPER_##record : public I_##record \
-    { \
-    public: \
-        WRAPPER_##record(bool (*f)(type, void*), void *c) : f(f), c(c) {} \
-        bool action(type arg) { return (*f)(arg, c); } \
-    private: \
-        bool (*const f)(type, void*); \
-        void * const c; \
-    }
+template<class T>
+class WRAPPER_IN : public I_READER<T>
+{ 
+public: 
+    WRAPPER_IN(bool (*f)(T&, void*), void *c) : f(f), c(c) {} 
+    bool read(T &arg) { return (*f)(arg, c); } 
+private: 
+    bool (*const f)(T&, void*); 
+    void * const c; 
+};
+
+template<class T>
+class WRAPPER_OUT : public I_WRITER<T>
+{ 
+public: 
+    WRAPPER_OUT(bool (*f)(T, void*), bool (*i)(T&, void*), void *c) :
+        f(f), i(i), c(c) {} 
+    bool init(T& arg) { return (*i)(arg, c); } 
+    bool write(T arg) { return (*f)(arg, c); } 
+private: 
+    bool (*const f)(T, void*); 
+    bool (*const i)(T&, void*);
+    void * const c; 
+};
 
 
-DECLARE_FUNCTION_WRAPPER(longin, int&, read);
-DECLARE_FUNCTION_WRAPPER(longout, int, write);
-DECLARE_FUNCTION_WRAPPER(ai, double&, read);
-DECLARE_FUNCTION_WRAPPER(ao, double, write);
-DECLARE_FUNCTION_WRAPPER(bi, bool&, read);
-DECLARE_FUNCTION_WRAPPER(bo, bool, write);
+#define PUBLISH_FUNCTION_IN(record, name, function, context) \
+    Publish_##record(name, \
+        * new WRAPPER_IN<TYPEOF(record)>(function, context))
+#define PUBLISH_FUNCTION_OUT(record, name, function, init, context) \
+    Publish_##record(name, \
+        * new WRAPPER_OUT<TYPEOF(record)>(function, init, context))
 
-#define PUBLISH_FUNCTION(record, name, function, context) \
-    Publish_##record(name, * new WRAPPER_##record(function, context))
+#define PUBLISH_FUNCTION_IN_OUT( \
+        record_in, record_out, name, read, write, context) \
+    PUBLISH_FUNCTION_IN(record_in, name, read, context); \
+    PUBLISH_FUNCTION_OUT(record_out, name, write, read, context); \
 
 
 /* Helper routine for concatenating strings. */

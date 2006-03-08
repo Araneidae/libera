@@ -77,11 +77,13 @@ public:
         WindowXyqs.Publish("TT");
 
         /* Control fields for managing capture and readout. */
-        PUBLISH_METHOD(longout, "TT:CAPLEN",   SetCaptureLength);
-        PUBLISH_METHOD(longin,  "TT:CAPLEN",   GetCaptureLength);
-        PUBLISH_METHOD(longin,  "TT:CAPTURED", GetCapturedLength);
-        PUBLISH_METHOD(longout, "TT:OFFSET",   SetWindowOffset);
-        PUBLISH_METHOD(longout, "TT:LENGTH",   SetWindowLength);
+        PUBLISH_METHOD_IN_OUT(longin, longout, "TT:CAPLEN",
+            GetCaptureLength, SetCaptureLength);
+        PUBLISH_METHOD_IN(longin,   "TT:CAPTURED", GetCapturedLength);
+        PUBLISH_METHOD_OUT(longout, "TT:OFFSET",
+            SetWindowOffset, WindowOffset);
+        PUBLISH_METHOD_OUT(longout, "TT:LENGTH",
+            SetWindowLength, WindowLength);
         Publish_longin("TT:OFFSET", WindowOffset);
         Publish_longin("TT:LENGTH", WindowLength);
 
@@ -91,7 +93,7 @@ public:
          *     Capturing a full waveform is done by writing 1 to the ARM
          * record and then waiting for READY to be signalled: this indicates
          * that a waveform has been read into memory. */
-        PUBLISH_METHOD(bo, "TT:ARM", SetArm);
+        PUBLISH_METHOD_OUT(bo, "TT:ARM", SetArm, Armed);
         Publish_bi("TT:READY", LongTrigger);
         Interlock.Publish("TT");
 

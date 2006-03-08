@@ -87,6 +87,17 @@ public:
  * to implement each class of record. */
 
 
+/* Helper macros for determining the underlying type for each supported
+ * record type. */
+#define TYPEOF(record)  TYPEOF_##record
+
+#define TYPEOF_longin   int
+#define TYPEOF_longout  int
+#define TYPEOF_ai       double
+#define TYPEOF_ao       double
+#define TYPEOF_bi       bool
+#define TYPEOF_bo       bool
+
 
 /* Both read and write methods return true if the operation was successful,
  * false if it failed.  Failure of read is unlikely, but supported! */
@@ -100,19 +111,20 @@ public:
 template<class T> class I_WRITER : public I_RECORD
 {
 public:
+    virtual bool init(T&) = 0;
     virtual bool write(T) = 0;
 };
 
-#define I_IN_VARIABLE(record,type)    typedef I_READER<type> I_##record
-#define I_OUT_VARIABLE(record,type)   typedef I_WRITER<type> I_##record
+#define I_IN_VARIABLE(record)    typedef I_READER<TYPEOF(record)> I_##record
+#define I_OUT_VARIABLE(record)   typedef I_WRITER<TYPEOF(record)> I_##record
 
 
-I_IN_VARIABLE(longin, int);             // I_longin
-I_OUT_VARIABLE(longout, int);           // I_longout
-I_IN_VARIABLE(ai, double);              // I_ai
-I_OUT_VARIABLE(ao, double);             // I_ao
-I_IN_VARIABLE(bi, bool);                // I_bi
-I_OUT_VARIABLE(bo, bool);               // I_bo
+I_IN_VARIABLE(longin);             // I_longin
+I_OUT_VARIABLE(longout);           // I_longout
+I_IN_VARIABLE(ai);                 // I_ai
+I_OUT_VARIABLE(ao);                // I_ao
+I_IN_VARIABLE(bi);                 // I_bi
+I_OUT_VARIABLE(bo);                // I_bo
 
 
 class I_waveform : public I_RECORD

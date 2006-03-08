@@ -83,8 +83,6 @@ public:
 
     
 private:
-    FREE_RUN();     // Needed for PUBLISH_METHOD hacks
-
     /* Captured and processed waveforms: these three blocks of waveforms are
      * all published to EPICS. */
     IQ_WAVEFORMS WaveformIq;

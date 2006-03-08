@@ -125,13 +125,14 @@ INTERLOCK::INTERLOCK()
      * be thread safe. */
     Next = InterlockList;
     InterlockList = this;
+    Value = true;
 }
 
 
 void INTERLOCK::Publish(const char * Prefix)
 {
     Publish_bi(Concat(Prefix, ":TRIG"), Trigger);
-    PUBLISH_METHOD(bo, Concat(Prefix, ":DONE"), ReportDone);
+    PUBLISH_METHOD_OUT(bo, Concat(Prefix, ":DONE"), ReportDone, Value);
 }
 
 void INTERLOCK::Ready()
@@ -156,6 +157,7 @@ bool INTERLOCK::ReportDone(bool Done)
     TEST_(sem_post, &Interlock);
     return true;
 }
+
 
 
 /* Called when EPICS has finished initialisation: release all the waiting

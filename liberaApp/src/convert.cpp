@@ -325,6 +325,20 @@ bool SetAtten(int Value, void * Context)
 }
 
 
+bool GetAtten(int &Value, void * Context)
+{
+    const int Offset = (int) Context;
+    ATTENUATORS attenuators;
+    if (ReadAttenuators(attenuators))
+    {
+        Value = attenuators[Offset];
+        return true;
+    }
+    else
+        return false;
+}
+
+
 
 bool GetSwitches(int &Value, void*)
 {
@@ -374,6 +388,11 @@ public:
         return true;
     }
 
+    bool init(double &Result)
+    {
+        return read(Result);
+    }
+
     bool write(double Value)
     {
         if (LowLimit < Value  &&  Value < HighLimit)
@@ -420,9 +439,9 @@ bool InitialiseConvert()
     PUBLISH_DOUBLE("CF:GD", ChannelGain[3], 0, GAIN_BOUND, GAIN_SCALE);
 
     Publish_waveform("CF:ATTWF", *new GET_ATTEN_WAVEFORM);
-    PUBLISH_FUNCTION(longout, "CF:ATT1", SetAtten, (void*)0);
-    PUBLISH_FUNCTION(longout, "CF:ATT2", SetAtten, (void*)1);
-    PUBLISH_FUNCTION(longin,  "CF:SW", GetSwitches, NULL);
-    PUBLISH_FUNCTION(longout, "CF:SW", SetSwitches, NULL);
+    PUBLISH_FUNCTION_OUT(longout, "CF:ATT1", SetAtten, GetAtten, (void*)0);
+    PUBLISH_FUNCTION_OUT(longout, "CF:ATT2", SetAtten, GetAtten, (void*)1);
+    PUBLISH_FUNCTION_IN_OUT(longin, longout,  "CF:SW",
+        GetSwitches, SetSwitches, NULL);
     return true;
 }
