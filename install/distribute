@@ -12,18 +12,20 @@ cd "$(dirname "$0")/.." &&
 # Need to build the .db files in case the recipient doesn't have the epics
 # Python library.  
 make &&
+mkdir install/prebuilt &&
 for f in sensors libera; do
-    sed '/^# \*\*\* Please do not edit/d' db/$f.db >install/$f.db.prebuilt
+    sed '/^# \*\*\* Please do not edit/d' db/$f.db >install/prebuilt/$f.db
 done  &&
+cp liberaApp/src/O.linux-arm/divide-lookup.h install/prebuilt  &&
 
 # Make sure we now start with a fresh page
 make clean uninstall &&
 
 # Build the distribution.  
-EPICS="$TARGET"/libera-epics-"$VERSION".tgz
+EPICS="$TARGET"/libera-epics-"$VERSION".tgz  &&
 tar czf "$EPICS"  --exclude=.svn --exclude=Libera/opi -C.. Libera  &&
 
 # Finally get rid of the prebuilt files again: we don't want them normally.
-rm install/*.db.prebuilt  &&
+rm -rf install/prebuilt  &&
 
 echo 'Distribution built ok in:'$'\n'"    $EPICS"

@@ -87,7 +87,7 @@ static int Maximum(EXTRACTED_ADC &Data)
 static void ExtractRawData(
     ADC_DATA &RawData, EXTRACTED_ADC &Extracted, ABCD_WAVEFORMS &RawAdc)
 {
-    /* Extract, sign extend and transpose. */
+    /* Extract, sign extend from 12 bits to 32 bits, and transpose. */
     for (int i = 0; i < ADC_LENGTH; i ++)
         for (int j = 0; j < 4; j ++)
             Extracted[j][i] = ((int) RawData.Rows[i][j] << 20) >> 20;
@@ -114,13 +114,14 @@ static void ExtractRawData(
  *
  * Furthermore, because the carrier frequency is so close to 1/4 sampling
  * frequency, mixing can be simplified here to a matter of multiplying
- * successively by exp(2*pi*i*n), in other words, by the sequence
+ * successively by exp(pi*i*n/2), in other words, by the sequence
  *      1,  i,  -1,  -i,  1,  ...
  * and if we then low pass filter by averaging four points together before
  * computing the magnitude, we can reduce the data stream
  *      x1, x2, x3, x4, x5, ...
  * to the stream
  *      |(x1-x3,x2-x4)|, |(x5-x7,x6-x8)|, ...
+ * Of course, we know how to compute |(x,y)| with great efficiency.
  *
  * At the same time we rescale the data to lie in the range 0..2^30. */
 static void CondenseAdcData(

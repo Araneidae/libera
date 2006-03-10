@@ -30,7 +30,8 @@
 /* Waveform processing support classes and routines. */
 
 /* A very simple waveform with direct EPICS support. */
-template<class T> class SIMPLE_WAVEFORM : public I_WAVEFORM
+template<class T>
+class SIMPLE_WAVEFORM : public I_WAVEFORM
 {
 public:
     SIMPLE_WAVEFORM(int TypeMark, size_t WaveformSize);
@@ -65,7 +66,8 @@ public:
  *      XYQS_WAVEFORMS  Used for computed electron beam positions.
  */
 
-template<class T> class WAVEFORMS
+template<class T>
+class WAVEFORMS
 {
 public:
     WAVEFORMS(size_t WaveformLength);
@@ -132,8 +134,8 @@ public:
     IQ_WAVEFORMS(size_t Length) : WAVEFORMS<IQ_ROW>(Length) { }
     
     /* Capture the currently selected active length of waveform from the data
-     * source. */
-    void Capture(int Decimation);
+     * source.  Possible decimations are 1 or 64, as determined by the FPGA. */
+    void Capture(int Decimation = 1);
     /* Capture the postmortem buffer. */
     void CapturePostmortem();
 };

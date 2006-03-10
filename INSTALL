@@ -19,7 +19,7 @@ This software depends on the following components:
    together with the full Libera distribution.  Libera can be obtained from
    Instrumentation Technologies at: http://www.i-tech.si.
        The CSPI library and its associated header files are included with this
-   distribution.  The makefile has been modified to integrate with the EPICS
+   distribution.  Its makefile has been modified to integrate with the EPICS
    build.
 
  * System updates.  The Libera system must be upgraded to 1.00.
@@ -41,6 +41,7 @@ Directories on target machine
 
 EPICS_TARGET    Location on Libera where the Epics run time files are
 DRIVER_TARGET   Location on Libera where the Epics driver files are
+IOC_STATE_PATH  Location on Libera to store persistent state
 
 Other symbols
 
@@ -112,11 +113,13 @@ $EPICS_BASE.
 2.  To remove the dependency on the Python epics library, copy the prebuilt
 files from the install directory to the Db directory thus:
     $ cd $LIBERA_EPICS
-    $ for f in libera sensors; do
-        mv install/$f.db.prebuilt liberaApp/Db/$f.db
-      done
+    $ cp install/prebuilt/*.db liberaApp/Db
 
 3.  Run make from $LIBERA_EPICS.  
+
+If your build environment lacks Python then a pre-built header file is also
+provided in the install/prebuilt directory: examine liberaApp/src/Makefile to
+see where this is needed.
 
 
 Preparing Libera for EPICS installation
@@ -166,8 +169,12 @@ the following symbols:
     DRIVER_TARGET
         Location on target machine where the ioc files will be installed.
 
-Unless you have installed screen on Libera you should also define the symbol
-LOG_IOC by uncommenting its line in the CONFIG file.
+    IOC_STATE_PATH
+        Location on target machine where persistent state files will be
+        stored.  This must point to a existing directory that is writeable by
+        the IOC.
+            It should be safe to place this state on the internal SBC: the IOC
+        takes care to only update this file when necessary.
 
 The Libera EPICS driver can now be installed by the following process:
 

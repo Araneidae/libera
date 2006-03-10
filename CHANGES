@@ -4,6 +4,32 @@ Change history of Libera EPICS Driver development
 First published release, supporting Libera 0.92-2 driver only.
 
 
-Version 0.3??
+2006/03/13 Version 0.4
+Works with Libera 1.00
 
-Migrate to Libera 1.00 driver
+Major changes:
+ - Uses Libera 1.00 driver, uses CSPI library interface, now cooperates with
+   leventd!
+ - Implements support for adc rate buffer and slow acquisition.
+ - Unprocessed I/Q data now exposed through EPICS interface.
+ - Separated out turn-by-turn processing into separate long capture and free
+   running modes
+ - Conversion routines now much more efficient (cordic in 135ns!)
+ - Buffer and capture lengths can now be configured at startup time.
+ - Persistent state now supported for basic configuration parameters.
+
+The following incompatible changes with the previous release should be noted:
+
+ - The FT (first turn) buffer is now sampled at 32ns intervals rather than at
+   turn-by-turn rate.  The default sample window has also been changed
+   accordingly.
+
+ - The "free running" trigger mode for TT (turn-by-turn) capture is no longer
+   supported, instead a separate FR (free running) mode is provided.
+
+ - The file /etc/sysconfig/epics_ioc now contains important startup
+   configuration information which must be provided before the IOC will start.
+   
+ - The loading of initial configuration has changed.  IOC_STATE_PATH should be
+   defined appropriately and an initial configuration can be written through
+   the EPICS interface.

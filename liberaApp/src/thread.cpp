@@ -54,7 +54,6 @@ bool THREAD::StartThread()
         pthread_create, &ThreadId, NULL, StaticThread, this);
     if (ThreadStarted)
         TEST_(sem_wait, &ThreadStatus);
-//    printf("StartThread returns %d\n", ThreadOkFlag);
     return ThreadOkFlag;
 }
 

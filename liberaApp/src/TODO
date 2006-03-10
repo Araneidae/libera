@@ -1,20 +1,10 @@
 Work to do
 
-Short term
-==========
-
-* Add controls for disabling unwanted functionality
-
-* Review event handling
-
-* Implement autosave and restore
+* Review event handling (again).
 
 * Review configuration handling
 
 * Try to create proper release process
-
-Long term
-=========
 
 * Create proper documentation
 

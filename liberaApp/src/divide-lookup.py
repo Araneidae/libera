@@ -1,7 +1,43 @@
-#!/usr/bin/env python
+# This file is part of the Libera EPICS Driver,
+# Copyright (C) 2005  Michael Abbott, Diamond Light Source Ltd.
+#
+# The Libera EPICS Driver is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# The Libera EPICS Driver is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc., 51
+# Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# Contact:
+#      Dr. Michael Abbott,
+#      Diamond Light Source Ltd,
+#      Diamond House,
+#      Chilton,
+#      Didcot,
+#      Oxfordshire,
+#      OX11 0DE
+#      michael.abbott@diamond.ac.uk
+
 # Python script to compute the division lookup table.
 
-# Number of bits to generate lookup for
+# See function Reciprocal() in support.c for the use of the table generated
+# by this file.
+
+
+# Number of bits to generate lookup for.  This value is a trade-off between
+# memory consumption and number of bits of precision according to the
+# following formulae:
+#                                          N+2
+#   Precision = 2*N + 2 bits,    Memory = 2    bytes
+#
+# So N=10 implies 22 bits of precision at a cost of 4K bytes lookup table.
 N = 10
 
 

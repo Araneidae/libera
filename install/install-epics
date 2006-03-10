@@ -46,7 +46,6 @@ rm -rf "$TARGET"  &&
 
 # Place the EPICS binaries in bin and lib directories as appropriate.
 mkdir -p "$TARGET"/bin "$TARGET"/lib  &&
-#cp -f "$EPICS_BASE"/bin/linux-arm/* "$TARGET"/bin  &&
 cp -f "$EPICS_BASE"/bin/linux-arm/caRepeater "$TARGET"/bin  &&
 cp -f "$EPICS_BASE"/lib/linux-arm/*.so "$TARGET"/lib  &&
 
@@ -61,7 +60,7 @@ cat <<EOF >"$TARGET"/epics_ioc  &&
 # Paths to EPICS base and the Libera IOC.
 # This file should be placed in /etc/sysconfig/epics_ioc
 EPICS_BASE="$EPICS_TARGET"
-LIBERA_IOC="$DRIVER_TARGET"/runioc
+LIBERA_IOC="$DRIVER_TARGET/runioc"
 EOF
 # All symbols definitions starting IOC_ will be passed through to the target
 # IOC to configure run-time operation.

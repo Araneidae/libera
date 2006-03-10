@@ -30,9 +30,9 @@
 /* This handles the publishing of variables and other internal state as EPICS
  * process variables.
  *
- * The code here is a scary mix of macros and templates: the goal is to make
- * the job of publishing values to EPICS as smooth as possible by hiding as
- * much of the nasty stuff as possible here. */
+ * The code here is a scary and extremely horrible mix of macros and
+ * templates: the goal is to make the job of publishing values to EPICS as
+ * smooth as possible by hiding as much of the nasty stuff as possible here. */
 
 
 
@@ -88,6 +88,19 @@ DECLARE_SEARCH(waveform);
 /*                        Publish Simple Variables                           */
 /*                                                                           */
 /*****************************************************************************/
+
+
+/* Helper macros for determining the underlying type for each supported
+ * record type. */
+#define TYPEOF(record)  TYPEOF_##record
+
+#define TYPEOF_longin   int
+#define TYPEOF_longout  int
+#define TYPEOF_ai       double
+#define TYPEOF_ao       double
+#define TYPEOF_bi       bool
+#define TYPEOF_bo       bool
+
 
 /* For the special case of variables which are just read or written in-place
  * with no further action, we also provide publish routines to support this. */

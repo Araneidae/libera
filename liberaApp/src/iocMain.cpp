@@ -111,9 +111,10 @@ static void StartupMessage()
  * only call async-safe functions.  This rather restricts what we're allowed
  * to do!
  *     Note also that this handler can be called repeatedly on exit (I'm not
- * sure why) so its actions need to be idempotent.  Fortunately close doesn't
- * seem to mind being called repeatedly, and multiple posts to our shutdown
- * semaphore are entirely inconsequential. */
+ * sure why: perhaps it gets called on each running thread?) so its actions
+ * need to be idempotent.  Fortunately close doesn't seem to mind being called
+ * repeatedly, and multiple posts to our shutdown semaphore are entirely
+ * inconsequential. */
 
 static void AtExit(int signal)
 {
@@ -141,6 +142,8 @@ static bool InitialiseAtExit()
         TEST_(sigaction, SIGTERM, &action, NULL);
 }
 
+
+/* Configures non-interactive (daemon mode) operation. */
 
 static void SetNonInteractive()
 {
@@ -274,13 +277,13 @@ static bool ParseConfigInt(char *optarg)
     static const struct
     {
         const char * Name;
-        int * Target;
+        int & Target;
         int Low, High;
     } Lookup[] = {
-        { "TT", & LongTurnByTurnLength,   1, 500000 },  // Up to 16M bytes
-        { "TW", & TurnByTurnWindowLength, 1, 65536 },   // Up to 8M bytes
-        { "FR", & FreeRunLength,          1, 8192 },
-        { "BN", & DecimatedShortLength,   1, 500 },
+        { "TT", LongTurnByTurnLength,   1, 500000 },  // Up to 16M bytes
+        { "TW", TurnByTurnWindowLength, 1, 65536 },   // Up to 8M bytes
+        { "FR", FreeRunLength,          1, 8192 },
+        { "BN", DecimatedShortLength,   1, 500 },
     };
 
     /* Parse the configuration setting into <key>=<integer>. */
@@ -306,7 +309,7 @@ static bool ParseConfigInt(char *optarg)
         {
             if (Lookup[i].Low <= Value  &&  Value <= Lookup[i].High)
             {
-                *Lookup[i].Target = Value;
+                Lookup[i].Target = Value;
                 return true;
             }
             else

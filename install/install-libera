@@ -10,10 +10,15 @@ if [ "$(uname -m)" != armv5tel ]; then
     exit 1
 fi
 
-[ -e /etc/init.d/epics ] && [ -e /var/run/ioc ] && /etc/init.d/epics stop
+# Ensure epics driver isn't running at the moment.
+[ -e /var/run/ioc.pid ] && kill "$(cat /var/run/ioc.pid)"
 
+# Copy over the local configuration files.
 cp -f epics /etc/init.d
 cp -f epics_ioc /etc/sysconfig
+
+# Link the epics startup script in so that it automatically starts when the
+# IOC is booted.
 ln -sf ../init.d/epics /etc/rc3.d/S900epics
 ln -sf ../init.d/epics /etc/rc6.d/K100epics
 

@@ -293,7 +293,9 @@ static bool init_record_(
 
 
 
-/* Post-initialisation processing for output records is defined here. */
+/* Post-initialisation processing for output records is defined here.
+ * Apologies, by the way, for the evil use of macros in this file.  Ideas for
+ * improvement are welcome! */
 #define POST_INIT_ao        POST_INIT(NO_CONVERT)
 #define POST_INIT_longout   POST_INIT(OK)
 #define POST_INIT_bo \
@@ -364,7 +366,7 @@ static long linconv_ao(aoRecord *, int) { return OK; }
 
 DEFINE_DEVICE(longin,   inp, 5, read_longin);
 DEFINE_DEVICE(longout,  out, 5, write_longout);
-DEFINE_DEVICE(ai,       inp, 6, read_ai, linconv_ai);
+DEFINE_DEVICE(ai,       inp, 6, read_ai,  linconv_ai);
 DEFINE_DEVICE(ao,       out, 6, write_ao, linconv_ao);
 DEFINE_DEVICE(bi,       inp, 5, read_bi);
 DEFINE_DEVICE(bo,       out, 5, write_bo);

@@ -13,9 +13,8 @@ USR_CXXFLAGS += -Werror
 USR_CXXFLAGS += -DLIBERA_VERSION='"$(shell \
     sed -n '/^VERSION=/{s///;p}' $(TOP)/install/CONFIG)"'
 
-# The lines below defeat the -ansi flag.
-#CMPLR=LAX
-#CXXCMPLR=LAX
+# The lines below defeat the -ansi flag: we want to use some gcc specific
+# features (typeof, in particular).
 CONFORM_CFLAGS_STRICT = 
 CONFORM_CXXFLAGS_STRICT = 
 
@@ -25,13 +24,13 @@ CONFORM_CXXFLAGS_STRICT =
 
 PROD_IOC = ioc
 
-# <name>.dbd will be created from <name>Include.dbd
+# ioc.dbd will be created from iocInclude.dbd
 DBD += ioc.dbd
 DBD += device.dbd
 DBD += libera.dbd
 
 
-# <name>_registerRecordDeviceDriver.cpp will be created from <name>.dbd
+# ioc_registerRecordDeviceDriver.cpp will be created from ioc.dbd
 ioc_SRCS += ioc_registerRecordDeviceDriver.cpp
 ioc_SRCS += iocMain.cpp
 ioc_SRCS += readFile.cpp
@@ -56,15 +55,14 @@ ioc_SRCS += persistent.cpp
 ioc_LIBS += cspi
 ioc_LIBS += $(EPICS_BASE_IOC_LIBS) 
 
-# Point to the Libera device driver include, libera.h and cspi.h.
+# Point to the Libera device driver includes, libera.h and cspi.h.
 USR_INCLUDES += -I$(TOP)/driver -I$(CSPI)
 
-
-#===========================
 
 include $(TOP)/configure/RULES
 #----------------------------------------
 #  ADD RULES AFTER THIS LINE
+
 
 # The support module uses a pre-built lookup table.
 support.o: divide-lookup.h
@@ -73,10 +71,7 @@ divide-lookup.h: ../divide-lookup.py
 	python ../divide-lookup.py >divide-lookup.h
 
 
-# Force iocMain to be rebuilt every time
+# Force iocMain to be rebuilt every time so that the build date and time is
+# current. 
 iocMain.o: EMPTY
 EMPTY:
-
-
-# iocMain should have the current version information defined in CONFIG.
-iocMain.o: $(TOP)/install/CONFIG

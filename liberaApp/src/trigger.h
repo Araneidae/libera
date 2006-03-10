@@ -28,7 +28,7 @@
 
 #include <semaphore.h>
 
-/* Simple trigger event notification to EPICS. */
+/* Simple trigger event notification to EPICS and related functionality. */
 
 
 /* A simple trigger class designed to publish I/O Intr events to EPICS. */
@@ -126,8 +126,8 @@ private:
 
 
 
-/* Implements simple enable flag which can be controlled through the EPICS
- * interface. */
+/* Implements simple persistent enable flag which can be controlled through
+ * the EPICS interface. */
 
 class ENABLE : I_bi, I_bo
 {

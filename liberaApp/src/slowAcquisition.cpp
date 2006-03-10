@@ -51,9 +51,6 @@ public:
     {
         Publish_ABCD("SA", ABCD);
         Publish_XYQS("SA", XYQS);
-
-        /* Publish the trigger.  This trigger will be signalled whenever our
-         * data has updated. */
         Interlock.Publish("SA");
     }
 
@@ -75,7 +72,6 @@ private:
     }
     
     INTERLOCK Interlock;
-
     ABCD_ROW ABCD;
     XYQSmm_ROW XYQS;
 };

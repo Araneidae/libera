@@ -1,15 +1,7 @@
 Current problems
 
- - Is printf thread safe?  Is perror thread safe?
-I've been seeing mysterious crashes which seem to occur when I'm printing from
-the event thread.  If the problem is indeed with printf then I've actually got
-a bit of a problem: EPICS is doing its own output. ...  Maybe that's part of
-the problem?
-   Problem current doesn't show.  Maybe EPICS uses a threadsafe output.  But
-surely printf is threadsafe??
-
  - Events are being missed. 
-Not too often, but often enough to be worrying.  Perhaps the events thread
+Not too often, but often enough worry about.  Perhaps the events thread
 wants to run at a higher priority: which would be a good idea anyway.
 
 Look into using Posix thread priority scheduling, see (this will only work
@@ -22,16 +14,6 @@ On linux, in order, to use real time priorities the option must be set to YES
 and the ioc must be started with root privilages. 
 
 (From http://www.aps.anl.gov/epics/base/R3-14/8-docs/RELEASE_NOTES.html )
-
- - The current event dispatcher doesn't understand multiple event types.
-Not an issue yet, but at some point we need to handle the postmortem event.
-
- - Need to come back and think carefully about where thread synchronisation
-is needed.  For example, may want to block reading a waveform while it's being
-assembled!
-
- - Possible conflicts between cspi.h/libera.h and hardware.h names need to be
-resolved: need to establish sensible naming convention.
 
  - Is it really adequate to rely on reading an event never returning a partial
 event?

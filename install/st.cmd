@@ -7,4 +7,3 @@ dbLoadRecords("db/sensors.db", "DEVICE=${DEVICE}")
 dbLoadRecords("db/libera.db", "${LIBERA_MACROS}")
 
 iocInit()
-

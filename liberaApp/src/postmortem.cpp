@@ -27,8 +27,8 @@
  */
 
 
-/* Provide support for free running "turn by turn" data.  This data is
- * acquired continously. */
+/* Provide support for postmortem data acquired on receipt of a postmortem
+ * trigger. */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -65,14 +65,8 @@ public:
         RegisterPostmortemEvent(*this, PRIORITY_PM);
     }
 
-
-    /* This code is called, possibly indirectly, in response to a trigger
-     * event to read and process a First Turn waveform.  The waveform is read
-     * and all associated values are computed.
-     *    We only process if armed. */
     void OnEvent()
     {
-        printf("PM!\n");
         /* Wait for EPICS to be ready. */
         Interlock.Wait();
 

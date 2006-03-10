@@ -68,7 +68,8 @@ SIMPLE_WAVEFORM<T>::SIMPLE_WAVEFORM(int TypeMark, size_t WaveformLength) :
 }
 
 
-template<class T> size_t SIMPLE_WAVEFORM<T>::read(void *array, size_t length)
+template<class T>
+size_t SIMPLE_WAVEFORM<T>::read(void *array, size_t length)
 {
     if (length > WaveformLength)  length = WaveformLength;
     memcpy(array, Waveform, sizeof(T) * length);
@@ -99,7 +100,8 @@ template SIMPLE_WAVEFORM<float>;
  * remembering the waveforms block and which column is required and then
  * simply wraps the Read() method into an I_waveform read() method. */
 
-template<class T> class COLUMN_WAVEFORM : public I_WAVEFORM
+template<class T>
+class COLUMN_WAVEFORM : public I_WAVEFORM
 {
 public:
     COLUMN_WAVEFORM(WAVEFORMS<T> & Waveforms, size_t Field) :

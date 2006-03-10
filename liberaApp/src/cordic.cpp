@@ -72,12 +72,12 @@
  *
  * At each step it is easy to calculate that
  *      |(x_{n+1}, y_{n+1})| = sqrt(1 + 2^{-2n}) * |(x_n,y_n)|
- * The correction factor sqrt((1+1/2)*(1+1/4)*(1+1/8)*...) can be calculated
+ * The correction factor sqrt((1+1/4)*(1+1/16)*(1+1/64)*...) can be calculated
  * as approximately 1.1644353.
  *
  * Note that a simpler initial condition (x_0, y_0 non-negative) can be used
- * by starting the iteration at n=0, but this affects overflow compensation:
- * see comments in the code below.
+ * by starting the iteration at n=0, but this would affect overflow
+ * compensation: see comments in the code below.
  *
  * After N steps the magnitude can be read from x_{N+1}, as y_{N+1} rapidly
  * converges to zero.  Indeed, it can be shown that at each stage the

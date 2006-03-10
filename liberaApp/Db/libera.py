@@ -31,7 +31,7 @@ import sys
 from math import *
 
 # It is important to import support before importing epics, as the support
-# module initialises epics (and determined which symbols it exports!)
+# module initialises epics (and determines which symbols it exports!)
 from support import Libera
 from epics import *
 

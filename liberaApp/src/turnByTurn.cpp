@@ -59,9 +59,9 @@ public:
         LongTrigger(false)
     {
         WindowOffset = 0;
-        WindowLength = WindowWaveformLength;
         /* Make the default capture length equal to one window. */
-        LongWaveform.SetLength(WindowWaveformLength);
+        WindowLength = WindowWaveformLength;
+        LongWaveform.SetLength(WindowLength);
         /* Don't trigger until asked to. */
         Armed = false;
         
@@ -114,7 +114,7 @@ public:
             Armed = false;
             /* Capture the full turn-by-turn undecimated waveform of the
              * requested length. */
-            LongWaveform.Capture(1);
+            LongWaveform.Capture();
 
             /* Also bring the short waveforms up to date.  Do this before
              * updating the long trigger so that the reader knows there is
@@ -174,10 +174,10 @@ private:
         if (0 < Length  &&  Length <= WindowWaveformLength)
         {
             bool Process = Length > WindowLength;
-            WindowIq.SetLength(Length);
-            WindowAbcd.SetLength(Length);
-            WindowXyqs.SetLength(Length);
             WindowLength = Length;
+            WindowIq.SetLength(WindowLength);
+            WindowAbcd.SetLength(WindowLength);
+            WindowXyqs.SetLength(WindowLength);
             /* Only process the short waveform if it has grown in length.
              * Otherwise there's nothing to do. */
             if (Process)

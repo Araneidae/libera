@@ -87,18 +87,6 @@ public:
  * to implement each class of record. */
 
 
-/* Helper macros for determining the underlying type for each supported
- * record type. */
-#define TYPEOF(record)  TYPEOF_##record
-
-#define TYPEOF_longin   int
-#define TYPEOF_longout  int
-#define TYPEOF_ai       double
-#define TYPEOF_ao       double
-#define TYPEOF_bi       bool
-#define TYPEOF_bo       bool
-
-
 /* Both read and write methods return true if the operation was successful,
  * false if it failed.  Failure of read is unlikely, but supported! */
 
@@ -115,16 +103,16 @@ public:
     virtual bool write(T) = 0;
 };
 
-#define I_IN_VARIABLE(record)    typedef I_READER<TYPEOF(record)> I_##record
-#define I_OUT_VARIABLE(record)   typedef I_WRITER<TYPEOF(record)> I_##record
 
-
-I_IN_VARIABLE(longin);             // I_longin
-I_OUT_VARIABLE(longout);           // I_longout
-I_IN_VARIABLE(ai);                 // I_ai
-I_OUT_VARIABLE(ao);                // I_ao
-I_IN_VARIABLE(bi);                 // I_bi
-I_OUT_VARIABLE(bo);                // I_bo
+/* The three basic types, int, double, bool, are supported by corresponding
+ * input and output records working through the reader and writer interfaces
+ * defined above. */
+typedef I_READER<int>       I_longin;
+typedef I_WRITER<int>       I_longout;
+typedef I_READER<double>    I_ai;
+typedef I_WRITER<double>    I_ao;
+typedef I_READER<bool>      I_bi;
+typedef I_WRITER<bool>      I_bo;
 
 
 class I_waveform : public I_RECORD

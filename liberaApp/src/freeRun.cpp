@@ -79,7 +79,7 @@ public:
         Interlock.Wait();
 
         /* Capture and convert everything. */
-        WaveformIq.Capture(1);
+        WaveformIq.Capture();
         WaveformAbcd.CaptureCordic(WaveformIq);
         WaveformXyqs.CaptureConvert(WaveformAbcd);
 

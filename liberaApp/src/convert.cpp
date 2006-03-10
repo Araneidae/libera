@@ -147,7 +147,7 @@ void IQtoABCD(const IQ_ROW *IQ, ABCD_ROW *ABCD, int Count)
  *                   S
  * 
  * In fact we gain slightly more head-room on K by computing K*InvS as an
- * *unsigned* multiply: an upper bound on K of over 0.25m seems ample! */
+ * *unsigned* multiply: an upper bound on K of over 250mm seems ample! */
 
 static int DeltaToPosition(int K, int M, int InvS, int shift)
 {
@@ -191,7 +191,7 @@ void ABCDtoXYQS(const ABCD_ROW *ABCD, XYQS_ROW *XYQS, int Count)
          * prescale by 4.  This can involve loss of bits when the intensity
          * is extremely low, but in fact the bottom bits are pretty well pure
          * noise and can be cheaply discarded.
-         *    The button values A,B,C,D are known to line in the range 0 to
+         *    The button values A,B,C,D are known to lie in the range 0 to
          * 2^31 - 1 so we similarly know that 0 <= S < 2^31. */
         int A = abcd.A >> 2;
         int B = abcd.B >> 2;

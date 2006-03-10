@@ -36,9 +36,6 @@
 # Export named parameter to libera.db definitions.
 #
 #   LiberaParameter <name> <value>
-#   LiberaParameter <name>
-#
-# If <value> is omitted the $<name> is used.
 #
 export LIBERA_MACROS=''
 LiberaParameter()
@@ -50,8 +47,8 @@ LiberaParameter()
 
 # Construct IOC parameter string array
 #
-#   IocParameter <flag>
 #   IocParameter <flag> <value>
+#
 declare -a IOC_PARAMETERS
 IocParameter()
 {
