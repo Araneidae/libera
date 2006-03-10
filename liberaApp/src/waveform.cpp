@@ -104,7 +104,7 @@ template<class T>
 class COLUMN_WAVEFORM : public I_WAVEFORM
 {
 public:
-    COLUMN_WAVEFORM(WAVEFORMS<T> & Waveforms, size_t Field) :
+    COLUMN_WAVEFORM(const WAVEFORMS<T> & Waveforms, size_t Field) :
         I_WAVEFORM(DBF_LONG),
         Waveforms(Waveforms),
         Field(Field)
@@ -117,7 +117,7 @@ public:
     }
     
 private:
-    WAVEFORMS<T> & Waveforms;
+    const WAVEFORMS<T> & Waveforms;
     const size_t Field;
 };
 
@@ -159,7 +159,7 @@ void WAVEFORMS<T>::SetLength(size_t NewLength)
 
 
 template<class T>
-size_t WAVEFORMS<T>::Read(size_t Field, int * Target, size_t Length)
+size_t WAVEFORMS<T>::Read(size_t Field, int * Target, size_t Length) const
 {
     /* Adjust the length we'll return according to how much data we actually
      * have in hand. */
@@ -192,7 +192,7 @@ void WAVEFORMS<T>::Write(size_t Field, const int * Source, size_t Length)
 
 
 template<class T>
-size_t WAVEFORMS<T>::CaptureLength(size_t Offset, size_t Length)
+size_t WAVEFORMS<T>::CaptureLength(size_t Offset, size_t Length) const
 {
     /* Use as much of the other waveform as we can fit into our currently
      * selected length, also taking into account our desired offset into the
@@ -208,7 +208,7 @@ size_t WAVEFORMS<T>::CaptureLength(size_t Offset, size_t Length)
 }
 
 template<class T>
-void WAVEFORMS<T>::CaptureFrom(WAVEFORMS<T> & Source, size_t Offset)
+void WAVEFORMS<T>::CaptureFrom(const WAVEFORMS<T> & Source, size_t Offset)
 {
     ActiveLength = Source.CaptureLength(Offset, CurrentLength);
     memcpy(Data, Source.Data + Offset, ActiveLength * sizeof(*Data));
@@ -221,7 +221,7 @@ void WAVEFORMS<T>::CaptureFrom(WAVEFORMS<T> & Source, size_t Offset)
 
 template<class T>
 void WAVEFORMS<T>::PublishColumn(
-    const char * Prefix, const char * Name, size_t Field)
+    const char * Prefix, const char * Name, size_t Field) const
 {
     Publish_waveform(
         Concat(Prefix, Name),
@@ -245,7 +245,7 @@ void WAVEFORMS<T>::PublishColumn(
 /*                           IQ Waveform Support                             */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-void WAVEFORMS<IQ_ROW>::Publish(const char * Prefix, const char *SubName)
+void WAVEFORMS<IQ_ROW>::Publish(const char * Prefix, const char *SubName) const
 {
     PREPARE_PUBLISH(Prefix, SubName);
     PUBLISH_COLUMN("AI", AI);
@@ -276,7 +276,8 @@ void IQ_WAVEFORMS::CapturePostmortem()
 /*                          ABCD Waveform Support                            */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-void WAVEFORMS<ABCD_ROW>::Publish(const char * Prefix, const char *SubName)
+void WAVEFORMS<ABCD_ROW>::Publish(
+    const char * Prefix, const char *SubName) const
 {
     PREPARE_PUBLISH(Prefix, SubName);
     PUBLISH_COLUMN("A", A);
@@ -285,7 +286,7 @@ void WAVEFORMS<ABCD_ROW>::Publish(const char * Prefix, const char *SubName)
     PUBLISH_COLUMN("D", D);
 }
 
-void ABCD_WAVEFORMS::CaptureCordic(IQ_WAVEFORMS & Source)
+void ABCD_WAVEFORMS::CaptureCordic(const IQ_WAVEFORMS & Source)
 {
     ActiveLength = Source.CaptureLength(0, CurrentLength);
     IQtoABCD(Source.Data, Data, ActiveLength);
@@ -296,7 +297,8 @@ void ABCD_WAVEFORMS::CaptureCordic(IQ_WAVEFORMS & Source)
 /*                          XYQS Waveform Support                            */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-void WAVEFORMS<XYQS_ROW>::Publish(const char * Prefix, const char *SubName)
+void WAVEFORMS<XYQS_ROW>::Publish(
+    const char * Prefix, const char *SubName) const
 {
     PREPARE_PUBLISH(Prefix, SubName);
     PUBLISH_COLUMN("X", X);
@@ -305,7 +307,7 @@ void WAVEFORMS<XYQS_ROW>::Publish(const char * Prefix, const char *SubName)
     PUBLISH_COLUMN("S", S);
 }
 
-void XYQS_WAVEFORMS::CaptureConvert(ABCD_WAVEFORMS &Source)
+void XYQS_WAVEFORMS::CaptureConvert(const ABCD_WAVEFORMS &Source)
 {
     ActiveLength = Source.CaptureLength(0, CurrentLength);
     ABCDtoXYQS(Source.Data, Data, ActiveLength);

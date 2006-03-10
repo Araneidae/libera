@@ -74,7 +74,7 @@ public:
 
     /* Publishes all of the fields associated with this waveform to EPICS
      * using the given prefix. */
-    void Publish(const char * Prefix, const char *SubName="WF");
+    void Publish(const char * Prefix, const char *SubName="WF") const;
     
     /* This changes the active length of the waveform: all other operations
      * will then operate only on the initial segment of length NewLength. */
@@ -82,20 +82,20 @@ public:
     
     /* Interrogate the set length of this waveform: this is the desired
      * length as set through the EPICS interface. */
-    size_t GetLength() { return CurrentLength; }
+    size_t GetLength() const { return CurrentLength; }
 
     /* Interrogate the working length: this is the number of rows
      * successfully captured. */
-    size_t WorkingLength() { return ActiveLength; }
+    size_t WorkingLength() const { return ActiveLength; }
     /* A helper routine for the working length: returns the length of
      * waveform that actually fits at the requested offset, truncating
      * Length as appropriate so that Offset+Length<=ActiveLength. */
-    size_t CaptureLength(size_t Offset, size_t Length);
+    size_t CaptureLength(size_t Offset, size_t Length) const;
 
     /* Reads a column from the block of waveforms, returns the number of
      * points actually read.  The Field must be the offset of the selected
      * field into the datatype T. */
-    size_t Read(size_t Field, int * Target, size_t Length);
+    size_t Read(size_t Field, int * Target, size_t Length) const;
 
     /* Overwrites a single column in the waveform, setting the active length
      * to the number of points written. */
@@ -103,12 +103,12 @@ public:
     
     /* Capture a waveform by copying from an existing instance of the same
      * waveform. */
-    void CaptureFrom(WAVEFORMS<T> & Source, size_t Offset);
+    void CaptureFrom(const WAVEFORMS<T> & Source, size_t Offset);
 
     
 protected:
     void PublishColumn(
-        const char * Prefix, const char * Name, size_t Field);
+        const char * Prefix, const char * Name, size_t Field) const;
 
     
     /* The maximum waveform size: space actually allocated. */
@@ -146,7 +146,7 @@ public:
     ABCD_WAVEFORMS(size_t Length) : WAVEFORMS<ABCD_ROW>(Length) { }
 
     /* Capture button values from given IQ waveform. */
-    void CaptureCordic(IQ_WAVEFORMS & Source);
+    void CaptureCordic(const IQ_WAVEFORMS & Source);
 };
 
 class XYQS_WAVEFORMS : public WAVEFORMS<XYQS_ROW>
@@ -155,7 +155,7 @@ public:
     XYQS_WAVEFORMS(size_t Length) : WAVEFORMS<XYQS_ROW>(Length) { }
 
     /* Capture positions from button values. */
-    void CaptureConvert(ABCD_WAVEFORMS &Source);
+    void CaptureConvert(const ABCD_WAVEFORMS &Source);
 };
 
 
