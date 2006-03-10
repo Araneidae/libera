@@ -51,6 +51,7 @@ ioc_SRCS += hardware.cpp
 ioc_SRCS += events.cpp
 ioc_SRCS += support.cpp
 ioc_SRCS += thread.cpp
+ioc_SRCS += persistent.cpp
 
 ioc_LIBS += cspi
 ioc_LIBS += $(EPICS_BASE_IOC_LIBS) 

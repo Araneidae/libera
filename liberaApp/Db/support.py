@@ -27,7 +27,6 @@
 
 # Support code for Python epics database generation.
 
-
 import sys
 import os
 

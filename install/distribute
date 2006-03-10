@@ -19,17 +19,11 @@ done  &&
 # Make sure we now start with a fresh page
 make clean uninstall &&
 
-# Build the distribution.  We do this in two parts to avoid confusion about
-# copyright!
+# Build the distribution.  
 EPICS="$TARGET"/libera-epics-"$VERSION".tgz
-DRIVER="$TARGET"/libera-driver-1.00.tgz
-tar czf "$EPICS" \
-    --exclude=CVS --exclude=.svn \
-    --exclude=Libera/driver --exclude=Libera/opi \
-    -C.. Libera  &&
-tar czf $DRIVER --exclude=CVS driver  &&
+tar czf "$EPICS"  --exclude=.svn --exclude=Libera/opi -C.. Libera  &&
 
 # Finally get rid of the prebuilt files again: we don't want them normally.
 rm install/*.db.prebuilt  &&
 
-echo 'Distribution built ok in:'$'\n'"    $EPICS"$'\n'"    $DRIVER"
+echo 'Distribution built ok in:'$'\n'"    $EPICS"

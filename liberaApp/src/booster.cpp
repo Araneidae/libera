@@ -35,6 +35,7 @@
 
 #include "drivers.h"
 #include "publish.h"
+#include "persistent.h"
 #include "trigger.h"
 #include "hardware.h"
 #include "events.h"
@@ -79,6 +80,7 @@ public:
 
         /* Trigger and interlock. */
         Interlock.Publish("BN");
+        Enable.Publish("BN");
 
         /* Announce our interest in the trigger. */
         RegisterTriggerEvent(*this, PRIORITY_BN);
@@ -90,6 +92,10 @@ public:
      * and all associated values are computed. */
     void OnEvent()
     {
+        /* Ignore events if not enabled. */
+        if (!Enable.Enabled())
+            return;
+        
         Interlock.Wait();
 
         LongIq.Capture(DECIMATION);
@@ -155,6 +161,7 @@ private:
     FLOAT_WAVEFORM ShortAxis;
     /* Interlock for communication with EPICS. */
     INTERLOCK Interlock;
+    ENABLE Enable;
 };
 
 

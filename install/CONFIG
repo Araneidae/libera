@@ -27,6 +27,9 @@ DRIVER_TARGET=/mnt/nfs/testing/ioc
 # daemon with output redirected to this file.
 IOC_LOG=/var/log/ioc
 
+# Location where the IOC will look for its persistent state.  
+IOC_STATE_PATH=/mnt/nfs/testing/ioc_state
+
 # Length of Booster ramp to be monitored in units of 1024 turn-by-turn
 # samples.
 IOC_BN_LENGTH=190

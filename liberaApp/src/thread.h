@@ -45,13 +45,13 @@ public:
      * responding to OnTerminate() method or polling Running() method. */
     void Terminate();
 
+protected:
     /* This is the thread itself. */
     virtual void Thread() = 0;
 
     /* This routine will be called to request termination of the thread. */
     virtual void OnTerminate() { }
 
-protected:
     /* This routine must be called by the thread when it has finished its
      * initialisation so that the startup status can be reported back to the
      * caller.  If this is not called then ThreadOk() will block.

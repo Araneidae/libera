@@ -35,6 +35,7 @@
 
 #include "drivers.h"
 #include "publish.h"
+#include "persistent.h"
 #include "trigger.h"
 #include "hardware.h"
 #include "events.h"
@@ -150,6 +151,8 @@ class FIRST_TURN : I_EVENT
 {
 public:
     FIRST_TURN() :
+        PersistentOffset(Offset),
+        PersistentLength(Length),
         RawAdc(ADC_LENGTH),
         Adc(ADC_LENGTH/4)
     {
@@ -162,7 +165,12 @@ public:
          * per processed sample, each point corresponds to approximately
          * 34ns. */
         Offset = 5;
-        SetLength(31);
+        Length = 31;
+        /* Now initialise the persistence of these and initialise the length
+         * state accordingly. */
+        PersistentOffset.Initialise("FT:OFF");
+        PersistentLength.Initialise("FT:LEN");
+        SetLength(Length);
         
         /* Computed button averages and associated button values. */
         RawAdc.Publish("FT", "RAW");
@@ -178,6 +186,7 @@ public:
          * has occured.  This code is then responsible for ensuring that all
          * the waveforms are updated before the trigger is updated.   */
         Interlock.Publish("FT");
+        Enable.Publish("FT");
 
         /* Also publish access to the offset and length controls for the
          * averaging window. */
@@ -196,6 +205,10 @@ public:
      * and all associated values are computed. */
     void OnEvent()
     {
+        /* Ignore events if not enabled. */
+        if (!Enable.Enabled())
+            return;
+        
         Interlock.Wait();
 
         /* Read and process the ADC waveform into ABCD values. */
@@ -310,8 +323,8 @@ private:
 
     /* Control variables for averaging defining the offset into processed ADC
      * buffer and the length of the averaging window. */
-    int Offset;
-    int Length;
+    int Offset, Length;
+    PERSISTENT_INT PersistentOffset, PersistentLength;
     /* This is set to 2^29/Length: this allows us to compute the average of
      * Length points with a simple double-word multiplication. */
     int AverageScale;
@@ -328,6 +341,7 @@ private:
 
     /* Epics trigger and interlock. */
     INTERLOCK Interlock;
+    ENABLE Enable;
 };
 
 

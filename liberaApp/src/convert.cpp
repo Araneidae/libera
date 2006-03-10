@@ -40,6 +40,7 @@
 #include "hardware.h"
 #include "cordic.h"
 #include "support.h"
+#include "persistent.h"
 
 #include "convert.h"
 
@@ -98,8 +99,7 @@ static int ChannelGain[4] =
  * arranged around a circular vacuum vessel in a linear accelerator or
  * transfer path. */
 static bool Diagonal = true;
-
-
+static PERSISTENT_BOOL PersistentDiagonal(Diagonal);
 
 
 /*****************************************************************************/
@@ -302,11 +302,19 @@ public:
 };
 
 
+/* To implement attenuator persistence we track the programmed attenuator
+ * values here. */
+static int AttenuatorSettings[2];
+static PERSISTENT_INT PersistentAtt1(AttenuatorSettings[0]);
+static PERSISTENT_INT PersistentAtt2(AttenuatorSettings[1]);
+
+
 static bool SetAtten(int Value, void * Context)
 {
     const int Offset = (int) Context;
     if (0 <= Value  &&  Value < 32)
     {
+        AttenuatorSettings[Offset] = Value;
         ATTENUATORS attenuators;
         if (ReadAttenuators(attenuators))
         {
@@ -332,6 +340,7 @@ static bool GetAtten(int &Value, void * Context)
     if (ReadAttenuators(attenuators))
     {
         Value = attenuators[Offset];
+        AttenuatorSettings[Offset] = Value;
         return true;
     }
     else
@@ -339,19 +348,53 @@ static bool GetAtten(int &Value, void * Context)
 }
 
 
+/* Attenuator persistence is achived by tracking the AttenuatorSettings array
+ * and keeping it in step with the requested values. */
+
+static void AttenuatorsPersist()
+{
+    /* First get the current settings so we have sensible defaults. */
+    int Dummy;
+    GetAtten(Dummy, (void*)0);
+    GetAtten(Dummy, (void*)1);
+    /* Now initialise the attenuators.
+     *    Um.  Note the iky use of & instead of && for non-shortcut
+     *    conjunction! */
+    if (PersistentAtt1.Initialise("CF:ATT1")  &
+        PersistentAtt2.Initialise("CF:ATT2"))
+    {
+        SetAtten(AttenuatorSettings[0], (void*)0);
+        SetAtten(AttenuatorSettings[1], (void*)1);
+    }
+}
+
+
+/* As for attenuators, we track the switch settings. */
+static int Switches;
+static PERSISTENT_INT PersistentSwitches(Switches);
 
 static bool GetSwitches(int &Value, void*)
 {
-    return ReadSwitches(Value);
+    bool Ok = ReadSwitches(Value);
+    Switches = Value;
+    return Ok;
 }
 
 
 
 static bool SetSwitches(int Value, void*)
 {
+    Switches = Value;
     return WriteSwitches(Value);
 }
 
+
+static void SwitchesPersist()
+{
+    GetSwitches(Switches, NULL);
+    if (PersistentSwitches.Initialise("CF:SW"))
+        SetSwitches(Switches, NULL);
+}
 
 
 
@@ -374,12 +417,14 @@ public:
 
         Name(Name),
         Parameter(Parameter),
+        Persistent(Parameter),
         LowLimit(LowLimit * Scale),
         HighLimit(HighLimit * Scale),
         Scale(Scale)
     {
         Publish_ai(Name, *this);
         Publish_ao(Name, *this);
+        Persistent.Initialise(Name);
     }
 
     bool read(double &Result)
@@ -411,6 +456,7 @@ public:
 private:
     const char * Name;
     int &Parameter;
+    PERSISTENT_INT Persistent;
     const double LowLimit;
     const double HighLimit;
     const double Scale;
@@ -418,7 +464,6 @@ private:
 
 
 #define PUBLISH_DOUBLE(args...) new CONFIG_DOUBLE(args)
-
 
 #define SCALE 1e-6
 #define BOUND (1 << 25)         // 2^25nm or approx 32mm
@@ -428,20 +473,24 @@ bool InitialiseConvert()
 {
     Publish_bi("CF:DIAG", Diagonal);
     Publish_bo("CF:DIAG", Diagonal);
+    PersistentDiagonal.Initialise("CF:DIAG");
     PUBLISH_DOUBLE("CF:KX", K_X, 0, BOUND, SCALE);
     PUBLISH_DOUBLE("CF:KY", K_Y, 0, BOUND, SCALE);
     PUBLISH_DOUBLE("CF:KQ", K_Q, 0, BOUND, SCALE);
     PUBLISH_DOUBLE("CF:X0", X_0, -BOUND/2, BOUND/2, SCALE);
     PUBLISH_DOUBLE("CF:Y0", Y_0, -BOUND/2, BOUND/2, SCALE);
-    PUBLISH_DOUBLE("CF:GA", ChannelGain[0], 0, GAIN_BOUND, GAIN_SCALE);
-    PUBLISH_DOUBLE("CF:GB", ChannelGain[1], 0, GAIN_BOUND, GAIN_SCALE);
-    PUBLISH_DOUBLE("CF:GC", ChannelGain[2], 0, GAIN_BOUND, GAIN_SCALE);
-    PUBLISH_DOUBLE("CF:GD", ChannelGain[3], 0, GAIN_BOUND, GAIN_SCALE);
+    PUBLISH_DOUBLE("CF:G0", ChannelGain[0], 0, GAIN_BOUND, GAIN_SCALE);
+    PUBLISH_DOUBLE("CF:G1", ChannelGain[1], 0, GAIN_BOUND, GAIN_SCALE);
+    PUBLISH_DOUBLE("CF:G2", ChannelGain[2], 0, GAIN_BOUND, GAIN_SCALE);
+    PUBLISH_DOUBLE("CF:G3", ChannelGain[3], 0, GAIN_BOUND, GAIN_SCALE);
 
     Publish_waveform("CF:ATTWF", *new GET_ATTEN_WAVEFORM);
     PUBLISH_FUNCTION_OUT(longout, "CF:ATT1", SetAtten, GetAtten, (void*)0);
     PUBLISH_FUNCTION_OUT(longout, "CF:ATT2", SetAtten, GetAtten, (void*)1);
+    AttenuatorsPersist();
     PUBLISH_FUNCTION_IN_OUT(longin, longout,  "CF:SW",
         GetSwitches, SetSwitches, NULL);
+    SwitchesPersist();
+
     return true;
 }

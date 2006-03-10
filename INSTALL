@@ -18,8 +18,9 @@ This software depends on the following components:
  * Libera 1.00.  To run the driver a complete Libera system must be used
    together with the full Libera distribution.  Libera can be obtained from
    Instrumentation Technologies at: http://www.i-tech.si.
-       To compile the driver the files libera.h and ebpp.h from the Libera
-   distribution must be placed where it they be found by the compiler. 
+       The CSPI library and its associated header files are included with this
+   distribution.  The makefile has been modified to integrate with the EPICS
+   build.
 
  * System updates.  The Libera system must be upgraded to 1.00.
 
@@ -99,31 +100,23 @@ line, but the Libera driver will only use the linux-arm target.
 Building the Libera EPICS driver
 ================================
 
-The Libera device driver header file is separately available, also under the
-GNU license.  The instructions below assume that you have the header file as
-libera-driver-1.00.tgz.
-
 One thing missing from this distribution is the Python library used to build
 the .db files, and as yet there is no separate distribution published for
 this, at it is very dependent on the Diamond environment.  The library can be
 provided on request, but it will require integration work, thus pre-built .db
 files are included with this distribution.
 
-1.  Extract the libera device driver definitions file thus:
-    $ cd $LIBERA_EPICS
-    $ tar xzf path-to-tar-file/libera-driver-1.00.tgz
-
-2.  Edit $LIBERA_EPICS/configure/RELEASE so that EPICS_BASE points to
+1.  Edit $LIBERA_EPICS/configure/RELEASE so that EPICS_BASE points to
 $EPICS_BASE.
 
-3.  To remove the dependency on the Python epics library, copy the prebuilt
+2.  To remove the dependency on the Python epics library, copy the prebuilt
 files from the install directory to the Db directory thus:
     $ cd $LIBERA_EPICS
     $ for f in libera sensors; do
         mv install/$f.db.prebuilt liberaApp/Db/$f.db
       done
 
-4.  Run make from $LIBERA_EPICS.  
+3.  Run make from $LIBERA_EPICS.  
 
 
 Preparing Libera for EPICS installation
@@ -135,7 +128,7 @@ instructions.  This will ensure that you are running the correct version of
 Libera. 
 
 This EPICS driver may misbehave in obscure ways if the wrong version of Libera
-software is installed, and it does not automatically detect this condition.
+software is installed.
 
 
 

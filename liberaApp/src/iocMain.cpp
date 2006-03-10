@@ -46,6 +46,7 @@
 #include "slowAcquisition.h"
 #include "postmortem.h"
 #include "drivers.h"
+#include "persistent.h"
 #include "trigger.h"
 #include "support.h"
 
@@ -81,6 +82,8 @@ static int DecimatedShortLength = 190;
  * This default frequency is the Diamond booster frequency. */
 static float RevolutionFrequency = 1892629.155;
 
+/* Location of the persistent state file. */
+static const char * StateFileName = NULL;
 
 
 /* Prints interactive startup message as recommended by GPL. */
@@ -106,7 +109,11 @@ static void StartupMessage()
  * up to.
  *     Note that this code is in a signal handler, so we must take care to
  * only call async-safe functions.  This rather restricts what we're allowed
- * to do! */
+ * to do!
+ *     Note also that this handler can be called repeatedly on exit (I'm not
+ * sure why) so its actions need to be idempotent.  Fortunately close doesn't
+ * seem to mind being called repeatedly, and multiple posts to our shutdown
+ * semaphore are entirely inconsequential. */
 
 static void AtExit(int signal)
 {
@@ -163,6 +170,7 @@ static void Usage(const char *IocName)
 "       TT      Length of short turn-by-turn buffer\n"
 "       TW      Length of turn-by-turn readout window\n"
 "       DD      Length of /1024 decimated data buffer\n"
+"    -s <state-file>    Read and record persistent state in <state-file>\n"
 "\n"
 "Note: This IOC application should normally be run from within runioc.\n",
         IocName);
@@ -178,6 +186,9 @@ static bool InitialiseLibera()
         /* Set up exit hander. */
         InitialiseAtExit()  &&
 
+        /* Initialise the persistent state system early on so that other
+         * components can make use of it. */
+        InitialisePersistentState(StateFileName)  &&
         /* Ensure the trigger interlock mechanism is working. */
         InitialiseTriggers()  &&
         /* Initialise the connections to the Libera device. */
@@ -220,6 +231,7 @@ static void TerminateLibera()
     TerminateEventReceiver();
     TerminateSlowAcquisition();
     TerminateHardware();
+    TerminatePersistentState();
     /* On orderly shutdown remove the pid file if we created it.  Do this
      * last of all. */
     if (PidFileName != NULL)
@@ -281,7 +293,7 @@ static bool ParseConfigInt(char *optarg)
     *eq++ = '\0';
     char * end;
     int Value = strtol(eq, &end, 0);
-    if (*eq == '\0'  ||  *end != '\0')
+    if (eq == end  ||  *end != '\0')
     {
         printf("Configuration value not a number: \"%s=%s\"\n", optarg, eq);
         return false;
@@ -317,7 +329,7 @@ static bool ParseFloat(const char *optarg, float &Target)
 {
     char *end;
     Target = strtod(optarg, &end);
-    if (*optarg == '\0'  ||  *end != '\0')
+    if (optarg == end  ||  *end != '\0')
     {
         printf("Not a floating point number: \"%s\"\n", optarg);
         return false;
@@ -339,13 +351,14 @@ static bool ProcessOptions(int &argc, char ** &argv)
     bool Ok = true;
     while (Ok)
     {
-        switch (getopt(argc, argv, "+p:nc:f:hv"))
+        switch (getopt(argc, argv, "+p:nc:f:s:hv"))
         {
             case 'p':   Ok = WritePid(optarg);          break;
             case 'n':   SetNonInteractive();            break;
             case 'c':   Ok = ParseConfigInt(optarg);    break;
-            case 'f':
-                Ok = ParseFloat(optarg, RevolutionFrequency);  break;
+            case 'f':   Ok = ParseFloat(
+                            optarg, RevolutionFrequency);  break;
+            case 's':   StateFileName = optarg;         break;
             case 'h':   Usage(argv[0]);                 return false;
             case 'v':   StartupMessage();               return false;
             case '?':

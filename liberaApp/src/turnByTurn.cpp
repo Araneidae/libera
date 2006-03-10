@@ -35,6 +35,7 @@
 
 #include "drivers.h"
 #include "publish.h"
+#include "persistent.h"
 #include "trigger.h"
 #include "hardware.h"
 #include "events.h"
@@ -127,7 +128,7 @@ public:
 
     
 private:
-    TURN_BY_TURN();     // Needed for PUBLISH_METHOD hacks
+    TURN_BY_TURN();     // Needed for PUBLISH_METHOD hacks: see ID<>
     
     /* Waveform length control.  This can be dynamically changed through the
      * EPICS interface. */

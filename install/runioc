@@ -104,8 +104,6 @@ if (($# >= OPTIND)); then
     exit 1
 fi
 
-
-
 # Don't run if the ioc.pid file is present: this is a simple technique to
 # prevent us interfering with an already running instance.
 if [ -e "$PIDFILE" ]; then
@@ -113,12 +111,8 @@ if [ -e "$PIDFILE" ]; then
     exit 1
 fi
 
-
-# Start the repeater first and background it properly to avoid possible
-# conflicts (for instance, it can hold important file handles open!)
-caRepeater </dev/null >/dev/null 2>&1 &
-
-# Export the database parameters needed to configure libera.db
+# Export the database parameters needed to configure libera.db.  These are
+# record lengths which need to be defined at IOC startup.
 LiberaParameter DEVICE    "$DEVICE"
 LiberaParameter BN_SHORT  $((IOC_BN_LENGTH))
 LiberaParameter BN_LONG   $((16*IOC_BN_LENGTH))
@@ -126,14 +120,23 @@ LiberaParameter TT_LONG   $((IOC_TT_LENGTH))
 LiberaParameter TT_WINDOW $((IOC_TT_WINDOW))
 LiberaParameter FR_LENGTH $((IOC_FR_LENGTH))
 
-IocParameter -p "$PIDFILE"
+# Define the corresponding record lengths for the IOC itself
 IocParameter -cBN= $((IOC_BN_LENGTH))
 IocParameter -cTT= $((IOC_TT_LENGTH))
 IocParameter -cTW= $((IOC_TT_WINDOW))
 IocParameter -cFR= $((IOC_FR_LENGTH))
-IocParameter -f    $FREV
-# Now run the ioc proper.
-./bin/ioc "${IOC_PARAMETERS[@]}" st.cmd
 
+# Where the IOC should write its pid file
+IocParameter -p "$PIDFILE"
+# Revolution frequency (used to compute time axis for BN mode)
+IocParameter -f $FREV
+# Location of persistent state, but only if a path has been defined.
+[ -n "$IOC_STATE_PATH" ] && IocParameter -s "$IOC_STATE_PATH/$DEVICE.state"
+
+# Start the repeater first and background it properly to avoid possible
+# conflicts (for instance, it can hold important file handles open!)
+caRepeater </dev/null >/dev/null 2>&1 &
+# Now run the IOC.
+./bin/ioc "${IOC_PARAMETERS[@]}" st.cmd
 # If we crash, make sure we don't leave the pid file behind!
 rm -f "$PIDFILE"

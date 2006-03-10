@@ -31,7 +31,7 @@ import sys
 from math import *
 
 # It is important to import support before importing epics, as the support
-# module initialises epics (and determined which symbols it exports to *!)
+# module initialises epics (and determined which symbols it exports!)
 from support import Libera
 from epics import *
 
@@ -80,13 +80,6 @@ def Waveform(name, length, FTVL='LONG', **fields):
 
 # Boilerplate record generation.  Here is where the various types of records
 # that can be generated are defined.
-# 
-# ChannelName = None
-# def SetChannelName(name):
-#     global ChannelName
-#     ChannelName = name
-# def Name(button):
-#     return '%s:%s' % (ChannelName, button)
 
 MAX_INT = 2**31 - 1
 MAX_nm  = 10 * 10**6         # 10^7 nm = 10 mm
@@ -145,7 +138,6 @@ def XYQS_(prec=1, logMax=0):
         
 
 def Enable():
-    return      # Not yet implemented
     boolInOut('ENABLE',
         ZNAM = 'Disabled',
         ONAM = 'Enabled')
@@ -254,8 +246,7 @@ def TurnByTurn():
     LONG_LENGTH   = Parameter('TT_LONG')
     WINDOW_LENGTH = Parameter('TT_WINDOW')
     
-    SetChannelName('TT')    # <=== Soon to be split into TT and LT
-    Enable()
+    SetChannelName('TT')
     
     # Number of points successfully captured by the last trigger.
     captured = Libera.longin('CAPTURED')
@@ -306,7 +297,6 @@ def TurnByTurn():
 # Slow acquisition: position updates at 10Hz.
 def SlowAcquisition():
     SetChannelName('SA')
-    Enable()
     Trigger(*ABCD_() + XYQS_())
     UnsetChannelName()
 
@@ -327,10 +317,10 @@ def Config():
     aInOut('KQ', 0, 32,   PREC = 4, EGU  = 'mm')
     aInOut('X0', -16, 16, PREC = 4, EGU  = 'mm')
     aInOut('Y0', -16, 16, PREC = 4, EGU  = 'mm')
-    aInOut('GA', 0, 1.5,  VAL  = 1, PREC = 4)
-    aInOut('GB', 0, 1.5,  VAL  = 1, PREC = 4)
-    aInOut('GC', 0, 1.5,  VAL  = 1, PREC = 4)
-    aInOut('GD', 0, 1.5,  VAL  = 1, PREC = 4)
+    aInOut('G0', 0, 1.5,  VAL  = 1, PREC = 4)
+    aInOut('G1', 0, 1.5,  VAL  = 1, PREC = 4)
+    aInOut('G2', 0, 1.5,  VAL  = 1, PREC = 4)
+    aInOut('G3', 0, 1.5,  VAL  = 1, PREC = 4)
 
     attenwf = Libera.waveform('ATTWF',
         NELM = 8, FTVL = 'LONG', PINI = 'YES')
@@ -343,36 +333,17 @@ def Config():
     UnsetChannelName()
 
 
-# Not yet used ...
-#   These interfaces will probably change drastically.
-
-def Fast():
-    SetChannelName('FF')
-    waveforms = [
-        Libera.waveform(
-            'FAST:WF' + name,
-            FTVL = 'LONG',
-            NELM = 4000)
-        for name in 'XYSQ']
-
-    trigger = Libera.bi(
-        'FAST:TRIG',
-        SCAN = 'I/O Intr',
-        DESC = 'Fast feedback trigger')
-    trigger.FLNK = records.create_fanout('FAST:FAN', waveforms)
-    UnsetChannelName()
-
 
 
 # Finally generate and output the supported records.
     
-FirstTurn()
-Booster()
-FreeRunning()
-TurnByTurn()
-SlowAcquisition()
-Postmortem()
+FirstTurn()         # FT - one position from somewhere within a 100us window
+Booster()           # BN - 1024:1 (and 64:1) decimated waveforms
+FreeRunning()       # FR - turn by turn, updating on every trigger
+TurnByTurn()        # TT - very long waveforms, triggered once on demand
+SlowAcquisition()   # SA - 10Hz low noise position
+Postmortem()        # PM - fixed length pre-postmortem trigger waveforms
 
-Config()
+Config()            # CF - general configuration records
 
 WriteRecords(sys.argv[1])

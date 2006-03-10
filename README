@@ -4,10 +4,10 @@ This software provides an EPICS interface to the Libera electron beam position
 monitor, allowing the performance of the electron beam to be monitored through
 epics channels.
 
-This version of the epics driver is designed to work with exclusively with
-version 0.92-2 of the Libera device driver, as distributed by Instrumentation
-Technologies, http://www.i-tech.si, and has been built to support the
-comissioning of the Diamond light source, http://diamond.ac.uk.
+This version of the epics driver is designed to work with with version 1.00 of
+the Libera device driver, as distributed by Instrumentation Technologies,
+http://www.i-tech.si, and has been built to support the comissioning of the
+Diamond light source, http://diamond.ac.uk.
 
 For licensing see the attached file COPYING.  For installation instructions
 see the attached file INSTALL.
@@ -31,6 +31,9 @@ Booster Ramp Data
     done by reducing 100ms of ramp data to two sample rates: 1/1024 turn
     frequency, and 1/64 turn frequency.
 
+Slow Acquisition Data
+    The electron beam position is filtered down to an update rate of 10Hz.
+
 
 All EPICS records follow a uniform naming convention of the form
     <device>:<group>:<record>
@@ -41,6 +44,9 @@ where:
     <record> is the remainder of the record name as specified below.
 
 In the list of records below we use a number of abbreviations:
+    <iq>
+        refers to eight names AI, AQ, BI, BQ, CI, CQ, DI, CQ referring to
+        button values in quadrature (typically at turn-by-turn rate).
     <buttons> 
         refers to four names, A, B, C, D, referring to the four beam position
         monitor buttons.
@@ -59,7 +65,8 @@ The following EPICS records provided by this driver will be of interest:
 
 First Turn (<group> = FT):
     WF<buttons>
-        32 point arrays at turn-by-turn frequency, updated on trigger
+        256 point arrays at approximately 32ns sampling interval, updated on
+        trigger
     <buttons>
         Button values averaged within the window specified by OFF and LEN.
     <positions>
@@ -67,6 +74,12 @@ First Turn (<group> = FT):
     OFF, LEN
         These two fields determine the window within WF<buttons> used to
         compute the averaged <buttons> values.
+
+Free Running (<group> = FR):
+    WF<iq>
+    WF<buttons>
+    WF<positions>
+        2048 point arrays updated on each trigger at turn-by-turn frequency.
 
 Turn by Turn (<group> = TT):
     ARM
@@ -79,13 +92,12 @@ Turn by Turn (<group> = TT):
         waveform.  A maximum of 200,000 points can be specified.
     CAPTURED
         Records how many points were captured.  At Diamond's booster frequency
-        (1.893MHz) typically no more than 120,000 points can be reliably
-        captured.
+        (1.893MHz) something over 200,000 points can be reliably captured.
     OFFSET_S
         Used to set the offset into the long buffer for reading out waveforms.
     LENGTH_S
         Used to set how many points are read from the long buffer.  The
-        default (and maximum) value is 1024.
+        default (and maximum) value is 16384.
     WF<buttons>, WF<positions>
         Waveforms of up to 1024 points read from the internal captured long
         waveform using the specified OFFSET and LENGTH.
@@ -97,6 +109,11 @@ Booster (<group> = BN):
     WFS<positions>
         190 point waveforms of the 100ms booster ramp reduced by a factor of
         1024 from turn-by-turn frequency.
+
+Slow Acquisition (<group> = SA):
+    <buttons>
+    <positions>
+        Averaged button readings and positions updating at approximately 10Hz.
 
 Configuration (<group> = CF):
     DIAG_S
@@ -110,9 +127,9 @@ Configuration (<group> = CF):
         Zero point offsets.  It is intended that these can be used to define a
         logical "centre" point once the centre of the focusing system has been
         located precisely.
-    G<buttons>_S
-        Gain offsets can be set for individual channels to compensate for
-        channel imbalances within Libera.
+    G0_S, G1_S, G2_S, G3_S
+        Gain offsets can be set for individual RF channels to compensate for
+        channel imbalances within Libera.  This is only used in FT mode.
     ATTWF, ATT1_S, ATT2_S
         The eight input attenuators (two per button) are set collectively
         using ATT1_S and ATT2_S, but read back as an 8 point array using

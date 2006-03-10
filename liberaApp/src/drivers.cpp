@@ -71,7 +71,7 @@
 
 /*****************************************************************************/
 /*                                                                           */
-/*                          Common Record Implementation                     */
+/*                        Common Record Implementation                       */
 /*                                                                           */
 /*****************************************************************************/
 
@@ -151,7 +151,7 @@ bool I_WAVEFORM::BindRecord(dbCommon * p)
 
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-/*                          Device Driver Implementations                    */
+/*                        Common Device Driver Routines                      */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 
@@ -201,9 +201,11 @@ static bool init_record_(
 
 
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*****************************************************************************/
+/*                                                                           */
 /*                    Boilerplate generation support.                        */
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                           */
+/*****************************************************************************/
 
 
 /* Record initialisation is simply a matter of constructing an instance of
@@ -285,18 +287,17 @@ static bool init_record_(
 
 /*****************************************************************************/
 /*                                                                           */
-/*                          Device Driver Implementations                    */
+/*                        Device Driver Implementations                      */
 /*                                                                           */
 /*****************************************************************************/
 
-/* Record specific access support. */
 
 
 /* Post-initialisation processing for output records is defined here. */
 #define POST_INIT_ao        POST_INIT(NO_CONVERT)
 #define POST_INIT_longout   POST_INIT(OK)
 #define POST_INIT_bo \
-    ( { bool Flag; \
+    ( { bool Flag = pr->rval; \
         pr->udf = iRecord->init(Flag); \
         pr->rval = Flag; \
         OK; } )
@@ -355,11 +356,9 @@ static long linconv_ao(aoRecord *, int) { return OK; }
 
 
 
-/*****************************************************************************/
-/*                                                                           */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                          Device Driver Definitions                        */
-/*                                                                           */
-/*****************************************************************************/
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 #include "recordDevice.h"
 

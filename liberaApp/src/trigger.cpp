@@ -43,6 +43,7 @@
 #include "drivers.h"
 #include "publish.h"
 #include "hardware.h"
+#include "persistent.h"
 #include "trigger.h"
 
 
@@ -169,6 +170,54 @@ void INTERLOCK::EpicsReady()
          Entry != NULL; Entry = Entry->Next)
         Entry->ReportDone(true);
 }
+
+
+
+/*****************************************************************************/
+/*                                                                           */
+/*                              ENABLE class                                 */
+/*                                                                           */
+/*****************************************************************************/
+
+
+ENABLE::ENABLE() :
+    Persistent(Value)
+{
+    Value = true;
+}
+
+void ENABLE::Publish(const char * Prefix)
+{
+    const char * Name = Concat(Prefix, ":ENABLE");
+    Publish_bi(Name, *this);
+    Publish_bo(Name, *this);
+    Persistent.Initialise(Name);
+}
+
+bool ENABLE::read(bool &Result)
+{
+    Result = Value;
+    return true;
+}
+
+bool ENABLE::init(bool &Result)
+{
+    return read(Result);
+}
+
+bool ENABLE::write(bool NewValue)
+{
+    Value = NewValue;
+    return true;
+}
+
+    
+
+/*****************************************************************************/
+/*                                                                           */
+/*                    Initialisation and Persistent State                    */
+/*                                                                           */
+/*****************************************************************************/
 
 
 INTERLOCK * INTERLOCK::InterlockList = NULL;

@@ -48,8 +48,8 @@ cp "$SOURCE/bin/linux-arm"/* "$TARGET/bin"  &&
 cp "$SOURCE/dbd"/* "$TARGET/dbd"  &&
 cp "$SOURCE/db"/* "$TARGET/db"  &&
 
-for f in runioc st.cmd config; do
-    cp -rp "$SOURCE/install/$f" "$TARGET"
+for f in runioc st.cmd; do
+    cp "$SOURCE/install/$f" "$TARGET"
 done  &&
 
 echo IOC installed in "$TARGET". 

@@ -26,3 +26,6 @@ include $(TOP)/configure/RULES
 $(COMMON_DIR)/%.db: ../%.py
 	python $< $@
 
+
+clean::
+	rm *.pyc

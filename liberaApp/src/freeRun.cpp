@@ -35,6 +35,7 @@
 
 #include "drivers.h"
 #include "publish.h"
+#include "persistent.h"
 #include "trigger.h"
 #include "hardware.h"
 #include "events.h"
@@ -58,6 +59,7 @@ public:
         WaveformAbcd.Publish("FR");
         WaveformXyqs.Publish("FR");
         Interlock.Publish("FR");
+        Enable.Publish("FR");
         /* Announce our interest in the trigger. */
         RegisterTriggerEvent(*this, PRIORITY_FR);
     }
@@ -69,6 +71,10 @@ public:
      *    We only process if armed. */
     void OnEvent()
     {
+        /* Ignore events if not enabled. */
+        if (!Enable.Enabled())
+            return;
+        
         /* Wait for EPICS to be ready. */
         Interlock.Wait();
 
@@ -91,6 +97,7 @@ private:
 
     /* EPICS interlock. */
     INTERLOCK Interlock;
+    ENABLE Enable;
 };
 
 

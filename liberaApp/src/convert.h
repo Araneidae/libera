@@ -104,7 +104,10 @@ void XYQStomm(const XYQS_ROW &XYQSnm, XYQSmm_ROW &XYQSmm);
 /* Combined single row ABCD to XYQSmm conversion. */
 void ABCDtoXYQSmm(const ABCD_ROW &ABCD, XYQSmm_ROW &XYQSmm);
 
-/* Gain correction on a single column of data from a single channel. */
+/* Gain correction on a single column of data from a single channel.  Note
+ * that gain conversion is performed on RF board channels, not on buttons, so
+ * the channel permutation needs to be taken into account before performing
+ * this correction. */
 void GainCorrect(int Channel, int *Column, int Count);
 
 /* Publishes conversion control PVs to EPICS. */

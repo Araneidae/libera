@@ -214,7 +214,8 @@ void WAVEFORMS<T>::CaptureFrom(WAVEFORMS<T> & Source, size_t Offset)
 
 
 /* Helper routine for publishing a column of the waveforms block to EPICS.
- * Uses the COLUMN_WAVEFORM class to build the appropriate access method. */
+ * Uses the COLUMN_WAVEFORM class to build the appropriate access method.
+ * Works closely with the two macros below. */
 
 template<class T>
 void WAVEFORMS<T>::PublishColumn(
@@ -225,12 +226,16 @@ void WAVEFORMS<T>::PublishColumn(
         *new COLUMN_WAVEFORM<T>(*this, Field));
 }
 
-#define PUBLISH_COLUMN(Name, Field) \
-    PublishColumn(PrefixString, Name, offsetof(typeof(*Data), Field))
-
+/* These two macros work together to publish a set of names in the form
+ *      <Prefix>:<SubName><Name>
+ * Note that these macros relie on PublishColumn taking a copy of the
+ * PrefixString! */
 #define PREPARE_PUBLISH(Prefix, SubName) \
     char PrefixString[100]; \
     snprintf(PrefixString, sizeof(PrefixString), "%s:%s", Prefix, SubName)
+
+#define PUBLISH_COLUMN(Name, Field) \
+    PublishColumn(PrefixString, Name, offsetof(typeof(*Data), Field))
 
 
 

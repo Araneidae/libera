@@ -125,5 +125,24 @@ private:
 };
 
 
+
+/* Implements simple enable flag which can be controlled through the EPICS
+ * interface. */
+
+class ENABLE : I_bi, I_bo
+{
+public:
+    ENABLE();
+    void Publish(const char * Prefix);
+    bool Enabled() { return Value; }
+private:
+    bool read(bool &);
+    bool init(bool &);
+    bool write(bool);
+    bool Value;
+    PERSISTENT_BOOL Persistent;
+};
+
+
 /* This needs to be called for initial startup synchronisation. */
 bool InitialiseTriggers();
