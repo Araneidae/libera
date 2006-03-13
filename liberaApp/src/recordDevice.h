@@ -73,6 +73,16 @@ struct boDevice {
     long (*write_bo)(boRecord *);
 };
 
+struct stringinDevice {
+    COMMON_FIELDS(stringin);
+    long (*read_stringin)(stringinRecord *);
+};
+
+struct stringoutDevice {
+    COMMON_FIELDS(stringout);
+    long (*write_stringout)(stringoutRecord *);
+};
+
 struct waveformDevice {
     COMMON_FIELDS(waveform);
     long (*read_waveform)(waveformRecord *);

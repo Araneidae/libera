@@ -174,3 +174,13 @@ Configuration (<group> = CF):
         ATTWF.  The driver initialises with all attenuators set to 20: this
         results in 40dB attenuation per button channel.  Any value (in dB)
         between 0 and 31 can be set per channel.
+
+
+Other (no group):
+=================
+
+    VERSION
+        Version of this release.
+
+    BUILD
+        Build time and date of the running IOC.

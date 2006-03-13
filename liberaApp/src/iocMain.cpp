@@ -46,6 +46,7 @@
 #include "slowAcquisition.h"
 #include "postmortem.h"
 #include "drivers.h"
+#include "publish.h"
 #include "persistent.h"
 #include "trigger.h"
 #include "support.h"
@@ -86,19 +87,23 @@ static float RevolutionFrequency = 1892629.155;
 static const char * StateFileName = NULL;
 
 
+static EPICS_STRING VersionString = LIBERA_VERSION;
+static EPICS_STRING BuildDate = __TIME__ " on " __DATE__;
+
+
 /* Prints interactive startup message as recommended by GPL. */
 
 static void StartupMessage()
 {
     printf(
 "\n"
-"Libera EPICS Driver, Version " LIBERA_VERSION
-        ".  Built: " __TIME__ " on "  __DATE__ ".\n"
+"Libera EPICS Driver, Version %s.  Built: %s.\n"
 "\n"
 "Copyright (C) 2005-2006 Michael Abbott, Diamond Light Source.\n"
 "This program comes with ABSOLUTELY NO WARRANTY.  This is free software,\n"
 "and you are welcome to redistribute it under certain conditions.\n"
-"For details see the GPL or the attached file COPYING.\n");
+"For details see the GPL or the attached file COPYING.\n",
+        VersionString, BuildDate);
 }
 
 
@@ -383,6 +388,9 @@ static bool ProcessOptions(int &argc, char ** &argv)
 
 int main(int argc, char *argv[])
 {
+    Publish_stringin("VERSION", VersionString);
+    Publish_stringin("BUILD", BuildDate);
+    
     /* Consume any option arguments and start the driver. */
     bool Ok =
         ProcessOptions(argc, argv)  &&

@@ -330,8 +330,12 @@ def Config():
         OMSL = 'supervisory', LOPR = 0, HOPR = 31, FLNK = attenwf)
 
     longInOut('SW', LOPR = 0, HOPR = 15)
+
     UnsetChannelName()
 
+    # The VERSION and BUILD strings are not tied to any "channel".
+    Libera.stringin('VERSION', PINI = 'YES')
+    Libera.stringin('BUILD',   PINI = 'YES')
 
 
 

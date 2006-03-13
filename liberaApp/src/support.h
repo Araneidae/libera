@@ -38,7 +38,7 @@
 
 
 /* Returns the number of leading zeros in an integer. */
-__attribute__((always_inline)) inline unsigned int CLZ(unsigned int x) 
+inline unsigned int CLZ(unsigned int x) 
 {
     unsigned int result; 
     __asm__("clz     %0, %1" : "=r"(result) : "r"(x)); 
@@ -48,14 +48,14 @@ __attribute__((always_inline)) inline unsigned int CLZ(unsigned int x)
 
 /* Returns 2^-32 * x * y.  This is particularly convenient for fixed point
  * arithmetic, and is reasonably inexpensive (approximately 30ns). */
-__attribute__((always_inline)) inline unsigned int MulUU(
+inline unsigned int MulUU(
     unsigned int x, unsigned int y)
 {
     return ((unsigned long long) x * y) >> 32;
 }
 
 
-__attribute__((always_inline)) inline int MulSS(int x, int y)
+inline int MulSS(int x, int y)
 {
     return ((long long) x * y) >> 32;
 }
@@ -71,7 +71,7 @@ __attribute__((always_inline)) inline int MulSS(int x, int y)
  *      
  * If it is known that x < 2^31 (and so cannot be mistaken for a signed
  * value) then it will be faster to use MulSS instead. */
-__attribute__((always_inline)) inline int MulUS(unsigned int x, int y)
+inline int MulUS(unsigned int x, int y)
 {
     unsigned int y0 = y & 0x7FFFFFFF;
     int result = (int) MulUU(x, y0);

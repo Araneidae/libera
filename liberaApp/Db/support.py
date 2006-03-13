@@ -56,11 +56,13 @@ class LiberaRecordNames(epics.TemplateRecordNames):
         self.__ChannelName = None
 
     def RecordName(self, name):
-        assert self.__ChannelName != None, 'Must set channel name'
         return self.super.RecordName(self, self.GetChannelName(name))
 
     def GetChannelName(self, name):
-        return '%s:%s' % (self.__ChannelName, name)
+        if self.__ChannelName:
+            return '%s:%s' % (self.__ChannelName, name)
+        else:
+            return name
 
 
 RecordNames = LiberaRecordNames()
@@ -93,10 +95,11 @@ class Libera(hardware.Device):
     @classmethod
     def init(cls):
         for name, addr in [
-                ('longin',   'INP'), ('longout',  'OUT'),
-                ('ai',       'INP'), ('ao',       'OUT'),
-                ('bi',       'INP'), ('bo',       'OUT'),
-                ('waveform', 'INP')]:
+                ('longin',    'INP'), ('longout',   'OUT'),
+                ('ai',        'INP'), ('ao',        'OUT'),
+                ('bi',        'INP'), ('bo',        'OUT'),
+                ('stringin',  'INP'), ('stringout', 'OUT'),
+                ('waveform',  'INP')]:
             setattr(cls, name, cls.makeRecord(name, addr))
 
 Libera.init()

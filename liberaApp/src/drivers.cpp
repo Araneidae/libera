@@ -56,6 +56,8 @@
 #include <aoRecord.h>
 #include <biRecord.h>
 #include <boRecord.h>
+#include <stringinRecord.h>
+#include <stringoutRecord.h>
 #include <waveformRecord.h>
 
 #include "drivers.h"
@@ -303,6 +305,7 @@ static bool init_record_(
         pr->udf = iRecord->init(Flag); \
         pr->rval = Flag; \
         OK; } )
+#define POST_INIT_stringout POST_INIT(OK)
 
 
 /* Mostly we can use simple boilerplate for the process routines. */
@@ -311,6 +314,8 @@ DEFINE_DEFAULT_PROCESS(longin, read, READ)
 DEFINE_DEFAULT_PROCESS(longout, write, WRITE)
 DEFINE_DEFAULT_PROCESS(ao, write, WRITE)
 DEFINE_DEFAULT_PROCESS(bo, write, WRITE)
+DEFINE_DEFAULT_PROCESS(stringin, read, READ)
+DEFINE_DEFAULT_PROCESS(stringout, write, READ)
 
 /* The following three routines need slightly special handling. */
 
@@ -364,10 +369,12 @@ static long linconv_ao(aoRecord *, int) { return OK; }
 
 #include "recordDevice.h"
 
-DEFINE_DEVICE(longin,   inp, 5, read_longin);
-DEFINE_DEVICE(longout,  out, 5, write_longout);
-DEFINE_DEVICE(ai,       inp, 6, read_ai,  linconv_ai);
-DEFINE_DEVICE(ao,       out, 6, write_ao, linconv_ao);
-DEFINE_DEVICE(bi,       inp, 5, read_bi);
-DEFINE_DEVICE(bo,       out, 5, write_bo);
-DEFINE_DEVICE(waveform, inp, 5, read_waveform);
+DEFINE_DEVICE(longin,    inp, 5, read_longin);
+DEFINE_DEVICE(longout,   out, 5, write_longout);
+DEFINE_DEVICE(ai,        inp, 6, read_ai,  linconv_ai);
+DEFINE_DEVICE(ao,        out, 6, write_ao, linconv_ao);
+DEFINE_DEVICE(bi,        inp, 5, read_bi);
+DEFINE_DEVICE(bo,        out, 5, write_bo);
+DEFINE_DEVICE(stringin,  inp, 5, read_stringin);
+DEFINE_DEVICE(stringout, out, 5, write_stringout);
+DEFINE_DEVICE(waveform,  inp, 5, read_waveform);

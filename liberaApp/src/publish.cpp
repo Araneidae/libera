@@ -133,6 +133,8 @@ DEFINE_PUBLISH(ai);
 DEFINE_PUBLISH(ao);
 DEFINE_PUBLISH(bi);
 DEFINE_PUBLISH(bo);
+DEFINE_PUBLISH(stringin);
+DEFINE_PUBLISH(stringout);
 DEFINE_PUBLISH(waveform);
 
 
@@ -213,11 +215,36 @@ private:
     } 
 
 
+/* For EPICS strings we need to treat things slightly differently as C++
+ * doesn't allow assignment of arrays.  Fortunately it seems that simply
+ * defining the following is enough. */
+
+bool PUBLISH_READ<EPICS_STRING>::read(EPICS_STRING &Value)
+{
+    PRINTF("Read %s: %d\n", Name, (int)  Variable);
+    CopyEpicsString(Variable, Value);
+    return true;
+}
+
+bool PUBLISH_WRITE<EPICS_STRING>::init(EPICS_STRING &Result)
+{
+    CopyEpicsString(Variable, Result);
+    return true;
+}
+
+bool PUBLISH_WRITE<EPICS_STRING>::write(EPICS_STRING Value)
+{
+    CopyEpicsString(Value, Variable);
+    return true;
+}
+
+
 
 DEFINE_PUBLISH_VAR_IN(longin);
-DEFINE_PUBLISH_VAR_IN(ai);
-DEFINE_PUBLISH_VAR_IN(bi);
-
 DEFINE_PUBLISH_VAR_OUT(longout);
+DEFINE_PUBLISH_VAR_IN(ai);
 DEFINE_PUBLISH_VAR_OUT(ao);
+DEFINE_PUBLISH_VAR_IN(bi);
 DEFINE_PUBLISH_VAR_OUT(bo);
+DEFINE_PUBLISH_VAR_IN(stringin);
+DEFINE_PUBLISH_VAR_OUT(stringout);

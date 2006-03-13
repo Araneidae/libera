@@ -104,15 +104,49 @@ public:
 };
 
 
+/* Epics strings are rather limited: a massive 39 characters are available! */
+typedef char EPICS_STRING[40];
+
+/* The following indulgence is an extravagantly efficient routine for copying
+ * epics strings: I believe this cannot be done more efficiently!  Of course,
+ * this is an exercise in futility, as epics strings have a negligible role
+ * in this driver, but it's a nice bit of assembler. */
+inline void CopyEpicsString(const EPICS_STRING in, EPICS_STRING &out)
+{
+    /* The choice of working registers here is a slightly delicate matter.  If
+     * we just let the compiler allocate them for us then we get warning
+     * messages from the assembler because the registers aren't in ascending
+     * order.  The ARM ABI specifies that r0-r3 and r12, (also called ip), are
+     * argument and scratch registers, and we also know that lr is invariably
+     * the first register saved (because "ldmfd sp!,{...,lr}" is a very handy
+     * return sequence).  It's also a good bet to look for in and out in
+     * r0-r1, hence the registers used here. */
+    #define REGISTER_BLOCK "{r2, r3, r4, ip, lr}"
+    __asm__ volatile(
+        "ldmia   %[in]!, "  REGISTER_BLOCK "\n\t"
+        "stmia   %[out]!, " REGISTER_BLOCK "\n\t"
+        "ldmia   %[in]!, "  REGISTER_BLOCK "\n\t"
+        "stmia   %[out]!, " REGISTER_BLOCK
+        : "=m"(out)
+        : [in]"r"(in), [out]"r"(out), "m"(*in)
+        : "r2", "r3", "r4", "ip", "lr" );
+    #undef REGISTER_BLOCK
+}
+
+
+
 /* The three basic types, int, double, bool, are supported by corresponding
  * input and output records working through the reader and writer interfaces
  * defined above. */
-typedef I_READER<int>       I_longin;
-typedef I_WRITER<int>       I_longout;
-typedef I_READER<double>    I_ai;
-typedef I_WRITER<double>    I_ao;
-typedef I_READER<bool>      I_bi;
-typedef I_WRITER<bool>      I_bo;
+typedef I_READER<int>           I_longin;
+typedef I_WRITER<int>           I_longout;
+typedef I_READER<double>        I_ai;
+typedef I_WRITER<double>        I_ao;
+typedef I_READER<bool>          I_bi;
+typedef I_WRITER<bool>          I_bo;
+typedef I_READER<EPICS_STRING>  I_stringin;
+typedef I_WRITER<EPICS_STRING>  I_stringout;
+
 
 
 class I_waveform : public I_RECORD

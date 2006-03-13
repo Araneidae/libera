@@ -68,6 +68,8 @@ DECLARE_PUBLISH(ai);
 DECLARE_PUBLISH(ao);
 DECLARE_PUBLISH(bi);
 DECLARE_PUBLISH(bo);
+DECLARE_PUBLISH(stringin);
+DECLARE_PUBLISH(stringout);
 DECLARE_PUBLISH(waveform);
 
 
@@ -78,6 +80,8 @@ DECLARE_SEARCH(ai);
 DECLARE_SEARCH(ao);
 DECLARE_SEARCH(bi);
 DECLARE_SEARCH(bo);
+DECLARE_SEARCH(stringin);
+DECLARE_SEARCH(stringout);
 DECLARE_SEARCH(waveform);
 
 
@@ -92,14 +96,16 @@ DECLARE_SEARCH(waveform);
 
 /* Helper macros for determining the underlying type for each supported
  * record type. */
-#define TYPEOF(record)  TYPEOF_##record
+#define TYPEOF(record)   TYPEOF_##record
 
-#define TYPEOF_longin   int
-#define TYPEOF_longout  int
-#define TYPEOF_ai       double
-#define TYPEOF_ao       double
-#define TYPEOF_bi       bool
-#define TYPEOF_bo       bool
+#define TYPEOF_longin    int
+#define TYPEOF_longout   int
+#define TYPEOF_ai        double
+#define TYPEOF_ao        double
+#define TYPEOF_bi        bool
+#define TYPEOF_bo        bool
+#define TYPEOF_stringin  EPICS_STRING
+#define TYPEOF_stringout EPICS_STRING
 
 
 /* For the special case of variables which are just read or written in-place
@@ -115,12 +121,13 @@ DECLARE_SEARCH(waveform);
 /* Declaration of Publish_<record> methods for simple variable PV access.  For
  * each of these the record implementation simply returns the current value. */
 DECLARE_PUBLISH_VAR_IN(longin);
-DECLARE_PUBLISH_VAR_IN(ai);
-DECLARE_PUBLISH_VAR_IN(bi);
-
 DECLARE_PUBLISH_VAR_OUT(longout);
+DECLARE_PUBLISH_VAR_IN(ai);
 DECLARE_PUBLISH_VAR_OUT(ao);
+DECLARE_PUBLISH_VAR_IN(bi);
 DECLARE_PUBLISH_VAR_OUT(bo);
+DECLARE_PUBLISH_VAR_IN(stringin);
+DECLARE_PUBLISH_VAR_OUT(stringout);
 
 
 
