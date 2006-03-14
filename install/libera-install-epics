@@ -27,29 +27,22 @@
 #      OX11 0DE
 #      michael.abbott@diamond.ac.uk
 
-# Install epics in target directory.  This script also assembles the
-# /etc/sysconfig/epics_ioc and /etc/init.d/epics scripts in the same directory
-# ready to be placed in the appropriate places.
+# This script is copied into $INSTALL_HOST/epics and should be run in place on
+# the IOC to install the EPICS files in their proper places on the local file
+# system.
 
-SOURCE="$(cd "$(dirname "$0")"/..; pwd)"  &&
-# Pick up the configuration settings: this will tell us where to put the
-# epics files we're assembling.
-. "$SOURCE"/install/CONFIG  &&
-: ${INSTALL_HOST:?Local installation path not defined}  &&
+# Hard-wired target on local file system
+EPICS_TARGET=/opt/epics
 
-# Figure out where Epics base is from the epics directory.
-EPICS_BASE="$(
-    sed -n '/^EPICS_BASE=/{s///;p;q}' "$SOURCE"/configure/RELEASE)"  &&
+cd "$(dirname "$0")"
 
-TARGET="$INSTALL_HOST"/epics  &&
-rm -rf "$TARGET"  &&
+if [ "$(uname -m)" != armv5tel ]; then
+    echo This should be run on Libera >&2
+    exit 1
+fi
 
-# Place the EPICS binaries in bin and lib directories as appropriate.
-mkdir -p "$TARGET"/bin "$TARGET"/lib  &&
-cp -f "$EPICS_BASE"/bin/linux-arm/caRepeater "$TARGET"/bin  &&
-cp -f "$EPICS_BASE"/lib/linux-arm/*.so "$TARGET"/lib  &&
-
-# Place the installation script.
-cp "$SOURCE"/install/libera-install-epics "$TARGET"  &&
-
-echo Epics files installed in "$TARGET".
+umask 22  &&
+rm -rf "$EPICS_TARGET"  &&
+mkdir -p "$EPICS_TARGET"  &&
+cp -r . "$EPICS_TARGET"  &&
+rm "$EPICS_TARGET"/libera-install-epics

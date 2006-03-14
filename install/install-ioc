@@ -52,4 +52,25 @@ for f in runioc st.cmd; do
     cp "$SOURCE/install/$f" "$TARGET"
 done  &&
 
+# Also create installation support files.
+mkdir -p "$TARGET"/install  &&
+
+# Also place the epics and epics_ioc files ready to be deployed on the ioc.
+for f in epics libera-install-ioc; do
+    cp "$SOURCE"/install/$f "$TARGET"/install
+done  &&
+
+# The epics_ioc file is basically a digest of the stuff in CONFIG that is
+# directly relevant to the target system.
+cat <<EOF >"$TARGET"/install/epics_ioc  &&
+# Paths to EPICS base and the Libera IOC.
+# This file should be placed in /etc/sysconfig/epics_ioc
+EPICS_BASE="$EPICS_TARGET"
+LIBERA_IOC="$DRIVER_TARGET/runioc"
+EOF
+# All symbols definitions starting IOC_ will be passed through to the target
+# IOC to configure run-time operation.
+grep '^IOC_[[:alnum:]_]*=' "$SOURCE"/install/CONFIG \
+    >>"$TARGET"/install/epics_ioc  &&
+
 echo IOC installed in "$TARGET". 
