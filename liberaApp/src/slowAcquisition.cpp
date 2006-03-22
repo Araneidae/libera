@@ -35,10 +35,10 @@
 #include "drivers.h"
 #include "publish.h"
 #include "persistent.h"
+#include "thread.h"
 #include "trigger.h"
 #include "hardware.h"
 #include "convert.h"
-#include "thread.h"
 #include "waveform.h"
 
 #include "slowAcquisition.h"
@@ -64,10 +64,14 @@ private:
          * stops responding. */
         while (Running())
         {
-            Interlock.Wait();
-            if (ReadSlowAcquisition(ABCD))
+            ABCD_ROW NewABCD;
+            if (ReadSlowAcquisition(NewABCD))
+            {
+                Interlock.Wait();
+                ABCD = NewABCD;
                 ABCDtoXYQSmm(ABCD, XYQS);
-            Interlock.Ready();
+                Interlock.Ready();
+            }
         }
     }
     

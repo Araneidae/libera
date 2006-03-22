@@ -145,8 +145,6 @@ private:
 /*                                                                           */
 /*****************************************************************************/
 
-//#define PRINTF(args...) printf(args)
-#define PRINTF(args...) 
 
 /* The event receiver class encapsulates our event dispatching thread.  This
  * thread listens on the event device and dispatches events to interested

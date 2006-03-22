@@ -268,6 +268,7 @@ class LEVENTD_THREAD : public THREAD
 public:
     LEVENTD_THREAD()
     {
+        TEST_(sem_init, &Shutdown, 0, 0);
     }
     
 private:
@@ -290,7 +291,6 @@ private:
         if (Ok)
         {
             StartupOk();
-            printf("Leventd thread running\n");
             TEST_(sem_wait, &Shutdown);
         }
 

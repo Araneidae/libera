@@ -79,7 +79,7 @@ export DEVICE="$(hostname)"
 PIDFILE=/var/run/ioc.pid
 
 # Check for arguments
-while getopts "d:nfh" option; do
+while getopts 'd:nfh' option; do
     case "$option" in
     d)  DEVICE="$OPTARG" ;;
     n)  IocParameter -n  ;;

@@ -30,43 +30,74 @@
 
 # This script is copied into $INSTALL_HOST and should be run in place on the
 # IOC to ensure that the appropriate files are copied into place.
+#
+# This installation script supports two modes of operation of the installed
+# IOC: testing (installed on the remote file system) or final (copied to the
+# local file system).
+
+SOURCE="$(cd "$(dirname "$0")"/..; pwd)"
+
+# Ensure this isn't run by accident on the development machine.
+if [ "$(uname -m)" != armv5tel ]; then
+    echo >&2 This should be run on Libera
+    exit 1
+fi
+
+# Parse local installation options
+COPY_FILES=0
+while getopts 'fh' option; do
+    case "$option" in
+    f)  COPY_FILES=1 ;;
+    h)  cat <<'EOF'
+Usage: libera-install-ioc [-f]
+    -f      Final install: copy files to local /opt directory
+EOF
+        exit 0 ;;
+    *)  echo >&2 'Invalid option: try -h for help'
+        exit 1 ;;
+    esac
+done
+if (($# >= OPTIND)); then
+    echo >&2 'Invalid arguments: try -h for help'
+    exit 1
+fi
 
 # Hard-wired targets on local file system
 EPICS_TARGET=/opt/epics
 IOC_TARGET=/opt/ioc
 STATE_DIR=/opt/state
 
-SOURCE="$(cd "$(dirname "$0")"/..; pwd)"
-
-if [ "$(uname -m)" != armv5tel ]; then
-    echo This should be run on Libera >&2
-    exit 1
-fi
-
 # Ensure epics driver isn't running at the moment.
 [ -e /var/run/ioc.pid ] && kill "$(cat /var/run/ioc.pid)"
 rm -f /var/run/ioc.pid  &&
 
-# Copy over all the runtime files.  First make sure the target directory is
-# fresh.
-rm -rf "$IOC_TARGET"  &&
-umask 22  &&
-mkdir -p "$IOC_TARGET"  &&
-cp -r "$SOURCE"/* "$IOC_TARGET"  &&
-rm -rf "$IOC_TARGET"/install  &&
-
 # Ensure the state directory exists (but don't interfere with it!)
 mkdir -p "$STATE_DIR"  &&
 
-# Hack the configuration file so that it now points to the standard
-# locations.  This allows a smooth transition from testing mode to release
-# mode, but does make the use of CONFIG rather confused.  This is bound to
-# change soon...
-sed <"$SOURCE"/install/epics_ioc >/etc/sysconfig/epics_ioc '
-    /^EPICS_BASE=/s:=.*$:="'"$EPICS_TARGET"'":
-    /^LIBERA_IOC=/s:=.*$:="'"$IOC_TARGET"'/runioc":
-    /^IOC_STATE_PATH=/s:=.*$:="'"$STATE_DIR"'":
-'  &&
+# If final installation selected then copy over all the run-time files and
+# update the configuration file to point to them.
+if ((COPY_FILES)); then
+    # Copy over all the runtime files.  First make sure the target directory
+    # is fresh.
+    rm -rf "$IOC_TARGET"  &&
+    umask 22  &&
+    mkdir -p "$IOC_TARGET"  &&
+    cp -r "$SOURCE"/* "$IOC_TARGET"  &&
+    rm -rf "$IOC_TARGET"/install  &&
+
+    # Hack the configuration file so that it now points to the standard
+    # locations.  This allows a smooth transition from testing mode to release
+    # mode, but does make the use of CONFIG rather confused.  This is bound to
+    # change soon...
+    sed <"$SOURCE"/install/epics_ioc >/etc/sysconfig/epics_ioc '
+        /^EPICS_BASE=/s:=.*$:="'"$EPICS_TARGET"'":
+        /^LIBERA_IOC=/s:=.*$:="'"$IOC_TARGET"'/runioc":
+        /^IOC_STATE_PATH=/s:=.*$:="'"$STATE_DIR"'":
+    '
+else
+    # Just place the unmodified configuration file in place.
+    cp "$SOURCE"/install/epics_ioc /etc/sysconfig/epics_ioc
+fi  &&
 
 # Copy the startup script
 cp -f "$SOURCE"/install/epics /etc/init.d  &&

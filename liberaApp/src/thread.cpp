@@ -32,9 +32,81 @@
 #include <errno.h>
 #include <pthread.h>
 #include <semaphore.h>
+#include <sys/time.h>
 
 #include "hardware.h"
 #include "thread.h"
+
+
+
+
+/*****************************************************************************/
+/*                                                                           */
+/*                             SEMAPHORE class                               */
+/*                                                                           */
+/*****************************************************************************/
+
+
+/* We roll our own semaphore class here because of unresolved (and really
+ * rather unexpected) problems with sem_t and in particular with
+ * sem_timedwait.  The biggest problem is a very mysterious effect where
+ * sem_timedwait returns ETIMEDOUT *immediately*!  Very odd indeed... */
+
+SEMAPHORE::SEMAPHORE(bool InitialReady)
+{
+    /* Initialise our internal resources. */
+    Ready = InitialReady;
+    TEST_(pthread_cond_init, &ReadyCondition, NULL);
+    pthread_mutex_init(&ReadyMutex, NULL);
+}
+
+bool SEMAPHORE::Wait(int Seconds)
+{
+    timeval Now;
+    TEST_(gettimeofday, &Now, NULL);
+    timespec Timeout;
+    Timeout.tv_sec  = Now.tv_sec + Seconds;
+    Timeout.tv_nsec = Now.tv_usec * 1000;
+    
+    Lock();
+    int ReturnCode = 0;
+    while (!Ready  &&  ReturnCode == 0)
+        ReturnCode = pthread_cond_timedwait(
+            &ReadyCondition, &ReadyMutex, &Timeout);
+    Ready = false;
+    UnLock();
+
+    return ReturnCode == 0;
+}
+
+bool SEMAPHORE::Signal()
+{
+    Lock();
+    bool OldReady = Ready;
+    Ready = true;
+    TEST_(pthread_cond_signal, &ReadyCondition);
+    UnLock();
+    return OldReady;
+}
+
+void SEMAPHORE::Lock()
+{
+    TEST_(pthread_mutex_lock, &ReadyMutex);
+}
+
+void SEMAPHORE::UnLock()
+{
+    TEST_(pthread_mutex_unlock, &ReadyMutex);
+}
+
+
+
+/*****************************************************************************/
+/*                                                                           */
+/*                               THREAD class                                */
+/*                                                                           */
+/*****************************************************************************/
+
 
 
 THREAD::THREAD()
@@ -84,7 +156,7 @@ void THREAD::StartupOk()
 }
 
 
-/* Simple hook to bring the thread into a full member function. */
+/* Simple hook to transfer the thread into a full member function. */
 
 void * THREAD::StaticThread(void * Context)
 {

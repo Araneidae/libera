@@ -26,7 +26,6 @@
  *      michael.abbott@diamond.ac.uk
  */
 
-#include <semaphore.h>
 
 /* Simple trigger event notification to EPICS and related functionality. */
 
@@ -110,18 +109,13 @@ public:
      * EPICS to finish initialising. */
     void Wait();
 
-    /* Private really: don't use externally. */
-    static void EpicsReady();
-
 private:
     bool ReportDone(bool);
 
     bool Value;
     TRIGGER Trigger;
-    sem_t Interlock;
-    INTERLOCK *Next;
-    
-    static INTERLOCK *InterlockList;
+    SEMAPHORE Interlock;
+    const char * Name;
 };
 
 

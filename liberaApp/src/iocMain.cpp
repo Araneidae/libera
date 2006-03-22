@@ -48,6 +48,7 @@
 #include "drivers.h"
 #include "publish.h"
 #include "persistent.h"
+#include "thread.h"
 #include "trigger.h"
 #include "support.h"
 

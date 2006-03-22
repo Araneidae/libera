@@ -3,7 +3,7 @@
 
 # Version number of this software: automatically included in build and used
 # to build distribution files.
-VERSION=0.4.1
+VERSION=0.4.2
 
 # This is where installed files will be placed ready for deployment to the
 # Libera IOC.
@@ -28,7 +28,7 @@ DRIVER_TARGET=/mnt/nfs/testing/ioc
 IOC_LOG=/var/log/ioc
 
 # Location where the IOC will look for its persistent state.  
-IOC_STATE_PATH=/mnt/nfs/testing/ioc_state
+IOC_STATE_PATH=/opt/state
 
 # Length of Booster ramp to be monitored in units of 1024 turn-by-turn
 # samples.

@@ -37,6 +37,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
+#include <pthread.h>
 
 #include <initHooks.h>
 
@@ -44,6 +46,7 @@
 #include "publish.h"
 #include "hardware.h"
 #include "persistent.h"
+#include "thread.h"
 #include "trigger.h"
 
 
@@ -94,87 +97,6 @@ void TRIGGER::Write(bool NewValue)
 
 /*****************************************************************************/
 /*                                                                           */
-/*                             INTERLOCK class                               */
-/*                                                                           */
-/*****************************************************************************/
-
-
-/* The choice of interlock mechanism is a little delicate, and depends
- * somewhat on what kinds of error we anticipate.  The most obvious interlock
- * is a semaphore, which we use.  However, a possible problem will be if more
- * than one DONE event occurs...  This is quite possible if the database is
- * tampered with directly.
- *
- * Another tiresome problem is that the interlocks will start operating
- * before EPICS has finished initialising.  Unfortunately we can't safely
- * call Ready() until EPICS has finished, as otherwise the event is quite
- * likely to be lost.
- *    To handle this we receive the EPICS finished event and use this to
- * signal all of the interlocks.  The implementation here relies on all of
- * the interlocks being created before EPICS is initialised, which is true. */
-
-
-INTERLOCK::INTERLOCK()
-{
-    /* If Wait() will be called before Ready() then start the semaphore with
-     * an initial resource so we don't block immediately! */
-    TEST_(sem_init, &Interlock, 0, 0);
-
-    /* Add ourself to the list of interlocks so that we can all be signalled
-     * once EPICS has finished initialisation.  All of our interlocks are
-     * created during the main initialisation thread, so this does not need to
-     * be thread safe. */
-    Next = InterlockList;
-    InterlockList = this;
-    Value = true;
-}
-
-
-void INTERLOCK::Publish(const char * Prefix)
-{
-    Publish_bi(Concat(Prefix, ":TRIG"), Trigger);
-    PUBLISH_METHOD_OUT(bo, Concat(Prefix, ":DONE"), ReportDone, Value);
-}
-
-void INTERLOCK::Ready()
-{
-    /* Inform EPICS, which is now responsible for calling ReportDone(). */
-    Trigger.Ready();
-}
-
-void INTERLOCK::Wait()
-{
-    sem_wait(&Interlock);
-}
-
-
-/* This will be called when process is done.  Release the interlock.
- * This is normally called when DONE is processed, which should only be after
- * a chain of processing initiated by processing TRIG has completed.  It will
- * also be called when EPICS has finished initialisation. */
-
-bool INTERLOCK::ReportDone(bool Done)
-{
-    TEST_(sem_post, &Interlock);
-    return true;
-}
-
-
-
-/* Called when EPICS has finished initialisation: release all the waiting
- * interlocks so that normal processing can begin. */
-  
-void INTERLOCK::EpicsReady()
-{
-    for (INTERLOCK * Entry = InterlockList;
-         Entry != NULL; Entry = Entry->Next)
-        Entry->ReportDone(true);
-}
-
-
-
-/*****************************************************************************/
-/*                                                                           */
 /*                              ENABLE class                                 */
 /*                                                                           */
 /*****************************************************************************/
@@ -215,21 +137,163 @@ bool ENABLE::write(bool NewValue)
 
 /*****************************************************************************/
 /*                                                                           */
+/*                             INTERLOCK class                               */
+/*                                                                           */
+/*****************************************************************************/
+
+
+/* Supporting class for INTERLOCK class: this is used to block until EPICS
+ * initialisation has completed.
+ *     This code is annoyingly complicated to perform a rather simple task.
+ * It might be worth abstracting the heart of this into the thread
+ * component. */
+
+class EPICS_READY
+{
+public:
+    static bool Initialise()
+    {
+        /* Initialise our internal resources. */
+        EpicsReady = false;
+        TEST_(pthread_cond_init, &ReadyCondition, NULL);
+        pthread_mutex_init(&ReadyMutex, NULL);
+        /* Register with the EPICS initialisation process so that we will be
+         * informed when initialisation is complete. */
+        return initHookRegister(EpicsReadyInitHook) == 0;
+    }
+
+    /* Waits for EPICS initialisation to complete, or returns immediately if
+     * this has already happened. */
+    static void Wait()
+    {
+        /* We can get away without locking if the flag is set.  However, we
+         * still have to test again after acquiring the lock, of course. */
+        if (!EpicsReady)
+        {
+            Lock();
+            while (!EpicsReady)
+                TEST_(pthread_cond_wait, &ReadyCondition, &ReadyMutex);
+            UnLock();
+        }
+    }
+    
+private:
+    /* This hook routine is called repeatedly through the EPICS
+     * initialisation process: however, we're only interested in the very
+     * last report, telling us that initialisation is complete.  We then
+     * communicate this to all interested waiting parties. */
+    static void EpicsReadyInitHook(initHookState State)
+    {
+        if (State == initHookAtEnd)
+        {
+            /* Initialisation is finished.  We can now tell all listening
+             * threads to go ahead. */
+            Lock();
+            EpicsReady = true;
+            TEST_(pthread_cond_broadcast, &ReadyCondition);
+            UnLock();
+        }
+    }
+
+    static void Lock()
+    {
+        TEST_(pthread_mutex_lock, &ReadyMutex);
+    }
+
+    static void UnLock()
+    {
+        TEST_(pthread_mutex_unlock, &ReadyMutex);
+    }
+
+    static bool EpicsReady;
+    static pthread_cond_t ReadyCondition;
+    static pthread_mutex_t ReadyMutex;
+};
+
+bool EPICS_READY::EpicsReady = false;
+pthread_cond_t EPICS_READY::ReadyCondition;
+pthread_mutex_t EPICS_READY::ReadyMutex;
+
+
+
+/* The choice of interlock mechanism is a little delicate, and depends
+ * somewhat on what kinds of error we anticipate.  The most obvious interlock
+ * is a semaphore, which we use.  However, a possible problem will be if more
+ * than one DONE event occurs...  This is quite possible if the database is
+ * tampered with directly.
+ *
+ * Another tiresome problem is that the interlocks will start operating
+ * before EPICS has finished initialising.  Unfortunately we can't safely
+ * call Ready() until EPICS has finished, as otherwise the event is quite
+ * likely to be lost.
+ *    To handle this we receive the EPICS finished event and use this to
+ * signal all of the interlocks.  The implementation here relies on all of
+ * the interlocks being created before EPICS is initialised, which is true. */
+
+
+INTERLOCK::INTERLOCK() :
+    /* As Wait() will be called before Ready() we start the semaphore with
+     * an initial resource to avoid blocking immediately! */
+    Interlock(true)
+{
+    Name = NULL;
+    Value = true;
+}
+
+
+void INTERLOCK::Publish(const char * Prefix)
+{
+    Name = Prefix;
+    Publish_bi(Concat(Prefix, ":TRIG"), Trigger);
+    PUBLISH_METHOD_OUT(bo, Concat(Prefix, ":DONE"), ReportDone, Value);
+}
+
+void INTERLOCK::Ready()
+{
+    /* Inform EPICS, which is now responsible for calling ReportDone(). */
+    Trigger.Ready();
+}
+
+
+void INTERLOCK::Wait()
+{
+    /* Before going on and waiting for the interlock we start by waiting for
+     * EPICS to report that it has finished initialisation. */
+    EPICS_READY::Wait();
+    /* Now wait for EPICS to finish processing the previous update.
+     * Unfortunately experience tells us that the post we're waiting for can
+     * go astray.  To guard against this possibility we wait on a timeout and
+     * go ahead anyway(!) if the event never arrives.  Of course, if events
+     * have become permanently lost then we're dead... */
+    if (!Interlock.Wait(2))
+        printf("%s:DONE timed out waiting for EPICS handshake\n", Name);
+}
+
+
+/* This will be called when process is done.  Release the interlock.
+ * This is normally called when DONE is processed, which should only be after
+ * a chain of processing initiated by processing TRIG has completed.  It will
+ * also be called when EPICS has finished initialisation. */
+
+bool INTERLOCK::ReportDone(bool Done)
+{
+    /* If the interlock was already ready when we signal it then something
+     * has gone wrong. */
+    if (Interlock.Signal())
+        printf("%s:DONE unexpected extra signal\n", Name);
+    return true;
+}
+
+
+
+/*****************************************************************************/
+/*                                                                           */
 /*                    Initialisation and Persistent State                    */
 /*                                                                           */
 /*****************************************************************************/
 
 
-INTERLOCK * INTERLOCK::InterlockList = NULL;
-
-
-static void InterlockInitHook(initHookState State)
-{
-    if (State == initHookAtEnd)
-        INTERLOCK::EpicsReady();
-}
-
 bool InitialiseTriggers()
 {
-    return initHookRegister(InterlockInitHook) == 0;
+    return EPICS_READY::Initialise();
 }

@@ -39,6 +39,11 @@
 #include "persistent.h"
 
 
+/* Period in seconds between polls of the persistent state.  Any update will
+ * be written out within this interval, even if the IOC crashes first. */
+#define PERSISTENCE_POLL_INTERVAL       100
+
+
 static const char * StateFileName = NULL;
 static PERSISTENT_BASE * PersistentList = NULL;
 
@@ -262,9 +267,9 @@ template PERSISTENT<bool>;
 
 /* We write the state file in a background time thread.  This has advantages
  * and disadvantages.  The advantage is that the state will be written out
- * within 10 seconds of being changed, so if the IOC crashes any updates to
+ * within seconds of being changed, so if the IOC crashes any updates to
  * persistent state are not lost.  The disadvantage is that we have to worry
- * about synchronisation issues. */
+ * (a little bit) about synchronisation issues. */
 
 class TIMER_THREAD: public THREAD
 {
@@ -275,14 +280,16 @@ private:
         StartupOk();
         while (Running())
         {
-            sleep(10);
+            sleep(PERSISTENCE_POLL_INTERVAL);
             WriteStateFile();
         }
     }
 
     void OnTerminate()
     {
-        /* Poke the terminate thread to kick it out of its sleep. */
+        /* Poke the terminate thread to kick it out of its sleep.
+         *    Note: this signal is handled elsewhere, so has side effects.
+         * Fortunately, these side effects aren't a problem. */
         TEST_(kill, pid, SIGINT);
     }
     

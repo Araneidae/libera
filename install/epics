@@ -60,6 +60,13 @@ case "$1" in
         echo -n "Stopping EPICS"
         [ -e /var/run/ioc.pid ] && kill "$(cat /var/run/ioc.pid)"
         evaluate_retval
+
+        # For the moment, try for a rather more rigorous stop if the kill
+        # above failed.
+        sleep 0.5
+        [ -e /var/run/ioc.pid ] && kill -9 "$(cat /var/run/ioc.pid)"  &&
+        echo >&2 'IOC killed forcibly!'
+        
         # Make sure that the ioc.pid file doesn't stay around, otherwise if
         # the ioc dies without removing its pid file we can never restart
         # without manual intervention.
@@ -68,6 +75,7 @@ case "$1" in
 
     restart)
         "$0" stop
+        sleep 1
         "$0" start
         ;;
 

@@ -74,3 +74,28 @@ private:
     pthread_t ThreadId;         // 
     sem_t ThreadStatus;         // Semaphore signalled when thread resolved
 };
+
+
+/* A class to implement binary semaphores with timeout. */
+
+class SEMAPHORE
+{
+public:
+    SEMAPHORE(bool InitialReady);
+
+    /* Wait for semaphore to be ready and consumes the ready flag.  Returns
+     * false on a timeout. */
+    bool Wait(int Seconds);
+
+    /* Signal that semaphore is ready: returns the previous state of the
+     * ready flag. */
+    bool Signal();
+    
+private:
+    void Lock();
+    void UnLock();
+
+    bool Ready;
+    pthread_cond_t ReadyCondition;
+    pthread_mutex_t ReadyMutex;
+};
