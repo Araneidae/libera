@@ -134,6 +134,8 @@ IocParameter -f $FREV
 # conflicts (for instance, it can hold important file handles open!)
 caRepeater </dev/null >/dev/null 2>&1 &
 # Now run the IOC.
+echo 'Starting IOC at' $(date)
 ./bin/ioc "${IOC_PARAMETERS[@]}" st.cmd
+echo 'IOC stopped at' $(date)
 # If we crash, make sure we don't leave the pid file behind!
 rm -f "$PIDFILE"

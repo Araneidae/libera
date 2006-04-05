@@ -50,7 +50,7 @@ case "$1" in
             else
                 # If a log file is specified then run as a daemon with all
                 # output sent to this file.
-                "$LIBERA_IOC" -n >"$IOC_LOG" 2>&1 </dev/null &
+                "$LIBERA_IOC" -n >>"$IOC_LOG" 2>&1 </dev/null &
             fi
             evaluate_retval
         fi
