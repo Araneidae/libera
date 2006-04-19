@@ -37,30 +37,36 @@
 
 SOURCE="$(cd "$(dirname "$0")"/..; pwd)"
 
-# Ensure this isn't run by accident on the development machine.
-if [ "$(uname -m)" != armv5tel ]; then
-    echo >&2 This should be run on Libera
+function Error()
+{
+    echo >&2 "$@"
     exit 1
-fi
+}
+
+# Ensure this isn't run by accident on the development machine.
+[ "$(uname -m)" != armv5tel ]  &&
+    Error This should be run on Libera
 
 # Parse local installation options
-COPY_FILES=0
-while getopts 'fh' option; do
+TARGET=none
+while getopts 'fth' option; do
     case "$option" in
-    f)  COPY_FILES=1 ;;
+    f)  TARGET=final ;;
+    t)  TARGET=test ;;
     h)  cat <<'EOF'
-Usage: libera-install-ioc [-f]
-    -f      Final install: copy files to local /opt directory
+Usage: libera-install-ioc <option>
+where <option> is one of
+    -f  Final install: copy files to local /opt directory
+    -t  Testing install: don't copy files, use from configured location
 EOF
         exit 0 ;;
-    *)  echo >&2 'Invalid option: try -h for help'
-        exit 1 ;;
+    *)  Error 'Invalid option: try -h for help' ;;
     esac
 done
-if (($# >= OPTIND)); then
-    echo >&2 'Invalid arguments: try -h for help'
-    exit 1
-fi
+[ $TARGET == none ]  &&
+    Error 'Specify installation option.  Try -h for help.'
+(($# >= OPTIND))  &&
+    Error 'Invalid arguments: try -h for help'
 
 # Hard-wired targets on local file system
 EPICS_TARGET=/opt/epics
@@ -68,15 +74,17 @@ IOC_TARGET=/opt/ioc
 STATE_DIR=/opt/state
 
 # Ensure epics driver isn't running at the moment.
-[ -e /var/run/ioc.pid ] && kill "$(cat /var/run/ioc.pid)"
-rm -f /var/run/ioc.pid  &&
+if [ -e /var/run/ioc.pid ]; then
+    kill "$(cat /var/run/ioc.pid)"
+    rm -f /var/run/ioc.pid
+fi
 
 # Ensure the state directory exists (but don't interfere with it!)
 mkdir -p "$STATE_DIR"  &&
 
 # If final installation selected then copy over all the run-time files and
 # update the configuration file to point to them.
-if ((COPY_FILES)); then
+if [ $TARGET == final ]; then
     # Copy over all the runtime files.  First make sure the target directory
     # is fresh.
     rm -rf "$IOC_TARGET"  &&

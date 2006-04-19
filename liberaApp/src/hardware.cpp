@@ -45,9 +45,6 @@
 #include "support.h"
 
 
-/* Disable PM support for the moment: it seems particularly broken! */
-#undef ENABLE_PM
-
 
 #define CSPI_(command, args...) \
     ( { int error = (command)(args); \
@@ -276,10 +273,7 @@ private:
     {
         CSPIHCON EventSource;
         CSPI_CONPARAMS ConParams;
-        ConParams.event_mask = CSPI_EVENT_TRIGGET;
-#ifdef ENABLE_PM
-        ConParams.event_mask |= LIBERA_EVENT_PM;
-#endif
+        ConParams.event_mask = CSPI_EVENT_TRIGGET | LIBERA_EVENT_PM;
         ConParams.handler = CspiSignal;
         bool Ok =
             CSPI_(cspi_allochandle, CSPI_HANDLE_CON, CspiEnv, &EventSource)  &&
@@ -395,9 +389,7 @@ bool InitialiseHardware()
         InitialiseConnection(CspiConAdc, CSPI_MODE_ADC)  &&
         InitialiseConnection(CspiConDd, CSPI_MODE_DD)  &&
         InitialiseConnection(CspiConSa, CSPI_MODE_SA)  &&
-#ifdef ENABLE_PM
         InitialiseConnection(CspiConPm, CSPI_MODE_PM)  &&
-#endif
         /* Set the attenuators and switches into a sensible default state. */
         WriteAttenuators(DefaultAttenuators)  &&
         WriteSwitches(0)  &&
