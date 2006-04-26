@@ -3,7 +3,7 @@
 
 # Version number of this software: automatically included in build and used
 # to build distribution files.
-VERSION=0.4.3
+VERSION=0.4.4
 
 # This is where installed files will be placed ready for deployment to the
 # Libera IOC.

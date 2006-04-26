@@ -53,5 +53,6 @@ void RegisterPostmortemEvent(I_EVENT &Event, int Priority);
 #define PRIORITY_SA     2       // Slow acquisition gets second place
 #define PRIORITY_BN     10      // Decimated booster mode
 #define PRIORITY_FR     100     // Free running mode
+#define PRIORITY_TICK   200     // Tick event notification
 #define PRIORITY_TT     5       // Turn-by-turn takes forever but goes early
 #define PRIORITY_PM     0       // Postmortem wins, every time.

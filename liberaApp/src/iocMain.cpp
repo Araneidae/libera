@@ -198,8 +198,6 @@ static bool InitialiseLibera()
         /* Initialise the persistent state system early on so that other
          * components can make use of it. */
         InitialisePersistentState(StateFileName)  &&
-        /* Ensure the trigger interlock mechanism is working. */
-        InitialiseTriggers()  &&
         /* Initialise the connections to the Libera device. */
         InitialiseHardware()  &&
         /* Initialise conversion code.  This needs to be done fairly early as
@@ -208,6 +206,8 @@ static bool InitialiseLibera()
         /* Get the event receiver up and running.  This spawns a background
          * thread for dispatching trigger events. */
         InitialiseEventReceiver()  &&
+        /* Ensure the trigger interlock mechanism is working. */
+        InitialiseTriggers()  &&
 
         /* Now we can initialise the mode specific components. */
 

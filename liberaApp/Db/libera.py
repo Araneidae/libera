@@ -337,6 +337,21 @@ def Config():
     Libera.stringin('VERSION', PINI = 'YES')
     Libera.stringin('BUILD',   PINI = 'YES')
 
+    # Similarly the tick health monitor is defined here.  This records the
+    # number of seconds since the last recorded trigger and signals an alarm
+    # according to how long the delay has been.
+    tick = records.calc('TICK',
+        SCAN = '.1 second',
+        CALC = 'A+0.1',
+        HIGH = 1,   HSV  = 'MINOR',
+        HIHI = 10,  HHSV = 'MAJOR')
+    tick.INPA = tick
+    tick_reset = records.calcout('TICK_CALC',
+        CALC = '0',
+        OUT  = tick,
+        OOPT = 'Every Time',
+        DOPT = 'Use CALC')
+    Libera.bi('TICK_TRIG', SCAN = 'I/O Intr', FLNK = tick_reset)
 
 
 # Finally generate and output the supported records.

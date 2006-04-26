@@ -49,27 +49,27 @@ class ReadFile(hardware.Device):
 
 
 def TemperatureSensor(name, file, description):
-    records.longin(name,
+    return records.longin(name,
         DTYP = 'ReadFile',
         INP  = '/proc/sys/dev/sensors/max1617a-i2c-0-%s|2' % file,
-        SCAN = DefaultScanRate,
+#        SCAN = DefaultScanRate,
         EGU  = 'deg C',
-        LOPR = 20,
-        HOPR = 60,
+        LOPR = 20,   HOPR = 60,
+        HIGH = 45,   HSV  = 'MINOR',
+        HIHI = 50,   HHSV = 'MAJOR',
+        LOLO = 0,    LLSV = 'MINOR',
         DESC = description)
 
 def FanSensor(name, file, description):
-    records.longin(name,
+    return records.longin(name,
         DTYP = 'ReadFile',
         INP  = '/proc/sys/dev/sensors/max6650-i2c-0-%s' % file,
-        SCAN = DefaultScanRate,
+#        SCAN = DefaultScanRate,
         EGU  = 'RPM',
-        LOPR = 0,
-        HOPR = 6000,
+        LOPR = 0,    HOPR = 6000,
+        LOW  = 4000, LSV  = 'MINOR',
+        LOLO = 1000, LLSV = 'MAJOR',
         DESC = description)
-
-def FanControl(name, file, description):
-    pass
 
 def MemInfo(name, field, description):
     records.longin(
@@ -88,16 +88,19 @@ DefaultScanRate = '10 second'
 
 ReadFile()
 
-TemperatureSensor('TEMP1', '29/temp1', 'Main PCB Temperature')
-TemperatureSensor('TEMP2', '29/temp2', '(unused)')
- 
-FanSensor( 'FAN1', '48/fan1',  'Back fan speed')
-FanControl('FAN1', '48/speed', 'Back fan set speed')
-FanSensor( 'FAN2', '4b/fan1',  'Front fan speed')
-FanControl('FAN2', '4b/speed', 'Front fan set speed')
+temp1 = TemperatureSensor('TEMP1', '29/temp1', 'Main PCB Temperature')
+fan1 = FanSensor('FAN1', '48/fan1', 'Back fan speed')
+fan2 = FanSensor('FAN2', '4b/fan1', 'Front fan speed')
  
 MemInfo('USED',  2, 'Total used memory')
 MemInfo('FREE',  3, 'Total memory free')
 MemInfo('CACHE', 6, 'Total cached memory')
+
+records.calc('HEALTH',
+    SCAN = DefaultScanRate,
+    CALC = '1',
+    INPA = PP(MS(temp1)),
+    INPB = PP(MS(fan1)),
+    INPC = PP(MS(fan2)))
 
 WriteRecords(sys.argv[1])

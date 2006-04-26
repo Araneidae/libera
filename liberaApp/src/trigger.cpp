@@ -47,6 +47,7 @@
 #include "hardware.h"
 #include "persistent.h"
 #include "thread.h"
+#include "events.h"
 #include "trigger.h"
 
 
@@ -292,8 +293,28 @@ bool INTERLOCK::ReportDone(bool Done)
 /*                                                                           */
 /*****************************************************************************/
 
+class TICK_TRIGGER : TRIGGER, I_EVENT
+{
+public:
+    TICK_TRIGGER()
+    {
+        Publish_bi("TICK_TRIG", *this);
+        RegisterTriggerEvent(*this, PRIORITY_TICK);
+    }
+private:
+    void OnEvent()
+    {
+        Ready();
+    }
+};
 
 bool InitialiseTriggers()
 {
+    /* Publish a ticking record to publish the fact that trigger has been
+     * processed. */
+    new TICK_TRIGGER();
+    
+    /* Ensure the trigger interlock mechanism (which needs to interact
+     * carefully with EPICS) has been correctly initialise. */
     return EPICS_READY::Initialise();
 }
