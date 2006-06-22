@@ -32,6 +32,5 @@
 
 /* Computes sqrt(x*x+y*y) using purely integer arithmetic.  The result
  * returned is scaled by a factor of approximately 0.5822 times the true
- * magnitude.  For our application this factor can be ignored.
- *    Two significant bits are generated per iteration. */
+ * magnitude.  For our application this factor can be ignored. */
 int CordicMagnitude(int x, int y);

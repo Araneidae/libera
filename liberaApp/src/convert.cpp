@@ -86,11 +86,13 @@ static int ChannelGain[4] =
 
 
 /* This flag determines the beam orientation: either diagonal or vertical.
+ * Note that the Z axis (or S, as accelerator physicists call it) is *into*
+ * the page, and X points out of the ring.
  * 
- *                  A                   B       A
- *              D   *   B                   *    
- *                  C                   C       D
- *
+ *       ^ Y        A                   A       B
+ *       |      D   *   B                   *    
+ * X <---+-         C                   D       C
+ *       |
  *              Vertical                Diagonal
  *
  * The default configuration is diagonal: this is the normal arrangement with
@@ -163,20 +165,20 @@ static int DeltaToPosition(int K, int M, int InvS, int shift)
  *              Vertical                        Diagonal
  *              
  *              A = I * (1 + Y/K)               A = I * (1 + X/K + Y/K)
- *              B = I * (1 + X/K)               B = I * (1 - X/K + Y/K)
+ *              B = I * (1 - X/K)               B = I * (1 - X/K + Y/K)
  *              C = I * (1 - Y/K)               C = I * (1 - X/K - Y/K)
- *              D = I * (1 - X/K)               D = I * (1 + X/K - Y/K)
+ *              D = I * (1 + X/K)               D = I * (1 + X/K - Y/K)
  *
  * where I is proportional to beam intensity and we are neglecting terms of
  * order X^2, Y^2 and XY.  Given this model we can calculate
  * 
  *      S = A + B + C + D = 4 * I
  *      Q = A - B + C - D = 0
- *              D_X = B - D = 2*I*X/K           D_X = A - B - C + D = 4*I*X/K
+ *              D_X = D - B = 2*I*X/K           D_X = A - B - C + D = 4*I*X/K
  *              D_Y = A - C = 2*I*Y/K           D_Y = A + B - C - D = 4*I*Y/K
  *
  * and thus
- *              X = 2*K * (B - D) / S           X = K * (A - B - C + D) / S
+ *              X = 2*K * (D - B) / S           X = K * (A - B - C + D) / S
  *              Y = 2*K * (A - C) / S           X = K * (A + B - C - D) / S .
  */
 
@@ -227,7 +229,7 @@ void ABCDtoXYQS(const ABCD_ROW *ABCD, XYQS_ROW *XYQS, int Count)
         }
         else
         {
-            xyqs.X = DeltaToPosition(K_X, B - D, InvS, shift) << 1 - X_0;
+            xyqs.X = DeltaToPosition(K_X, D - B, InvS, shift) << 1 - X_0;
             xyqs.Y = DeltaToPosition(K_Y, A - C, InvS, shift) << 1 - Y_0;
         }
         xyqs.Q = DeltaToPosition(K_Q, A - B + C - D, InvS, shift);

@@ -49,7 +49,7 @@ EPICS_VERSION   One of 3.14.6, 3.14.7 or 3.14.8.2 for this release.
 
 
 The instructions below assume that you have already extracted
-libera-epics-<version>.tgz into $LIBERA_EPICS.
+libera-epics-$EPICS_VERSION.tgz into $LIBERA_EPICS.
 
 When running make the environment variable HOST_ARCH will be assumed to be
 set thus: 

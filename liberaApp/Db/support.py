@@ -75,7 +75,7 @@ from epics import *
 class Libera(hardware.Device):
     @classmethod
     def LoadLibrary(cls):
-        cls.LoadDbdFile('dbd/libera.dbd')
+        cls.LoadDbdFile('libera.dbd')
 
     class makeRecord:
         def __init__(self, builder, addr_name):

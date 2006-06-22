@@ -284,12 +284,11 @@ static bool ParseConfigInt(char *optarg)
     {
         const char * Name;
         int & Target;
-        int Low, High;
     } Lookup[] = {
-        { "TT", LongTurnByTurnLength,   1, 500000 },  // Up to 16M bytes
-        { "TW", TurnByTurnWindowLength, 1, 65536 },   // Up to 8M bytes
-        { "FR", FreeRunLength,          1, 8192 },
-        { "BN", DecimatedShortLength,   1, 500 },
+        { "TT", LongTurnByTurnLength },
+        { "TW", TurnByTurnWindowLength },
+        { "FR", FreeRunLength },
+        { "BN", DecimatedShortLength },
     };
 
     /* Parse the configuration setting into <key>=<integer>. */
@@ -313,16 +312,8 @@ static bool ParseConfigInt(char *optarg)
     {
         if (strcmp(optarg, Lookup[i].Name) == 0)
         {
-            if (Lookup[i].Low <= Value  &&  Value <= Lookup[i].High)
-            {
-                Lookup[i].Target = Value;
-                return true;
-            }
-            else
-            {
-                printf("Unreasonable value: \"%s=%s\"\n", optarg, eq);
-                return false;
-            }
+            Lookup[i].Target = Value;
+            return true;
         }
     }
 

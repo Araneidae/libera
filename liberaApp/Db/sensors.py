@@ -43,16 +43,17 @@ LibVersion('ReadFile', 'Libera', home=HomeDir)
 class ReadFile(hardware.Device):
     @classmethod
     def LoadLibrary(cls):
-        cls.LoadDbdFile('dbd/device.dbd')
+        cls.LoadDbdFile('device.dbd')
     
 
+
+DefaultScanRate = '10 second'
 
 
 def TemperatureSensor(name, file, description):
     return records.longin(name,
         DTYP = 'ReadFile',
         INP  = '/proc/sys/dev/sensors/max1617a-i2c-0-%s|2' % file,
-#        SCAN = DefaultScanRate,
         EGU  = 'deg C',
         LOPR = 20,   HOPR = 60,
         HIGH = 45,   HSV  = 'MINOR',
@@ -64,26 +65,26 @@ def FanSensor(name, file, description):
     return records.longin(name,
         DTYP = 'ReadFile',
         INP  = '/proc/sys/dev/sensors/max6650-i2c-0-%s' % file,
-#        SCAN = DefaultScanRate,
         EGU  = 'RPM',
         LOPR = 0,    HOPR = 6000,
         LOW  = 4000, LSV  = 'MINOR',
         LOLO = 1000, LLSV = 'MAJOR',
         DESC = description)
 
-def MemInfo(name, field, description):
-    records.longin(
+MB = 1024 * 1024
+def MemInfo(name, field, description, SCAN=DefaultScanRate):
+    return records.longin(
         name,
         DTYP = 'ReadFile',
         INP  = '/proc/meminfo|%d,1' % field,
-        SCAN = DefaultScanRate,
+        SCAN = SCAN,
         EGU  = 'Bytes',
         LOPR = 0,
-        HOPR = 64 * 1024 * 1024,   # 64 MB
+        HOPR = 64 * MB,
+        LOW  = 32 * MB,   LSV  = 'MINOR',
+        LOLO = 16 * MB,   LLSV = 'MAJOR',
         DESC = description)
         
-
-DefaultScanRate = '10 second'
 
 
 ReadFile()
@@ -92,15 +93,16 @@ temp1 = TemperatureSensor('TEMP1', '29/temp1', 'Main PCB Temperature')
 fan1 = FanSensor('FAN1', '48/fan1', 'Back fan speed')
 fan2 = FanSensor('FAN2', '4b/fan1', 'Front fan speed')
  
-MemInfo('USED',  2, 'Total used memory')
-MemInfo('FREE',  3, 'Total memory free')
-MemInfo('CACHE', 6, 'Total cached memory')
+#MemInfo('USED',  2, 'Total used memory')
+#MemInfo('CACHE', 6, 'Total cached memory')
+free = MemInfo('FREE',  3, 'Total memory free', SCAN='Passive')
 
 records.calc('HEALTH',
     SCAN = DefaultScanRate,
     CALC = '1',
     INPA = PP(MS(temp1)),
     INPB = PP(MS(fan1)),
-    INPC = PP(MS(fan2)))
+    INPC = PP(MS(fan2)),
+    INPD = PP(MS(free)))
 
 WriteRecords(sys.argv[1])

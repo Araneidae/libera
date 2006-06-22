@@ -333,6 +333,8 @@ def Config():
 
     UnsetChannelName()
 
+    
+def Miscellaneous():
     # The VERSION and BUILD strings are not tied to any "channel".
     Libera.stringin('VERSION', PINI = 'YES')
     Libera.stringin('BUILD',   PINI = 'YES')
@@ -343,6 +345,7 @@ def Config():
     tick = records.calc('TICK',
         SCAN = '.1 second',
         CALC = 'A+0.1',
+        EGU  = 's', PREC = 1,
         HIGH = 1,   HSV  = 'MINOR',
         HIHI = 10,  HHSV = 'MAJOR')
     tick.INPA = tick
@@ -353,6 +356,7 @@ def Config():
         DOPT = 'Use CALC')
     Libera.bi('TICK_TRIG', SCAN = 'I/O Intr', FLNK = tick_reset)
 
+    
 
 # Finally generate and output the supported records.
     
@@ -364,5 +368,5 @@ SlowAcquisition()   # SA - 10Hz low noise position
 Postmortem()        # PM - fixed length pre-postmortem trigger waveforms
 
 Config()            # CF - general configuration records
-
+Miscellaneous()     # Other records
 WriteRecords(sys.argv[1])
