@@ -30,17 +30,13 @@
 import sys
 import os
 
-import epics
-epics.Configure(recordnames=epics.TemplateRecordNames())
- 
+# Support and epics must be imported in this order.
+import support 
 from epics import *
-
-HomeDir = os.path.realpath(
-    os.path.join(os.path.dirname(sys.argv[0]), '../../..'))
-LibVersion('ReadFile', 'Libera', home=HomeDir)
 
 
 class ReadFile(hardware.Device):
+    LibraryName = 'Libera'
     @classmethod
     def LoadLibrary(cls):
         cls.LoadDbdFile('device.dbd')
