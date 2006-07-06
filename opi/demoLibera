@@ -1,5 +1,9 @@
 #!/bin/sh
-#/home/mga83/epics/Diagnostics/opi/runedm -p5064 -x -noedit -eolc \
-/home/mga83/epics/Diagnostics/opi/runedm -p5064 -x -eolc \
-    /home/mga83/epics/Libera/opi/launcher.edl &
 
+EDM="$(
+    which edm 2>/dev/null ||
+    echo /home/epics/R3.14.8.2/extensions/bin/linux-x86/edm )"
+
+cd "$(dirname "$0")"
+export EPICS_CA_MAX_ARRAY_BYTES=1000000
+$EDM -x -eolc launcher.edl &

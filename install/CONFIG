@@ -3,16 +3,18 @@
 
 # Version number of this software: automatically included in build and used
 # to build distribution files.
-VERSION=0.4.5-pre
+VERSION=0.5
 
 # This is where installed files will be placed ready for deployment to the
 # Libera IOC.
 INSTALL_HOST=/mt/libera/nfs/testing
 
-# This identifies where the epics files are installed on the IOC.
+# This identifies where the epics files are searched on the IOC when running
+# a test installation.
 EPICS_TARGET=/mnt/nfs/testing/epics
 
-# This is where the IOC driver files are installed.
+# This is where the IOC driver files are searched for on the IOC when
+# running a test installation.
 DRIVER_TARGET=/mnt/nfs/testing/ioc
 
 

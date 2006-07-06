@@ -3,10 +3,10 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 54
-y 105
-w 730
-h 262
+x 211
+y 350
+w 300
+h 148
 font "arial-medium-r-18.0"
 ctlFont "arial-medium-r-18.0"
 btnFont "arial-medium-r-18.0"
@@ -22,195 +22,9 @@ botShadowColor index 14
 showGrid
 snapToGrid
 gridSize 8
+disableScroll
 endScreenProperties
 
-# (Related Display)
-object relatedDisplayClass
-beginObjectProperties
-major 4
-minor 0
-release 0
-x 152
-y 56
-w 88
-h 32
-fgColor index 14
-bgColor index 3
-topShadowColor index 0
-botShadowColor index 14
-font "arial-medium-r-18.0"
-buttonLabel "FT"
-numPvs 4
-numDsps 1
-displayFileName {
-  0 "libera/FT_overview.edl"
-}
-symbols {
-  0 "device=TS-DI-EBPM-01"
-}
-endObjectProperties
-
-# (Static Text)
-object activeXTextClass
-beginObjectProperties
-major 4
-minor 1
-release 0
-x 152
-y 32
-w 78
-h 20
-font "arial-medium-r-18.0"
-fgColor index 14
-bgColor index 0
-useDisplayBg
-value {
-  "First Turn"
-}
-autoSize
-endObjectProperties
-
-# (Related Display)
-object relatedDisplayClass
-beginObjectProperties
-major 4
-minor 0
-release 0
-x 248
-y 56
-w 88
-h 32
-fgColor index 14
-bgColor index 3
-topShadowColor index 0
-botShadowColor index 14
-font "arial-medium-r-18.0"
-buttonLabel "BN"
-numPvs 4
-numDsps 1
-displayFileName {
-  0 "libera/BO_overview.edl"
-}
-symbols {
-  0 "device=TS-DI-EBPM-01"
-}
-endObjectProperties
-
-# (Static Text)
-object activeXTextClass
-beginObjectProperties
-major 4
-minor 1
-release 0
-x 256
-y 32
-w 65
-h 20
-font "arial-medium-r-18.0"
-fgColor index 14
-bgColor index 0
-useDisplayBg
-value {
-  "Booster"
-}
-autoSize
-endObjectProperties
-
-# (Related Display)
-object relatedDisplayClass
-beginObjectProperties
-major 4
-minor 0
-release 0
-x 440
-y 56
-w 88
-h 32
-fgColor index 14
-bgColor index 3
-topShadowColor index 0
-botShadowColor index 14
-font "arial-medium-r-18.0"
-buttonLabel "TT"
-numPvs 4
-numDsps 1
-displayFileName {
-  0 "libera/TT_overview.edl"
-}
-symbols {
-  0 "device=TS-DI-EBPM-01"
-}
-endObjectProperties
-
-# (Static Text)
-object activeXTextClass
-beginObjectProperties
-major 4
-minor 1
-release 0
-x 440
-y 8
-w 88
-h 40
-font "arial-medium-r-18.0"
-fontAlign "center"
-fgColor index 14
-bgColor index 0
-useDisplayBg
-value {
-  "Turn"
-  "by Turn"
-}
-endObjectProperties
-
-# (Related Display)
-object relatedDisplayClass
-beginObjectProperties
-major 4
-minor 0
-release 0
-x 536
-y 56
-w 88
-h 32
-fgColor index 14
-bgColor index 3
-topShadowColor index 0
-botShadowColor index 14
-font "arial-medium-r-18.0"
-buttonLabel "SA"
-numPvs 4
-numDsps 1
-displayFileName {
-  0 "libera/SA_overview.edl"
-}
-symbols {
-  0 "device=TS-DI-EBPM-01"
-}
-endObjectProperties
-
-# (Static Text)
-object activeXTextClass
-beginObjectProperties
-major 4
-minor 1
-release 0
-x 536
-y 8
-w 91
-h 40
-font "arial-medium-r-18.0"
-fontAlign "center"
-fgColor index 14
-bgColor index 0
-useDisplayBg
-value {
-  "Slow"
-  "Acquisition"
-}
-autoSize
-endObjectProperties
-
 # (Static Text)
 object activeXTextClass
 beginObjectProperties
@@ -218,15 +32,15 @@ major 4
 minor 1
 release 0
 x 8
-y 64
-w 135
+y 8
+w 114
 h 20
 font "arial-medium-r-18.0"
 fgColor index 14
 bgColor index 0
 useDisplayBg
 value {
-  "TS-DI-EBPM-01"
+  "TS-DI-EBPM-"
 }
 autoSize
 endObjectProperties
@@ -237,23 +51,23 @@ beginObjectProperties
 major 4
 minor 0
 release 0
-x 344
-y 56
-w 88
+x 8
+y 32
+w 40
 h 32
 fgColor index 14
 bgColor index 3
 topShadowColor index 0
 botShadowColor index 14
 font "arial-medium-r-18.0"
-buttonLabel "FR"
+buttonLabel "01"
 numPvs 4
 numDsps 1
 displayFileName {
-  0 "libera/FR_overview.edl"
+  0 "libera/overview.edl"
 }
 symbols {
-  0 "device=TS-DI-EBPM-01,mode=FR"
+  0 "device=TS-DI-EBPM-01"
 }
 endObjectProperties
 
@@ -263,65 +77,49 @@ beginObjectProperties
 major 4
 minor 0
 release 0
-x 632
-y 56
-w 88
+x 56
+y 32
+w 40
 h 32
 fgColor index 14
 bgColor index 3
 topShadowColor index 0
 botShadowColor index 14
 font "arial-medium-r-18.0"
-buttonLabel "PM"
+buttonLabel "02"
 numPvs 4
 numDsps 1
 displayFileName {
-  0 "libera/FR_overview.edl"
+  0 "libera/overview.edl"
 }
 symbols {
-  0 "device=TS-DI-EBPM-01,mode=PM"
+  0 "device=TS-DI-EBPM-02"
 }
 endObjectProperties
 
-# (Static Text)
-object activeXTextClass
+# (Related Display)
+object relatedDisplayClass
 beginObjectProperties
 major 4
-minor 1
+minor 0
 release 0
-x 344
-y 8
-w 88
-h 40
-font "arial-medium-r-18.0"
-fontAlign "center"
+x 104
+y 32
+w 40
+h 32
 fgColor index 14
-bgColor index 0
-useDisplayBg
-value {
-  "Free"
-  "Running"
+bgColor index 3
+topShadowColor index 0
+botShadowColor index 14
+font "arial-medium-r-18.0"
+buttonLabel "03"
+numPvs 4
+numDsps 1
+displayFileName {
+  0 "libera/overview.edl"
 }
-endObjectProperties
-
-# (Static Text)
-object activeXTextClass
-beginObjectProperties
-major 4
-minor 1
-release 0
-x 632
-y 8
-w 88
-h 40
-font "arial-medium-r-18.0"
-fontAlign "center"
-fgColor index 14
-bgColor index 0
-useDisplayBg
-value {
-  "Post-"
-  "Mortem"
+symbols {
+  0 "device=TS-DI-EBPM-03"
 }
 endObjectProperties
 
@@ -332,22 +130,48 @@ major 4
 minor 0
 release 0
 x 152
-y 96
-w 88
+y 32
+w 40
 h 32
 fgColor index 14
 bgColor index 3
 topShadowColor index 0
 botShadowColor index 14
 font "arial-medium-r-18.0"
-buttonLabel "FT"
+buttonLabel "04"
 numPvs 4
 numDsps 1
 displayFileName {
-  0 "libera/FT_overview.edl"
+  0 "libera/overview.edl"
 }
 symbols {
-  0 "device=TS-DI-EBPM-02"
+  0 "device=TS-DI-EBPM-04"
+}
+endObjectProperties
+
+# (Related Display)
+object relatedDisplayClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 200
+y 32
+w 40
+h 32
+fgColor index 14
+bgColor index 3
+topShadowColor index 0
+botShadowColor index 14
+font "arial-medium-r-18.0"
+buttonLabel "05"
+numPvs 4
+numDsps 1
+displayFileName {
+  0 "libera/overview.edl"
+}
+symbols {
+  0 "device=TS-DI-EBPM-05"
 }
 endObjectProperties
 
@@ -358,251 +182,154 @@ major 4
 minor 0
 release 0
 x 248
-y 96
-w 88
+y 32
+w 40
 h 32
 fgColor index 14
 bgColor index 3
 topShadowColor index 0
 botShadowColor index 14
 font "arial-medium-r-18.0"
-buttonLabel "BN"
+buttonLabel "06"
 numPvs 4
 numDsps 1
 displayFileName {
-  0 "libera/BO_overview.edl"
+  0 "libera/overview.edl"
 }
 symbols {
-  0 "device=TS-DI-EBPM-02"
+  0 "device=TS-DI-EBPM-06"
 }
 endObjectProperties
 
-# (Related Display)
-object relatedDisplayClass
-beginObjectProperties
-major 4
-minor 0
-release 0
-x 440
-y 96
-w 88
-h 32
-fgColor index 14
-bgColor index 3
-topShadowColor index 0
-botShadowColor index 14
-font "arial-medium-r-18.0"
-buttonLabel "TT"
-numPvs 4
-numDsps 1
-displayFileName {
-  0 "libera/TT_overview.edl"
-}
-symbols {
-  0 "device=TS-DI-EBPM-02"
-}
-endObjectProperties
-
-# (Related Display)
-object relatedDisplayClass
-beginObjectProperties
-major 4
-minor 0
-release 0
-x 536
-y 96
-w 88
-h 32
-fgColor index 14
-bgColor index 3
-topShadowColor index 0
-botShadowColor index 14
-font "arial-medium-r-18.0"
-buttonLabel "SA"
-numPvs 4
-numDsps 1
-displayFileName {
-  0 "libera/SA_overview.edl"
-}
-symbols {
-  0 "device=TS-DI-EBPM-02"
-}
-endObjectProperties
-
-# (Static Text)
-object activeXTextClass
+# (Text Control)
+object activeXTextDspClass
 beginObjectProperties
 major 4
 minor 1
 release 0
 x 8
+y 72
+w 280
+h 24
+controlPv "LOC\\ioc-name=s:"
+font "arial-medium-r-18.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+editable
+autoHeight
+motifWidget
+limitsFromDb
+nullColor index 0
+useHexPrefix
+newPos
+objType "controls"
+endObjectProperties
+
+# (Related Display)
+object relatedDisplayClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 192
 y 104
-w 135
-h 20
-font "arial-medium-r-18.0"
-fgColor index 14
-bgColor index 0
-useDisplayBg
-value {
-  "TS-DI-EBPM-02"
-}
-autoSize
-endObjectProperties
-
-# (Related Display)
-object relatedDisplayClass
-beginObjectProperties
-major 4
-minor 0
-release 0
-x 344
-y 96
-w 88
+w 96
 h 32
 fgColor index 14
 bgColor index 3
 topShadowColor index 0
 botShadowColor index 14
 font "arial-medium-r-18.0"
-buttonLabel "FR"
+buttonLabel "IOC"
 numPvs 4
 numDsps 1
 displayFileName {
-  0 "libera/FR_overview.edl"
+  0 "libera/overview.edl"
 }
 symbols {
-  0 "device=TS-DI-EBPM-02,mode=FR"
+  0 "device=$(device)"
 }
 endObjectProperties
 
-# (Related Display)
-object relatedDisplayClass
-beginObjectProperties
-major 4
-minor 0
-release 0
-x 632
-y 96
-w 88
-h 32
-fgColor index 14
-bgColor index 3
-topShadowColor index 0
-botShadowColor index 14
-font "arial-medium-r-18.0"
-buttonLabel "PM"
-numPvs 4
-numDsps 1
-displayFileName {
-  0 "libera/FR_overview.edl"
-}
-symbols {
-  0 "device=TS-DI-EBPM-02,mode=PM"
-}
-endObjectProperties
-
-# (Related Display)
-object relatedDisplayClass
-beginObjectProperties
-major 4
-minor 0
-release 0
-x 152
-y 136
-w 88
-h 32
-fgColor index 14
-bgColor index 3
-topShadowColor index 0
-botShadowColor index 14
-font "arial-medium-r-18.0"
-buttonLabel "FT"
-numPvs 4
-numDsps 1
-displayFileName {
-  0 "libera/FT_overview.edl"
-}
-symbols {
-  0 "device=TS-DI-EBPM-03"
-}
-endObjectProperties
-
-# (Related Display)
-object relatedDisplayClass
+# (Group)
+object activeGroupClass
 beginObjectProperties
 major 4
 minor 0
 release 0
 x 248
-y 136
-w 88
-h 32
-fgColor index 14
-bgColor index 3
-topShadowColor index 0
-botShadowColor index 14
-font "arial-medium-r-18.0"
-buttonLabel "BN"
-numPvs 4
-numDsps 1
-displayFileName {
-  0 "libera/BO_overview.edl"
-}
-symbols {
-  0 "device=TS-DI-EBPM-03"
-}
-endObjectProperties
+y 8
+w 40
+h 16
 
-# (Related Display)
-object relatedDisplayClass
+beginGroup
+
+# (Group)
+object activeGroupClass
 beginObjectProperties
 major 4
 minor 0
 release 0
-x 440
-y 136
-w 88
-h 32
-fgColor index 14
-bgColor index 3
-topShadowColor index 0
-botShadowColor index 14
-font "arial-medium-r-18.0"
-buttonLabel "TT"
-numPvs 4
-numDsps 1
-displayFileName {
-  0 "libera/TT_overview.edl"
-}
-symbols {
-  0 "device=TS-DI-EBPM-03"
-}
-endObjectProperties
+x 248
+y 8
+w 40
+h 16
 
-# (Related Display)
-object relatedDisplayClass
+beginGroup
+
+# (Menu Mux PV)
+object menuMuxPVClass
 beginObjectProperties
 major 4
 minor 0
 release 0
-x 536
-y 136
-w 88
-h 32
-fgColor index 14
-bgColor index 3
-topShadowColor index 0
-botShadowColor index 14
-font "arial-medium-r-18.0"
-buttonLabel "SA"
-numPvs 4
-numDsps 1
-displayFileName {
-  0 "libera/SA_overview.edl"
+x 248
+y 8
+w 40
+h 16
+fgColour index 14
+bgColour index 0
+topShadowColour index 0
+botShadowColour index 14
+font "arial-medium-r-8.0"
+numItems 1
+symbolTag {
+  0 "ioc-name"
 }
-symbols {
-  0 "device=TS-DI-EBPM-03"
+symbol0 {
+  0 "device"
 }
+PV0 {
+  0 "LOC\\ioc-name"
+}
+endObjectProperties
+
+endGroup
+
+visPv "0"
+visInvert
+visMin "0"
+visMax "1"
+endObjectProperties
+
+# (Rectangle)
+object activeRectangleClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 248
+y 8
+w 40
+h 16
+lineColor index 3
+fill
+fillColor index 3
+endObjectProperties
+
+endGroup
+
 endObjectProperties
 
 # (Static Text)
@@ -612,420 +339,16 @@ major 4
 minor 1
 release 0
 x 8
-y 144
-w 135
-h 20
-font "arial-medium-r-18.0"
+y 112
+w 151
+h 17
+font "arial-medium-r-16.0"
 fgColor index 14
 bgColor index 0
 useDisplayBg
 value {
-  "TS-DI-EBPM-03"
+  "Open IOC by name:"
 }
 autoSize
-endObjectProperties
-
-# (Related Display)
-object relatedDisplayClass
-beginObjectProperties
-major 4
-minor 0
-release 0
-x 344
-y 136
-w 88
-h 32
-fgColor index 14
-bgColor index 3
-topShadowColor index 0
-botShadowColor index 14
-font "arial-medium-r-18.0"
-buttonLabel "FR"
-numPvs 4
-numDsps 1
-displayFileName {
-  0 "libera/FR_overview.edl"
-}
-symbols {
-  0 "device=TS-DI-EBPM-03,mode=FR"
-}
-endObjectProperties
-
-# (Related Display)
-object relatedDisplayClass
-beginObjectProperties
-major 4
-minor 0
-release 0
-x 632
-y 136
-w 88
-h 32
-fgColor index 14
-bgColor index 3
-topShadowColor index 0
-botShadowColor index 14
-font "arial-medium-r-18.0"
-buttonLabel "PM"
-numPvs 4
-numDsps 1
-displayFileName {
-  0 "libera/FR_overview.edl"
-}
-symbols {
-  0 "device=TS-DI-EBPM-03,mode=PM"
-}
-endObjectProperties
-
-# (Related Display)
-object relatedDisplayClass
-beginObjectProperties
-major 4
-minor 0
-release 0
-x 152
-y 176
-w 88
-h 32
-fgColor index 14
-bgColor index 3
-topShadowColor index 0
-botShadowColor index 14
-font "arial-medium-r-18.0"
-buttonLabel "FT"
-numPvs 4
-numDsps 1
-displayFileName {
-  0 "libera/FT_overview.edl"
-}
-symbols {
-  0 "device=TS-DI-EBPM-04"
-}
-endObjectProperties
-
-# (Related Display)
-object relatedDisplayClass
-beginObjectProperties
-major 4
-minor 0
-release 0
-x 248
-y 176
-w 88
-h 32
-fgColor index 14
-bgColor index 3
-topShadowColor index 0
-botShadowColor index 14
-font "arial-medium-r-18.0"
-buttonLabel "BN"
-numPvs 4
-numDsps 1
-displayFileName {
-  0 "libera/BO_overview.edl"
-}
-symbols {
-  0 "device=TS-DI-EBPM-04"
-}
-endObjectProperties
-
-# (Related Display)
-object relatedDisplayClass
-beginObjectProperties
-major 4
-minor 0
-release 0
-x 440
-y 176
-w 88
-h 32
-fgColor index 14
-bgColor index 3
-topShadowColor index 0
-botShadowColor index 14
-font "arial-medium-r-18.0"
-buttonLabel "TT"
-numPvs 4
-numDsps 1
-displayFileName {
-  0 "libera/TT_overview.edl"
-}
-symbols {
-  0 "device=TS-DI-EBPM-04"
-}
-endObjectProperties
-
-# (Related Display)
-object relatedDisplayClass
-beginObjectProperties
-major 4
-minor 0
-release 0
-x 536
-y 176
-w 88
-h 32
-fgColor index 14
-bgColor index 3
-topShadowColor index 0
-botShadowColor index 14
-font "arial-medium-r-18.0"
-buttonLabel "SA"
-numPvs 4
-numDsps 1
-displayFileName {
-  0 "libera/SA_overview.edl"
-}
-symbols {
-  0 "device=TS-DI-EBPM-04"
-}
-endObjectProperties
-
-# (Static Text)
-object activeXTextClass
-beginObjectProperties
-major 4
-minor 1
-release 0
-x 8
-y 184
-w 135
-h 20
-font "arial-medium-r-18.0"
-fgColor index 14
-bgColor index 0
-useDisplayBg
-value {
-  "TS-DI-EBPM-04"
-}
-autoSize
-endObjectProperties
-
-# (Related Display)
-object relatedDisplayClass
-beginObjectProperties
-major 4
-minor 0
-release 0
-x 344
-y 176
-w 88
-h 32
-fgColor index 14
-bgColor index 3
-topShadowColor index 0
-botShadowColor index 14
-font "arial-medium-r-18.0"
-buttonLabel "FR"
-numPvs 4
-numDsps 1
-displayFileName {
-  0 "libera/FR_overview.edl"
-}
-symbols {
-  0 "device=TS-DI-EBPM-04,mode=FR"
-}
-endObjectProperties
-
-# (Related Display)
-object relatedDisplayClass
-beginObjectProperties
-major 4
-minor 0
-release 0
-x 632
-y 176
-w 88
-h 32
-fgColor index 14
-bgColor index 3
-topShadowColor index 0
-botShadowColor index 14
-font "arial-medium-r-18.0"
-buttonLabel "PM"
-numPvs 4
-numDsps 1
-displayFileName {
-  0 "libera/FR_overview.edl"
-}
-symbols {
-  0 "device=TS-DI-EBPM-04,mode=PM"
-}
-endObjectProperties
-
-# (Related Display)
-object relatedDisplayClass
-beginObjectProperties
-major 4
-minor 0
-release 0
-x 152
-y 216
-w 88
-h 32
-fgColor index 14
-bgColor index 3
-topShadowColor index 0
-botShadowColor index 14
-font "arial-medium-r-18.0"
-buttonLabel "FT"
-numPvs 4
-numDsps 1
-displayFileName {
-  0 "libera/FT_overview.edl"
-}
-symbols {
-  0 "device=TS-DI-EBPM-05"
-}
-endObjectProperties
-
-# (Related Display)
-object relatedDisplayClass
-beginObjectProperties
-major 4
-minor 0
-release 0
-x 248
-y 216
-w 88
-h 32
-fgColor index 14
-bgColor index 3
-topShadowColor index 0
-botShadowColor index 14
-font "arial-medium-r-18.0"
-buttonLabel "BN"
-numPvs 4
-numDsps 1
-displayFileName {
-  0 "libera/BO_overview.edl"
-}
-symbols {
-  0 "device=TS-DI-EBPM-05"
-}
-endObjectProperties
-
-# (Related Display)
-object relatedDisplayClass
-beginObjectProperties
-major 4
-minor 0
-release 0
-x 440
-y 216
-w 88
-h 32
-fgColor index 14
-bgColor index 3
-topShadowColor index 0
-botShadowColor index 14
-font "arial-medium-r-18.0"
-buttonLabel "TT"
-numPvs 4
-numDsps 1
-displayFileName {
-  0 "libera/TT_overview.edl"
-}
-symbols {
-  0 "device=TS-DI-EBPM-05"
-}
-endObjectProperties
-
-# (Related Display)
-object relatedDisplayClass
-beginObjectProperties
-major 4
-minor 0
-release 0
-x 536
-y 216
-w 88
-h 32
-fgColor index 14
-bgColor index 3
-topShadowColor index 0
-botShadowColor index 14
-font "arial-medium-r-18.0"
-buttonLabel "SA"
-numPvs 4
-numDsps 1
-displayFileName {
-  0 "libera/SA_overview.edl"
-}
-symbols {
-  0 "device=TS-DI-EBPM-05"
-}
-endObjectProperties
-
-# (Static Text)
-object activeXTextClass
-beginObjectProperties
-major 4
-minor 1
-release 0
-x 8
-y 224
-w 135
-h 20
-font "arial-medium-r-18.0"
-fgColor index 14
-bgColor index 0
-useDisplayBg
-value {
-  "TS-DI-EBPM-05"
-}
-autoSize
-endObjectProperties
-
-# (Related Display)
-object relatedDisplayClass
-beginObjectProperties
-major 4
-minor 0
-release 0
-x 344
-y 216
-w 88
-h 32
-fgColor index 14
-bgColor index 3
-topShadowColor index 0
-botShadowColor index 14
-font "arial-medium-r-18.0"
-buttonLabel "FR"
-numPvs 4
-numDsps 1
-displayFileName {
-  0 "libera/FR_overview.edl"
-}
-symbols {
-  0 "device=TS-DI-EBPM-05,mode=FR"
-}
-endObjectProperties
-
-# (Related Display)
-object relatedDisplayClass
-beginObjectProperties
-major 4
-minor 0
-release 0
-x 632
-y 216
-w 88
-h 32
-fgColor index 14
-bgColor index 3
-topShadowColor index 0
-botShadowColor index 14
-font "arial-medium-r-18.0"
-buttonLabel "PM"
-numPvs 4
-numDsps 1
-displayFileName {
-  0 "libera/FR_overview.edl"
-}
-symbols {
-  0 "device=TS-DI-EBPM-05,mode=PM"
-}
 endObjectProperties
 

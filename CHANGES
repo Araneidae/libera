@@ -1,10 +1,45 @@
 Change history of Libera EPICS Driver development
 
-2006/02/06 Version 0.2  
-First published release, supporting Libera 0.92-2 driver only.
+
+2006/07/06 Version 0.5
+======================
+Works with Libera 1.00 iTech drivers
+
+Note that the description of the installation process in INSTALL has changed:
+this release includes scripts to run on Libera to automate part of this
+install process.
+
+Significant changes:
+ - New HEALTH record which collects together alarm severities for temperature,
+   fans and free memory.
+ - New TICK record which records time since last processed trigger and records
+   an alarm status after 1 and 10 seconds.
+ - Redefine orientation of vertical mode: button/stripline B is now deemed to
+   be in the *negative* X direction.  This makes the logic consistent with
+   conventions at Diamond.
+ - Postmortem support now enabled: this seems to work ok with the latest
+   drivers from iTech.
+ - New libera-install-ioc and libera-install-epics scripts.  These can be
+   used to install the epics libraries and Libera EPICS driver on the IOC.
+   Note that the INSTALL instructions have changed to reflect this.
+ - `/etc/init.d/epics stop` script now copes if the driver has locked up and
+   forcibly kills it if necessary.
+ - EDM control screens now included in this distribution.
+
+Minor changes:
+ - Temperature, fan and memory alarm limits defined.  Memory records USED and
+   CACHE withdrawn (still looking for a good measure of free memory).  Unused
+   TEMP2 record also deleted.
+ - Change implementation of interlocking with EPICS layer, used to rule out
+   the EPICS layer from any involvement with Libera lockups (it is clear now
+   that these occur in the iTech driver).
+ - Remove rather arbitrary limits on TT, TW, FR and BN IOC configuration
+   parameters: if the installer insists on killing the IOC by setting
+   unreasonable values, be my guest.
 
 
 2006/03/13 Version 0.4
+======================
 Works with Libera 1.00
 
 Major changes:
@@ -33,3 +68,8 @@ The following incompatible changes with the previous release should be noted:
  - The loading of initial configuration has changed.  IOC_STATE_PATH should be
    defined appropriately and an initial configuration can be written through
    the EPICS interface.
+
+
+2006/02/06 Version 0.2
+======================  
+First published release, supporting Libera 0.92-2 driver only.

@@ -1,4 +1,5 @@
 Epics driver for Libera Electron Beam Position Monitor (EBPM)
+=============================================================
 
 This software provides an EPICS interface to the Libera electron beam position
 monitor, allowing the performance of the electron beam to be monitored through
@@ -9,11 +10,29 @@ the Libera device driver, as distributed by Instrumentation Technologies,
 http://www.i-tech.si, and has been built to support the comissioning of the
 Diamond light source, http://diamond.ac.uk.
 
-For licensing see the attached file COPYING.  For installation instructions
-see the attached file INSTALL.
+The normal distribution point for this software is Sourceforge, from URL
+    http://sourceforge.net/projects/libera-epics
+The author, Dr. Michael Abbott, can be contacted at Diamond Light Source at
+michael.abbott@diamond.ac.uk.
 
 
-This version provides the following functionality:
+Do read the following attached files:
+
+    COPYING
+        This contains the standard GNU license, and all files in this release
+        are distributed under this license.
+
+    INSTALL
+        Read this file for detailed build and install instructions.
+
+    CHANGES
+        Records the change history of this driver.
+
+Please note that the doc directory in this distribution is out of date and
+should be ignored in this release!
+
+
+This release of the Libera EPICS driver provides the following functionality:
 
 First Turn Data
     This is designed for monitoring transfer paths and behaviour during
@@ -184,3 +203,12 @@ Other (no group):
 
     BUILD
         Build time and date of the running IOC.
+
+    HEALTH
+        Monitors the temperature, fan state and free memory.  Only the alarm
+        state of this record is significant.
+
+    TICK
+        Counts the number of seconds (in 0.1s steps) since the last trigger,
+        and records an alarm state if the delay is more than 1 or 10 seconds.
+        Used to detect driver lockup.

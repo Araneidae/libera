@@ -1,4 +1,4 @@
-Libera EPICS driver version 0.3, for use with Libera drivers version 1.00.
+Libera EPICS driver version 0.5, for use with Libera drivers version 1.00.
 
 
 INSTALLATION INSTRUCTIONS
@@ -25,25 +25,39 @@ This software depends on the following components:
  * System updates.  The Libera system must be upgraded to 1.00.
 
 
+The instructions below are divided into the following stages:
+
+ 1. Preparation
+ 2. Building EPICS for linux-arm
+ 3. Building the Libera EPICS driver
+ 4. Preparing Libera for EPICS installation
+ 5. Installing the Libera EPICS driver
+ 6. Running the Libera EPICS driver
+
+
+
+Preparation
+===========
+
 A number of file locations will need to be defined before installing this
 software, both on the development system (assumed to be Linux) and on the
 target Libera machine.  These are identified through this document by the
 symbols below.
 
-Directories on development machine
+Directories on development machine:
 
 LIBERA_EPICS    Root of this distribution as extracted
 ARM_LINUX_GCC   Root of gcc cross compiler
 EPICS_BASE      Root of epics base distribution
 INSTALL_HOST    Where to build the installation
 
-Directories on target machine
+The following directory on the target machine is assumed to contain the same
+files as $INSTALL_HOST.  It is assumed in this document that this is done
+through an NFS mount on Libera.
 
-EPICS_TARGET    Location on Libera where the Epics run time files are
-DRIVER_TARGET   Location on Libera where the Epics driver files are
-IOC_STATE_PATH  Location on Libera to store persistent state
+INSTALL_TARGET  Where to find installation files on Libera.  
 
-Other symbols
+Other symbols:
 
 EPICS_VERSION   One of 3.14.6, 3.14.7 or 3.14.8.2 for this release.
 
@@ -56,6 +70,29 @@ set thus:
     $ export HOST_ARCH=linux-x86
 This is used by the Epics environment to determine which build configuration
 to use.
+
+
+Start by editing $LIBERA_EPICS/install/CONFIG to suit your installation.  The
+following symbols should be edited:
+
+    INSTALL_HOST    Set to $INSTALL_HOST as described above
+    EPICS_TARGET    } See notes below for
+    DRIVER_TARGET   } these two symbols
+
+    The two _TARGET symbols need only be defined if using the Test
+    installation mode described below (under "Installing the Libera EPICS
+    driver"), in which case they should be set as follows:
+        EPICS_TARGET    $INSTALL_TARGET/epics
+        DRIVER_TARGET   $INSTALL_TARGET/ioc
+    If only using Final installation these can be ignored.
+
+In all of the instructions below a line of the form
+    $ command
+describes a command to be run on the host build machine, and a line of the
+form
+    # command
+describes a command to be run on Libera, when logged in as root.
+
 
 
 Building EPICS for linux-arm
@@ -96,6 +133,12 @@ Multiple target architectures can be supported by EPICS and defined on this
 line, but the Libera driver will only use the linux-arm target.
 
 6.  Run make from $EPICS_BASE.  This will take a while...
+    $ cd $EPICS_BASE
+    $ make
+
+7.  Extract the Libera EPICS files to $INSTALL_HOST by running
+    $ $LIBERA_EPICS/install/install-epics
+
 
 
 Building the Libera EPICS driver
@@ -103,7 +146,7 @@ Building the Libera EPICS driver
 
 One thing missing from this distribution is the Python library used to build
 the .db files, and as yet there is no separate distribution published for
-this, at it is very dependent on the Diamond environment.  The library can be
+this, as it is very dependent on the Diamond environment.  The library can be
 provided on request, but it will require integration work, thus pre-built .db
 files are included with this distribution.
 
@@ -115,11 +158,17 @@ files from the install directory to the Db directory thus:
     $ cd $LIBERA_EPICS
     $ cp install/prebuilt/*.db liberaApp/Db
 
-3.  Run make from $LIBERA_EPICS.  
+3.  Run make thus:
+    $ make
+
+4.  Copy the runtime files to $INSTALL_HOST by running
+    $ ./install/install-ioc
+This builds the directory $INSTALL_HOST/ioc.
 
 If your build environment lacks Python then a pre-built header file is also
-provided in the install/prebuilt directory: examine liberaApp/src/Makefile to
-see where this is needed.
+provided in the install/prebuilt directory which can be copied into
+liberaApp/src if required.
+
 
 
 Preparing Libera for EPICS installation
@@ -138,72 +187,81 @@ software is installed.
 Installing the Libera EPICS driver
 ==================================
 
-The install process is designed to take place in two stages, each stage
-possibly requiring two separate steps:
-    1.  Installing EPICS files
-        .a  Run install-epics to build target files
-        .b  Deploy files to Libera machine
-    2.  Installing IOC files
-        .a  Run install-ioc to build target files
-        .b  Deploy files to Libera machine
+Two modes of installation are supported:
 
-At Diamond we currently implement step (.b) by sharing the files over NFS
-using a permanently mounted file location.  Alternatively any mechanism of
-choice can be used at this stage to copy the files to the flash file system of
-Libera.
+Test    Designed for testing, files are accessed over NFS.
 
-To support this process a number of symbols need to be defined in the file
-     $LIBERA_BASE/install/CONFIG
-which should be edited before running either of the install scripts to define
-the following symbols:
+Final   Designed for production, files are copied to standard locations on the
+        Libera IOC.
 
-    INSTALL_HOST
-        Location on build machine where files should be assembled.  The
-        install-epics script will place files in $INSTALL_HOST/epics and 
-        install-ioc will place files in $INSTALL_HOST/ioc.
+In all of the following it is assumed that the Libera IOC has access to the
+contents of the directory $INSTALL_HOST as $INSTALL_TARGET, either by copying
+the files onto Libera, or via a shared NFS mount point.
 
-    EPICS_TARGET
-        Location on target machine (Libera) where the epics run-time files
-        will be installed.  This will become $EPICS_BASE on the target.
+There are two stages to both installation modes:
 
-    DRIVER_TARGET
-        Location on target machine where the ioc files will be installed.
+Install EPICS   
+    This only needs to be done once, or when the EPICS version is upgraded.
 
-    IOC_STATE_PATH
-        Location on target machine where persistent state files will be
-        stored.  This must point to a existing directory that is writeable by
-        the IOC.
-            It should be safe to place this state on the internal SBC: the IOC
-        takes care to only update this file when necessary.
-
-The Libera EPICS driver can now be installed by the following process:
+Install Driver
+    This should be done each time this driver is updated.
 
 
-First, prepare the target IOC.
+Test Installation
+-----------------
 
-1.  Edit $LIBERA_BASE/install/CONFIG as described above.
+    In this mode of installation the run-time files are accessed over NFS and
+    nothing is copied onto the Libera file system.  This is useful when
+    developing Libera, but is not recommended for normal operation as
+    uninterrupt access to NFS is requred.
 
-2.  Run $LIBERA_BASE/install/install-epics.  This builds a directory
-$INSTALL_HOST/epics.
+    In this mode the following symbols in install/CONFIG are used to locate
+    files:
 
-3.  Copy the host directory $INSTALL_HOST/epics to $EPICS_TARGET on Libera.
+        EPICS_TARGET    Location for EPICS runtime files
+        DRIVER_TARGET   Location for Libera EPICS driver runtime files
+        IOC_STATE_PATH  Location for storing persistent state
 
-4.  Move the following two files on Libera:
-    # mv $EPICS_TARGET/epics_ioc /etc/sysconfig/
-    # mv $EPICS_TARGET/epics /etc/init.d/
+    To install a Test installation run one of following commands on Libera,
+    either:
+    # $INSTALL_TARGET/ioc/install/libera-install-ioc -t
+    or:
+    # $INSTALL_TARGET/ioc/install/libera-install-ioc -ta
 
-These steps should normally only need to be done once during driver
-development.
+    Using the -a option ensures that the libera IOC is automatically started
+    on reboot.
 
-Now build and install the IOC files.
 
-5.  Make the ioc and install the files
-    $ cd $LIBERA_BASE
-    $ make 
-    $ ./install/install-ioc
-This builds a directory $INSTALL_HOST/ioc.
+Final Installation
+------------------
+    
+    In this mode of installation the run-time files are copied to standard
+    locations on Libera.  This mode is recommended for production use.
 
-6.  Copy the host directory $INSTALL_HOST/ioc to $DRIVER_TARGET on Libera.
+    In this mode the following hard wired targets are used on Libera for
+    placing files:
+
+        /opt/epics      Location for EPICS runtime files
+        /opt/ioc        Location for Libera EPICS driver runtime files
+        /opt/state      Location for storing persistent state
+
+    Installation of a Final installation requires two steps, one to copy the
+    EPICS files over, a second to copy the ioc files.  Of course, the EPICS
+    files only need to be copied once, while the ioc files should be copied
+    each time the IOC changes.
+
+    To install the EPICS files run the following command on Libera:
+    # $INSTALL_TARGET/epics/libera-install-epics
+
+    To install the IOC files run one of the following commands on Libera,
+    either:
+    # $INSTALL_TARGET/ioc/install/libera-install-ioc -f
+    or:
+    # $INSTALL_TARGET/ioc/install/libera-install-ioc -fa
+
+    Using the -a option ensures that the libera IOC is automatically started
+    on reboot.
+
 
 
 Running the Libera EPICS driver
@@ -218,6 +276,20 @@ Alternatively, daemon operation is possible by using the epics script:
     # /etc/init.d/epics start
 This will start the ioc running, and it can be stopped by running
     # /etc/init.d/epics stop
-In this mode of operation epics can be configured to start automatically on
-IOC reboot by means of the command
-    # ln -s ../init.d/epics /etc/rc3.d/S900epics
+
+If the -a option has been used when running libera-install-ioc then the EPICS
+IOC will start automatically when Libera reboots.
+
+Note that the IOC will take the IOC device name from the configured hostname,
+thus for example if 
+    # hostname
+returns
+    TS-DI-EBPM-01
+then running
+    $ caget TS-DI-EBPM-01:VERSION
+should return the IOC build version.
+
+
+The script $LIBERA_EPICS/opi/demoLibera will use the EPICS EDM viewer to
+display $LIBERA_EPICS/opi/launcher.edl which provides access to Libera control
+screens.
