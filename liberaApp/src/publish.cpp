@@ -42,101 +42,26 @@
 #include <string.h>
 
 #include "drivers.h"
+#include "persistent.h"
 #include "publish.h"
-
-
-
-/* Simple helper routine for building published names.  As we never have to
- * worry about end of lifetime, this is pretty easy. */
-const char * Concat(const char * Prefix, const char * Suffix)
-{
-    char * Result = new char[strlen(Prefix) + strlen(Suffix) + 1];
-    strcpy(Result, Prefix);
-    strcat(Result, Suffix);
-    return Result;
-}
-
-
-/****************************************************************************/
-/*                                                                          */
-/*                         Generic Publish by Name                          */
-/*                                                                          */
-/****************************************************************************/
-
-
-
-/* A simple lookup table class. */
-
-class LOOKUP
-{
-public:
-    LOOKUP()
-    {
-        List = NULL;
-    }
-
-    /* Method to look up by name.  Returns NULL if not found. */
-    I_RECORD * Find(const char * Name)
-    {
-        for (ENTRY * entry = List; entry != NULL; entry = entry->Next)
-            if (strcmp(entry->Name, Name) == 0)
-                return entry->Value;
-        return NULL;
-    }
-
-    /* Inserts a new entry into the lookup table.  Note that the given string
-     * is *NOT* copied, so the caller should ensure that it is persistent. */
-    void Insert(const char * Name, I_RECORD * Value)
-    {
-        ENTRY * Entry = new ENTRY;
-        Entry->Next = List;
-        Entry->Name = Name;
-        Entry->Value = Value;
-        List = Entry;
-    }
-
-private:
-    struct ENTRY
-    {
-        ENTRY * Next;
-        const char * Name;
-        I_RECORD * Value;
-    };
-
-    ENTRY * List;
-};
-
 
 
 //#define PRINTF(args...) printf(args)
 #define PRINTF(args...)
 
 
-/* This macro builds the appropriate Publish_<record> and Search_<record>
- * methods and initialises any associated static state. */
-#define DEFINE_PUBLISH(record) \
-    static LOOKUP Lookup_##record; \
-    DECLARE_PUBLISH(record) \
-    { \
-        PRINTF("Publishing %s %s\n", Name, #record); \
-        Lookup_##record.Insert(Name, &Record); \
-    } \
-    DECLARE_SEARCH(record) \
-    { \
-        return dynamic_cast<I_##record *>(Lookup_##record.Find(Name)); \
-    }
 
-
-DEFINE_PUBLISH(longin);
-DEFINE_PUBLISH(longout);
-DEFINE_PUBLISH(ai);
-DEFINE_PUBLISH(ao);
-DEFINE_PUBLISH(bi);
-DEFINE_PUBLISH(bo);
-DEFINE_PUBLISH(stringin);
-DEFINE_PUBLISH(stringout);
-DEFINE_PUBLISH(waveform);
-
+/* Simple helper routine for building published names.  As we never have to
+ * worry about end of lifetime, this is pretty easy. */
+const char * Concat(
+    const char * Prefix, const char * Body, const char * Suffix)
+{
+    char * Result = new char[strlen(Prefix) + strlen(Suffix) + 1];
+    strcpy(Result, Prefix);
+    strcat(Result, Body);
+    strcat(Result, Suffix);
+    return Result;
+}
 
 
 /****************************************************************************/
@@ -248,3 +173,5 @@ DEFINE_PUBLISH_VAR_IN(bi);
 DEFINE_PUBLISH_VAR_OUT(bo);
 DEFINE_PUBLISH_VAR_IN(stringin);
 DEFINE_PUBLISH_VAR_OUT(stringout);
+DEFINE_PUBLISH_VAR_IN(mbbi);
+DEFINE_PUBLISH_VAR_OUT(mbbo);

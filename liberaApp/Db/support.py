@@ -99,6 +99,7 @@ class Libera(hardware.Device):
                 ('ai',        'INP'), ('ao',        'OUT'),
                 ('bi',        'INP'), ('bo',        'OUT'),
                 ('stringin',  'INP'), ('stringout', 'OUT'),
+                ('mbbi',      'INP'), ('mbbo',      'OUT'),
                 ('waveform',  'INP')]:
             setattr(cls, name, cls.makeRecord(name, addr))
 

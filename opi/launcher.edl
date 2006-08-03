@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 211
-y 350
+x 540
+y 680
 w 300
 h 148
 font "arial-medium-r-18.0"
@@ -252,31 +252,25 @@ symbols {
 }
 endObjectProperties
 
-# (Group)
-object activeGroupClass
+# (Static Text)
+object activeXTextClass
 beginObjectProperties
 major 4
-minor 0
+minor 1
 release 0
-x 248
-y 8
-w 40
-h 16
-
-beginGroup
-
-# (Group)
-object activeGroupClass
-beginObjectProperties
-major 4
-minor 0
-release 0
-x 248
-y 8
-w 40
-h 16
-
-beginGroup
+x 8
+y 112
+w 151
+h 17
+font "arial-medium-r-16.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "Open IOC by name:"
+}
+autoSize
+endObjectProperties
 
 # (Menu Mux PV)
 object menuMuxPVClass
@@ -305,50 +299,18 @@ PV0 {
 }
 endObjectProperties
 
-endGroup
-
-visPv "0"
-visInvert
-visMin "0"
-visMax "1"
-endObjectProperties
-
 # (Rectangle)
 object activeRectangleClass
 beginObjectProperties
 major 4
 minor 0
 release 0
-x 248
+x 152
 y 8
-w 40
+w 136
 h 16
 lineColor index 3
 fill
 fillColor index 3
-endObjectProperties
-
-endGroup
-
-endObjectProperties
-
-# (Static Text)
-object activeXTextClass
-beginObjectProperties
-major 4
-minor 1
-release 0
-x 8
-y 112
-w 151
-h 17
-font "arial-medium-r-16.0"
-fgColor index 14
-bgColor index 0
-useDisplayBg
-value {
-  "Open IOC by name:"
-}
-autoSize
 endObjectProperties
 

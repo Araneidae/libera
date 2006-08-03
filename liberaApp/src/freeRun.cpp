@@ -34,8 +34,8 @@
 #include <stdlib.h>
 
 #include "drivers.h"
-#include "publish.h"
 #include "persistent.h"
+#include "publish.h"
 #include "thread.h"
 #include "trigger.h"
 #include "hardware.h"

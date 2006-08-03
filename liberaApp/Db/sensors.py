@@ -41,6 +41,8 @@ class ReadFile(hardware.Device):
     def LoadLibrary(cls):
         cls.LoadDbdFile('device.dbd')
     
+# Instantiate this class to ensure that the device is loaded.
+ReadFile()
 
 
 DefaultScanRate = '10 second'
@@ -82,8 +84,32 @@ def MemInfo(name, field, description, SCAN=DefaultScanRate):
         DESC = description)
         
 
+def Uptime():
+    uptime = records.longin('UPTIME',
+        DTYP = 'ReadFile',
+        INP  = '/proc/uptime',
+        EGU  = 's')
 
-ReadFile()
+    idletime = records.longin('IDLE',
+        DTYP = 'ReadFile',
+        INP  = '/proc/uptime|1',
+        EGU  = 's')
+
+    last_uptime = records.longin('LASTUP', INP = uptime)
+    last_idle = records.longin('LASTIDLE', INP = idletime)
+
+    calc_busy = records.calc('CPU',
+        CALC = '1-(A-B)/(C-D)',
+        MDEL = -1,
+        INPA = idletime,
+        INPB = last_idle,
+        INPC = uptime,
+        INPD = last_uptime)
+
+    uptime.SCAN = DefaultScanRate
+    uptime.FLNK = create_fanout('UPFAN',
+        idletime, calc_busy, last_uptime, last_idle)
+    
 
 temp1 = TemperatureSensor('TEMP1', '29/temp1', 'Main PCB Temperature')
 fan1 = FanSensor('FAN1', '48/fan1', 'Back fan speed')
@@ -92,6 +118,8 @@ fan2 = FanSensor('FAN2', '4b/fan1', 'Front fan speed')
 #MemInfo('USED',  2, 'Total used memory')
 #MemInfo('CACHE', 6, 'Total cached memory')
 free = MemInfo('FREE',  3, 'Total memory free', SCAN='Passive')
+
+Uptime()
 
 records.calc('HEALTH',
     SCAN = DefaultScanRate,

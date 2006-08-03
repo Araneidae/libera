@@ -40,35 +40,45 @@ from epics import *
 # ----------------------------------------------------------------------------
 #           Record Generation Support
 # ----------------------------------------------------------------------------
-        
 
-# Functions for creating bound pairs of set/readback records.
 
-def aInOut(name, DRVL, DRVH, **fields):
-    input  = Libera.ai(name,
-        PINI = 'YES',
-        EGUL = DRVL,  EGUF = DRVH,
-        **fields)
-    output = Libera.ao(name + '_S', address=name,
-        FLNK = input,
-        OMSL = 'supervisory', LINR = 'NO CONVERSION',
+def extend(dictionary, key, value):
+    assert key not in dictionary, 'key %s already in dictionary' % key
+    dictionary[key] = value
+
+
+# Functions for creating output records
+
+def aOut(name, DRVL, DRVH, ESLO=1e-6, EOFF=0, PREC=4, **fields):
+    Libera.ao(name + '_S', address=name,
+        OMSL = 'supervisory', 
+        ESLO = ESLO,  EOFF = EOFF,  LINR = 'LINEAR',
+        PREC = PREC,  
         DRVL = DRVL,  DRVH = DRVH,
         EGUL = DRVL,  EGUF = DRVH,
         **fields)
-    return input, output
 
-def boolInOut(name, **fields):
-    input = Libera.bi(name, PINI = 'YES', **fields)
-    output = Libera.bo(name + '_S', address=name, FLNK = input, **fields)
-    return input, output
+def boolOut(name, ZNAM, ONAM, **fields):
+    Libera.bo(name + '_S', address=name,
+        OMSL = 'supervisory', 
+        ZNAM = ZNAM, ONAM = ONAM, **fields)
 
-def longInOut(name, OMSL='supervisory', **fields):
-    input  = Libera.longin(name, PINI = 'YES', **fields)
-    output = Libera.longout(name + '_S', address=name,
-        FLNK = input, OMSL = 'supervisory', **fields)
-    return input, output
+def longOut(name, LOPR, HOPR, **fields):
+    Libera.longout(name + '_S', address=name,
+        OMSL = 'supervisory',
+        LOPR = LOPR, HOPR = HOPR, **fields)
 
+def mbbOut(name, *option_values, **fields):
+    mbbPrefixes = [
+        'ZR', 'ON', 'TW', 'TH', 'FR', 'FV', 'SX', 'SV',     # 0-7
+        'EI', 'NI', 'TE', 'EL', 'TV', 'TT', 'FT', 'FF']     # 8-15
+    for prefix, (option, value) in zip(mbbPrefixes, option_values):
+        extend(fields, prefix + 'ST', option)
+        extend(fields, prefix + 'VL', value)
+    Libera.mbbo(name + '_S', address=name,
+        OMSL = 'supervisory', **fields)
     
+
 def Waveform(name, length, FTVL='LONG', **fields):
     return Libera.waveform(
         name, name,
@@ -119,18 +129,19 @@ def XYQS_wf(length, prefix='WF'):
         Waveform(prefix + 'S', length,
             LOPR = 0, HOPR = MAX_S)]
 
-def XYQS_(prec=1, logMax=0):
-    sl = [Libera.longin('S', MDEL = -1)]
+def XYQS_(prec, logMax=0, suffix=''):
+    sl = [Libera.longin('S' + suffix, MDEL = -1)]
     if logMax:
-        sl.append(records.calc('SL',
+        sl.append(records.calc('SL' + suffix,
             CALC = '20*(LOG(A)-%g)' % logMax,
             INPA = sl[0],
             MDEL = -1,
             LOPR = -50,   HOPR = 0,
             EGU  = 'dB',  PREC = 0))
     return [
-        Libera.ai(position,
-            MDEL = -1,
+        Libera.ai(position + suffix,
+            MDEL = -1,    LINR = 'LINEAR',
+            EOFF = 0,     ESLO = 1e-6,
             LOPR = 0,     HOPR = MAX_mm,
             PREC = prec,  EGU  = 'mm')
         for position in 'XYQ'] + sl
@@ -138,9 +149,7 @@ def XYQS_(prec=1, logMax=0):
         
 
 def Enable():
-    boolInOut('ENABLE',
-        ZNAM = 'Disabled',
-        ONAM = 'Enabled')
+    boolOut('ENABLE', 'Disabled', 'Enabled')
 
 def Trigger(*positions):
     # The DONE record must be processed after all other triggered records are
@@ -179,11 +188,11 @@ def FirstTurn():
         # Synthesised button positions from windowed averages
         ABCD_() + 
         # Final computed positions with logarithmic scale.
-        XYQS_(logMax = log10(2**30 * 0.582217 * sqrt(2))))
+        XYQS_(2, logMax = log10(2**30 * 0.582217 * sqrt(2))))
 
     # Sample window control
-    longInOut('OFF', LOPR = 0, HOPR = SHORT_LENGTH - 1)
-    longInOut('LEN', LOPR = 1, HOPR = SHORT_LENGTH)
+    longOut('OFF', 0, SHORT_LENGTH - 1)
+    longOut('LEN', 1, SHORT_LENGTH)
 
     UnsetChannelName()
 
@@ -198,6 +207,8 @@ def Booster():
     Enable()
     
     Trigger(*
+        # IQ data
+        IQ_wf(LONG_LENGTH) + 
         # Raw decimated /64 button values
         ABCD_wf(LONG_LENGTH) +
         # Decimated /64 positions
@@ -272,14 +283,11 @@ def TurnByTurn():
     ready.FLNK = create_fanout('FANA', rearm, captured)
 
     # Readout window and total capture length
-    longInOut('LENGTH', LOPR = 1, HOPR = WINDOW_LENGTH)
-    longInOut('CAPLEN', LOPR = 1, HOPR = LONG_LENGTH)
-    # Readout window offset.  Here we break the usual chain where OFFSET
-    # would update as soon as OFFSET_S is written: instead, offset won't
-    # update until all the waveforms have been processed.  This allows OFFSET
-    # to be used as a readout interlock.
-    Libera.longout('OFFSET_S', 'OFFSET',
-        OMSL = 'supervisory', LOPR = 0, HOPR = LONG_LENGTH)
+    longOut('LENGTH', 1, WINDOW_LENGTH)
+    longOut('CAPLEN', 1, LONG_LENGTH)
+    # Readout window offset together with a readback to be used as a readout
+    # interlock.
+    longOut('OFFSET', 0, LONG_LENGTH)
     offset = Libera.longin('OFFSET', PINI = 'YES')
 
     Trigger(*
@@ -296,8 +304,25 @@ def TurnByTurn():
     
 # Slow acquisition: position updates at 10Hz.
 def SlowAcquisition():
+    CurrentEGU  = 'mA'
+    CurrentESLO = 1e-5
+    
     SetChannelName('SA')
-    Trigger(*ABCD_() + XYQS_())
+    power = Libera.ai('POWER',
+        MDEL = -1,  LINR = 'LINEAR',
+        EOFF = 0,   ESLO = 1e-6,
+        LOPR = -80, HOPR = 10,
+        PREC = 3,   EGU  = 'dBm')
+    current = Libera.ai('CURRENT',
+        MDEL = -1,  LINR = 'LINEAR',
+        EOFF = 0,   ESLO = CurrentESLO,
+        LOPR = 0,   HOPR = 500,
+        PREC = 3,   EGU  = CurrentEGU)
+    Trigger(*ABCD_() + XYQS_(4) + XYQS_(4, suffix='C') + [power, current])
+    aOut('ISCALE', 0, 20000,
+        EGU  = CurrentEGU,
+        ESLO = CurrentESLO,
+        PREC = 1)
     UnsetChannelName()
 
 
@@ -311,26 +336,71 @@ def SlowAcquisition():
 # geometry and 
 def Config():
     SetChannelName('CF')
-    boolInOut('DIAG', ZNAM = 'VERTICAL', ONAM = 'DIAGONAL')
-    aInOut('KX', 0, 32,   PREC = 4, EGU  = 'mm')
-    aInOut('KY', 0, 32,   PREC = 4, EGU  = 'mm')
-    aInOut('KQ', 0, 32,   PREC = 4, EGU  = 'mm')
-    aInOut('X0', -16, 16, PREC = 4, EGU  = 'mm')
-    aInOut('Y0', -16, 16, PREC = 4, EGU  = 'mm')
-    aInOut('G0', 0, 1.5,  VAL  = 1, PREC = 4)
-    aInOut('G1', 0, 1.5,  VAL  = 1, PREC = 4)
-    aInOut('G2', 0, 1.5,  VAL  = 1, PREC = 4)
-    aInOut('G3', 0, 1.5,  VAL  = 1, PREC = 4)
+    boolOut('DIAG', 'VERTICAL', 'DIAGONAL')
+    # Geometry calibration control
+    aOut('KX', 0, 32,   EGU  = 'mm')
+    aOut('KY', 0, 32,   EGU  = 'mm')
+    aOut('KQ', 0, 32,   EGU  = 'mm')
+    aOut('X0', -16, 16, EGU  = 'mm')
+    aOut('Y0', -16, 16, EGU  = 'mm')
+    # Channel gain settings.  Only applies to first turn mode.
+    aOut('G0', 0, 1.5,  ESLO = 2**-30)
+    aOut('G1', 0, 1.5,  ESLO = 2**-30)
+    aOut('G2', 0, 1.5,  ESLO = 2**-30)
+    aOut('G3', 0, 1.5,  ESLO = 2**-30)
 
-    attenwf = Libera.waveform('ATTWF',
-        NELM = 8, FTVL = 'LONG', PINI = 'YES')
-    Libera.longout('ATT1_S', 'ATT1',
-        OMSL = 'supervisory', LOPR = 0, HOPR = 31, FLNK = attenwf)
-    Libera.longout('ATT2_S', 'ATT2',
-        OMSL = 'supervisory', LOPR = 0, HOPR = 31, FLNK = attenwf)
+    # Switch automatic switching on or off
+    boolOut('AUTOSW', 'Fixed', 'Automatic')
+    # Select switch to use when automatic switching off
+    longOut('SETSW', 0, 15)
+    # Switch automatic gain control on or off
+    boolOut('AGC', 'Manual', 'Automatic')
+    # Select attenuation to use when AGC is off
+    longOut('SETATTEN', 0, 62, EGU = 'dB')
+    # Currently configured attenuation
+    Libera.longin('ATTEN',
+        SCAN = '1 second', LOPR = 0, HOPR = 62, EGU = 'dB')
 
-    longInOut('SW', LOPR = 0, HOPR = 15)
+    UnsetChannelName()
 
+
+# Interlock control records.  Used for configuring interlock operation.
+def Interlock():
+    SetChannelName('IL')
+
+    # Interlock window limits in mm
+    aOut('MINX', -5, 5, EGU = 'mm')
+    aOut('MAXX', -5, 5, EGU = 'mm')
+    aOut('MINY', -5, 5, EGU = 'mm')
+    aOut('MAXY', -5, 5, EGU = 'mm')
+
+    # Interlock gain limits
+    longOut('GAIN', -62, 0, EGU = 'dB')
+
+    # Overflow detection and limits
+    longOut('OVER', 0, 2048)
+    longOut('TIME', 0, 1000)
+
+    # Interlock mode: disabled, enabled or gain dependent.
+    mbbOut('MODE', ('Disable', 0), ('Enable', 1), ('Gain Dependent', 3))
+
+    # Interlock state.  This is a bit nasty: we get repeated triggers on TRIG
+    # while the interlock is active (ie, reporting signal bad).  The records
+    # POKE_STATE simply acts to relay the trigger state to STATE, which
+    # automatically resets itself if no triggers are received.
+    trigger = Libera.bi('TRIG', 
+        SCAN = 'I/O Intr',
+        VAL  = 1,  PINI = 'YES',
+        ONAM = 'Trigger')
+    state = records.bo('STATE',
+        HIGH = 0.5,
+        OMSL = 'supervisory',
+        ZNAM = 'Ready',        ZSV  = 'NO_ALARM',
+        ONAM = 'Interlocked',  OSV  = 'MAJOR')
+    trigger.FLNK = records.bo('POKE_STATE',
+        DOL  = trigger,  OMSL = 'closed_loop',
+        OUT  = PP(state))
+    
     UnsetChannelName()
 
     
@@ -368,5 +438,6 @@ SlowAcquisition()   # SA - 10Hz low noise position
 Postmortem()        # PM - fixed length pre-postmortem trigger waveforms
 
 Config()            # CF - general configuration records
+Interlock()         # IL - interlock configuration records
 Miscellaneous()     # Other records
 WriteRecords(sys.argv[1])

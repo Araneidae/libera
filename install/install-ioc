@@ -55,8 +55,8 @@ done  &&
 # Also create installation support files.
 mkdir -p "$TARGET"/install  &&
 
-# Also place the epics and epics_ioc files ready to be deployed on the ioc.
-for f in epics libera-install-ioc; do
+# Also place the ioc specific files ready to be deployed on the ioc.
+for f in epics gain.conf libera-install-ioc offsets.conf; do
     cp "$SOURCE"/install/$f "$TARGET"/install
 done  &&
 

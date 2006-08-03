@@ -34,8 +34,8 @@
 #include <stddef.h>
 
 #include "drivers.h"
-#include "publish.h"
 #include "persistent.h"
+#include "publish.h"
 #include "thread.h"
 #include "trigger.h"
 #include "hardware.h"
@@ -72,6 +72,7 @@ public:
         FillAxis(ShortAxis, ShortWaveformLength, RampDuration);
         
         /* Publish the PVs associated with Booster data. */
+        LongIq.Publish("BN");
         LongAbcd.Publish("BN");
         LongXyqs.Publish("BN");
         ShortXyqs.Publish("BN", "WFS");

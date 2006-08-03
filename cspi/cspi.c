@@ -1,4 +1,4 @@
-// $Id: cspi.c,v 1.58 2006/01/12 12:53:00 miha Exp $
+// $Id: cspi.c,v 1.62 2006/06/27 05:40:18 ales Exp $
 
 //! \file cspi.c
 //! Implements Control System Programming Interface.
@@ -58,6 +58,7 @@ const char* err_list[] = {
 	"illegal CSPI call",
 	"failed to allocate memory",
 	"driver version mismatch",
+	"DSC server protocol error"
 };
 
 /** A list of warning messages corresponding to warning codes. */
@@ -700,6 +701,10 @@ int get_param( int fd, int *p, const Param_traits *traits )
 	if ( -1 == ioctl( fd, LIBERA_IOC_GET_CFG, &request ) ) return CSPI_E_SYSTEM;
 
 	*p = request.val;
+
+	VALIDATOR validate = traits->validate;
+	if ( validate && !validate(p) ) return CSPI_E_INVALID_PARAM;
+
 	return CSPI_OK;
 }
 
@@ -743,15 +748,18 @@ int cspi_setenvparam_fa( CSPIHENV h, size_t offset,
 	if ( size % 4 ) return CSPI_E_INVALID_PARAM;
 
 	Environment *e =  (Environment*) h;
+	int fd = open( "/dev/libera.fa", O_WRONLY );
+	if ( -1 == fd ) return CSPI_E_SYSTEM;
 
 	int rc = CSPI_E_SYSTEM;
 	VERIFY( 0 == pthread_mutex_lock( &e->mutex ) );
 
-	if ((off_t)-1 != lseek(e->fd, offset, SEEK_SET)) {
-		if (count*size == write(e->fd, pbuf, count*size)) rc = CSPI_OK;
+	if ((off_t)-1 != lseek(fd, offset, SEEK_SET)) {
+		if (count*size == write(fd, pbuf, count*size)) rc = CSPI_OK;
 	}
 
 	VERIFY( 0 == pthread_mutex_unlock( &e->mutex ) );
+	VERIFY( 0 == close(fd) );
     return rc;
 }
 
@@ -770,15 +778,18 @@ int cspi_getenvparam_fa( CSPIHENV h, size_t offset,
 	if ( size % 4 ) return CSPI_E_INVALID_PARAM;
 
 	Environment *e =  (Environment*) h;
+	int fd = open( "/dev/libera.fa", O_RDONLY );
+	if ( -1 == fd ) return CSPI_E_SYSTEM;
 
 	int rc = CSPI_E_SYSTEM;
 	VERIFY( 0 == pthread_mutex_lock( &e->mutex ) );
 
-	if ((off_t)-1 != lseek(e->fd, offset, SEEK_SET)) {
-		if (count*size == read(e->fd, pbuf, count*size)) rc = CSPI_OK;
+	if ((off_t)-1 != lseek(fd, offset, SEEK_SET)) {
+		if (count*size == read(fd, pbuf, count*size)) rc = CSPI_OK;
 	}
 
 	VERIFY( 0 == pthread_mutex_unlock( &e->mutex ) );
+	VERIFY( 0 == close(fd) );
     return rc;
 }
 
@@ -1119,7 +1130,8 @@ int cspi_gettimestamp( CSPIHCON h, CSPI_TIMESTAMP *ts )
 	if ( -1 == p->fd || 0 >= p->timestamp.st.tv_sec ) return CSPI_E_SEQUENCE;
 
 	// Must be a DD connection!
-	if ( CSPI_MODE_DD != p->mode ) return CSPI_E_ILLEGAL_CALL;
+	if ( CSPI_MODE_DD != p->mode && CSPI_MODE_PM != p->mode )
+		return CSPI_E_ILLEGAL_CALL;
 
 	memcpy( ts, &p->timestamp, sizeof(p->timestamp) );
 	return CSPI_OK;

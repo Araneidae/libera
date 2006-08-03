@@ -28,9 +28,11 @@
 
 /* High efficiency support routines. */
 
+#include <limits.h>
+
 #include "support.h"
 
-#include "divide-lookup.h"
+#include "support-lookup.h"
 
 
 /* Here we compute 2^61 / X with 22 bits of precision with a table lookup and
@@ -132,12 +134,13 @@ unsigned int Reciprocal(unsigned int X, int &shift)
 {
     /* Start by normalising x.  This ensures that we have as many bits as
      * possible (and is required for the rest of the algorithm to work). */
-    shift = CLZ(X);
-    X <<= shift;
+    int norm = CLZ(X);
+    X <<= norm;
+    shift += 61 - norm;
 
     /* Now extract the two components a and b. */
-    unsigned int A = (X & 0x7FFFFFFF) >> M_BITS;
-    int B = (X & M_MASK) - B_OFFSET;
+    unsigned int A = (X & 0x7FFFFFFF) >> DIV_M_BITS;
+    int B = (X & DIV_M_MASK) - DIV_B_OFFSET;
     /* Compute the initial estimate by a table lookup. */
     unsigned int AA = DivisionLookup[A];
     /* Perform linear correction. */
@@ -145,86 +148,266 @@ unsigned int Reciprocal(unsigned int X, int &shift)
 }
 
 
-#if 0
-/* This code is currently useless... */
 
-/* This routine quickly computes 1e-6 * x without using floating point
- * arithmetic.  This allows us to convert integer nanometre positions to
- * floating point millimetre positions in just over 110ns.
- *
- * The IEEE single precision floating point represents a floating point
- * number with value x as three bit fields
- * 
- *      31 30    23 22              0
- *      +-+--------+-----------------+
- *      |s|    e   |        f        |
- *      +-+--------+-----------------+
- *
- * where
- *                s   e-127           -23
- *        x = (-1) * 2      * (1.0 + 2   f).
- *        
- * Writing F = 2^23 + f this can be conveniently written as
- * 
- *                s   e-150    
- *        x = (-1) * 2      * F.
- *
- * Assembling this value is described step by step below. */
+/* Denormalising, the conversion of a number together with its shift, into a
+ * simple integer, is on the face of it as simple as returning X >> shift.
+ * However, here we also take overflow into account, which complicates
+ * things. */
 
-/* Unfortunately, in the current instantiation of the driver, the simple act
- * of returning a floating point result generates the instruction
- *
- *      ldfs    f0, ...
- *
- * to load floating point register f0 with the result.  Unfortunately, this
- * register does not exist!  This adds around 2000ns to the running time.
- *    We work around this by returning the result by reference!  No floating
- * point registers were troubled by this code. */
-
-void nmTOmm(int nm, float &mm_float)
+unsigned int Denormalise(unsigned int X, int shift)
 {
-    /* K = 2^51 * 1e-6.  This is the largest multiplier that will fit in a 32
-     * bit word. */
-    unsigned int const K = 0x8637BD05U;
-    unsigned int mm;
-    if (nm == 0)
-        mm = 0;
+    if (shift < 0)
+        /* Negative residual shift is a sign of probable trouble: numbers
+         * should be arranged so there's some shift left to play with!  Never
+         * mind, let's do the best we can... */
+        if (CLZ(X) >= (unsigned int) -shift)
+            /* Ok, we can afford this much left shift. */
+            return X << -shift;
+        else
+            /* Out of bits.  Return maximum possible value, unless X is zero,
+             * in which case we just return 0. */
+            if (X == 0)
+                return 0;
+            else
+                return ULONG_MAX;
+    else if (shift < 32)
+        /* The normal case. */
+        return X >> shift;
+    else
+        /* Shifting by more than 32 is not properly defined, but we know to
+         * return 0! */
+        return 0;
+}
+
+
+
+/* Computes logarithm base 2 of input to about 22 bits of precision using
+ * table lookup and linear interpolation, as for Reciprocal above.
+ *
+ * Here the input argument is taken to have 16 bits of fraction and 16 bits
+ * of integer: this gives us a sensible output dynamic range, with an output
+ * in the range +- 16.
+ *
+ * Computation proceeds as follows:
+ *
+ *  1. The input is normalised.  The normalising shift will simply be added
+ *     into the final result (and is part of the reason for choosing base 2).
+ *  2. The normalised input is separated into three fields, 1, A, B, exactly
+ *     as for Reciprocal.
+ *  3. The logarithm of A is computed by direct lookup.
+ *  4. The remaining offset B is corrected for by linear interpolation.  In
+ *     this case the scaling factor for B is also looked up.
+ *
+ * After normalisation write X = 2^31 x and X is decomposed into
+ *
+ *           31    m
+ *      X = 2   + 2  A + B    (A n bits wide, B m bits wide, n+m=31).
+ *
+ *                -n                -31      m-1
+ * Write a = 1 + 2  (A + 0.5), b = 2   (B - 2   ) and then x = a+b and we
+ * compute
+ *                                   b                      b
+ *      log x = log (a+b) = log (a(1+-)) = log a + log (1 + -)
+ *         2       2           2     a        2       2     a
+ *                         b
+ *            ~~ log a + ------
+ *                  2    a ln 2
+ *                  
+ * The values log_2 a and 1/(a ln 2) are precomputed.  The offsets on A and B
+ * used to calculate a and be are used to reduce the maximum value of b to
+ * 2^(n+1), thus reducing the residual error. */
+
+int log2(unsigned int X)
+{
+    /* First need to check for overflow.  Because linear approximation
+     * overestimates the logarithm, we can't go all the way to the maximum
+     * possible input without overflow.  Also, we have to return something
+     * for log2(0), and we might as well return the smallest value (rather
+     * than something close to the largest!) */
+    if (X >= 0xFFFFFF80)
+        return 0x7FFFFFFF;
+    else if (X == 0)
+        return 0x80000000;
     else
     {
-        unsigned int sign = nm & 0x80000000U;
-        if (nm < 0)  nm = -nm;
-
-        /* Normalise the input value to ensure we get as many bits as
-         * possible in the fraction. */
-        unsigned int Shift = CLZ(nm);
-        unsigned int X = nm << Shift;
-        /* Compute the unnormalised fraction f.  We now have
-         *      F = 2^(19+Shift) * mm
-         * where mm = 1e-6 * x is the desired result. */
-        unsigned int F = ((unsigned long long) X * K) >> 32;
-        /*  At this point we know that f >= 2^30, but we're not sure about the
-         * top bit. */
-        unsigned int t = CLZ(F);    // Either 0 or 1!
-        /* The exponent can now be calculated.  We're going have to shift F
-         * down by 8-t (and remove its top bit -- but see below), and so we
-         * can calculate that the fraction will satisfy the equation
-         *      F' = 2^(t-8)F = 2^(11+Shift+t) mm.
-         * We want the assembled result to satisfy the equation
-         *      mm = 2^(e-150) F' = 2^(e-150+11+Shift-t) mm
-         * and so it's clear that we want e = 139 - Shift - t.
-         *     There is one further little hack here: we ought to remove the
-         * topmost bit of f before assembling it into the result, but instead
-         * we add it into the exponent.  This saves an extra masking operation
-         * at the cost of an offset by one in the calculation below (which
-         * is, of course, free). */
-        unsigned int exp = 139 - Shift - t - 1;
-        /* Finally assemble the mm value. */
-        mm = sign + (exp << 23) + (F >> (8 - t));
+        int shift = CLZ(X);
+        X <<= shift;
+        unsigned int A = (X & 0x7FFFFFFF) >> LOG2_M_BITS;
+        int B = (X & LOG2_M_MASK) - LOG2_B_OFFSET;
+        LOG2_LOOKUP Lookup = Log2Lookup[A];
+        return ((15 - shift) << 27) + Lookup.Log + MulSS(Lookup.Scale, B);
     }
-
-    /* Return the resulting bit pattern as a float. */
-    * (int *) & mm_float = mm;
-//    return * (float *) & mm;
 }
-#endif
 
+
+
+/* Computes exponential to the power 2 to about 22 bits of precising using
+ * algorithms similar to those for Reciprocal and log2 above.
+ *
+ * Here the input argument has 27 bits of fraction and 5 signed bits of
+ * integer, yielding 16 bits of fraction and 16 bits of integer.
+ *
+ * The computation process is very similar to that for log2, but the input
+ * does not need normalisation: instead, the integer part of the input is
+ * treated separately (as a shift on the final output).
+ *
+ * The input X = 2^27 x is decomposed into
+ *
+ *           27     m
+ *      X = 2  S + 2 A + B      (A n bits wide, B m bits wide, n+m=27)
+ *
+ *                   -n                -27      m-1
+ * and we write a = 2  (A + 0.5), b = 2   (B - 2   ) and x = S+a+b.  Then
+ *
+ *       x    S+a+b    S  a  b     S  a
+ *      2  = 2      = 2  2  2  ~~ 2  2  (1 + b ln 2)
+ *
+ *             a      a
+ *         = (2  + b 2  ln 2) << S.
+ *
+ * The constant 2^a is precomputed.  The multiplier 2^a ln 2 could also be
+ * precomputed, but in this implementation is multiplied on the fly.
+ *
+ * The final required shift is returned instead of being applied to the
+ * result: this allows accumulation of shifts if required without loss of
+ * precision. */
+
+unsigned int exp2(int X, int &shift)
+{
+    shift += 15 - (X >> 27);
+    unsigned int A = (X & 0x07FFFFFF) >> EXP2_M_BITS;
+    int B = (X & EXP2_M_MASK) - EXP2_B_OFFSET;
+    unsigned int E = Exp2Lookup[A];
+    return E + MulSS(B << 6, MulUU(E, EXP2_LN2));
+}
+
+
+
+/* Returns 1e6 * 20 * log_10(X), used for computing dB values for output to
+ * the user.
+ *
+ * Calculate
+ *                                 2e7            2e7     -27
+ *      to_dB(X) = 2e7 * log  X = ------ log X = ------ (2   log2(X) + 16)
+ *                          10    log 10    2    log 10
+ *                                   2              2
+ *
+ * The two constants, 2^32 * 2^-27 * 2e7 / log_2 10, and 16 * 2e7 / log_2 10,
+ * are precomputed by support-header.ph. */
+
+int to_dB(unsigned int X)
+{
+    return TO_DB_OFFSET + MulSS(log2(X), TO_DB_FACTOR);
+}
+
+
+/* Returns 2^s * 10^(X/(20 * 1e6)), intended as an inverse to to_dB above,
+ * where s is a shift normalisation to be applied by the caller.  Calculated
+ * as:
+ *                                            log 10
+ *                      X               X        2
+ *                     ---   ( log 10) ---    ------ X
+ *                     2e7   (    2  ) 2e7      2e7      KX
+ *      from_dB(X) = 10    = (2      )     = 2        = 2
+ *
+ *                    -s-16      27
+ *                 = 2     exp2(2  KX)
+ *
+ * where
+ *          log 10
+ *             2
+ *      K = ------
+ *            2e7
+ *
+ * We now have to be rather careful about scaling X.  The factor 2^27*K above
+ * is about 22.3, which restricts the maximum value of X/1e6 to 93.
+ * Furthermore, to avoid losing precision, represent K below as 2^27 * K. */
+
+unsigned int from_dB(int X, int &shift)
+{
+    /* Check for limits: if computing X<<5 loses bits then we overflow. */
+    int XX = X << 5;
+    if ((XX >> 5) == X)
+    {
+        unsigned int result = exp2(MulUS(FROM_DB_FACTOR, XX), shift);
+        shift += 16;
+        return result;
+    }
+    else
+    {
+        /* Oops.  Overflow!  Return a limiting value. */
+        if (X > 0)
+            shift += 16;
+        else
+            shift += 48;
+        return 0xFFFFFFFF;
+    }
+}
+
+
+
+
+/*****************************************************************************/
+/*                                                                           */
+/*                       Poor Man's Floating Point Class                     */
+/*                                                                           */
+/*****************************************************************************/
+
+/* Pretty much boilerplate C++ operator wrappers.  A little subtlety in
+ * division and reciprocal, but it's all obvious stuff.  Long winded, and
+ * hardly worth it, really... */
+
+PMFP::PMFP(unsigned int InitialValue, int InitialShift)
+{
+    Value = InitialValue;
+    Shift = InitialShift;
+}
+
+PMFP::PMFP(const PMFP &Copy)
+{
+    Value = Copy.Value;
+    Shift = Copy.Shift;
+}
+
+void PMFP::operator=(const PMFP &Copy)
+{
+    Value = Copy.Value;
+    Shift = Copy.Shift;
+}
+
+unsigned int PMFP::Denormalise() const
+{
+    return ::Denormalise(Value, Shift);
+}
+
+PMFP PMFP::operator*(const PMFP &Multiplier) const
+{
+    int NewShift = Shift + Multiplier.Shift;
+    unsigned int NewValue = MulUUshift(Value, Multiplier.Value, NewShift);
+    return PMFP(NewValue, NewShift);
+}
+
+PMFP PMFP::operator/(const PMFP &Divisor) const
+{
+    int NewShift = Shift - Divisor.Shift;
+    unsigned int NewValue = MulUUshift(
+        Value, ::Reciprocal(Divisor.Value, NewShift), NewShift);
+    return PMFP(NewValue, NewShift);
+}
+
+PMFP PMFP::Reciprocal() const
+{
+    int NewShift = - Shift;
+    unsigned int NewValue = ::Reciprocal(Value, NewShift);
+    return PMFP(NewValue, NewShift);
+}
+
+PMFP Reciprocal(const PMFP &Argument)
+{
+    return Argument.Reciprocal();
+}
+
+unsigned int Denormalise(const PMFP &Argument)
+{
+    return Argument.Denormalise();
+}

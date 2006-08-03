@@ -36,11 +36,11 @@
 #include <dbFldTypes.h>
 
 #include "drivers.h"
+#include "persistent.h"
 #include "publish.h"
 #include "hardware.h"
 #include "cordic.h"
 #include "support.h"
-#include "persistent.h"
 
 #include "convert.h"
 
@@ -75,7 +75,21 @@ static int Y_0 = 0;
 #define DEFAULT_GAIN    (1 << 30)
 static int ChannelGain[4] =
     { DEFAULT_GAIN, DEFAULT_GAIN, DEFAULT_GAIN, DEFAULT_GAIN };
-#define GAIN_SCALE (1.0 / DEFAULT_GAIN)
+
+
+/* Control configuration. */
+
+/* Controls whether automatic switching is enabled (DSC, Digital Signal
+ * Conditioning, is enabled or disabled at the same time. */
+static bool AutoSwitchEnabled = false;
+/* Controls whether automatic gain control (AGC) is enabled. */
+static bool AgcEnabled = false;
+/* Selects which switch setting to use in manual mode. */
+static int ManualSwitch = 3;
+/* Selects which attenuation to use in manual mode.  By default we configure
+ * quite a high attenuation. */
+static int ManualAttenuation = 60;
+
 
 /* Rescales value by gain factor making use of the GAIN_OFFSET defined above.
  * The gain factors are scaled by a factor of 2^31, and are intended to
@@ -101,7 +115,7 @@ static int ChannelGain[4] =
  * arranged around a circular vacuum vessel in a linear accelerator or
  * transfer path. */
 static bool Diagonal = true;
-static PERSISTENT_BOOL PersistentDiagonal(Diagonal);
+
 
 
 /*****************************************************************************/
@@ -205,19 +219,20 @@ void ABCDtoXYQS(const ABCD_ROW *ABCD, XYQS_ROW *XYQS, int Count)
          * inner loop function we take some time to optimise its execution by
          * precomputing as much as possible.
          *    Start by precomputing 1/S, or more precisely, a scaled version
-         * of 1/S.  (InvS,shift) = Reciprocal(S) returns InvS=2^(61-shift)/S,
-         * where shift is a bit normalisation count on S, ie
-         *      2^31 <= 2^shift * S < 2^32.
-         * From the observation above we know that shift >= 1, and it is
+         * of 1/S.  (InvS,shift) = Reciprocal(S) returns InvS=2^shift/S,
+         * where shift derives from a bit normalisation count on S.  Indeed,
+         * we know that shift = 61-n where n is the normalisation count, so
+         *      2^31 <= 2^n * S < 2^32.
+         * From the observation above we know that n >= 1, and it is
          * convenient for the subsequent call to DeltaToPosition to adjust
          * things so that
          *
          *      InvS = 2^(60-shift) / S
          *      2^(30-shift) <= S < 2^(31-shift)
          */
-        int shift;
+        int shift = 0;
         int InvS = Reciprocal(S, shift);
-        shift -= 1;
+        shift = 60 - shift;
         /* Compute X and Y according to the currently selected detector
          * orientation.  There seem to be no particularly meaningful
          * computation of Q in vertical orientation, so we use the diagonal
@@ -239,25 +254,6 @@ void ABCDtoXYQS(const ABCD_ROW *ABCD, XYQS_ROW *XYQS, int Count)
 
 
 
-/* Rescales one row XYQS data from nm to mm. */
-void XYQStomm(const XYQS_ROW &XYQSnm, XYQSmm_ROW &XYQSmm)
-{
-    XYQSmm.X = nmTOmm(XYQSnm.X);
-    XYQSmm.Y = nmTOmm(XYQSnm.Y);
-    XYQSmm.Q = nmTOmm(XYQSnm.Q);
-    XYQSmm.S = XYQSnm.S;
-}
-
-
-void ABCDtoXYQSmm(const ABCD_ROW &ABCD, XYQSmm_ROW &XYQSmm)
-{
-    XYQS_ROW XYQSnm;
-    ABCDtoXYQS(&ABCD, &XYQSnm, 1);
-    XYQStomm(XYQSnm, XYQSmm);
-}
-
-
-
 void GainCorrect(int Channel, int *Column, int Count)
 {
     int Gain = ChannelGain[Channel];
@@ -269,230 +265,169 @@ void GainCorrect(int Channel, int *Column, int Count)
 
 /****************************************************************************/
 /*                                                                          */
-/*                        Attenuators and Switches                          */
+/*                    Attenuation and Switch Management                     */
 /*                                                                          */
 /****************************************************************************/
 
-/* The following functions are concerned with setting and reading the
- * attenuators and switch settings on the Libera. */
+
+static int CachedAttenuation = 0;
 
 
-/* The eight attenuator settings are read as a complete waveform but written
- * as a pair of settings across all four channels. */
+/* Attenuator configuration management. */
 
 
-class GET_ATTEN_WAVEFORM : public I_WAVEFORM
+#define MAX_ATTENUATION  62
+#define OFFSET_CONF_FILE "/opt/dsc/offsets.conf"
+
+
+/* The attenuator value reported by ReadCachedAttenuation() is not strictly
+ * accurate, due to minor offsets on attenuator values.  Here we attempt to
+ * compensate for these offsets by reading an offset configuration file. */
+static int AttenuatorOffset[MAX_ATTENUATION + 1];
+
+
+static bool ReadAttenuatorOffsets()
 {
-public:
-    GET_ATTEN_WAVEFORM() : I_WAVEFORM(DBF_LONG) { }
-    
-    size_t read(void * array, size_t length)
+    FILE * OffsetFile = fopen(OFFSET_CONF_FILE, "r");
+    if (OffsetFile == NULL)
     {
-        ATTENUATORS attenuators;
-        if (ReadAttenuators(attenuators))
-        {
-            const size_t LENGTH = 8;    // Number of attenuators 
-            if (length > LENGTH)  length = LENGTH;
-            int * target = (int *) array;
-            for (size_t i = 0; i < length; i ++)
-                target[i] = attenuators[i];
-            return length;
-        }
-        else
-            return 0;
-    }
-};
-
-
-/* To implement attenuator persistence we track the programmed attenuator
- * values here. */
-static int AttenuatorSettings[2];
-static PERSISTENT_INT PersistentAtt1(AttenuatorSettings[0]);
-static PERSISTENT_INT PersistentAtt2(AttenuatorSettings[1]);
-
-
-static bool SetAtten(int Value, void * Context)
-{
-    const int Offset = (int) Context;
-    if (0 <= Value  &&  Value < 32)
-    {
-        AttenuatorSettings[Offset] = Value;
-        ATTENUATORS attenuators;
-        if (ReadAttenuators(attenuators))
-        {
-            for (int i = 0; i < 4; i ++)
-                attenuators[Offset + 2*i] = (unsigned char) Value;
-            return WriteAttenuators(attenuators);
-        }
-        else
-            return false;
+        printf("Unable to open file " OFFSET_CONF_FILE "\n");
+        return false;
     }
     else
     {
-        printf("Attenuator value %d out of range\n", Value);
-        return false;
+        bool Ok = true;
+        for (int i = 0; Ok  &&  i <= MAX_ATTENUATION; i ++)
+        {
+            double Offset;
+            Ok = fscanf(OffsetFile, "%lf", &Offset) == 1;
+            if (Ok)
+                AttenuatorOffset[i] = (int) (DB_SCALE * Offset);
+            else
+                printf("Error reading file " OFFSET_CONF_FILE "\n");
+        }
+        fclose(OffsetFile);
+        return Ok;
     }
 }
 
 
-static bool GetAtten(int &Value, void * Context)
+
+
+/* This routine is called periodically (once per second) by the CF:ATTEN
+ * record.  As well as reading the attenuator value directly from the
+ * hardware (which actually involves asking the DSC!) we cache it locally. */
+
+static bool UpdateCurrentAttenuation(int &Attenuation)
 {
-    const int Offset = (int) Context;
-    ATTENUATORS attenuators;
-    if (ReadAttenuators(attenuators))
-    {
-        Value = attenuators[Offset];
-        AttenuatorSettings[Offset] = Value;
-        return true;
-    }
-    else
-        return false;
-}
-
-
-/* Attenuator persistence is achived by tracking the AttenuatorSettings array
- * and keeping it in step with the requested values. */
-
-static void AttenuatorsPersist()
-{
-    /* First get the current settings so we have sensible defaults. */
-    int Dummy;
-    GetAtten(Dummy, (void*)0);
-    GetAtten(Dummy, (void*)1);
-    /* Now initialise the attenuators.
-     *    Um.  Note the iky use of & instead of && for non-shortcut
-     *    conjunction! */
-    if (PersistentAtt1.Initialise("CF:ATT1")  &
-        PersistentAtt2.Initialise("CF:ATT2"))
-    {
-        SetAtten(AttenuatorSettings[0], (void*)0);
-        SetAtten(AttenuatorSettings[1], (void*)1);
-    }
-}
-
-
-/* As for attenuators, we track the switch settings. */
-static int Switches;
-static PERSISTENT_INT PersistentSwitches(Switches);
-
-static bool GetSwitches(int &Value, void*)
-{
-    bool Ok = ReadSwitches(Value);
-    Switches = Value;
+    bool Ok = ReadAttenuation(CachedAttenuation);
+    Attenuation = CachedAttenuation;
     return Ok;
 }
 
 
 
-static bool SetSwitches(int Value, void*)
-{
-    Switches = Value;
-    return WriteSwitches(Value);
-}
+/* Returns the current cached attenuator setting, after correcting for
+ * attenuator offset. */
 
-
-static void SwitchesPersist()
+int ReadCorrectedAttenuation()
 {
-    GetSwitches(Switches, NULL);
-    if (PersistentSwitches.Initialise("CF:SW"))
-        SetSwitches(Switches, NULL);
+    int Attenuation = CachedAttenuation;
+    return Attenuation * DB_SCALE + AttenuatorOffset[Attenuation];
 }
 
 
 
-/****************************************************************************/
-/*                                                                          */
-/*                          Publishing Parameters                           */
-/*                                                                          */
-/****************************************************************************/
-
-/* Class to publish a writeable int to EPICS to appear as both an ai and ao
- * value.  When read and written the value is automatically rescaled between
- * double and integer. */
-
-class CONFIG_DOUBLE : public I_ai, public I_ao
+static void UpdateCalibration()
 {
-public:
-    CONFIG_DOUBLE(
-        const char * Name,
-        int &Parameter, int LowLimit, int HighLimit, double Scale) :
+    WriteCalibrationSettings(K_X, K_Y, K_Q, X_0, Y_0);
+}
 
-        Name(Name),
-        Parameter(Parameter),
-        Persistent(Parameter),
-        LowLimit(LowLimit * Scale),
-        HighLimit(HighLimit * Scale),
-        Scale(Scale)
+
+/* Called whenever the autoswitch mode has changed. */ 
+static void UpdateAutoSwitch()
+{
+    if (AutoSwitchEnabled)
     {
-        Publish_ai(Name, *this);
-        Publish_ao(Name, *this);
-        Persistent.Initialise(Name);
+        /* Switch mode is now automatic.  Turn on DSC as well. */
+        WriteSwitchState(CSPI_SWITCH_AUTO);
+        WriteDscMode(CSPI_DSC_AUTO);
     }
-
-    bool read(double &Result)
+    else
     {
-        Result = Scale * Parameter;
-        return true;
+        /* Switch to manual mode. */
+        WriteDscMode(CSPI_DSC_OFF);
+        WriteSwitchState((CSPI_SWITCHMODE) ManualSwitch);
     }
+}
 
-    bool init(double &Result)
+static void UpdateAgcMode()
+{
+    if (AgcEnabled)
+        WriteAgcMode(CSPI_AGC_AUTO);
+    else
     {
-        return read(Result);
+        WriteAgcMode(CSPI_AGC_MANUAL);
+        WriteAttenuation(ManualAttenuation);
+        CachedAttenuation = ManualAttenuation;
     }
+}
 
-    bool write(double Value)
+static void UpdateManualSwitch()
+{
+    if (!AutoSwitchEnabled)
+        WriteSwitchState((CSPI_SWITCHMODE) ManualSwitch);
+}
+
+static void UpdateManualAttenuation()
+{
+    if (!AgcEnabled)
     {
-        if (LowLimit < Value  &&  Value < HighLimit)
-        {
-            Parameter = (int) (Value / Scale);
-            return true;
-        }
-        else
-        {
-            printf("Value of %g for parameter %s is out of range\n",
-                Value, Name);
-            return false;
-        }
+        WriteAttenuation(ManualAttenuation);
+        CachedAttenuation = ManualAttenuation;
     }
-
-private:
-    const char * Name;
-    int &Parameter;
-    PERSISTENT_INT Persistent;
-    const double LowLimit;
-    const double HighLimit;
-    const double Scale;
-};
+}
 
 
-#define PUBLISH_DOUBLE(args...) new CONFIG_DOUBLE(args)
+#define PUBLISH_CALIBRATION(Name, Value) \
+    PUBLISH_CONFIGURATION(Name, ao, Value, UpdateCalibration)
 
-#define SCALE 1e-6
-#define BOUND (1 << 25)         // 2^25nm or approx 32mm
-#define GAIN_BOUND (DEFAULT_GAIN + DEFAULT_GAIN/2)
+#define PUBLISH_GAIN(Name, Value) \
+    PUBLISH_CONFIGURATION(Name, ao, Value, NULL)
+
 
 bool InitialiseConvert()
 {
-    Publish_bi("CF:DIAG", Diagonal);
-    Publish_bo("CF:DIAG", Diagonal);
-    PersistentDiagonal.Initialise("CF:DIAG");
-    PUBLISH_DOUBLE("CF:KX", K_X, 0, BOUND, SCALE);
-    PUBLISH_DOUBLE("CF:KY", K_Y, 0, BOUND, SCALE);
-    PUBLISH_DOUBLE("CF:KQ", K_Q, 0, BOUND, SCALE);
-    PUBLISH_DOUBLE("CF:X0", X_0, -BOUND/2, BOUND/2, SCALE);
-    PUBLISH_DOUBLE("CF:Y0", Y_0, -BOUND/2, BOUND/2, SCALE);
-    PUBLISH_DOUBLE("CF:G0", ChannelGain[0], 0, GAIN_BOUND, GAIN_SCALE);
-    PUBLISH_DOUBLE("CF:G1", ChannelGain[1], 0, GAIN_BOUND, GAIN_SCALE);
-    PUBLISH_DOUBLE("CF:G2", ChannelGain[2], 0, GAIN_BOUND, GAIN_SCALE);
-    PUBLISH_DOUBLE("CF:G3", ChannelGain[3], 0, GAIN_BOUND, GAIN_SCALE);
+    if (!ReadAttenuatorOffsets())
+        return false;
+    
+    PUBLISH_CONFIGURATION("CF:DIAG", bo, Diagonal, NULL);
 
-    Publish_waveform("CF:ATTWF", *new GET_ATTEN_WAVEFORM);
-    PUBLISH_FUNCTION_OUT(longout, "CF:ATT1", SetAtten, GetAtten, (void*)0);
-    PUBLISH_FUNCTION_OUT(longout, "CF:ATT2", SetAtten, GetAtten, (void*)1);
-    AttenuatorsPersist();
-    PUBLISH_FUNCTION_IN_OUT(longin, longout,  "CF:SW",
-        GetSwitches, SetSwitches, NULL);
-    SwitchesPersist();
+    PUBLISH_CALIBRATION("CF:KX", K_X);
+    PUBLISH_CALIBRATION("CF:KY", K_Y);
+    PUBLISH_CALIBRATION("CF:KQ", K_Q);
+    PUBLISH_CALIBRATION("CF:X0", X_0);
+    PUBLISH_CALIBRATION("CF:Y0", Y_0);
+    /* Write the current state to the hardware. */
+    UpdateCalibration();
+
+    PUBLISH_GAIN("CF:G0", ChannelGain[0]);
+    PUBLISH_GAIN("CF:G1", ChannelGain[1]);
+    PUBLISH_GAIN("CF:G2", ChannelGain[2]);
+    PUBLISH_GAIN("CF:G3", ChannelGain[3]);
+
+    PUBLISH_CONFIGURATION("CF:AUTOSW", bo,
+        AutoSwitchEnabled, UpdateAutoSwitch);
+    PUBLISH_CONFIGURATION("CF:AGC", bo, AgcEnabled, UpdateAgcMode);
+    PUBLISH_CONFIGURATION("CF:SETSW", longout,
+        ManualSwitch, UpdateManualSwitch);
+    PUBLISH_CONFIGURATION("CF:SETATTEN", longout,
+        ManualAttenuation, UpdateManualAttenuation);
+    /* Write the current state to the hardware. */
+    UpdateAutoSwitch();
+    UpdateAgcMode();
+
+    PUBLISH_FUNCTION_IN(longin, "CF:ATTEN", UpdateCurrentAttenuation);
 
     return true;
 }

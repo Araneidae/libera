@@ -34,8 +34,8 @@
 #include <stddef.h>
 
 #include "drivers.h"
-#include "publish.h"
 #include "persistent.h"
+#include "publish.h"
 #include "thread.h"
 #include "trigger.h"
 #include "hardware.h"
@@ -192,8 +192,6 @@ public:
 
         /* Also publish access to the offset and length controls for the
          * averaging window. */
-        Publish_longin("FT:OFF", Offset);
-        Publish_longin("FT:LEN", Length);
         PUBLISH_METHOD_OUT(longout, "FT:OFF", SetOffset, Offset);
         PUBLISH_METHOD_OUT(longout, "FT:LEN", SetLength, Length);
 
@@ -216,7 +214,7 @@ public:
         /* Read and process the ADC waveform into ABCD values. */
         ProcessAdcWaveform();
         /* Convert button values to XYQS values. */
-        ABCDtoXYQSmm(ABCD, XYQS);
+        ABCDtoXYQS(&ABCD, &XYQS, 1);
 
         /* Finally tell EPICS there's stuff to read. */
         Interlock.Ready();
@@ -336,7 +334,7 @@ private:
     ABCD_WAVEFORMS RawAdc;
     ABCD_WAVEFORMS Adc;
     ABCD_ROW ABCD;
-    XYQSmm_ROW XYQS;
+    XYQS_ROW XYQS;
 
     /* Maximum raw ADC across all four buttons. */
     int MaxAdc;

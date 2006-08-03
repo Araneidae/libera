@@ -16,14 +16,14 @@ mkdir install/prebuilt &&
 for f in sensors libera; do
     sed '/^# \*\*\* Please do not edit/d' db/$f.db >install/prebuilt/$f.db
 done  &&
-cp liberaApp/src/O.linux-arm/divide-lookup.h install/prebuilt  &&
+cp liberaApp/src/O.linux-arm/*.h install/prebuilt  &&
 
 # Make sure we now start with a fresh page
 make clean uninstall &&
 
 # Build the distribution.  
 EPICS="$TARGET"/libera-epics-"$VERSION".tgz  &&
-tar czf "$EPICS"  --exclude=.svn --exclude=Libera/opi -C.. Libera  &&
+tar czf "$EPICS"  --exclude=.svn -C.. Libera  &&
 
 # Finally get rid of the prebuilt files again: we don't want them normally.
 rm -rf install/prebuilt  &&

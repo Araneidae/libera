@@ -37,9 +37,6 @@
 #include <sys/ioctl.h>
 #include <linux/unistd.h>
 
-#define EBPP
-#include "cspi.h"
-
 #include "thread.h"
 #include "hardware.h"
 #include "support.h"
@@ -83,7 +80,9 @@ static CSPIHCON CspiConPm = NULL;
 /*****************************************************************************/
 
 
-/* This array translates switch positions into button permutations. */
+/* This array translates switch positions into button permutations.  This is
+ * needed when reading raw ADC buffers to undo the permutation performed by
+ * the input switch. */
 
 static const PERMUTATION PermutationLookup[16] =
 {
@@ -94,27 +93,62 @@ static const PERMUTATION PermutationLookup[16] =
 };
 
 
-/* We think of the attenuators in the ATTENUATORS array as setting values for
- * the first and second stages of channels 1 to 4, in the order
- *      ch1 1st, ch1 2nd, ch2 1st, ..., ch4 2nd . */
 
-bool ReadAttenuators(ATTENUATORS Attenuators)
+bool WriteInterlockParameters(
+    CSPI_ILKMODE mode,
+    int Xlow, int Xhigh, int Ylow, int Yhigh,
+    int overflow_limit, int overflow_dur,
+    int gain_limit)
 {
     CSPI_ENVPARAMS EnvParams;
-    bool Ok = CSPI_(cspi_getenvparam, CspiEnv, &EnvParams, CSPI_ENV_ATTN);
-    if (Ok)
-        for (int i = 0; i < CSPI_MAXATTN; i ++)
-            Attenuators[i] = EnvParams.attn[i];
-    return Ok;
+    EnvParams.ilk.mode = mode;
+    EnvParams.ilk.Xlow = Xlow;
+    EnvParams.ilk.Xhigh = Xhigh;
+    EnvParams.ilk.Ylow = Ylow;
+    EnvParams.ilk.Yhigh = Yhigh;
+    EnvParams.ilk.overflow_limit = overflow_limit;
+    EnvParams.ilk.overflow_dur = overflow_dur;
+    EnvParams.ilk.gain_limit = gain_limit;
+    return CSPI_(cspi_setenvparam, CspiEnv, &EnvParams, CSPI_ENV_ILK);
 }
 
-bool WriteAttenuators(const ATTENUATORS Attenuators)
+
+bool WriteCalibrationSettings(
+    int Kx, int Ky, int Kq, int Xoffset, int Yoffset)
 {
     CSPI_ENVPARAMS EnvParams;
-    for (int i = 0; i < CSPI_MAXATTN; i ++)
-        EnvParams.attn[i] = Attenuators[i];
-    return CSPI_(cspi_setenvparam, CspiEnv, &EnvParams, CSPI_ENV_ATTN);
+    EnvParams.Kx = Kx;
+    EnvParams.Ky = Ky;
+    EnvParams.Xoffset = Xoffset;
+    EnvParams.Yoffset = Yoffset;
+    return CSPI_(cspi_setenvparam, CspiEnv, &EnvParams,
+        CSPI_ENV_KX | CSPI_ENV_KY | CSPI_ENV_XOFFSET | CSPI_ENV_YOFFSET);
 }
+
+
+bool WriteSwitchState(CSPI_SWITCHMODE Switches)
+{
+    CSPI_ENVPARAMS EnvParams;
+    EnvParams.switches = Switches;
+    return CSPI_(cspi_setenvparam, CspiEnv, &EnvParams, CSPI_ENV_SWITCH);
+}
+
+
+bool WriteAgcMode(CSPI_AGCMODE AgcMode)
+{
+    CSPI_ENVPARAMS EnvParams;
+    EnvParams.agc = AgcMode;
+    return CSPI_(cspi_setenvparam, CspiEnv, &EnvParams, CSPI_ENV_AGC);
+}
+
+
+bool WriteDscMode(CSPI_DSCMODE DscMode)
+{
+    CSPI_ENVPARAMS EnvParams;
+    EnvParams.dsc = DscMode;
+    return CSPI_(cspi_setenvparam, CspiEnv, &EnvParams, CSPI_ENV_DSC);
+}
+
 
 bool ReadSwitches(int &Switches)
 {
@@ -125,11 +159,32 @@ bool ReadSwitches(int &Switches)
     return Ok;
 }
 
-bool WriteSwitches(int Switches)
+
+/* The interface to the attenuators is somewhat indirect in this version of
+ * the CSPI.  The file /opt/dsc/gain.conf defines a mapping from "gain level"
+ * to attenuation, with level=17 mapped to attenuation=62, down to level=-45
+ * mapped to attenuation=0.
+ *    To simplify things we reverse this mapping again, using the formula:
+ *      attenuation - level = 45.
+ *    To further confuse things, the appropriate EnvParams field (where
+ * "level" is configured) is named gain below. */
+
+#define ZEROdBmATT 62
+
+bool WriteAttenuation(int Attenuation)
 {
     CSPI_ENVPARAMS EnvParams;
-    EnvParams.switches = Switches;
-    return CSPI_(cspi_setenvparam, CspiEnv, &EnvParams, CSPI_ENV_SWITCH);
+    EnvParams.gain = Attenuation - ZEROdBmATT;
+    return CSPI_(cspi_setenvparam, CspiEnv, &EnvParams, CSPI_ENV_GAIN);
+}
+
+bool ReadAttenuation(int &Attenuation)
+{
+    CSPI_ENVPARAMS EnvParams;
+    bool Ok = CSPI_(cspi_getenvparam, CspiEnv, &EnvParams, CSPI_ENV_GAIN);
+    if (Ok)
+        Attenuation = EnvParams.gain + ZEROdBmATT;
+    return Ok;
 }
 
 
@@ -182,21 +237,31 @@ bool ReadAdcWaveform(ADC_DATA &Data)
         CSPI_(cspi_read_ex, CspiConAdc, &Data.Rows, 1024, &Read, NULL)  &&
         Read == 1024;
     if (Ok)
+    {
+        /* If automatic switching is selected then the returned switch value
+         * is pretty meaningless (and the returned waveform will be less than
+         * helpful).  Anyhow, choose an arbitrary switch assignment. */
+        if (Switches < 0 || 15 < Switches)  Switches = 3;
         memcpy(Data.Permutation, PermutationLookup[Switches],
             sizeof(Data.Permutation));
+    }
     return Ok;
 }
 
 
-bool ReadSlowAcquisition(SA_DATA &SaData)
+bool ReadSlowAcquisition(ABCD_ROW &ButtonData, XYQS_ROW &PositionData)
 {
     CSPI_SA_ATOM Result;
     if (CSPI_(cspi_get, CspiConSa, &Result))
     {
-        SaData.A = Result.Va;
-        SaData.B = Result.Vb;
-        SaData.C = Result.Vc;
-        SaData.D = Result.Vd;
+        ButtonData.A = Result.Va;
+        ButtonData.B = Result.Vb;
+        ButtonData.C = Result.Vc;
+        ButtonData.D = Result.Vd;
+        PositionData.X = Result.X;
+        PositionData.Y = Result.Y;
+        PositionData.Q = Result.Q;
+        PositionData.S = Result.Sum;
         return true;
     }
     else
@@ -220,7 +285,7 @@ static int event_source = -1;
  * by calling this routine until it returns false before processing any
  * events. */
 
-bool ReadOneEvent(HARDWARE_EVENT_ID &Id, int &Param)
+bool ReadOneEvent(CSPI_EVENTMASK &Id, int &Param)
 {
     libera_event_t event;
     ssize_t bytes_read = read(libera_event, &event, sizeof(event));
@@ -241,7 +306,7 @@ bool ReadOneEvent(HARDWARE_EVENT_ID &Id, int &Param)
         else
         {
             /* Good.  Return the event. */
-            Id = (HARDWARE_EVENT_ID) event.id;
+            Id = (CSPI_EVENTMASK) event.id;
             Param = event.param;
             return true;
         }
@@ -273,7 +338,10 @@ private:
     {
         CSPIHCON EventSource;
         CSPI_CONPARAMS ConParams;
-        ConParams.event_mask = CSPI_EVENT_TRIGGET | LIBERA_EVENT_PM;
+        ConParams.event_mask =
+            CSPI_EVENT_TRIGGET |
+            CSPI_EVENT_PM |
+            CSPI_EVENT_INTERLOCK;
         ConParams.handler = CspiSignal;
         bool Ok =
             CSPI_(cspi_allochandle, CSPI_HANDLE_CON, CspiEnv, &EventSource)  &&
@@ -373,10 +441,10 @@ static bool InitialiseConnection(CSPIHCON &Connection, int Mode)
 
 bool InitialiseHardware()
 {
-    /* A default attenuator setting of 20/20 (40 dB total) ensures a safe
-     * starting point on initialisation. */
-    static const ATTENUATORS DefaultAttenuators =
-        { 20, 20, 20, 20, 20, 20, 20, 20 };
+//     /* A default attenuator setting of 20/20 (40 dB total) ensures a safe
+//      * starting point on initialisation. */
+//     static const ATTENUATORS DefaultAttenuators =
+//         { 20, 20, 20, 20, 20, 20, 20, 20 };
 
     CSPI_LIBPARAMS LibParams;
     LibParams.superuser = 1;    // Allow us to change settings!
@@ -391,8 +459,8 @@ bool InitialiseHardware()
         InitialiseConnection(CspiConSa, CSPI_MODE_SA)  &&
         InitialiseConnection(CspiConPm, CSPI_MODE_PM)  &&
         /* Set the attenuators and switches into a sensible default state. */
-        WriteAttenuators(DefaultAttenuators)  &&
-        WriteSwitches(0)  &&
+//        WriteAttenuators(DefaultAttenuators)  &&
+//        WriteSwitches(0)  &&
         /* Finally start receiving events. */
         OpenEventStream();
 }

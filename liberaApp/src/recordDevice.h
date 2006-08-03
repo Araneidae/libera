@@ -93,4 +93,14 @@ struct subArrayDevice {
     long (*read_subArray)(subArrayRecord *);
 };
 
+struct mbbiDevice {
+    COMMON_FIELDS(mbbi);
+    long (*read_mbbi)(mbbiRecord *);
+};
+
+struct mbboDevice {
+    COMMON_FIELDS(mbbo);
+    long (*write_mbbo)(mbboRecord *);
+};
+
 #undef COMMON_FIELDS

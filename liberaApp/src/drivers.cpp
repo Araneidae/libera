@@ -59,15 +59,107 @@
 #include <stringinRecord.h>
 #include <stringoutRecord.h>
 #include <waveformRecord.h>
+#include <mbbiRecord.h>
+#include <mbboRecord.h>
 
 #include "drivers.h"
-#include "publish.h"
 
 
 /* Epics processing return codes. */
 #define OK              0
 #define ERROR           1
 #define NO_CONVERT      2       // Special code for ai/ao conversion
+
+
+
+//#define PRINTF(args...) printf(args)
+#define PRINTF(args...)
+
+
+
+/****************************************************************************/
+/*                                                                          */
+/*                         Generic Publish by Name                          */
+/*                                                                          */
+/****************************************************************************/
+
+/* All records are published via a call to Publish_<record>, where <record>
+ * is the appropriate record type, and discovered via an internally called
+ * Search_<record> method.
+ *    This interface is constructed here. */
+
+
+/* A simple lookup table class. */
+
+class LOOKUP
+{
+public:
+    LOOKUP()
+    {
+        List = NULL;
+    }
+
+    /* Method to look up by name.  Returns NULL if not found. */
+    I_RECORD * Find(const char * Name)
+    {
+        for (ENTRY * entry = List; entry != NULL; entry = entry->Next)
+            if (strcmp(entry->Name, Name) == 0)
+                return entry->Value;
+        return NULL;
+    }
+
+    /* Inserts a new entry into the lookup table.  Note that the given string
+     * is *NOT* copied, so the caller should ensure that it is persistent. */
+    void Insert(const char * Name, I_RECORD * Value)
+    {
+        ENTRY * Entry = new ENTRY;
+        Entry->Next = List;
+        Entry->Name = Name;
+        Entry->Value = Value;
+        List = Entry;
+    }
+
+private:
+    struct ENTRY
+    {
+        ENTRY * Next;
+        const char * Name;
+        I_RECORD * Value;
+    };
+
+    ENTRY * List;
+};
+
+
+
+/* This macro builds the appropriate Publish_<record> and Search_<record>
+ * methods and initialises any associated static state. */
+#define DEFINE_PUBLISH(record) \
+    static LOOKUP Lookup_##record; \
+    DECLARE_PUBLISH(record) \
+    { \
+        PRINTF("Publishing %s %s\n", Name, #record); \
+        Lookup_##record.Insert(Name, &Record); \
+    } \
+    \
+    static I_##record * Search_##record(const char *Name) \
+    { \
+        return dynamic_cast<I_##record *>(Lookup_##record.Find(Name)); \
+    }
+
+
+DEFINE_PUBLISH(longin);
+DEFINE_PUBLISH(longout);
+DEFINE_PUBLISH(ai);
+DEFINE_PUBLISH(ao);
+DEFINE_PUBLISH(bi);
+DEFINE_PUBLISH(bo);
+DEFINE_PUBLISH(stringin);
+DEFINE_PUBLISH(stringout);
+DEFINE_PUBLISH(waveform);
+DEFINE_PUBLISH(mbbi);
+DEFINE_PUBLISH(mbbo);
+
 
 
 
@@ -210,6 +302,27 @@ static bool init_record_(
 /*****************************************************************************/
 
 
+/* Reads a value from the appropriate record interface.  An intermediate
+ * value is used so that the record interface type doesn't need to precisely
+ * match the data type stored in the EPICS record. */
+#define READ_ADAPTER(record, action, field) \
+    ( { \
+        TYPEOF(record) Value; \
+        bool Ok = action(Value); \
+        field = Value; \
+        Ok; \
+    } )
+
+#define READ_DIRECT(record, action, field) \
+    action(field)
+
+#define READ_VALUE(record, action, field) \
+    READ_##record(record, action, field)
+
+#define WRITE_VALUE(record, action, field) \
+    action(field)
+
+
 /* Record initialisation is simply a matter of constructing an instance of
  * the appropriate record type. */
 #define INIT_RECORD(record, inOrOut) \
@@ -233,18 +346,12 @@ static bool init_record_(
 #define POST_INIT_out(record, pr) \
     { \
         GET_RECORD(record, pr, iRecord); \
-        int ReturnCode = POST_INIT_##record; \
+        pr->udf = ! READ_VALUE(record, iRecord->init, pr->VAL(record)); \
         SET_ALARM(pr, READ, iRecord); \
         recGblResetAlarms(pr); \
-        return ReturnCode; \
+        return OK; \
     }
 
-/* This is the boiler-plate post-initialisation code for an output record.
- * The current value is read (typically into val or rval) and an appropriate
- * return code (either OK or NO_CONVERT) is returned from init_record. */
-#define POST_INIT(ReturnCode) \
-    ( pr->udf = ! iRecord->init(pr->val), \
-      ReturnCode )
 
 
 #define DEFINE_DEVICE(record, inOrOut, length, args...) \
@@ -276,14 +383,20 @@ static bool init_record_(
 /* Standard boiler-plate default record processing action.  The val field is
  * either read or written and the alarm state is set by interrogating the
  * record interface.  This processing is adequate for most record types. */
-#define DEFINE_DEFAULT_PROCESS(record, action, ACTION) \
+#define DEFINE_DEFAULT_PROCESS(record, action, ACTION, DO_ACTION) \
     static long action##_##record(record##Record * pr) \
     { \
         GET_RECORD(record, pr, iRecord); \
-        bool Ok = iRecord->action(pr->val); \
+        bool Ok = DO_ACTION(record, iRecord->action, pr->VAL(record)); \
         SET_ALARM(pr, ACTION, iRecord); \
         return Ok ? OK : ERROR; \
     }
+
+
+#define DEFINE_DEFAULT_READ(record) \
+    DEFINE_DEFAULT_PROCESS(record, read, READ, READ_VALUE) 
+#define DEFINE_DEFAULT_WRITE(record) \
+    DEFINE_DEFAULT_PROCESS(record, write, WRITE, WRITE_VALUE) 
 
 
 
@@ -294,56 +407,53 @@ static bool init_record_(
 /*****************************************************************************/
 
 
+/* For some types we read and write the VAL field, for others the RVAL field.
+ * Here we define which. */
+#define longin_VAL      val
+#define longout_VAL     val
+#define ai_VAL          rval
+#define ao_VAL          rval
+#define bi_VAL          rval
+#define bo_VAL          rval
+#define stringin_VAL    val
+#define stringout_VAL   val
+#define mbbi_VAL        rval
+#define mbbo_VAL        rval
 
-/* Post-initialisation processing for output records is defined here.
- * Apologies, by the way, for the evil use of macros in this file.  Ideas for
- * improvement are welcome! */
-#define POST_INIT_ao        POST_INIT(NO_CONVERT)
-#define POST_INIT_longout   POST_INIT(OK)
-#define POST_INIT_bo \
-    ( { bool Flag = pr->rval; \
-        pr->udf = iRecord->init(Flag); \
-        pr->rval = Flag; \
-        OK; } )
-#define POST_INIT_stringout POST_INIT(OK)
+#define VAL(record)     record##_VAL
+
+/* Type adapters.  Some types need to be read directly, others need to be
+ * read via the read adapter. */
+
+#define READ_longin     READ_DIRECT
+#define READ_longout    READ_DIRECT
+#define READ_ai         READ_DIRECT
+#define READ_ao         READ_DIRECT
+#define READ_bi         READ_ADAPTER
+#define READ_bo         READ_ADAPTER
+#define READ_stringin   READ_DIRECT
+#define READ_stringout  READ_DIRECT
+#define READ_mbbi       READ_ADAPTER
+#define READ_mbbo       READ_ADAPTER
+
+
 
 
 /* Mostly we can use simple boilerplate for the process routines. */
-
-DEFINE_DEFAULT_PROCESS(longin, read, READ)
-DEFINE_DEFAULT_PROCESS(longout, write, WRITE)
-DEFINE_DEFAULT_PROCESS(ao, write, WRITE)
-DEFINE_DEFAULT_PROCESS(bo, write, WRITE)
-DEFINE_DEFAULT_PROCESS(stringin, read, READ)
-DEFINE_DEFAULT_PROCESS(stringout, write, READ)
-
-/* The following three routines need slightly special handling. */
-
-
-static long read_ai(aiRecord *pr)
-{
-    GET_RECORD(ai, pr, i_ai);
-    bool Ok = i_ai->read(pr->val);
-    /* Because we are dealing with doubles already we want to suppress the
-     * construction of val from rval.  We therefore have to set udf ourselves
-     * (emulating what is done in aiRecord.c:convert) and return 2 to suppress
-     * conversion. */
-    pr->udf = !finite(pr->val);
-    SET_ALARM(pr, READ, i_ai);
-    return Ok ? NO_CONVERT : ERROR;
-}
+DEFINE_DEFAULT_READ (longin)
+DEFINE_DEFAULT_WRITE(longout)
+DEFINE_DEFAULT_READ (ai)
+DEFINE_DEFAULT_WRITE(ao)
+DEFINE_DEFAULT_READ (bi)
+DEFINE_DEFAULT_WRITE(bo)
+DEFINE_DEFAULT_READ (stringin)
+DEFINE_DEFAULT_WRITE(stringout)
+DEFINE_DEFAULT_READ (mbbi)
+DEFINE_DEFAULT_WRITE(mbbo)
 
 
-static long read_bi(biRecord * pr)
-{
-    GET_RECORD(bi, pr, i_bi);
-    bool Flag;
-    bool Ok = i_bi->read(Flag);
-    pr->rval = Flag;
-    SET_ALARM(pr, READ, i_bi);
-    return Ok ? OK : ERROR;
-}
-
+/* Reading a waveform doesn't fit into the fairly uniform pattern established
+ * for the other record types. */
 
 static long read_waveform(waveformRecord * pr)
 {
@@ -378,3 +488,5 @@ DEFINE_DEVICE(bo,        out, 5, write_bo);
 DEFINE_DEVICE(stringin,  inp, 5, read_stringin);
 DEFINE_DEVICE(stringout, out, 5, write_stringout);
 DEFINE_DEVICE(waveform,  inp, 5, read_waveform);
+DEFINE_DEVICE(mbbi,      inp, 5, read_mbbi);
+DEFINE_DEVICE(mbbo,      out, 5, write_mbbo);

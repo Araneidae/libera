@@ -43,9 +43,9 @@
 #include <initHooks.h>
 
 #include "drivers.h"
+#include "persistent.h"
 #include "publish.h"
 #include "hardware.h"
-#include "persistent.h"
 #include "thread.h"
 #include "events.h"
 #include "trigger.h"
@@ -112,20 +112,14 @@ ENABLE::ENABLE() :
 void ENABLE::Publish(const char * Prefix)
 {
     const char * Name = Concat(Prefix, ":ENABLE");
-    Publish_bi(Name, *this);
     Publish_bo(Name, *this);
     Persistent.Initialise(Name);
 }
 
-bool ENABLE::read(bool &Result)
+bool ENABLE::init(bool &Result)
 {
     Result = Value;
     return true;
-}
-
-bool ENABLE::init(bool &Result)
-{
-    return read(Result);
 }
 
 bool ENABLE::write(bool NewValue)

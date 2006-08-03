@@ -112,6 +112,16 @@ typedef enum
     LIBERA_TRIG_FA_SC1,          //!< FA SC trigger #1
 } libera_event_param_t;
 
+/* Libera interlock control flags. */
+typedef enum
+{
+    LIBERA_INTERLOCK_X    = (1<<0),
+    LIBERA_INTERLOCK_Y    = (1<<1),
+    LIBERA_INTERLOCK_ATTN = (1<<2),
+    LIBERA_INTERLOCK_ADCF = (1<<3),
+    LIBERA_INTERLOCK_ADC  = (1<<4),
+} libera_interlock_param_t;
+
 /** Available modes of operation. */
 // TOOD: Possibly remove from the driver
 typedef enum {
@@ -197,10 +207,6 @@ typedef struct
 typedef enum {
     /** Trigger mode (set, get, ...) */
     LIBERA_CFG_TRIGMODE = 0,
-    /** X interlock - horizontal plane */
-    LIBERA_CFG_XINTERLOCK,
-    /** Y interlock - vertical plane */
-    LIBERA_CFG_YINTERLOCK,
     /** First custom (Libera member specific) parameter */
     LIBERA_CFG_CUSTOM_FIRST = 128,
 } LIBERA_CFG_COMMON;
@@ -292,6 +298,9 @@ typedef enum
     LIBERA_EVENT_PMBUF,
     LIBERA_EVENT_MCPHI,
     LIBERA_EVENT_SCPHI,
+    LIBERA_EVENT_MC_TRIGGER_1,
+    LIBERA_EVENT_MC_TRIGGER_0,
+        
     /* All DEBUG IDs have to be declared at the bottom of enum! */
 #ifdef DEBUG
     LIBERA_EVENT_PEEK_POKE,
@@ -416,6 +425,14 @@ enum libera_event_ids_t
 					  LIBERA_EVENT_PMBUF,
 					  libera_U32_t),
     
+    LIBERA_EVENT_GET_MC_TRIGGER_1 = _IOR(LIBERA_EVENT_MAGIC,
+                                         LIBERA_EVENT_MC_TRIGGER_1,
+                                         libera_hw_time_t),
+
+    LIBERA_EVENT_GET_MC_TRIGGER_0 = _IOR(LIBERA_EVENT_MAGIC,
+                                         LIBERA_EVENT_MC_TRIGGER_0,
+                                         libera_hw_time_t),
+    
     /* All DEBUG IDs have to be declared at the bottom of enum! */
 #ifdef DEBUG
     LIBERA_EVENT_GET_TRIGGER_BLOCKED = _IOR(LIBERA_EVENT_MAGIC,
@@ -448,6 +465,9 @@ enum libera_event_ids_t
 #endif
 #ifdef BBFP
 #include "bbfp.h"
+#endif
+#ifdef HBPP
+#include "hbpp.h"
 #endif
 
 

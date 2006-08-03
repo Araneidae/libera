@@ -1,4 +1,4 @@
-// $Id: cspi.h,v 1.33 2006/01/12 12:53:00 miha Exp $
+// $Id: cspi.h,v 1.35 2006/06/02 05:48:26 miha Exp $
 
 //! \file cspi.h
 //! Public CSPI header file.
@@ -69,6 +69,9 @@ enum {
 
 	/** Driver version mismatch. */
 	CSPI_E_VERSION = -9,
+
+	/** DSC server protocol error. */
+	CSPI_E_DSCPROTO = -10,
 };
 
 /** Maximum length of the error description string. */
@@ -794,16 +797,18 @@ CSPI_TIMEFLAGS;
  */
 int cspi_settime( CSPIHENV h, CSPI_TIMESTAMP *ts, CSPI_BITMASK flags );
 
-#ifdef __cplusplus
-}
-#endif
-
 #if defined(EBPP)
 #include "ebpp.h"		// EBPP-specific declarations
 #elif defined(BBFP)
 #include "bbfp.h"		// BBFP-specific declarations
+#elif defined(HBPP)
+#include "hbpp.h"		// HBPP-specific declarations
 #else
 #error Must define Libera family member!
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif	// _CSPI_H

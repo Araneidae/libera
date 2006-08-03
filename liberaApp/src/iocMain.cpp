@@ -46,11 +46,12 @@
 #include "slowAcquisition.h"
 #include "postmortem.h"
 #include "drivers.h"
-#include "publish.h"
 #include "persistent.h"
+#include "publish.h"
 #include "thread.h"
 #include "trigger.h"
 #include "support.h"
+#include "interlock.h"
 
 #include "events.h"
 #include "hardware.h"
@@ -211,6 +212,8 @@ static bool InitialiseLibera()
 
         /* Now we can initialise the mode specific components. */
 
+        /* Initialise interlock settings. */
+        InitialiseInterlock()  &&
         /* First turn processing is designed for transfer path operation. */
         InitialiseFirstTurn()  &&
         /* Turn by turn is designed for long waveform capture at revolution

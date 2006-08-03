@@ -1,4 +1,4 @@
-// $Id: eventd.c,v 1.12 2006/01/12 08:01:51 miha Exp $
+// $Id: eventd.c,v 1.14 2006/07/03 10:43:59 ales Exp $
 
 //! \file eventd.c
 //! Implements CSPI Event Daemon.
@@ -53,7 +53,7 @@ TAB = 4 spaces.
 #define MAX_ARGS 3
 
 /** Libera initial event mask. */
-#define INIT_MASK LIBERA_EVENT_PM
+#define INIT_MASK ( LIBERA_EVENT_PM | LIBERA_EVENT_INTERLOCK )
 
 /** Helper macro to stringify the expanded argument. */
 #define XSTR(s) STR(s)
@@ -483,7 +483,7 @@ int handle_request( const Request *p )
 	if (p->mask) {
 
 		// Attempt to JOIN the list...
-		if (q) _LOG_WARNING( "pid %d already joined", p->pid );
+		if (q) q->mask = p->mask;	// update mask only
 		else if ( 0 == insert_listener( p->pid, p->mask ) ) EXIT( "insert_listener" );
 	}
 	else {

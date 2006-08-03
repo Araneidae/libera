@@ -38,10 +38,11 @@
 #include <dbFldTypes.h>
 
 #include "drivers.h"
+#include "persistent.h"
+#include "publish.h"
 #include "hardware.h"
 #include "convert.h"
 #include "cordic.h"
-#include "publish.h"
 
 #include "waveform.h"
 
@@ -224,8 +225,7 @@ void WAVEFORMS<T>::PublishColumn(
     const char * Prefix, const char * Name, size_t Field) const
 {
     Publish_waveform(
-        Concat(Prefix, Name),
-        *new COLUMN_WAVEFORM<T>(*this, Field));
+        Concat(Prefix, Name), *new COLUMN_WAVEFORM<T>(*this, Field));
 }
 
 /* These two macros work together to publish a set of names in the form
@@ -341,10 +341,10 @@ void Publish_ABCD(const char * Prefix, ABCD_ROW &ABCD)
     Publish_longin(Concat(Prefix, ":D"), ABCD.D);
 }
 
-void Publish_XYQS(const char * Prefix, XYQSmm_ROW &XYQS)
+void Publish_XYQS(const char * Prefix, XYQS_ROW &XYQS, const char * Suffix)
 {
-    Publish_ai    (Concat(Prefix, ":X"), XYQS.X);
-    Publish_ai    (Concat(Prefix, ":Y"), XYQS.Y);
-    Publish_ai    (Concat(Prefix, ":Q"), XYQS.Q);
-    Publish_longin(Concat(Prefix, ":S"), XYQS.S);
+    Publish_ai    (Concat(Prefix, ":X", Suffix), XYQS.X);
+    Publish_ai    (Concat(Prefix, ":Y", Suffix), XYQS.Y);
+    Publish_ai    (Concat(Prefix, ":Q", Suffix), XYQS.Q);
+    Publish_longin(Concat(Prefix, ":S", Suffix), XYQS.S);
 }

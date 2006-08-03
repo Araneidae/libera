@@ -36,19 +36,16 @@ typedef enum {
     LIBERA_CFG_QOFFSET,        //!< Electrical offset.
     LIBERA_CFG_KX,             //!< Horizontal calibration coefficient.
     LIBERA_CFG_KY,             //!< Vertical calibration coefficient.
-    LIBERA_CFG_XLOW,           //!< Horizontal interlock threshold (LOW).
-    LIBERA_CFG_XHIGH,          //!< Horizontal interlock threshold (HIGH).
-    LIBERA_CFG_YLOW,           //!< Vertical interlock threshold (LOW).
-    LIBERA_CFG_YHIGH,          //!< Vertical interlock threshold (HIGH).
-    LIBERA_CFG_SWITCH,         //!< Switches.
-    LIBERA_CFG_ATTN0,          //!< Attenuator 0.
-    LIBERA_CFG_ATTN1,          //!< Attenuator 1.
-    LIBERA_CFG_ATTN2,          //!< Attenuator 2.
-    LIBERA_CFG_ATTN3,          //!< Attenuator 3.
-    LIBERA_CFG_ATTN4,          //!< Attenuator 4.
-    LIBERA_CFG_ATTN5,          //!< Attenuator 5.
-    LIBERA_CFG_ATTN6,          //!< Attenuator 6.
-    LIBERA_CFG_ATTN7,          //!< Attenuator 7.
+    LIBERA_CFG_ILK_XLOW,        // Interlock X low limit
+    LIBERA_CFG_ILK_XHIGH,       // Interlock Y high limit
+    LIBERA_CFG_ILK_YLOW,        // Interlock Y low limit
+    LIBERA_CFG_ILK_YHIGH,       // Interlock Y high limit
+    LIBERA_CFG_ILK_MODE,        // Interlock mode
+    LIBERA_CFG_ILK_OVERFLOW_LIMIT,      // ADC data overflow limit
+    LIBERA_CFG_ILK_OVERFLOW_DUR,        // Overflow duration for interlock
+    LIBERA_CFG_ILK_GAIN_LIMIT,  // Interlock gain limit
+        
+    LIBERA_CFG_CUSTOM_LAST,
 } LIBERA_CFG_EBPP_GENERIC;
 
 

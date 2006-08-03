@@ -36,9 +36,6 @@
 #include <sys/select.h>
 #include <pthread.h>
 
-#define EBPP
-#include "cspi.h"
-
 #include "hardware.h"
 #include "events.h"
 
@@ -64,7 +61,7 @@ public:
 
     /* Note that subscribers can only *add* entries.  This simplifies this
      * class substantially! */
-    void Subscribe(I_EVENT & iEvent, HARDWARE_EVENT_ID EventType, int Priority)
+    void Subscribe(I_EVENT & iEvent, CSPI_EVENTMASK EventType, int Priority)
     {
         SUBSCRIPTION * Subscription = new SUBSCRIPTION;
         Subscription->iEvent = & iEvent;
@@ -94,7 +91,7 @@ public:
     }
 
     /* Return next subscriber, or returns false if end of list. */
-    bool StepIteration(I_EVENT * &iEvent, HARDWARE_EVENT_ID &EventType)
+    bool StepIteration(I_EVENT * &iEvent, CSPI_EVENTMASK &EventType)
     {
         if (Iterator == NULL)
             return false;
@@ -127,7 +124,7 @@ private:
     {
         SUBSCRIPTION * Next;
         I_EVENT * iEvent;
-        HARDWARE_EVENT_ID EventType;
+        CSPI_EVENTMASK EventType;
         int Priority;
     };
 
@@ -210,7 +207,7 @@ public:
 
 
     /* Register interest in a particular event type. */
-    void Register(I_EVENT & Event, HARDWARE_EVENT_ID EventType, int Priority)
+    void Register(I_EVENT & Event, CSPI_EVENTMASK EventType, int Priority)
     {
         Receivers.Subscribe(Event, EventType, Priority);
     }
@@ -264,7 +261,7 @@ private:
          * to all who wish to hear. */
         Receivers.StartIteration();
         I_EVENT * iEvent;
-        HARDWARE_EVENT_ID EventId;
+        CSPI_EVENTMASK EventId;
         while (Receivers.StepIteration(iEvent, EventId))
         {
             if (IncomingEvents & EventId)
@@ -281,7 +278,7 @@ private:
     int ReadEvents()
     {
         int IncomingEvents = 0;
-        HARDWARE_EVENT_ID Id;
+        CSPI_EVENTMASK Id;
         int Param;
         while (ReadOneEvent(Id, Param))
             /* Record this event. */
@@ -323,11 +320,16 @@ void TerminateEventReceiver()
 
 void RegisterTriggerEvent(I_EVENT &Event, int Priority)
 {
-    EventReceiver->Register(Event, HARDWARE_EVENT_TRIGGET, Priority);
+    EventReceiver->Register(Event, CSPI_EVENT_TRIGGET, Priority);
 }
 
 
 void RegisterPostmortemEvent(I_EVENT &Event, int Priority)
 {
-    EventReceiver->Register(Event, HARDWARE_EVENT_PM, Priority);
+    EventReceiver->Register(Event, CSPI_EVENT_PM, Priority);
+}
+
+void RegisterInterlockEvent(I_EVENT &Event, int Priority)
+{
+    EventReceiver->Register(Event, CSPI_EVENT_INTERLOCK, Priority);
 }

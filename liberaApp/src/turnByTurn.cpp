@@ -34,8 +34,8 @@
 #include <stdlib.h>
 
 #include "drivers.h"
-#include "publish.h"
 #include "persistent.h"
+#include "publish.h"
 #include "thread.h"
 #include "trigger.h"
 #include "hardware.h"
@@ -79,15 +79,14 @@ public:
         WindowXyqs.Publish("TT");
 
         /* Control fields for managing capture and readout. */
-        PUBLISH_METHOD_IN_OUT(longin, longout, "TT:CAPLEN",
-            GetCaptureLength, SetCaptureLength);
-        PUBLISH_METHOD_IN(longin,   "TT:CAPTURED", GetCapturedLength);
+        PUBLISH_METHOD_OUT(longout, "TT:CAPLEN",
+            SetCaptureLength, GetCaptureLength);
         PUBLISH_METHOD_OUT(longout, "TT:OFFSET",
             SetWindowOffset, WindowOffset);
         PUBLISH_METHOD_OUT(longout, "TT:LENGTH",
             SetWindowLength, WindowLength);
+        PUBLISH_METHOD_IN(longin,   "TT:CAPTURED", GetCapturedLength);
         Publish_longin("TT:OFFSET", WindowOffset);
-        Publish_longin("TT:LENGTH", WindowLength);
 
         /* Turn by turn triggering is rather complicated, and needs to occur
          * in two stages.  The idea is that only a single shot of turn by

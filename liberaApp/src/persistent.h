@@ -75,5 +75,15 @@ typedef PERSISTENT<bool>   PERSISTENT_BOOL;
 
 
 
+/* Calling this function is enough to establish persistence for the given
+ * value. */
+template<class T>
+void Persistent(const char * Name, T &Value)
+{
+    PERSISTENT<T> & Persistence = * new PERSISTENT<T>(Value);
+    Persistence.Initialise(Name);
+}
+
+
 bool InitialisePersistentState(const char * StateFileName);
 void TerminatePersistentState();

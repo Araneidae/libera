@@ -55,30 +55,7 @@
  *
  */
 
-/* Raw IQ data.  This is identical in layout to the LIBERA_ROW structure. */
-struct IQ_ROW
-{
-    int AI, AQ;
-    int BI, BQ;
-    int CI, CQ;
-    int DI, DQ;
-};
 
-/* Button values. */
-typedef SA_DATA         ABCD_ROW;
-
-/* Computed X, Y values in nm. */
-struct XYQS_ROW
-{
-    int X, Y, Q, S;
-};
-
-/* X, Y values scaled to mm. */
-struct XYQSmm_ROW
-{
-    double X, Y, Q;  // SL;  Maybe at some point...
-    int S;
-};
 
 /* Some field identifiers used for indexes into the structures above. */
 #ifdef offsetof
@@ -90,6 +67,11 @@ struct XYQSmm_ROW
 #endif
 
 
+/* All dB values are scaled by 1e6: this is a fairly standard scaling for
+ * values intended for transmission through an ai/ao record. */
+#define DB_SCALE        1000000
+
+
 /* Converts Count rows of IQ data into ABCD format by applying Cordic
  * conversion on each I,Q pair. */
 void IQtoABCD(const IQ_ROW *IQ, ABCD_ROW *ABCD, int Count);
@@ -98,17 +80,19 @@ void IQtoABCD(const IQ_ROW *IQ, ABCD_ROW *ABCD, int Count);
  * data via the configured conversion function. */
 void ABCDtoXYQS(const ABCD_ROW *ABCD, XYQS_ROW *XYQS, int Count);
 
-/* Rescales one row XYQS data from nm to mm. */
-void XYQStomm(const XYQS_ROW &XYQSnm, XYQSmm_ROW &XYQSmm);
-
-/* Combined single row ABCD to XYQSmm conversion. */
-void ABCDtoXYQSmm(const ABCD_ROW &ABCD, XYQSmm_ROW &XYQSmm);
 
 /* Gain correction on a single column of data from a single channel.  Note
  * that gain conversion is performed on RF board channels, not on buttons, so
  * the channel permutation needs to be taken into account before performing
  * this correction. */
 void GainCorrect(int Channel, int *Column, int Count);
+
+
+/* Returns the cached and corrected settings of the attenuators.  The
+ * returned value is scaled by 1e6 to provide a dB value suitable for direct
+ * display. */
+int ReadCorrectedAttenuation();
+
 
 /* Publishes conversion control PVs to EPICS. */
 bool InitialiseConvert();

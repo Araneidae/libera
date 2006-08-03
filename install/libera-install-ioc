@@ -112,6 +112,10 @@ fi  &&
 
 # Copy the startup script
 cp -f "$SOURCE"/install/epics /etc/init.d  &&
+# Copy the gain.conf file, replacing the version in the default distribution,
+# and add our own offsets.conf file.
+cp -f "$SOURCE"/install/gain.conf /opt/dsc  &&
+cp -f "$SOURCE"/install/offsets.conf /opt/dsc  &&
 
 # Configure autostart as required.
 if ((AUTOSTART)); then

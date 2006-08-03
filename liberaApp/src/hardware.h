@@ -27,6 +27,9 @@
  */
 
 
+#define EBPP
+#include "cspi.h"
+
 /* Exports for libera device driver interface routines. */
 
 
@@ -52,6 +55,27 @@
  * decimated to 1/64th. */
 typedef int LIBERA_ROW[8];
 
+/* Raw IQ data.  This is identical in layout to the LIBERA_ROW structure. */
+struct IQ_ROW
+{
+    int AI, AQ;
+    int BI, BQ;
+    int CI, CQ;
+    int DI, DQ;
+};
+
+/* Button values. */
+struct ABCD_ROW
+{
+    int A, B, C, D;
+};
+
+/* Computed X, Y values in nm, S in arbitrary units. */
+struct XYQS_ROW
+{
+    int X, Y, Q, S;
+};
+
 
 /* The ADC data is read directly from the ADC converter at the sample rate of
  * 117MHz.  Each row consists of four 12-bit signed values (not sign extended
@@ -67,19 +91,6 @@ struct ADC_DATA
     /* Raw ADC data as read. */
     ADC_ROW Rows[ADC_LENGTH];
 };
-
-
-/* Slow acquisition data is read as four filtered button values. */
-struct SA_DATA
-{
-    int A, B, C, D;
-};
-
-
-/* The attenuators for Libera are controlled as an array of 8 settings, two
- * per input channel, each of which can be any value in the range 0..31 --
- * this corresponds to precisely this attenuation in dB. */
-typedef unsigned int ATTENUATORS[8];
 
 
 
@@ -118,57 +129,56 @@ size_t ReadPostmortem(size_t WaveformLength, LIBERA_ROW * Data);
 bool ReadAdcWaveform(ADC_DATA &Data);
 
 /* Reads a slow acquisition update. */
-bool ReadSlowAcquisition(SA_DATA &Data);
+bool ReadSlowAcquisition(ABCD_ROW &ButtonData, XYQS_ROW &PositionData);
+
 
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-/*                      Miscellaneous Support Routines.                      */
+/*                      Configuration Setting Routines.                      */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/* Routines to read and write attenuator settings. */
-bool ReadAttenuators(ATTENUATORS attenuators);
-bool WriteAttenuators(const ATTENUATORS attenuators);
 
-/* Read and write switch settings. */
-bool ReadSwitches(int &switches);
-bool WriteSwitches(int switches);
+/* Interlock settings.   As the CSPI interface requires that we set all the
+ * parameters together, we present the interface in one piece. */
+bool WriteInterlockParameters(
+    CSPI_ILKMODE mode,
+    // Valid X,Y positions for interlock
+    int Xlow, int Xhigh, int Ylow, int Yhigh,
+    // Interlock overflow limit and duration (ADC value and clocks)
+    int overflow_limit, int overflow_dur,
+    // Gain limit (dBm) for gain-dependent interlock.
+    int gain_limit);
+
+
+/* Sets calibration paramters for calculating (X,Y) from (A,B,C,D). */
+bool WriteCalibrationSettings(
+    int Kx, int Ky, int Kq, int Xoffset, int Yoffset);
+
+
+/* Routines for setting switch management, AGC mode, DSC mode and gain. */
+bool WriteSwitchState(CSPI_SWITCHMODE Switches);
+bool WriteAgcMode(CSPI_AGCMODE AgcMode);
+bool WriteDscMode(CSPI_DSCMODE DscMode);
+bool WriteAttenuation(int Attenuation);
+
+bool ReadSwitches(int &Switches);
+bool ReadAttenuation(int &Attenuation);
 
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                        Direct Event Connection                            */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#ifdef _CSPI_H
-/* The following event types can be returned by the event mechanism.  These
- * are a digest of corresponding events in libera_event_id_t, or equivalently,
- * CSPI_EVENTMASK in cspi.h.  We conditionally include these definitions here
- * to avoid including cspi.h outside the core hardware.cpp file. */
-enum HARDWARE_EVENT_ID
-{
-    /* Something has changed in the configuration.  It may be useful to
-     * monitor this to track values of switches and attenuators. */
-    HARDWARE_EVENT_CFG       = CSPI_EVENT_CFG,
-    /* Slow acquisition sample available.  This should tick at 10Hz.
-     * Unfortunately it appears that, at least with the current version of
-     * the driver, this event never arrives! */
-    HARDWARE_EVENT_SA        = CSPI_EVENT_SA,
-    /* Postmortem event.  A fixed 16K sample buffer is available. */
-    HARDWARE_EVENT_PM        = CSPI_EVENT_PM,
-    /* Normal triggered data is available. */
-    HARDWARE_EVENT_TRIGGET   = CSPI_EVENT_TRIGGET
-};
-
 
 /* Reads one event from the event queue and decodes it into an event id and
  * its associated parameter information.  The caller should empty the queue
  * by calling this routine until it returns false before processing any
  * events. */
-bool ReadOneEvent(HARDWARE_EVENT_ID &Id, int &Param);
+bool ReadOneEvent(CSPI_EVENTMASK &Id, int &Param);
 
 /* This value can be used in a select() call to discover when ReadOneEvent()
  * should be called. */
 int EventSelector();
-#endif
 
 
 

@@ -1,4 +1,4 @@
-// $Id: ebpp.h,v 1.10 2006/01/06 22:45:13 ales Exp $
+// $Id: ebpp.h,v 1.16 2006/07/06 09:27:51 ales Exp $
 
 //! \file ebpp.h
 //! Electron Beam Position Processor specific definitions.
@@ -57,9 +57,6 @@ CSPI_ADC_ATOM;
 
 //--------------------------------------------------------------------------
 
-/** Private. Total number of attenuators. */
-#define CSPI_MAXATTN 8
-
 /** Environment parameters or attributes. */
 struct tagCSPI_ENVPARAMS
 {
@@ -67,11 +64,29 @@ struct tagCSPI_ENVPARAMS
 
 	int Kx, Ky;
 	int Xoffset, Yoffset, Qoffset;
-	int Xlow, Xhigh, Ylow, Yhigh;
-	int switches;
-	int attn[CSPI_MAXATTN];
+
+	int switches;	// Analog board switch mode. See CSPI_SWITCHMODE.
+	int gain;		// Analog board gain (dBm).
+
+	int agc;		// AGC mode. See CSPI_AGCMODE.
+	int dsc;		// DSC mode. See CSPI_DSCMODE.
+
+	// Interlock parameters.
+	struct {
+		// Interlock mode. See CSPI_INTERLOCKMODE.
+		int mode;
+		// Interlock limits.
+		int Xlow, Xhigh, Ylow, Yhigh;
+		// Interlock overflow limit (ADC count).
+		int overflow_limit;
+		// Interlock overflow duration (ADC clock periods).
+		int overflow_dur;
+		// Gain limit (dBm) for gain-dependant interlock.
+		int gain_limit;
+	} ilk;
 };
 
+/** Libera EBPP specific environment bitflags. */
 typedef enum
 {
 	CSPI_ENV_KX			= CUSTOM_ENV_BIT(0),
@@ -79,14 +94,61 @@ typedef enum
 	CSPI_ENV_XOFFSET	= CUSTOM_ENV_BIT(2),
 	CSPI_ENV_YOFFSET	= CUSTOM_ENV_BIT(3),
 	CSPI_ENV_QOFFSET	= CUSTOM_ENV_BIT(4),
-	CSPI_ENV_XLOW		= CUSTOM_ENV_BIT(5),
-	CSPI_ENV_XHIGH		= CUSTOM_ENV_BIT(6),
-	CSPI_ENV_YLOW		= CUSTOM_ENV_BIT(7),
-	CSPI_ENV_YHIGH		= CUSTOM_ENV_BIT(8),
-	CSPI_ENV_SWITCH		= CUSTOM_ENV_BIT(9),
-	CSPI_ENV_ATTN		= CUSTOM_ENV_BIT(10),
+	CSPI_ENV_SWITCH		= CUSTOM_ENV_BIT(5),
+	CSPI_ENV_GAIN		= CUSTOM_ENV_BIT(6),
+	CSPI_ENV_AGC		= CUSTOM_ENV_BIT(7),
+	CSPI_ENV_DSC		= CUSTOM_ENV_BIT(8),
+	CSPI_ENV_ILK		= CUSTOM_ENV_BIT(9),
 }
 CSPI_ENVFLAGS_EBPP;
+
+/** Available switch modes. */
+typedef enum {
+	/** Enable switching. */
+	CSPI_SWITCH_AUTO	= 0xff,
+	/** Enable direct connection (no crossover). */
+	CSPI_SWITCH_DIRECT	= 0x03,
+        /** Minimal switch position value  */
+        CSPI_SWITCH_MIN         = 0x00,
+        /** Maximal switch position value  */
+        CSPI_SWITCH_MAX         = 0x0f,
+}
+CSPI_SWITCHMODE;
+
+/** Available AGC modes. */
+typedef enum {
+	/** Manual gain control. */
+	CSPI_AGC_MANUAL = 0,
+	/** Enable AGC. */
+	CSPI_AGC_AUTO,
+}
+CSPI_AGCMODE;
+
+/** Available DSC modes. */
+typedef enum {
+	/** Disable signal conditioning with DSC daemon. */	
+	CSPI_DSC_OFF = 0,
+	/** Enable signal conditioning with DSC daemon. */	
+	CSPI_DSC_AUTO,
+	/** Enable factory preset configuration. */
+	CSPI_DSC_DEFAULT,
+	/** Enable last good configuration determined by DSC daemon. */
+	CSPI_DSC_LASTGOOD,
+	/** Enable user defined configuration in /opt/dsc/custom.cfg.*/
+	CSPI_DSC_CUSTOM,
+}
+CSPI_DSCMODE;
+
+/** Available interlock modes. */
+typedef enum {
+	/** Disable interlock. */
+	CSPI_ILK_DISABLE = 0,
+	/** Enable interlock. */
+	CSPI_ILK_ENABLE = 1,
+	/** Enable gain-dependant interlock. */
+	CSPI_ILK_ENABLE_GAINDEP = 3,
+}
+CSPI_ILKMODE;
 
 //--------------------------------------------------------------------------
 

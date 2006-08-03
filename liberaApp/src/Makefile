@@ -7,7 +7,8 @@ include $(TOP)/configure/CONFIG
 #=============================
 
 #USR_CXXFLAGS += -S
-USR_CXXFLAGS += -Werror
+#USR_CXXFLAGS += -E
+USR_CXXFLAGS += -Werror -Wno-comment
 
 # Make sure that we pick up the version from install/CONFIG.
 USR_CXXFLAGS += -DLIBERA_VERSION='"$(shell \
@@ -51,6 +52,7 @@ ioc_SRCS += events.cpp
 ioc_SRCS += support.cpp
 ioc_SRCS += thread.cpp
 ioc_SRCS += persistent.cpp
+ioc_SRCS += interlock.cpp
 
 ioc_LIBS += cspi
 ioc_LIBS += $(EPICS_BASE_IOC_LIBS) 
@@ -65,10 +67,10 @@ include $(TOP)/configure/RULES
 
 
 # The support module uses a pre-built lookup table.
-support.o: divide-lookup.h
+support.o: support-lookup.h
 
-divide-lookup.h: ../divide-lookup.py
-	python ../divide-lookup.py >divide-lookup.h
+%.h: ../%.py
+	python $< >$@
 
 
 # Force iocMain to be rebuilt every time so that the build date and time is

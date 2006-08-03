@@ -75,9 +75,7 @@ In the list of records below we use a number of abbreviations:
         (S).  The intensity S is in arbitrary units, normally scaled to
         0.5822*2^31 full scale; the positions are in either nm or mm. 
     ..._S
-        Every record of the form <name>_S is used to write a value into the
-        driver and has a corresponding readback record <name> which returns
-        the current value.
+        Records of the form <name>_S are used to write values into the driver.
         
 
 The following EPICS records provided by this driver will be of interest:
@@ -93,9 +91,11 @@ First Turn (<group> = FT):
         Button values averaged within the window specified by OFF and LEN.
     <positions>
         Position data derived from <buttons>, in mm.
-    OFF, LEN
+    OFF_S, LEN_S
         These two fields determine the window within WF<buttons> used to
         compute the averaged <buttons> values.
+    ENABLE_S
+        If set to Disabled then FT processing will not occur.
 
 
 Free Running (<group> = FR):
@@ -105,6 +105,8 @@ Free Running (<group> = FR):
     WF<buttons>
     WF<positions>
         2048 point arrays updated on each trigger at turn-by-turn frequency.
+    ENABLE_S
+        If set to Disabled then FR processing will not occur.
 
 
 Turn by Turn (<group> = TT):
@@ -121,8 +123,9 @@ Turn by Turn (<group> = TT):
     CAPTURED
         Records how many points were captured.  At Diamond's booster frequency
         (1.893MHz) something over 200,000 points can be reliably captured.
-    OFFSET_S
-        Used to set the offset into the long buffer for reading out waveforms.
+    OFFSET_S, OFFSET
+        Used to set the offset into the long buffer for reading out waveforms,
+        together with readback used for synchronisation.
     LENGTH_S
         Used to set how many points are read from the long buffer.  The
         default (and maximum) value is 16384.
@@ -160,6 +163,8 @@ Booster (<group> = BN):
     WFS<positions>
         190 point waveforms of the 100ms booster ramp reduced by a factor of
         1024 from turn-by-turn frequency.
+    ENABLE_S
+        If set to Disabled then BN processing will not occur.
 
 
 Slow Acquisition (<group> = SA):
@@ -168,6 +173,24 @@ Slow Acquisition (<group> = SA):
     <buttons>
     <positions>
         Averaged button readings and positions updating at approximately 10Hz.
+
+
+Interlock Control (<group> = IL):
+=================================
+
+    MODE
+        Interlock operational mode, one of: Disable (interlock output always
+        closed), Enable (normal interlock operation, Gain Dependent
+        (interlock depends on AGC setting).
+    MINX, MAXX, MINY, MAXY
+        Interlock window: interlock output is closed so long as the beam
+        position lies within this window.
+    OVER, TIME
+        ADC overflow detection parameters: the interlock is opened if the ADC
+        input exceeds value OVER for at least TIME samples.
+    GAIN
+        If AGC is operational and MODE is Gain Dependent then the window and
+        ADC are ignored while the AGC gain level is below this value.
 
 
 Configuration (<group> = CF):
@@ -187,12 +210,20 @@ Configuration (<group> = CF):
     G0_S, G1_S, G2_S, G3_S
         Gain offsets can be set for individual RF channels to compensate for
         channel imbalances within Libera.  This is only used in FT mode.
-    ATTWF, ATT1_S, ATT2_S
-        The eight input attenuators (two per button) are set collectively
-        using ATT1_S and ATT2_S, but read back as an 8 point array using
-        ATTWF.  The driver initialises with all attenuators set to 20: this
-        results in 40dB attenuation per button channel.  Any value (in dB)
-        between 0 and 31 can be set per channel.
+    AUTOSW_S
+        Controls automatic cycling of switches with DSC (Digital Signal
+        Conditioning), for sub-kHz position measurements, or fixed switch
+        positions for high frequency measurements.
+    SETSW_S
+        Switch position to use when AUTOSW_S is set to Fixed.
+    AGC_S
+        Controls whether Automatic Gain Control is enabled.
+    SETATTEN_S
+        Gain level to use when AGC_S is set to Manual.
+
+    ATTEN
+        Reads the current input gain.  If AGC_S is Fixed then this should
+        match the value set in SETLEVEL_S.
 
 
 Other (no group):

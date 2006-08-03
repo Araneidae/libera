@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.19 2006/01/12 08:06:49 miha Exp $
+# $Id: Makefile,v 1.24 2006/07/03 10:44:01 ales Exp $
 #
 # Copyright (C) 2004, 2005 Instrumentation Technologies
 # See the COPYING file for copying conditions.
@@ -21,14 +21,14 @@
 #
 
 #
-# TARGET: Set to EBPP or BBFP.
+# TARGET: Set to family member ID.
 #
 TARGET = EBPP
 
 #
 # drvdir: Where to look for Libera GNU/Linux driver .h files.
 #
-drvdir = ../../driver
+drvdir = ../../../driver/src
 
 #
 # cspidir: Where to look for CSPI .h files.
@@ -130,12 +130,16 @@ CFLAGS  += $(DEBUG_FLAGS)
 CXXFLAGS += $(DEBUG_FLAGS)
 
 ifeq ($(TARGET),EBPP)
-	C_TARGETS := test-event acquire
-	CXX_TARGETS := libera
+	#C_TARGETS := test-event acquire
+	CXX_TARGETS := libera test-event
 endif
 ifeq ($(TARGET),BBFP)
-	C_TARGETS := test-bbfp
-	#CXX_TARGETS :=
+	#C_TARGETS :=
+	CXX_TARGETS := libera-bbfp
+endif
+ifeq ($(TARGET),HBPP)
+	#C_TARGETS :=
+	CXX_TARGETS := libera-hbpp
 endif
 
 
@@ -160,21 +164,24 @@ $(CXX_TARGETS): %: %.o
 $(C_TARGETS) $(CXX_TARGETS): -lcspi
 
 
-$(C_SRCS) $(CXX_SRCS): .depend
+# all .o files depend on .depend
+$(C_TARGETS:%=%.o) $(CXX_TARGETS:%=%.o): .depend
 
 
 install: install-$(TARGET)
 
 
 install-EBPP:
-	$(CROSS_COMPILE)strip acquire libera
+	$(CROSS_COMPILE)strip libera
 	$(INSTALL) -d -o root -g root $(bindir)
 	$(INSTALL) -m 755 -o root -g root libera $(bindir)
-	$(INSTALL) -m 664 -o root -g root gain.conf env.conf $(bindir)
+	$(INSTALL) -m 664 -o root -g root env.conf $(bindir)
 
 
-install-BBFP:
-	@echo Empty target!
+install-BBFP install-HBPP:
+	$(CROSS_COMPILE)strip $(C_TARGETS) $(CXX_TARGETS)
+	$(INSTALL) -d -o root -g root $(bindir)
+	$(INSTALL) -m 755 -o root -g root $(C_TARGETS) $(CXX_TARGETS) $(bindir)
 
 
 clean:

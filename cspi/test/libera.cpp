@@ -1,4 +1,4 @@
-// $Id: libera.cpp,v 1.10 2006/01/12 10:35:18 miha Exp $
+// $Id: libera.cpp,v 1.14 2006/07/11 07:06:24 ales Exp $
 
 // \file libera.cpp
 // Simple utility for configuration and data acquisition.
@@ -64,6 +64,8 @@ TAB = 4 spaces.
 #define PROGRAM_ERROR(what) program_error(what, __FUNCTION__, __LINE__)
 
 //--------------------------------------------------------------------------
+
+const size_t ILK_PARAMCOUNT = 8;
 
 struct quote_type { const char *p; };
 
@@ -260,7 +262,7 @@ void version(const char* argv0)
 	          << std::endl;
 
 	std::cout <<
-		"Copyright 2005 Instrumentation Technologies.\n"
+		"Copyright 2004-2006 Instrumentation Technologies.\n"
 		"This is free software; see the source for copying conditions.\n"
 		"There is NO warranty; not even for MERCHANTABILITY or FITNESS "
 		"FOR A PARTICULAR PURPOSE.";
@@ -552,9 +554,11 @@ std::ostream& operator<<(std::ostream& os, const CSPI_ENVPARAMS& obj)
 		"TRIGmode",
 		"Kx", "Ky",
 		"Xoffset", "Yoffset", "Qoffset",
-		"Xlow", "Xhigh", "Ylow", "Yhigh",
 		"Switches",
-		//"attenuators",
+		"Level",
+		"AGC",
+		"DSC",
+		//"Interlock",
 		0
 	};
 
@@ -564,67 +568,32 @@ std::ostream& operator<<(std::ostream& os, const CSPI_ENVPARAMS& obj)
 		os << std::setw(12) << labels[i] << ": " << *p++ << std::endl;
 	}
 
-	os << std::setw(12) << "Attenuators" << ": ";
-	const int *q = p + CSPI_MAXATTN - 1;
+	os << std::setw(12) << "Interlock" << ": ";
+	const int *q = p + ILK_PARAMCOUNT - 1;
 
-	std::copy(p, q, std::ostream_iterator<int>(std::cout,", "));
+	std::copy(p, q, std::ostream_iterator<int>(std::cout," "));
 	return os << *q << std::endl;
 }
 
 //--------------------------------------------------------------------------
 
-struct attn_adaptor
+struct interlock_adaptor
 {
-	explicit attn_adaptor(int* p) : pval(p) {}
+	explicit interlock_adaptor(int* p) : pval(p) {}
 	std::istream& extract(std::istream& is) {
 
-		for (int n=CSPI_MAXATTN; is && n; --n) is >> *pval++;
+		for (int n=ILK_PARAMCOUNT; is && n; --n) is >> *pval++;
 		return is;
 	}
 
-protected:
-	int *pval;
+	protected:
+		int *pval;
 };
 
 //--------------------------------------------------------------------------
 
-class gain_adaptor : public attn_adaptor
-{
-public:
-	explicit gain_adaptor(int* p) : attn_adaptor(p) {}
-	std::istream& extract(std::istream& is) {
-
-		std::string gain;
-		if (!(is >> gain)) return is;
-
-		std::ifstream file("gain.conf");
-		if (!file) throw std::runtime_error("cannot open gain.conf");
-
-		std::string val;
-		while (file >> val) {
-
-			if (val == gain) {
-				attn_adaptor::extract(file);
-				break;
-			}
-			file.ignore(std::numeric_limits<int>::max(), '\n');
-		}
-
-		if (!file) is.setstate(std::ios::failbit);
-		return is;
-	}
-};
-
-//--------------------------------------------------------------------------
-
-// cannot use attn_adaptor& if used as a stream modifier
-inline std::istream& operator>>(std::istream& is, attn_adaptor obj)
-{
-	return obj.extract(is);
-}
-
-// cannot use gain_adaptor& if used as a stream modifier
-inline std::istream& operator>>(std::istream& is, gain_adaptor obj)
+// cannot use interlock_adaptor& if used as a stream modifier
+inline std::istream& operator>>(std::istream& is, interlock_adaptor obj)
 {
 	return obj.extract(is);
 }
@@ -633,7 +602,7 @@ inline std::istream& operator>>(std::istream& is, gain_adaptor obj)
 
 struct keyword
 {
-	const enum adaptor_type {plain, attn, gain} type;
+	const enum adaptor_type {plain, interlock} type;
 
 	const char* key;
 	const size_t mask;
@@ -674,15 +643,13 @@ std::istream& operator>>(std::istream& is,
 		KEY(keyword::plain, "Yoffset", YOFFSET, Yoffset),
 		KEY(keyword::plain, "Qoffset", QOFFSET, Qoffset),
 
-		KEY(keyword::plain, "Xlow",  XLOW,  Xlow),
-		KEY(keyword::plain, "Xhigh", XHIGH, Xhigh),
-		KEY(keyword::plain, "Ylow",  YLOW,  Ylow),
-		KEY(keyword::plain, "Yhigh", YHIGH, Yhigh),
-
 		KEY(keyword::plain, "Switches", SWITCH, switches),
+		KEY(keyword::plain, "Level",     GAIN,   gain),
 
-		KEY(keyword::attn, "Attenuators",  ATTN, attn[0]),
-		KEY(keyword::gain, "Gain",         ATTN, attn[0]),
+		KEY(keyword::plain, "AGC", AGC, agc),
+		KEY(keyword::plain, "DSC", DSC, dsc),
+
+		KEY(keyword::interlock, "Interlock", ILK, ilk.mode),
 	};
 
 	keyword *const beg = map;
@@ -706,19 +673,10 @@ std::istream& operator>>(std::istream& is,
 				throw std::invalid_argument(what);
 			}
 
-			switch (p->type) {
-
-				case keyword::attn:
-					iss >> attn_adaptor(&p->val);
-					break;
-
-				case keyword::gain:
-					iss >> gain_adaptor(&p->val);
-					break;
-
-				default:
-					iss >> p->val;
-			}
+			if (p->type == keyword::interlock)
+				iss >> interlock_adaptor(&p->val);
+			else
+				iss >> p->val;
 			pair.second |= p->mask;
 
 			if (!iss) {

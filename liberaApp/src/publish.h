@@ -38,74 +38,9 @@
 
 /*****************************************************************************/
 /*                                                                           */
-/*                        Publish EPICS Interfaces                           */
-/*                                                                           */
-/*****************************************************************************/
-
-/* Publication for generic read and write methods.  Every EPICS parameter is
- * announced through a suitable Publish_##record method and located through
- * the corresponding Search_ method. */
-
-
-/* This macro is used to declare general purpose EPICS variable publishing
- * methods for publishing an I_<record> interface by name. */
-#define DECLARE_PUBLISH(record) \
-    void Publish_##record(const char * Name, I_##record & Record)
-    
-
-/* Record implementation lookup, used by the drivers.cpp implementation of
- * Libera record support. */
-#define DECLARE_SEARCH(record) \
-    I_##record * Search_##record(const char *Name)
-
-
-/* Declaration of Publish_<record> methods for each supported record type.
- * Every visible PV should be made available through a call to the
- * appropriate one of these, or perhaps one of the wrappers below. */
-DECLARE_PUBLISH(longin);
-DECLARE_PUBLISH(longout);
-DECLARE_PUBLISH(ai);
-DECLARE_PUBLISH(ao);
-DECLARE_PUBLISH(bi);
-DECLARE_PUBLISH(bo);
-DECLARE_PUBLISH(stringin);
-DECLARE_PUBLISH(stringout);
-DECLARE_PUBLISH(waveform);
-
-
-/* Declaration of the search methods used in driver implementation. */
-DECLARE_SEARCH(longin);
-DECLARE_SEARCH(longout);
-DECLARE_SEARCH(ai);
-DECLARE_SEARCH(ao);
-DECLARE_SEARCH(bi);
-DECLARE_SEARCH(bo);
-DECLARE_SEARCH(stringin);
-DECLARE_SEARCH(stringout);
-DECLARE_SEARCH(waveform);
-
-
-
-
-/*****************************************************************************/
-/*                                                                           */
 /*                        Publish Simple Variables                           */
 /*                                                                           */
 /*****************************************************************************/
-
-
-/* Helper macros for determining the underlying type for each supported
- * record type. */
-#define TYPEOF(record)   TYPEOF_##record
-
-#define TYPEOF_longin    int
-#define TYPEOF_longout   int
-#define TYPEOF_ai        double
-#define TYPEOF_ao        double
-#define TYPEOF_bi        bool
-#define TYPEOF_bo        bool
-#define TYPEOF_stringin  EPICS_STRING
-#define TYPEOF_stringout EPICS_STRING
 
 
 /* For the special case of variables which are just read or written in-place
@@ -128,6 +63,8 @@ DECLARE_PUBLISH_VAR_IN(bi);
 DECLARE_PUBLISH_VAR_OUT(bo);
 DECLARE_PUBLISH_VAR_IN(stringin);
 DECLARE_PUBLISH_VAR_OUT(stringout);
+DECLARE_PUBLISH_VAR_IN(mbbi);
+DECLARE_PUBLISH_VAR_OUT(mbbo);
 
 
 
@@ -199,7 +136,7 @@ private:
  * implemented: a private unimplemented declaration suffices! */
 template<class T> class ID : public T { };
 
-/* This rather naughtly macro assumes that it is always used to publish
+/* This rather naughty macro assumes that it is always used to publish
  * methods of the calling class. */
 #define PUBLISH_METHOD_IN(record, name, method) \
     Publish_##record(name, \
@@ -224,40 +161,90 @@ template<class T>
 class WRAPPER_IN : public I_READER<T>
 { 
 public: 
-    WRAPPER_IN(bool (*f)(T&, void*), void *c) : f(f), c(c) {} 
-    bool read(T &arg) { return (*f)(arg, c); } 
+    WRAPPER_IN(bool (*f)(T&)) : f(f) {} 
+    bool read(T &arg) { return (*f)(arg); } 
 private: 
-    bool (*const f)(T&, void*); 
-    void * const c; 
+    bool (*const f)(T&); 
 };
+
+
+// template<class T>
+// class WRAPPER_OUT : public I_WRITER<T>
+// { 
+// public: 
+//     WRAPPER_OUT(bool (*f)(T, void*), bool (*i)(T&, void*), void *c) :
+//         f(f), i(i), c(c) {} 
+//     bool init(T& arg) { return (*i)(arg, c); } 
+//     bool write(T arg) { return (*f)(arg, c); } 
+// private: 
+//     bool (*const f)(T, void*); 
+//     bool (*const i)(T&, void*);
+//     void * const c; 
+// };
+
+
+#define PUBLISH_FUNCTION_IN(record, name, function) \
+    Publish_##record(name, \
+        * new WRAPPER_IN<TYPEOF(record)>(function))
+// #define PUBLISH_FUNCTION_OUT(record, name, function, init, context) \
+//     Publish_##record(name, \
+//         * new WRAPPER_OUT<TYPEOF(record)>(function, init, context))
+// 
+// #define PUBLISH_FUNCTION_IN_OUT( \
+//         record_in, record_out, name, read, write, context) \
+//     PUBLISH_FUNCTION_IN(record_in, name, read, context); \
+//     PUBLISH_FUNCTION_OUT(record_out, name, write, read, context); \
+
+
+
+
+/* Yet another approach to publishing values! */
 
 template<class T>
-class WRAPPER_OUT : public I_WRITER<T>
-{ 
-public: 
-    WRAPPER_OUT(bool (*f)(T, void*), bool (*i)(T&, void*), void *c) :
-        f(f), i(i), c(c) {} 
-    bool init(T& arg) { return (*i)(arg, c); } 
-    bool write(T arg) { return (*f)(arg, c); } 
-private: 
-    bool (*const f)(T, void*); 
-    bool (*const i)(T&, void*);
-    void * const c; 
+class CONFIGURATION_VALUE : public I_WRITER<T>
+{
+public:
+    CONFIGURATION_VALUE(T &Parameter, void (*OnUpdate)() = NULL) :
+        Parameter(Parameter),
+        OnUpdate(OnUpdate)
+    {
+    }
+
+    bool init(T &Result)
+    {
+        Result = Parameter;
+        return true;
+    }
+    bool write(T Value)
+    {
+        Parameter = Value;
+        if (OnUpdate)
+            OnUpdate();
+        return true;
+    }
+
+private:
+    T &Parameter;
+    void (*OnUpdate)();
 };
 
 
-#define PUBLISH_FUNCTION_IN(record, name, function, context) \
-    Publish_##record(name, \
-        * new WRAPPER_IN<TYPEOF(record)>(function, context))
-#define PUBLISH_FUNCTION_OUT(record, name, function, init, context) \
-    Publish_##record(name, \
-        * new WRAPPER_OUT<TYPEOF(record)>(function, init, context))
+/* Publishes managed configuration values with associated recin and recout
+ * records (for reading and writing, respectively).  The  Action function is
+ * called whenever the recout record is updated.  The configuration value is
+ * also automatically managed as a persistent value. */
+#define PUBLISH_CONFIGURATION(Name, recout, Value, Action) \
+    ( { \
+        CONFIGURATION_VALUE<typeof(Value)> & ConfigValue = \
+            * new CONFIGURATION_VALUE<typeof(Value)>(Value, Action); \
+        Publish_##recout(Name, ConfigValue); \
+        Persistent(Name, Value); \
+    } )
 
-#define PUBLISH_FUNCTION_IN_OUT( \
-        record_in, record_out, name, read, write, context) \
-    PUBLISH_FUNCTION_IN(record_in, name, read, context); \
-    PUBLISH_FUNCTION_OUT(record_out, name, write, read, context); \
+
+
 
 
 /* Helper routine for concatenating strings. */
-const char * Concat(const char * Prefix, const char * Suffix);
+const char * Concat(
+    const char * Prefix, const char * Body, const char * Suffix="");

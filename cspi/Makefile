@@ -9,6 +9,6 @@ USR_CFLAGS = -DEBPP -DCORDIC_IGNORE_GAIN -I$(TOP)/driver -std=gnu99
 
 LIBRARY_IOC = cspi
 
-cspi_SRCS = cordic.c pool.c cspi.c ebpp.c
+cspi_SRCS = cordic.c cspi.c ebpp.c
 
 include $(TOP)/configure/RULES

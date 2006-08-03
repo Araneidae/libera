@@ -93,13 +93,17 @@ public:
 template<class T> class I_READER : public I_RECORD
 {
 public:
+    /* Reads the current value. */
     virtual bool read(T &) = 0;
 };
 
 template<class T> class I_WRITER : public I_RECORD
 {
 public:
+    /* Reads the initial underlying value.  This is useful for persistent
+     * values, where this picks up the old stored state. */
     virtual bool init(T&) = 0;
+    /* Writes a new value. */
     virtual bool write(T) = 0;
 };
 
@@ -135,17 +139,38 @@ inline void CopyEpicsString(const EPICS_STRING in, EPICS_STRING &out)
 
 
 
+/* Helper macros for determining the underlying type for each supported
+ * record type. */
+#define TYPEOF(record)   TYPEOF_##record
+
+#define TYPEOF_longin    int
+#define TYPEOF_longout   int
+#define TYPEOF_ai        int
+#define TYPEOF_ao        int
+#define TYPEOF_bi        bool
+#define TYPEOF_bo        bool
+#define TYPEOF_stringin  EPICS_STRING
+#define TYPEOF_stringout EPICS_STRING
+#define TYPEOF_mbbi      int
+#define TYPEOF_mbbo      int
+
+
 /* The three basic types, int, double, bool, are supported by corresponding
  * input and output records working through the reader and writer interfaces
  * defined above. */
-typedef I_READER<int>           I_longin;
-typedef I_WRITER<int>           I_longout;
-typedef I_READER<double>        I_ai;
-typedef I_WRITER<double>        I_ao;
-typedef I_READER<bool>          I_bi;
-typedef I_WRITER<bool>          I_bo;
-typedef I_READER<EPICS_STRING>  I_stringin;
-typedef I_WRITER<EPICS_STRING>  I_stringout;
+#define DECLARE_INTERFACE(access, type) \
+    typedef I_##access<TYPEOF(type)> I_##type
+
+DECLARE_INTERFACE(READER, longin);
+DECLARE_INTERFACE(WRITER, longout);
+DECLARE_INTERFACE(READER, ai);
+DECLARE_INTERFACE(WRITER, ao);
+DECLARE_INTERFACE(READER, bi);
+DECLARE_INTERFACE(WRITER, bo);
+DECLARE_INTERFACE(READER, stringin);
+DECLARE_INTERFACE(WRITER, stringout);
+DECLARE_INTERFACE(READER, mbbi);
+DECLARE_INTERFACE(WRITER, mbbo);
 
 
 
@@ -174,3 +199,32 @@ public:
 private:
     const epicsEnum16 Type;
 };
+
+
+
+/*****************************************************************************/
+/*                                                                           */
+/*                        Publish EPICS Interfaces                           */
+/*                                                                           */
+/*****************************************************************************/
+
+/* This macro is used to declare general purpose EPICS variable publishing
+ * methods for publishing an I_<record> interface by name. */
+#define DECLARE_PUBLISH(record) \
+    void Publish_##record(const char * Name, I_##record & Record)
+    
+
+/* Declaration of Publish_<record> methods for each supported record type.
+ * Every visible PV should be made available through a call to the appropriate
+ * one of these, either directly or through a wrapper in publish.h. */
+DECLARE_PUBLISH(longin);
+DECLARE_PUBLISH(longout);
+DECLARE_PUBLISH(ai);
+DECLARE_PUBLISH(ao);
+DECLARE_PUBLISH(bi);
+DECLARE_PUBLISH(bo);
+DECLARE_PUBLISH(stringin);
+DECLARE_PUBLISH(stringout);
+DECLARE_PUBLISH(waveform);
+DECLARE_PUBLISH(mbbi);
+DECLARE_PUBLISH(mbbo);
