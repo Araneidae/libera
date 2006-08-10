@@ -41,6 +41,7 @@
 #include "hardware.h"
 #include "cordic.h"
 #include "support.h"
+#include "interlock.h"
 
 #include "convert.h"
 
@@ -82,13 +83,10 @@ static int ChannelGain[4] =
 /* Controls whether automatic switching is enabled (DSC, Digital Signal
  * Conditioning, is enabled or disabled at the same time. */
 static bool AutoSwitchEnabled = false;
-/* Controls whether automatic gain control (AGC) is enabled. */
-static bool AgcEnabled = false;
 /* Selects which switch setting to use in manual mode. */
 static int ManualSwitch = 3;
-/* Selects which attenuation to use in manual mode.  By default we configure
- * quite a high attenuation. */
-static int ManualAttenuation = 60;
+/* Selected attenuation.  The default is quite high for safety. */
+static int CurrentAttenuation = 60;
 
 
 /* Rescales value by gain factor making use of the GAIN_OFFSET defined above.
@@ -270,8 +268,6 @@ void GainCorrect(int Channel, int *Column, int Count)
 /****************************************************************************/
 
 
-static int CachedAttenuation = 0;
-
 
 /* Attenuator configuration management. */
 
@@ -312,31 +308,19 @@ static bool ReadAttenuatorOffsets()
 }
 
 
-
-
-/* This routine is called periodically (once per second) by the CF:ATTEN
- * record.  As well as reading the attenuator value directly from the
- * hardware (which actually involves asking the DSC!) we cache it locally. */
-
-static bool UpdateCurrentAttenuation(int &Attenuation)
-{
-    bool Ok = ReadAttenuation(CachedAttenuation);
-    Attenuation = CachedAttenuation;
-    return Ok;
-}
-
-
-
 /* Returns the current cached attenuator setting, after correcting for
  * attenuator offset. */
 
 int ReadCorrectedAttenuation()
 {
-    int Attenuation = CachedAttenuation;
-    return Attenuation * DB_SCALE + AttenuatorOffset[Attenuation];
+    return CurrentAttenuation * DB_SCALE +
+        AttenuatorOffset[CurrentAttenuation];
 }
 
 
+/* Called whenever any of the scaling calibration settings has changed.
+ * These are then written to CSPI to ensure that the FPGA calculations remain
+ * in step with ours. */
 
 static void UpdateCalibration()
 {
@@ -344,7 +328,8 @@ static void UpdateCalibration()
 }
 
 
-/* Called whenever the autoswitch mode has changed. */ 
+/* Called whenever the autoswitch mode has changed. */
+
 static void UpdateAutoSwitch()
 {
     if (AutoSwitchEnabled)
@@ -361,16 +346,17 @@ static void UpdateAutoSwitch()
     }
 }
 
-static void UpdateAgcMode()
+static void UpdateAttenuation(int &, int NewAttenuation)
 {
-    if (AgcEnabled)
-        WriteAgcMode(CSPI_AGC_AUTO);
-    else
-    {
-        WriteAgcMode(CSPI_AGC_MANUAL);
-        WriteAttenuation(ManualAttenuation);
-        CachedAttenuation = ManualAttenuation;
-    }
+    /* Mask out the interlocks while we change attenuation.
+     * It's quite important here that we mask out interlocks before *any*
+     * part of the new attenuation value is written.  In particular, the slow
+     * acquisition reads the current attenuation and uses this to communicate
+     * with the interlock layer: this should also be prevented from having an
+     * unexpected effect. */
+    TemporaryMaskInterlock();
+    CurrentAttenuation = NewAttenuation;
+    WriteAttenuation(CurrentAttenuation);
 }
 
 static void UpdateManualSwitch()
@@ -379,21 +365,13 @@ static void UpdateManualSwitch()
         WriteSwitchState((CSPI_SWITCHMODE) ManualSwitch);
 }
 
-static void UpdateManualAttenuation()
-{
-    if (!AgcEnabled)
-    {
-        WriteAttenuation(ManualAttenuation);
-        CachedAttenuation = ManualAttenuation;
-    }
-}
 
 
 #define PUBLISH_CALIBRATION(Name, Value) \
     PUBLISH_CONFIGURATION(Name, ao, Value, UpdateCalibration)
 
 #define PUBLISH_GAIN(Name, Value) \
-    PUBLISH_CONFIGURATION(Name, ao, Value, NULL)
+    PUBLISH_CONFIGURATION(Name, ao, Value, NULL_ACTION)
 
 
 bool InitialiseConvert()
@@ -401,7 +379,7 @@ bool InitialiseConvert()
     if (!ReadAttenuatorOffsets())
         return false;
     
-    PUBLISH_CONFIGURATION("CF:DIAG", bo, Diagonal, NULL);
+    PUBLISH_CONFIGURATION("CF:DIAG", bo, Diagonal, NULL_ACTION);
 
     PUBLISH_CALIBRATION("CF:KX", K_X);
     PUBLISH_CALIBRATION("CF:KY", K_Y);
@@ -418,16 +396,15 @@ bool InitialiseConvert()
 
     PUBLISH_CONFIGURATION("CF:AUTOSW", bo,
         AutoSwitchEnabled, UpdateAutoSwitch);
-    PUBLISH_CONFIGURATION("CF:AGC", bo, AgcEnabled, UpdateAgcMode);
     PUBLISH_CONFIGURATION("CF:SETSW", longout,
         ManualSwitch, UpdateManualSwitch);
-    PUBLISH_CONFIGURATION("CF:SETATTEN", longout,
-        ManualAttenuation, UpdateManualAttenuation);
-    /* Write the current state to the hardware. */
-    UpdateAutoSwitch();
-    UpdateAgcMode();
+    PUBLISH_CONFIGURATION("CF:ATTEN", longout,
+        CurrentAttenuation, UpdateAttenuation);
 
-    PUBLISH_FUNCTION_IN(longin, "CF:ATTEN", UpdateCurrentAttenuation);
+    /* Write the initial state to the hardware. */
+    WriteAgcMode(CSPI_AGC_MANUAL);
+    WriteAttenuation(CurrentAttenuation);
+    UpdateAutoSwitch();
 
     return true;
 }

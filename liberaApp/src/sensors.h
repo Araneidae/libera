@@ -26,12 +26,6 @@
  *      michael.abbott@diamond.ac.uk
  */
 
+/* Interface to sensor implementions. */
 
-/* Interlock management initialisation. */
-bool InitialiseInterlock();
-
-/* Called by slow acquisition to notify current level. */
-void NotifyInterlockCurrent(int Current);
-
-/* Called when attenuators are changed to temporarily mask out interlocks. */
-void TemporaryMaskInterlock();
+bool InitialiseSensors();

@@ -52,6 +52,7 @@
 #include "trigger.h"
 #include "support.h"
 #include "interlock.h"
+#include "sensors.h"
 
 #include "events.h"
 #include "hardware.h"
@@ -90,7 +91,7 @@ static const char * StateFileName = NULL;
 
 
 static EPICS_STRING VersionString = LIBERA_VERSION;
-static EPICS_STRING BuildDate = __TIME__ " on " __DATE__;
+static EPICS_STRING BuildDate = BUILD_DATE_TIME;
 
 
 /* Prints interactive startup message as recommended by GPL. */
@@ -229,7 +230,10 @@ static bool InitialiseLibera()
          * captures the last 16K events before the event. */
         InitialisePostmortem()  &&
         /* Slow acquisition returns highly filtered positions at 10Hz. */
-        InitialiseSlowAcquisition();
+        InitialiseSlowAcquisition()  &&
+
+        /* Background monitoring stuff: fan, temperature, memory, etcetera. */
+        InitialiseSensors();
 }
 
 

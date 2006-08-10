@@ -46,21 +46,21 @@ class LiberaRecordNames(epics.TemplateRecordNames):
 
     def __init__(self):
         self.super.__init__(self)
-        self.__ChannelName = None
+        self.ChannelName = None
 
     def SetChannelName(self, name):
-        assert self.__ChannelName == None, 'Channel name already set'
-        self.__ChannelName = name
+        assert self.ChannelName == None, 'Channel name already set'
+        self.ChannelName = name
 
     def UnsetChannelName(self):
-        self.__ChannelName = None
+        self.ChannelName = None
 
     def RecordName(self, name):
         return self.super.RecordName(self, self.GetChannelName(name))
 
     def GetChannelName(self, name):
-        if self.__ChannelName:
-            return '%s:%s' % (self.__ChannelName, name)
+        if self.ChannelName:
+            return '%s:%s' % (self.ChannelName, name)
         else:
             return name
 
@@ -68,6 +68,10 @@ class LiberaRecordNames(epics.TemplateRecordNames):
 RecordNames = LiberaRecordNames()
 epics.Configure(recordnames = RecordNames)
 from epics import *
+
+
+def ChannelName():
+    return RecordNames.ChannelName
 
 
 # This class wraps the creation of records which talk directly to the
@@ -86,10 +90,14 @@ class Libera(hardware.Device):
             if address is None:
                 address = name
             record = self.builder(name, **fields)
-            if not GetSimulation():
-                record.DTYP = 'Libera'
-                setattr(record, self.addr_name,
-                    RecordNames.GetChannelName(address))
+            record.DTYP = 'Libera'
+            ChannelName = RecordNames.GetChannelName(address)
+            setattr(record, self.addr_name, ChannelName)
+
+            # Check for a description, make a report if none given.
+            if 'DESC' not in fields:
+                print 'No description for', ChannelName
+                
             return record
 
     @classmethod
@@ -106,3 +114,5 @@ class Libera(hardware.Device):
 Libera.init()
 Libera()
 
+
+__all__ = ['Libera', 'ChannelName']

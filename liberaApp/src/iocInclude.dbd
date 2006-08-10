@@ -1,5 +1,4 @@
 # Pulls together the DBD definitions for libera.
 include "base.dbd"
-include "device.dbd"
 include "libera.dbd"
 

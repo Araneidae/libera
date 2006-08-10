@@ -41,6 +41,7 @@
 #include "convert.h"
 #include "waveform.h"
 #include "support.h"
+#include "interlock.h"
 
 #include "slowAcquisition.h"
 
@@ -173,6 +174,9 @@ private:
 
         Power = to_dB(S) + CurrentAttenuation - P_0;
         Current = Denormalise(CurrentFactor * S);
+
+        /* Communicate the latest current reading to the interlock. */
+        NotifyInterlockCurrent(Current);
     }
     
     

@@ -1,3 +1,0 @@
-# Device support for /proc filesystem based variables.
-device(longin,  CONSTANT, readFile,  "ReadFile")
-device(longout, CONSTANT, writeFile, "WriteFile")

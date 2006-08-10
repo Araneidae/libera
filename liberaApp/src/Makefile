@@ -13,6 +13,9 @@ USR_CXXFLAGS += -Werror -Wno-comment
 # Make sure that we pick up the version from install/CONFIG.
 USR_CXXFLAGS += -DLIBERA_VERSION='"$(shell \
     sed -n '/^VERSION=/{s///;p}' $(TOP)/install/CONFIG)"'
+# Compute a sensible format of build date
+USR_CXXFLAGS += -DBUILD_DATE_TIME='"$(shell \
+    date -u '+%Y-%m-%d %H:%M:%S UTC')"'
 
 # The lines below defeat the -ansi flag: we want to use some gcc specific
 # features (typeof, in particular).
@@ -27,14 +30,13 @@ PROD_IOC = ioc
 
 # ioc.dbd will be created from iocInclude.dbd
 DBD += ioc.dbd
-DBD += device.dbd
 DBD += libera.dbd
 
 
 # ioc_registerRecordDeviceDriver.cpp will be created from ioc.dbd
 ioc_SRCS += ioc_registerRecordDeviceDriver.cpp
+
 ioc_SRCS += iocMain.cpp
-ioc_SRCS += readFile.cpp
 ioc_SRCS += drivers.cpp
 ioc_SRCS += publish.cpp
 ioc_SRCS += trigger.cpp
@@ -53,6 +55,7 @@ ioc_SRCS += support.cpp
 ioc_SRCS += thread.cpp
 ioc_SRCS += persistent.cpp
 ioc_SRCS += interlock.cpp
+ioc_SRCS += sensors.cpp
 
 ioc_LIBS += cspi
 ioc_LIBS += $(EPICS_BASE_IOC_LIBS) 

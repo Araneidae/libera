@@ -168,32 +168,9 @@ private:
 };
 
 
-// template<class T>
-// class WRAPPER_OUT : public I_WRITER<T>
-// { 
-// public: 
-//     WRAPPER_OUT(bool (*f)(T, void*), bool (*i)(T&, void*), void *c) :
-//         f(f), i(i), c(c) {} 
-//     bool init(T& arg) { return (*i)(arg, c); } 
-//     bool write(T arg) { return (*f)(arg, c); } 
-// private: 
-//     bool (*const f)(T, void*); 
-//     bool (*const i)(T&, void*);
-//     void * const c; 
-// };
-
-
 #define PUBLISH_FUNCTION_IN(record, name, function) \
     Publish_##record(name, \
         * new WRAPPER_IN<TYPEOF(record)>(function))
-// #define PUBLISH_FUNCTION_OUT(record, name, function, init, context) \
-//     Publish_##record(name, \
-//         * new WRAPPER_OUT<TYPEOF(record)>(function, init, context))
-// 
-// #define PUBLISH_FUNCTION_IN_OUT( \
-//         record_in, record_out, name, read, write, context) \
-//     PUBLISH_FUNCTION_IN(record_in, name, read, context); \
-//     PUBLISH_FUNCTION_OUT(record_out, name, write, read, context); \
 
 
 
@@ -204,9 +181,20 @@ template<class T>
 class CONFIGURATION_VALUE : public I_WRITER<T>
 {
 public:
-    CONFIGURATION_VALUE(T &Parameter, void (*OnUpdate)() = NULL) :
+    /* In this case the update is performed by this class, but an update
+     * method will also be called on completion. */
+    CONFIGURATION_VALUE(T &Parameter, void (*OnUpdate)()) :
         Parameter(Parameter),
-        OnUpdate(OnUpdate)
+        OnUpdate(OnUpdate),
+        DoUpdate(NULL)
+    {
+    }
+
+    /* In this case the callback method needs to do the update as well. */
+    CONFIGURATION_VALUE(T &Parameter, void (*DoUpdate)(T&,T)) :
+        Parameter(Parameter),
+        OnUpdate(NULL),
+        DoUpdate(DoUpdate)
     {
     }
 
@@ -217,22 +205,28 @@ public:
     }
     bool write(T Value)
     {
-        Parameter = Value;
-        if (OnUpdate)
-            OnUpdate();
+        if (DoUpdate)
+            DoUpdate(Parameter, Value);
+        else
+        {
+            Parameter = Value;
+            if (OnUpdate)
+                OnUpdate();
+        }
         return true;
     }
 
 private:
     T &Parameter;
     void (*OnUpdate)();
+    void (*DoUpdate)(T&,T);
 };
 
 
-/* Publishes managed configuration values with associated recin and recout
- * records (for reading and writing, respectively).  The  Action function is
- * called whenever the recout record is updated.  The configuration value is
- * also automatically managed as a persistent value. */
+/* Publishes managed persistent configuration values with associated recout
+ * record.  The Action function is called whenever the recout record is
+ * updated and the configuration value is automatically managed as a
+ * persistent value. */
 #define PUBLISH_CONFIGURATION(Name, recout, Value, Action) \
     ( { \
         CONFIGURATION_VALUE<typeof(Value)> & ConfigValue = \
@@ -241,8 +235,9 @@ private:
         Persistent(Name, Value); \
     } )
 
-
-
+/* To specify no action for PUBLISH_CONFIGURATION the NULL_ACTION action can
+ * be specified. */
+#define NULL_ACTION ((void(*)())NULL)
 
 
 /* Helper routine for concatenating strings. */
