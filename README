@@ -88,12 +88,12 @@ First Turn (<group> = FT):
         256 point arrays at approximately 32ns sampling interval, updated on
         trigger
     <buttons>
-        Button values averaged within the window specified by OFF and LEN.
+        Button values integrated within the window specified by OFF and LEN.
     <positions>
         Position data derived from <buttons>, in mm.
     OFF_S, LEN_S
         These two fields determine the window within WF<buttons> used to
-        compute the averaged <buttons> values.
+        compute the integrated <buttons> values.
     ENABLE_S
         If set to Disabled then FT processing will not occur.
 
@@ -174,23 +174,40 @@ Slow Acquisition (<group> = SA):
     <positions>
         Averaged button readings and positions updating at approximately 10Hz.
 
+    POWER
+        Absolute input power in dBm.  The scaling here is hard-wired and not
+        especially accurate.
+
+    CURRENT, ISCALE_S
+        Beam current computed on the assumption that ISCALE specifies the beam
+        current (in mA) at 0dBm input power.
+
 
 Interlock Control (<group> = IL):
 =================================
 
-    MODE
-        Interlock operational mode, one of: Disable (interlock output always
-        closed), Enable (normal interlock operation, Gain Dependent
-        (interlock depends on AGC setting).
-    MINX, MAXX, MINY, MAXY
-        Interlock window: interlock output is closed so long as the beam
-        position lies within this window.
-    OVER, TIME
-        ADC overflow detection parameters: the interlock is opened if the ADC
+    ENABLE_S
+        If this is set to Disabled the interlock output is held active, or
+        closed (unless OVERFLOW_S is also set to Enabled to enable overflow
+        detection).  When set to Enabled the interlock output is only active
+        while the beam position lies within the interlock window.
+    MINX_S, MAXX_S, MINY_S, MAXY_S
+        Interlock window: when the interlock is enabled the interlock output
+        is closed ("active") so long as the beam position lies within this
+        window. 
+    OVER_S, TIME_S
+        ADC overflow detection parameters: the interlock is dropped if the ADC
         input exceeds value OVER for at least TIME samples.
-    GAIN
-        If AGC is operational and MODE is Gain Dependent then the window and
-        ADC are ignored while the AGC gain level is below this value.
+    OVERFLOW_S
+        This can be set to Enabled to enable ADC overflow detection even when
+        the interlock is otherwise disabled.
+    ILIMIT_S
+        The interlock will automatically Enabled when the beam current,
+        measured by SA:CURRENT, exceeds this value.
+    STATE, LATCH
+        STATE records whether the interlock is currently dropped or has been
+        dropped within the last 0.5 seconds.  LATCH is set if the interlock
+        has been dropped at any time since it was last reset.
 
 
 Configuration (<group> = CF):
@@ -216,14 +233,8 @@ Configuration (<group> = CF):
         positions for high frequency measurements.
     SETSW_S
         Switch position to use when AUTOSW_S is set to Fixed.
-    AGC_S
-        Controls whether Automatic Gain Control is enabled.
-    SETATTEN_S
-        Gain level to use when AGC_S is set to Manual.
-
-    ATTEN
-        Reads the current input gain.  If AGC_S is Fixed then this should
-        match the value set in SETLEVEL_S.
+    ATTEN_S
+        Attenuator settings in dB: a value between 0 and 62dB can be set.
 
 
 Other (no group):

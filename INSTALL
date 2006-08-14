@@ -107,7 +107,7 @@ ARM_LINUX_GCC be the root of the compiler, so that GCC is available as
 $ARM_LINUX_GCC/bin/arm-linux-gcc.
 
 2.  Extract EPICS from
-    http://www.aps.anl.gov/epics/download/base/base$EPICS_VERSION.tar.gz
+    http://www.aps.anl.gov/epics/download/base/baseR$EPICS_VERSION.tar.gz
 into a suitable directory.  Let EPICS_BASE be the path to the root directory
 of this distribution.
 

@@ -174,7 +174,7 @@ public:
         PersistentLength.Initialise("FT:LEN");
         SetLength(Length);
         
-        /* Computed button averages and associated button values. */
+        /* Computed button totals and associated button values. */
         RawAdc.Publish("FT", "RAW");
         Adc.Publish("FT");
         Publish_ABCD("FT", ABCD);
@@ -222,23 +222,20 @@ public:
 
     
 private:
-    /* Function for computing an average button value.  The Index selects
-     * which button to average. */
-    int Average(int Data[ADC_LENGTH/4])
+    /* Function for computing the total charge (in arbitrary units) coming
+     * into a button. */
+    int Integrate(int Data[ADC_LENGTH/4])
     {
         int Total = 0;
         for (int i = 0; i < Length; i ++)
             /* Prescale data as we accumulate to ensure we don't overflow.
              * We know that each data point is <2^30 (see the Capture()
              * method of ADC_WAVEFORM), and there can be at most 2^8 points,
-             * so scaling by 2^-7 is safe. */
+             * so scaling by 2^-7 is safe.
+             *    Fortunately there are plenty of spare bits at the bottom of
+             * each sample, so we can afford to spend seven of them here! */
             Total += Data[Offset + i] >> 7;
-        /* We know that:
-         *      AverageScale = 2^30/Length
-         *      Total = 2^-7 * Sum
-         * so to compute the desired average Sum/Length we compute
-         *      2^-23 * Total * AverageScale. */
-        return ((long long) Total * AverageScale) >> 23;
+        return Total;
     }
 
     /* Performs the fairly complex processing required to convert a raw ADC
@@ -254,7 +251,7 @@ private:
      *  4. Gain correct each column.
      *  5. Permute the columns according to the currently selected switch and
      *     write into Adc to be published to EPICS.
-     *  6. Extract the average ABCD values from the permuted column.
+     *  6. Extract the integrated ABCD values from the permuted column.
      *  7. Finally compute XYQS. */
     void ProcessAdcWaveform()
     {
@@ -281,8 +278,9 @@ private:
             CondenseAdcData(Extracted[Channel], Condensed);
             GainCorrect(Channel, Condensed, ADC_LENGTH/4);
             Adc.Write(Field, Condensed, ADC_LENGTH/4);
+            
             /* Also update the appropriate field of the ABCD structure. */
-            use_offset(int, ABCD, Field) = Average(Condensed);
+            use_offset(int, ABCD, Field) = Integrate(Condensed);
         }
     }
 
@@ -307,9 +305,6 @@ private:
         if (0 < newLength  &&  Offset + newLength <= ADC_LENGTH/4)
         {
             Length = newLength;
-            /* We compute the average scale as 2^30/Length so that we can
-             * compute the average by a simple multiplication. */
-            AverageScale = (1 << 30) / Length;
             return true;
         }
         else
@@ -325,11 +320,8 @@ private:
      * buffer and the length of the averaging window. */
     int Offset, Length;
     PERSISTENT_INT PersistentOffset, PersistentLength;
-    /* This is set to 2^29/Length: this allows us to compute the average of
-     * Length points with a simple double-word multiplication. */
-    int AverageScale;
     
-    /* Computed state.  The button values are averaged from the selection of
+    /* Computed state.  The button values are integrated from the selection of
      * points, and the appropriate elements are published to epics. */
     ABCD_WAVEFORMS RawAdc;
     ABCD_WAVEFORMS Adc;

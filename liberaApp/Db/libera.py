@@ -110,8 +110,8 @@ def Waveform(name, length, FTVL='LONG', **fields):
 # that can be generated are defined.
 
 MAX_INT = 2**31 - 1
-MAX_nm  = 10 * 10**6         # 10^7 nm = 10 mm
-MAX_mm  = 1e-6 * MAX_nm
+MAX_mm  = 10
+MAX_nm  = MAX_mm * 10**6         # 10^7 nm = 10 mm
 MAX_S   = MAX_INT
 KB      = 1024
 MB      = KB*KB
@@ -167,7 +167,7 @@ def XYQS_(prec, logMax=0, suffix=''):
             LOPR = -50,   HOPR = 0,
             EGU  = 'dB',  PREC = 0))
     return [
-        aIn(position + suffix, 0, MAX_mm, 1e-6, 'mm', prec,
+        aIn(position + suffix, -MAX_mm, MAX_mm, 1e-6, 'mm', prec,
             DESC = '%s %s position' % (ChannelName(), position))
         for position in 'XYQ'] + sl
         

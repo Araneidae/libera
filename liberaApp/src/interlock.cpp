@@ -173,9 +173,13 @@ void NotifyInterlockCurrent(int Current)
     Lock();
 
     if (InterlockHoldoff > 0)
+    {
         /* Count off the interlock holdoff.  Ignore the current during this
          * holdoff period. */
         InterlockHoldoff -= 1;
+        if (InterlockHoldoff == 0)
+            WriteInterlockState();
+    }
     else
     {
         /* Normal operation: check for current over threshold, and enable the
