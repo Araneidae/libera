@@ -45,7 +45,7 @@
 #include "freeRun.h"
 #include "slowAcquisition.h"
 #include "postmortem.h"
-#include "drivers.h"
+#include "device.h"
 #include "persistent.h"
 #include "publish.h"
 #include "thread.h"

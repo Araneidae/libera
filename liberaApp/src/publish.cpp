@@ -41,7 +41,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "drivers.h"
+#include "device.h"
 #include "persistent.h"
 #include "publish.h"
 

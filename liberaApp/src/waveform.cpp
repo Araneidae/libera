@@ -37,7 +37,7 @@
 
 #include <dbFldTypes.h>
 
-#include "drivers.h"
+#include "device.h"
 #include "persistent.h"
 #include "publish.h"
 #include "hardware.h"

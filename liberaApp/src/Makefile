@@ -37,7 +37,7 @@ DBD += libera.dbd
 ioc_SRCS += ioc_registerRecordDeviceDriver.cpp
 
 ioc_SRCS += iocMain.cpp
-ioc_SRCS += drivers.cpp
+ioc_SRCS += device.cpp
 ioc_SRCS += publish.cpp
 ioc_SRCS += trigger.cpp
 ioc_SRCS += firstTurn.cpp

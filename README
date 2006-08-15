@@ -96,6 +96,9 @@ First Turn (<group> = FT):
         compute the integrated <buttons> values.
     ENABLE_S
         If set to Disabled then FT processing will not occur.
+    CHARGE
+        Train charge as integrated within the integration window, and scaled
+        by CF:ISCALE.
 
 
 Free Running (<group> = FR):
@@ -178,9 +181,8 @@ Slow Acquisition (<group> = SA):
         Absolute input power in dBm.  The scaling here is hard-wired and not
         especially accurate.
 
-    CURRENT, ISCALE_S
-        Beam current computed on the assumption that ISCALE specifies the beam
-        current (in mA) at 0dBm input power.
+    CURRENT
+        Beam current.  This is scaled by CF:ISCALE.
 
 
 Interlock Control (<group> = IL):
@@ -235,6 +237,9 @@ Configuration (<group> = CF):
         Switch position to use when AUTOSW_S is set to Fixed.
     ATTEN_S
         Attenuator settings in dB: a value between 0 and 62dB can be set.
+    ISCALE_S
+        Nominal beam current at 0dBm input power as seen by Libera.  This is
+        used to compute SA:CURRENT and FT:CHARGE.
 
 
 Other (no group):

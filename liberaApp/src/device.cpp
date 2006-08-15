@@ -62,7 +62,7 @@
 #include <mbbiRecord.h>
 #include <mbboRecord.h>
 
-#include "drivers.h"
+#include "device.h"
 
 
 /* Epics processing return codes. */

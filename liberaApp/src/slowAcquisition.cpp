@@ -32,7 +32,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "drivers.h"
+#include "device.h"
 #include "persistent.h"
 #include "publish.h"
 #include "thread.h"
