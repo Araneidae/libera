@@ -47,13 +47,9 @@
 
 
 
-/* Attenuation for sensible signal level at input power of 0dBm, about 45
- * dBm. */
-#define A_0                     (45 * DB_SCALE)         // 45 dBm
-
-/* Recorded S level at 45dB attenuation and input power 0dBm. */
+/* Recorded S level at 45dB attenuation and input power 0dBm.  Used to scale
+ * absolute power and current computations. */
 #define S_0                     100000000               // 1e8
-
 
 
 
@@ -61,25 +57,15 @@ class SLOW_ACQUISITION : public THREAD
 {
 public:
     SLOW_ACQUISITION() :
-        P_0(to_dB(S_0) + A_0)                   // 20 log_10(S_0) + A_0
+        P_0(to_dB(S_0) + A_0),                  // 20 log_10(S_0) + A_0
+        S_0_INV(Reciprocal(S_0))                  // 1 / S_0
     {
-        /* Default current scale of 800mA at 0dBm. */
-        CurrentScale = 800 * 100000;
-        /* Ensure we initialise attenuation stuff! */
-        CurrentAttenuation = -1;
-        
         Publish_ABCD("SA", ABCD);
         Publish_XYQS("SA", XYQS);
         Publish_XYQS("SA", XYQS_CSPI, "C");
         Publish_ai("SA:POWER", Power);
         Publish_ai("SA:CURRENT", Current);
-        PUBLISH_METHOD_OUT(ao, "SA:ISCALE", SetCurrentScale, CurrentScale);
-        Persistent("SA:ISCALE", CurrentScale);
         Interlock.Publish("SA");
-
-        /* Initialise the current scale associated values with the initial
-         * reading. */
-        SetCurrentScale(CurrentScale);
     }
 
 private:
@@ -107,47 +93,6 @@ private:
     }
 
 
-    void UpdateCurrentFactor()
-    {
-        /* The computation of current is computed as
-         *
-         *                                       A - A_0
-         *                                       -------
-         *                                S        20
-         *      Current = CurrentScale * --- * 10
-         *                               S_0
-         *                                           
-         * where A is the current attenuation, and S is the reading returned
-         * by CSPI (in arbitrary units).  We precompute all of this
-         * calculation here except for multiplication by S using the "poor
-         * man's floating point" class (PMFP): this is hugely faster than
-         * real floating point, and helps ensure we have good precision and
-         * dynamic range. */
-        CurrentFactor =
-            (PMFP(from_dB, CurrentAttenuation - A_0) * CurrentScale) / S_0;
-    }
-
-    /* Called to configure the current scale. */
-    bool SetCurrentScale(int NewCurrentScale)
-    {
-        CurrentScale = NewCurrentScale;
-        UpdateCurrentFactor();
-        return true;
-    }
-
-
-    /* Called to manage the attenuator setting: called each time the
-     * attenuator value is needed. */
-    void UpdateAttenuation()
-    {
-        int NewAttenuation = ReadCorrectedAttenuation();
-        if (NewAttenuation != CurrentAttenuation)
-        {
-            CurrentAttenuation = NewAttenuation;
-            UpdateCurrentFactor();
-        }
-    }
-
     /* Computes power and current from the observed S value, the attenuator
      * setting and the current scaling factor thus:
      * 
@@ -169,13 +114,11 @@ private:
      * The scaling factor K_M is the beam current for 0dBm input power. */
     void UpdatePowerAndCurrent()
     {
-        UpdateAttenuation();
-        int S = XYQS.S;
+        Power = to_dB(XYQS.S) + ReadCorrectedAttenuation() - P_0;
+        Current = ComputeScaledCurrent(S_0_INV, XYQS.S);
 
-        Power = to_dB(S) + CurrentAttenuation - P_0;
-        Current = Denormalise(CurrentFactor * S);
-
-        /* Communicate the latest current reading to the interlock. */
+        /* Communicate the latest current reading to the machine protection
+         * interlock. */
         NotifyInterlockCurrent(Current);
     }
     
@@ -185,17 +128,13 @@ private:
     XYQS_ROW XYQS;
     XYQS_ROW XYQS_CSPI;
     int Power;          // Power in dBm * 1e6
-    int Current;        // Current in nA
-    int CurrentScale;   // Current in nA at 0dBm input power
+    int Current;        // Current in 10*nA
     
-    /* Current attenuation, used to detect attenuation change. */
-    int CurrentAttenuation;
-    /* Scaling factor for current calculation: updated whenever either the
-     * current scale or the attenuation changes. */
-    PMFP CurrentFactor;
     
     /* Precomputed offset for power calculation: P_0 = A_0 + 20 log_10(S_0). */
     const int P_0;
+    /* Precomputed scaling factor for current calculation, S_0_INV = 1/S_0. */
+    const PMFP S_0_INV;
 };
 
 

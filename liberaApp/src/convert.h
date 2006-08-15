@@ -71,6 +71,11 @@
  * values intended for transmission through an ai/ao record. */
 #define DB_SCALE        1000000
 
+/* Attenuation for sensible signal level at input power of 0dBm, about 45
+ * dBm.  This is a reference point for the scaling factor passed to
+ * ComputeScaledCurrent(), below. */
+#define A_0                     (45 * DB_SCALE)         // 45 dBm
+
 
 /* Converts Count rows of IQ data into ABCD format by applying Cordic
  * conversion on each I,Q pair. */
@@ -88,10 +93,33 @@ void ABCDtoXYQS(const ABCD_ROW *ABCD, XYQS_ROW *XYQS, int Count);
 void GainCorrect(int Channel, int *Column, int Count);
 
 
-/* Returns the cached and corrected settings of the attenuators.  The
- * returned value is scaled by 1e6 to provide a dB value suitable for direct
- * display. */
+/* Returns the corrected settings of the attenuators.  The returned value is
+ * scaled by 1e6 to provide a dB value suitable for direct display. */
 int ReadCorrectedAttenuation();
+
+
+/* Computes the beam current corresponding to the given readout Intensity.
+ * The given IntensityScale should correspond to the nominal intensity
+ * reading at 0dBm input and A_0 attenuator setting.   The value returned is
+ * given by:
+ *                          A - A_0
+ *                          -------
+ *                            20
+ *      I = K  * S * K  * 10
+ *           I        S
+ * where
+ *      K_I = beam current at 0dBm input power
+ *      I   = computed scaled current
+ *      K_S = IntensityScale
+ *      S   = Intensity
+ *      A   = current attenuator setting
+ *      A_0 = nominal 0dBm attenuator settings
+ *
+ * Given that the current scale is normally in units of 10nA, ie 10^-8 A (so
+ * allowing a full scale of 20A beam current) then so is the scaled current
+ * returned by this routine. */
+class PMFP;
+int ComputeScaledCurrent(const PMFP & IntensityScale, int Intensity);
 
 
 /* Publishes conversion control PVs to EPICS. */

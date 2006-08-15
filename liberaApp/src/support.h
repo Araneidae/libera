@@ -198,24 +198,62 @@ public:
     /* Here we implement a fairly classical style operator oriented interface
      * to make a PMFP look like an ordinary value. */
 
-    /* Standard constructors and assignment. */
-    PMFP(unsigned int InitialValue = 0, int InitialShift = 0);
-    PMFP(const PMFP &Copy);
-    void operator=(const PMFP &Copy);
+    /* Standard constructors and assignment.  These are all inlined in the
+     * hope that the compiler will be sensible. */
+    inline PMFP(unsigned int InitialValue = 0, int InitialShift = 0)
+    {
+        Value = InitialValue;
+        Shift = InitialShift;
+    }
+    
+    inline PMFP(const PMFP &Copy)
+    {
+        Value = Copy.Value;
+        Shift = Copy.Shift;
+    }
+
+    inline void operator=(const PMFP &Copy)
+    {
+        Value = Copy.Value;
+        Shift = Copy.Shift;
+    }
+
 
     /* Extracting the underlying value.  We don't provide a casting operator,
      * as implicit denormalising is actually rather a bad idea! */
-    unsigned int Denormalise() const;
+    inline unsigned int Denormalise() const
+    {
+        return ::Denormalise(Value, Shift);
+    }
 
     /* Actually doing work. */
-    PMFP operator*(const PMFP &Multiplier) const;
-    PMFP operator/(const PMFP &Divisor) const;
-    PMFP Reciprocal() const;
+    inline PMFP operator*(const PMFP &Multiplier) const
+    {
+        int NewShift = Shift + Multiplier.Shift;
+        unsigned int NewValue = MulUUshift(Value, Multiplier.Value, NewShift);
+        return PMFP(NewValue, NewShift);
+    }
+        
+    inline PMFP operator/(const PMFP &Divisor) const
+    {
+        int NewShift = Shift - Divisor.Shift;
+        unsigned int NewValue = MulUUshift(
+            Value, ::Reciprocal(Divisor.Value, NewShift), NewShift);
+        return PMFP(NewValue, NewShift);
+    }
 
+    inline PMFP Reciprocal() const
+    {
+        int NewShift = - Shift;
+        unsigned int NewValue = ::Reciprocal(Value, NewShift);
+        return PMFP(NewValue, NewShift);
+    }
+
+    
     /* This one is rather tricky: here we construct a PMFP instance from any
      * function which returns a value and a shift (for example, exp2). */
-    template<class T>
-        PMFP(unsigned int (*f)(T,int&), T Argument, int InitialShift = 0)
+    template<class T> inline PMFP(
+        unsigned int (*f)(T,int&), T Argument, int InitialShift = 0)
     {
         Shift = InitialShift;
         Value = f(Argument, Shift);
@@ -231,5 +269,12 @@ private:
 };
 
 /* Conversions of methods into operations. */
-PMFP Reciprocal(const PMFP &Argument);
-unsigned int Denormalise(const PMFP &Argument);
+inline PMFP Reciprocal(const PMFP &Argument)
+{
+    return Argument.Reciprocal();
+}
+
+inline unsigned int Denormalise(const PMFP &Argument)
+{
+    return Argument.Denormalise();
+}

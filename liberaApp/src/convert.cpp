@@ -89,6 +89,14 @@ static int ManualSwitch = 3;
 static int CurrentAttenuation = 60;
 
 
+/* Current scaling factor.  This is used to program the nominal beam current
+ * for an input power of 0dBm, or equivalently, the beam current
+ * corresponding to a button current of 4.5mA.
+ *    This is recorded in units of 10nA, giving a maximum 0dBm current of
+ * 20A. */
+int CurrentScale = 100000000;
+
+
 /* Rescales value by gain factor making use of the GAIN_OFFSET defined above.
  * The gain factors are scaled by a factor of 2^31, and are intended to
  * always be <= 1.  The value to be scaled derives from a CORDIC computation,
@@ -263,6 +271,50 @@ void GainCorrect(int Channel, int *Column, int Count)
 
 /****************************************************************************/
 /*                                                                          */
+/*                  Switches and Miscellaneous Settings                     */
+/*                                                                          */
+/****************************************************************************/
+
+
+/* Called whenever any of the scaling calibration settings has changed.
+ * These are then written to CSPI to ensure that the FPGA calculations remain
+ * in step with ours. */
+
+static void UpdateCalibration()
+{
+    WriteCalibrationSettings(K_X, K_Y, K_Q, X_0, Y_0);
+}
+
+
+/* Called whenever the autoswitch mode has changed. */
+
+static void UpdateAutoSwitch()
+{
+    if (AutoSwitchEnabled)
+    {
+        /* Switch mode is now automatic.  Turn on DSC as well. */
+        WriteSwitchState(CSPI_SWITCH_AUTO);
+        WriteDscMode(CSPI_DSC_AUTO);
+    }
+    else
+    {
+        /* Switch to manual mode. */
+        WriteDscMode(CSPI_DSC_OFF);
+        WriteSwitchState((CSPI_SWITCHMODE) ManualSwitch);
+    }
+}
+
+
+static void UpdateManualSwitch()
+{
+    if (!AutoSwitchEnabled)
+        WriteSwitchState((CSPI_SWITCHMODE) ManualSwitch);
+}
+
+
+
+/****************************************************************************/
+/*                                                                          */
 /*                    Attenuation and Switch Management                     */
 /*                                                                          */
 /****************************************************************************/
@@ -280,6 +332,14 @@ void GainCorrect(int Channel, int *Column, int Count)
  * accurate, due to minor offsets on attenuator values.  Here we attempt to
  * compensate for these offsets by reading an offset configuration file. */
 static int AttenuatorOffset[MAX_ATTENUATION + 1];
+
+
+/* This contains a precalculation of K_S * 10^((A-A_0)/20) to ensure that the
+ * calculation of ComputeScaledCurrent is efficient. */
+static PMFP ScaledCurrentFactor;
+/* This contains a precalculation of 10^((A-A_0)/20): this only needs to
+ * change when the attenuator settings are changed. */
+static PMFP AttenuatorScalingFactor;
 
 
 static bool ReadAttenuatorOffsets()
@@ -318,35 +378,13 @@ int ReadCorrectedAttenuation()
 }
 
 
-/* Called whenever any of the scaling calibration settings has changed.
- * These are then written to CSPI to ensure that the FPGA calculations remain
- * in step with ours. */
-
-static void UpdateCalibration()
+static void UpdateCurrentScale()
 {
-    WriteCalibrationSettings(K_X, K_Y, K_Q, X_0, Y_0);
+    ScaledCurrentFactor = AttenuatorScalingFactor * CurrentScale;
 }
 
 
-/* Called whenever the autoswitch mode has changed. */
-
-static void UpdateAutoSwitch()
-{
-    if (AutoSwitchEnabled)
-    {
-        /* Switch mode is now automatic.  Turn on DSC as well. */
-        WriteSwitchState(CSPI_SWITCH_AUTO);
-        WriteDscMode(CSPI_DSC_AUTO);
-    }
-    else
-    {
-        /* Switch to manual mode. */
-        WriteDscMode(CSPI_DSC_OFF);
-        WriteSwitchState((CSPI_SWITCHMODE) ManualSwitch);
-    }
-}
-
-static void UpdateAttenuation(int &, int NewAttenuation)
+static void UpdateAttenuation(int NewAttenuation)
 {
     /* Mask out the interlocks while we change attenuation.
      * It's quite important here that we mask out interlocks before *any*
@@ -357,12 +395,17 @@ static void UpdateAttenuation(int &, int NewAttenuation)
     TemporaryMaskInterlock();
     CurrentAttenuation = NewAttenuation;
     WriteAttenuation(CurrentAttenuation);
+
+    /* Update the scaling factors. */
+    AttenuatorScalingFactor = PMFP(from_dB, ReadCorrectedAttenuation() - A_0);
+    UpdateCurrentScale();
 }
 
-static void UpdateManualSwitch()
+
+
+int ComputeScaledCurrent(const PMFP & IntensityScale, int Intensity)
 {
-    if (!AutoSwitchEnabled)
-        WriteSwitchState((CSPI_SWITCHMODE) ManualSwitch);
+    return Denormalise(IntensityScale * ScaledCurrentFactor * Intensity);
 }
 
 
@@ -400,10 +443,12 @@ bool InitialiseConvert()
         ManualSwitch, UpdateManualSwitch);
     PUBLISH_CONFIGURATION("CF:ATTEN", longout,
         CurrentAttenuation, UpdateAttenuation);
+    PUBLISH_CONFIGURATION("CF:ISCALE", ao,
+        CurrentScale, UpdateCurrentScale);
 
     /* Write the initial state to the hardware. */
     WriteAgcMode(CSPI_AGC_MANUAL);
-    WriteAttenuation(CurrentAttenuation);
+    UpdateAttenuation(CurrentAttenuation);
     UpdateAutoSwitch();
 
     return true;

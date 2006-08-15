@@ -205,9 +205,12 @@ def FirstTurn():
         HSV  = 'MINOR',  HIGH = 1024,                   # -6dB
         HHSV = 'MAJOR',  HIHI = int(1024*sqrt(2)))      # -3dB
 
+    charge = aIn('CHARGE', 0, 2000, 1e-6, 'nC', 2,
+        DESC = 'Charge of bunch train')
+
     Trigger(*
         # Raw wavefors as read from the ADC rate buffer
-        RAW_ADC(LONG_LENGTH) + [maxadc] +
+        RAW_ADC(LONG_LENGTH) + [maxadc, charge] +
         # ADC data reduced by 1/4 by recombination
         ABCD_wf(SHORT_LENGTH) +
         # Synthesised button positions from windowed averages
@@ -344,9 +347,6 @@ def SlowAcquisition():
     current = aIn('CURRENT', 0, 500, 1e-5, 'mA', 3,
         DESC = 'SA input current')
     Trigger(*ABCD_() + XYQS_(4) + XYQS_(4, suffix='C') + [power, current])
-    aOut('ISCALE', 0, 20000, 
-        DESC = 'Input current at 0dBm power',
-        EGU  = 'mA', ESLO = 1e-5, PREC = 1)
     UnsetChannelName()
 
 
@@ -382,6 +382,10 @@ def Config():
     # Control attenuation
     longOut('ATTEN', 0, 62, EGU = 'dB',
         DESC = 'Attenuator setting')
+
+    aOut('ISCALE', 0, 20000, 
+        DESC = 'Input current at 0dBm power',
+        EGU  = 'mA', ESLO = 1e-5, PREC = 1)
 
     UnsetChannelName()
 

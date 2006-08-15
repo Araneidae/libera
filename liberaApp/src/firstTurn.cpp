@@ -48,6 +48,11 @@
 #include "firstTurn.h"
 
 
+/* Recorded S level at 45dB attenuation and input power 0dBm. */
+#define S_0             2540000
+
+
+
 /* Processing the raw ADC data is a suprisingly complicated process.  The
  * following routines capture the stages. */
 
@@ -156,7 +161,8 @@ public:
         PersistentOffset(Offset),
         PersistentLength(Length),
         RawAdc(ADC_LENGTH),
-        Adc(ADC_LENGTH/4)
+        Adc(ADC_LENGTH/4),
+        ChargeScale(PMFP(40) / (PMFP(S_0) * 117))
     {
         /* Sensible defaults for offset and length.  Must be bounded to lie
          * within the waveform.
@@ -182,6 +188,8 @@ public:
 
         /* The computed maximum ADC values (used to detect overflow). */
         Publish_longin("FT:MAXADC", MaxAdc);
+        /* The integrated charge. */
+        Publish_ai("FT:CHARGE", Charge);
 
         /* Finally the trigger used to notify events.  The database wires this
          * up so that the all the variables above are processed when a trigger
@@ -215,6 +223,8 @@ public:
         ProcessAdcWaveform();
         /* Convert button values to XYQS values. */
         ABCDtoXYQS(&ABCD, &XYQS, 1);
+        /* Convert S into a charge. */
+        Charge = ComputeScaledCurrent(ChargeScale, XYQS.S);
 
         /* Finally tell EPICS there's stuff to read. */
         Interlock.Ready();
@@ -330,10 +340,46 @@ private:
 
     /* Maximum raw ADC across all four buttons. */
     int MaxAdc;
+    /* Integrated charge corresponding to measured S. */
+    int Charge;
 
     /* Epics trigger and interlock. */
     INTERLOCK Interlock;
     ENABLE Enable;
+
+
+    /* Scaling constant for charge.
+     *
+     * If we write the charge as
+     * 
+     *          /
+     *      Q = | I dt = SUM I(S/S_0) Dt
+     *          /
+     *
+     * where I(S/S_0) = ComputeScaledCurrent(1/S_0, S)
+     * and   Dt = 4 / 117MHz (four samples per accumulated point) then by
+     * taking unit scaling into account we can determine K = ChargeScale.
+     * The operation I(K,S) is bilinear, so we can also write
+     *
+     *      Q = I(Dt/S_0, SUM S)
+     *  
+     * The units of I are 10nA, ie 10^-8 A and we'll display Q in units of
+     * 10^-15 Coulombs (so giving a full scale range of 2 microculombs).
+     * Thus we have:
+     *
+     *            15    -8   (    4       1        )
+     *      Q = 10  * 10  * I(--------- * --, SUM S)
+     *                       (        6   S        )
+     *                       (117 * 10     0       )
+     * and thus
+     *
+     *      K = 40 / (117 * S_0)
+     *      
+     * and we can compute
+     *
+     *      Q = I(K, SUM S)
+     */
+    const PMFP ChargeScale;
 };
 
 

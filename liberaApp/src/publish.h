@@ -191,7 +191,7 @@ public:
     }
 
     /* In this case the callback method needs to do the update as well. */
-    CONFIGURATION_VALUE(T &Parameter, void (*DoUpdate)(T&,T)) :
+    CONFIGURATION_VALUE(T &Parameter, void (*DoUpdate)(T)) :
         Parameter(Parameter),
         OnUpdate(NULL),
         DoUpdate(DoUpdate)
@@ -206,7 +206,7 @@ public:
     bool write(T Value)
     {
         if (DoUpdate)
-            DoUpdate(Parameter, Value);
+            DoUpdate(Value);
         else
         {
             Parameter = Value;
@@ -219,7 +219,7 @@ public:
 private:
     T &Parameter;
     void (*OnUpdate)();
-    void (*DoUpdate)(T&,T);
+    void (*DoUpdate)(T);
 };
 
 
