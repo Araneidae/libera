@@ -1,0 +1,38 @@
+#!/bin/sh
+#
+# Script to send command to all liberas or to a selection.
+
+NAME_LIST="$(dirname "$(readlink -fn "$0")")/allbpms"
+
+ASYNC='&'
+while getopts 'asl:r:h' option; do
+    case "$option" in
+    a)  ASYNC='&' ;;
+    s)  ASYNC=''  ;;
+    l)  NAME_LIST="$OPTARG" ;;
+    r)  LOG_EXT="$OPTARG"  ;;
+    h)  cat <<'EOF' 
+Usage: liberas [-a] <pattern> [<command>]
+Sends a command to all matching liberas.
+    -a          send command asynchronously (the default)
+    -s          send commands in sequence
+    -l<list>    use specified list instead of default list
+    -r<ext>     record stdout in $BPM<ext> file
+EOF
+        exit 0 ;;
+    *)  echo >&2 'Invalid option: try -h for help'
+        exit 1 ;;
+    esac
+done
+shift $((OPTIND-1))
+MATCH="$1"
+shift
+
+for BPM in $(grep -E "$MATCH" "$NAME_LIST"); do
+    if [ -n "$LOG_EXT" ]; then
+        LOGFILE=">'$BPM$LOG_EXT'"
+    else
+        LOGFILE=
+    fi
+    eval 'ssh -x -oStrictHostKeyChecking=no root@$BPM "$@"' $LOGFILE $ASYNC
+done

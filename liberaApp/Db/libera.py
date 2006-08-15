@@ -216,7 +216,7 @@ def FirstTurn():
         # Synthesised button positions from windowed averages
         ABCD_() + 
         # Final computed positions with logarithmic scale.
-        XYQS_(2, logMax = log10(2**30 * 0.582217 * sqrt(2))))
+        XYQS_(1, logMax = log10(2**30 * 0.582217 * sqrt(2))))
 
     # Sample window control
     longOut('OFF', 0, SHORT_LENGTH - 1,
@@ -473,8 +473,8 @@ def Sensors():
         HIHI = 16,      HHSV = 'MAJOR')
     cpu = aIn('CPU', 0, 100, 1e-3, '%', 1,
         DESC = 'CPU usage',
-        HIGH = 50,      HSV  = 'MINOR',
-        HIHI = 80,      HHSV = 'MAJOR')
+        HIGH = 80,      HSV  = 'MINOR',
+        HIHI = 95,      HHSV = 'MAJOR')
     
     uptime = aIn('UPTIME', 0, 24*3600*5, 1./3600, 'h', 2,
         DESC = 'Total system up time')
@@ -516,8 +516,7 @@ def Miscellaneous():
         SCAN = '.1 second',
         CALC = 'A+0.1',
         EGU  = 's', PREC = 1,
-        HIGH = 1,   HSV  = 'MINOR',
-        HIHI = 10,  HHSV = 'MAJOR')
+        HIGH = 1,   HSV  = 'MINOR')
     tick.INPA = tick
     tick_reset = records.calcout('TICK_CALC',
         CALC = '0',
@@ -543,4 +542,5 @@ Config()            # CF - general configuration records
 Interlock()         # IL - interlock configuration records
 Sensors()           # SE - temperatures, fan speeds, memory and CPU usage etc
 Miscellaneous()     # Other records
+
 WriteRecords(sys.argv[1])
