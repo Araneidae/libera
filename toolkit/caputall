@@ -1,0 +1,12 @@
+#!/bin/sh
+# Write value to PV on all liberas matching pattern.
+
+NAME_LIST="$(dirname "$(readlink -fn "$0")")/allbpms"
+
+MATCH="$1"
+PV="$2"
+NEW_VALUE="$3"
+
+for BPM in $(grep -E "$MATCH" "$NAME_LIST"); do
+    caput "$BPM:$PV" "$NEW_VALUE" &
+done

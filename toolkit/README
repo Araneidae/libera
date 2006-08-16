@@ -1,0 +1,35 @@
+Toolkit for Libera support.
+
+This directory contains tools for managing Liberas.  
+
+
+liberas
+    Tool for running a command on all liberas or a specified subset.
+
+cagetall
+    Performs caget request on all liberas or a specified subset.
+
+caputall
+    Performs caput request on all liberas or a specified subset.
+
+
+libera/
+    Tools for running on Libera.
+
+    (None included yet.)
+
+
+matlab/
+    Matlab scripts for supporting Libera operations.
+
+    getabcd.m
+        Reads ADC button waveforms.
+
+    getraw.m
+        Reads raw ADD waveforms.
+
+    getxy.m
+        Reads positions from long turn by turn waveforms.
+
+    getiq.m
+        Reads long complex turn by turn waveforms.

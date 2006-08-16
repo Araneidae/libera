@@ -27,4 +27,4 @@ $(COMMON_DIR)/%.db: ../%.py ../support.py
 
 
 clean::
-	rm *.pyc
+	rm -f *.pyc
