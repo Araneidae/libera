@@ -1,0 +1,100 @@
+#!/bin/sh
+
+# This file is part of the Libera EPICS Driver,
+# Copyright (C) 2005  Michael Abbott, Diamond Light Source Ltd.
+#
+# The Libera EPICS Driver is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# The Libera EPICS Driver is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc., 51
+# Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# Contact:
+#      Dr. Michael Abbott,
+#      Diamond Light Source Ltd,
+#      Diamond House,
+#      Chilton,
+#      Didcot,
+#      Oxfordshire,
+#      OX11 0DE
+#      michael.abbott@diamond.ac.uk
+
+# Automates the generation of a new Libera release.
+
+function Error()
+{
+    echo >&2 "$@"
+    exit 1
+}
+
+# Checks that the given directory is completely in step with svn.  Unknown
+# files (flagged by ?) are ignored.
+#
+#   CheckSvnCurrent <working-dir>
+#
+function CheckSvnCurrent()
+{
+    svn status -u "$1" |
+    # We ignore both lines beginning with '?' (these are files that haven't
+    # been added: it can be a bit much to insist on adding these) and the
+    # 'Status against revision' line that comes from the -u flag.
+    sed '/^\?/d; /^Status against revision:/d' |
+    wc -l |
+    { read count && ((count == 0)); }
+    # Return success only if the svn status command succeeded and no lines
+    # were reported as unresolved.
+    ((${PIPESTATUS[0]}==0 && ${PIPESTATUS[3]}==0))
+}
+
+
+SVN_RELEASE="$SVN_ROOT/diamond/release/ioc/Libera"
+SVN_EDM_FILES="$SVN_ROOT/diamond/trunk/support/Diagnostics/opi/libera"
+BUILD_TARGET=/mt/libera/nfs/Libera
+
+
+cd "$(dirname "$0")/.."
+
+DISTRIBUTION="${2?Specify distribution target directory}"
+
+
+# First check that we're publishing the version we expect.
+VERSION="$(sed -n '/^VERSION=/{s///;p;q;}' install/CONFIG)"
+[ "$VERSION" = "${1?Specify release version}" ]  ||
+    Error "Release version mismatch: $1 != $VERSION"
+# Check the version doesn't already exist!
+svn info $SVN_RELEASE/$VERSION  >/dev/null 2>&1  &&
+    Error "Release $VERSION already published to subversion"
+
+# Check that we're up to date with subversion.  
+CheckSvnCurrent .  &&  CheckSvnCurrent opi/libera  ||
+    Error "Libera files not checked in"
+
+# Make the release into subversion.
+svn -m "Libera: Release $VERSION" cp . "$SVN_RELEASE/$VERSION"  &&
+svn -m "Libera: Release $VERSION.  Copy edm files" \
+    cp "$SVN_EDM_FILES" "$SVN_RELEASE/$VERSION/opi"  ||
+    Error "Problem making subversion release"
+
+# Now grab a temporary copy and build it.
+TEMP_ROOT="$(mktemp -d /tmp/libera-release.XXXXXX)"  &&
+cd "$TEMP_ROOT"  &&
+svn export "$SVN_RELEASE/$VERSION"  &&
+mv $VERSION Libera  &&
+cd Libera  &&
+make  ||
+    Error "Problem building final release"
+
+# Publish the build files locally
+./install/install-epics "$BUILD_TARGET"  &&
+./install/install-ioc "$BUILD_TARGET"  &&
+
+# Finally prepare the release
+./install/distribute 
