@@ -93,8 +93,12 @@ make  ||
     Error "Problem building final release"
 
 # Publish the build files locally
-./install/install-epics "$BUILD_TARGET"  &&
-./install/install-ioc "$BUILD_TARGET"  &&
+./install/install-epics "$BUILD_TARGET/$VERSION"  &&
+./install/install-ioc "$BUILD_TARGET/$VERSION"  &&
 
 # Finally prepare the release
-./install/distribute 
+./install/distribute "$DISTRIBUTION"  &&
+
+# Finally tidy away the temporary directory
+cd /tmp  &&
+rm -rf "$TEMP_ROOT"
