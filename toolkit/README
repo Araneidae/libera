@@ -16,7 +16,8 @@ caputall
 libera/
     Tools for running on Libera.
 
-    (None included yet.)
+    doupgrade
+        Upgrades Libera to specified version of Libera drivers.
 
 
 matlab/

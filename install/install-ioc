@@ -30,8 +30,13 @@
 # Install a build IOC in the target IOC directory.
 
 SOURCE="$(cd "$(dirname "$0")"/..; pwd)"  &&
-. "$SOURCE"/install/CONFIG  &&
-: ${INSTALL_HOST:?Local installation path not defined}  &&
+if (($# > 0)); then
+    INSTALL_HOST="$1"
+else
+    . "$SOURCE"/install/CONFIG  &&
+    : ${INSTALL_HOST:?Local installation path not defined}
+fi  &&
+[ -d "$INSTALL_HOST" ]  &&
 
 # Erase everything in the target directory: start from scratch on each
 # install.
@@ -61,16 +66,10 @@ for f in epics gain.conf libera-install-ioc offsets.conf; do
 done  &&
 
 # The epics_ioc file is basically a digest of the stuff in CONFIG that is
-# directly relevant to the target system.
-cat <<EOF >"$TARGET"/install/epics_ioc  &&
-# Paths to EPICS base and the Libera IOC.
-# This file should be placed in /etc/sysconfig/epics_ioc
-EPICS_BASE="$EPICS_TARGET"
-LIBERA_IOC="$DRIVER_TARGET/runioc"
-EOF
-# All symbols definitions starting IOC_ will be passed through to the target
-# IOC to configure run-time operation.
-grep '^IOC_[[:alnum:]_]*=' "$SOURCE"/install/CONFIG \
-    >>"$TARGET"/install/epics_ioc  &&
+# directly relevant to the target system.  All symbols definitions starting
+# IOC_ or xx_IOC_ will be passed through to the target IOC to configure
+# run-time operation.
+grep -E '^([[:alpha:]][[:alnum:]]_)?IOC_[[:alnum:]_]*=' \
+    "$SOURCE"/install/CONFIG >>"$TARGET"/install/epics_ioc  &&
 
 echo IOC installed in "$TARGET". 

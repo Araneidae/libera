@@ -1,5 +1,30 @@
 Change history of Libera EPICS Driver development
 
+2006/08/17 Version 0.6.1
+========================
+Works with Libera 1.21 
+
+Significant changes:
+ - Automatic switching and DSC (digital signal conditioning) can now be
+   switched on or off.  This should normally be on when accurate slow
+   acquisition (and fast feedback) data is required, and should be off for
+   first turn and turn by turn data. 
+ - The machine protection interlock can now be controlled and configured.
+ - Slow acquisition mode now estimates beam current.
+ - First turn now estimates charge in measured bunch train.
+ - More detailed monitoring of Libera status, including accurate free memory,
+   ram disk usage, cpu consumption.
+ - IQ data available for decimated /64 waveforms.
+
+Minor changes:
+ - Added toolkit files.
+ - Sensor PVs (temperature, fan speeds etcetera) reimplemented and renamed.
+ - Descriptions added to all records.
+ - Configuration readback PVs now removed.
+ - Significant rearrangements of code, together with necessary changes to
+   track substantial changes in CSPI interface.
+ - ai/ao records now perform conversion to floating point in the EPICS layer.
+
 
 2006/07/06 Version 0.5
 ======================

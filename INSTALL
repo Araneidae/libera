@@ -73,18 +73,9 @@ to use.
 
 
 Start by editing $LIBERA_EPICS/install/CONFIG to suit your installation.  The
-following symbols should be edited:
+following symbol should be defined:
 
     INSTALL_HOST    Set to $INSTALL_HOST as described above
-    EPICS_TARGET    } See notes below for
-    DRIVER_TARGET   } these two symbols
-
-    The two _TARGET symbols need only be defined if using the Test
-    installation mode described below (under "Installing the Libera EPICS
-    driver"), in which case they should be set as follows:
-        EPICS_TARGET    $INSTALL_TARGET/epics
-        DRIVER_TARGET   $INSTALL_TARGET/ioc
-    If only using Final installation these can be ignored.
 
 In all of the instructions below a line of the form
     $ command
@@ -126,7 +117,7 @@ and defining
 
 5.  Make sure that linux-arm is included as a cross compiler target
 architecture, by editing
-    $EPICS_BASE/configure/os/CONFIG_SITE.linux-x86.Common
+    $EPICS_BASE/configure/CONFIG_SITE
 and defining 
     CROSS_COMPILER_TARGET_ARCHS=linux-arm
 Multiple target architectures can be supported by EPICS and defined on this
@@ -215,13 +206,6 @@ Test Installation
     developing Libera, but is not recommended for normal operation as
     uninterrupt access to NFS is requred.
 
-    In this mode the following symbols in install/CONFIG are used to locate
-    files:
-
-        EPICS_TARGET    Location for EPICS runtime files
-        DRIVER_TARGET   Location for Libera EPICS driver runtime files
-        IOC_STATE_PATH  Location for storing persistent state
-
     To install a Test installation run one of following commands on Libera,
     either:
     # $INSTALL_TARGET/ioc/install/libera-install-ioc -t
@@ -268,8 +252,11 @@ Running the Libera EPICS driver
 ===============================
 
 The ioc can be run in two ways on Libera.  Interactive operation is possible
-by running the ioc file directly:
-    # $DRIVER_TARGET/runioc
+by running the ioc file directly (depending on whether a test or final
+installation has been selected):
+    # $INSTALL_TARGET/ioc/runioc
+or
+    # /opt/ioc/runioc
 This will provide an epics shell prompt.
 
 Alternatively, daemon operation is possible by using the epics script:

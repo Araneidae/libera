@@ -27,15 +27,16 @@
 #      OX11 0DE
 #      michael.abbott@diamond.ac.uk
 
-# Install epics in target directory.  This script also assembles the
-# /etc/sysconfig/epics_ioc and /etc/init.d/epics scripts in the same directory
-# ready to be placed in the appropriate places.
+# Install epics in target directory.  
 
 SOURCE="$(cd "$(dirname "$0")"/..; pwd)"  &&
-# Pick up the configuration settings: this will tell us where to put the
-# epics files we're assembling.
-. "$SOURCE"/install/CONFIG  &&
-: ${INSTALL_HOST:?Local installation path not defined}  &&
+if (($# > 0)); then
+    INSTALL_HOST="$1"
+else
+    . "$SOURCE"/install/CONFIG  &&
+    : ${INSTALL_HOST:?Local installation path not defined}
+fi  &&
+[ -d "$INSTALL_HOST" ]  &&
 
 # Figure out where Epics base is from the epics directory.
 EPICS_BASE="$(

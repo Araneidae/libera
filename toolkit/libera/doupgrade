@@ -27,32 +27,41 @@
 #      OX11 0DE
 #      michael.abbott@diamond.ac.uk
 
-# Script to build the distribution
+# Where to find the upgrade files
+UPGRADES_DIR=/mnt/nfs/install
 
-TARGET="${1:?Where to put the files?}"
+# Server providing rdate functionality
+RDATE_SERVER=172.23.199.1
 
-cd "$(dirname "$0")/.." &&
 
-# Pick up the version
-. install/CONFIG  &&
+# These files are overwritten by the upgrade process, but need to be
+# preserved. 
+SAVE_FILES="network libera nic-config/ifcfg-eth0"
 
-# Need to build the .db files in case the recipient doesn't have the epics
-# Python library.  
-make &&
-mkdir install/prebuilt &&
-for f in sensors libera; do
-    sed '/^# \*\*\* Please do not edit/d' db/$f.db >install/prebuilt/$f.db
-done  &&
-cp liberaApp/src/O.linux-arm/*.h install/prebuilt  &&
+cd /
+hostname
 
-# Make sure we now start with a fresh page
-make clean uninstall &&
+# Bring the libera into a sensible quiescent state suitable for applying the
+# upgrades
+rdate -s $RDATE_SERVER
+[ -e /etc/init.d/epics ] && /etc/init.d/epics stop
+/etc/init.d/libera stop
 
-# Build the distribution.  
-EPICS="$TARGET"/libera-epics-"$VERSION".tgz  &&
-tar czf "$EPICS"  --exclude=.svn -C.. Libera  &&
+# Put the saved files to one side
+for file in $SAVE_FILES; do
+    mv /etc/sysconfig/$file /etc/sysconfig/$file.dls
+done
 
-# Finally get rid of the prebuilt files again: we don't want them normally.
-rm -rf install/prebuilt  &&
+# Perform all the required upgrades
+for name in $(ls "$UPGRADES_DIR"/upgrade-$1/upgrade/*.lpm); do
+   echo $name
+   /opt/bin/libera_upgrade $name
+done
 
-echo 'Distribution built ok in:'$'\n'"    $EPICS"
+echo "serv0005.cs.diamond.ac.uk:/home2/libera/nfs /mnt/nfs nfs rw,rsize=4096,wsize=4096" >>/etc/fstab
+echo "TIMESERVER=$RDATE_SERVER" >/etc/sysconfig/clock
+ln -sf /bin/false /sbin/dhcpcd
+
+for file in $SAVE_FILES; do
+    mv /etc/sysconfig/$file.dls /etc/sysconfig/$file
+done

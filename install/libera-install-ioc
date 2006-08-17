@@ -1,6 +1,5 @@
 #!/bin/sh
 
-
 # This file is part of the Libera EPICS Driver,
 # Copyright (C) 2005  Michael Abbott, Diamond Light Source Ltd.
 #
@@ -35,6 +34,10 @@
 # IOC: testing (installed on the remote file system) or final (copied to the
 # local file system).
 
+# Ensure this isn't run by accident on the development machine.
+[ "$(uname -m)" != armv5tel ]  &&
+    Error This should be run on Libera
+
 SOURCE="$(cd "$(dirname "$0")"/..; pwd)"
 
 function Error()
@@ -43,38 +46,66 @@ function Error()
     exit 1
 }
 
-# Ensure this isn't run by accident on the development machine.
-[ "$(uname -m)" != armv5tel ]  &&
-    Error This should be run on Libera
 
 # Parse local installation options
 TARGET=none
 AUTOSTART=0
-while getopts 'ftah' option; do
+STARTNOW=0
+while getopts 'ftash' option; do
     case "$option" in
     f)  TARGET=final ;;
     t)  TARGET=test ;;
     a)  AUTOSTART=1 ;;
+    s)  STARTNOW=1 ;;
     h)  cat <<'EOF'
-Usage: libera-install-ioc <option>
-where <option> is one of
+Usage: libera-install-ioc <options> [<location>]
+where <options> includes
     -f  Final install: copy files to local /opt directory
     -t  Testing install: don't copy files, use from configured location
     -a  Enable autostart of ioc: link /etc/init.d/epics into rc3.d and rc6.d
+    -s  Start IOC after installation
+and <location> is a two character location code used to configure location
+specific settings.
 EOF
         exit 0 ;;
     *)  Error 'Invalid option: try -h for help' ;;
     esac
 done
+shift $((OPTIND - 1))
 [ $TARGET == none ]  &&
     Error 'Specify installation option.  Try -h for help.'
-(($# >= OPTIND))  &&
-    Error 'Invalid arguments: try -h for help'
 
+# Read the location code, but only if it's actually required!  The set of
+# location codes is determined by a simple pattern match: if this set is
+# empty then no location needs to be specified, otherwise the code should be
+# one of these patterns.
+LOCATIONS="$(
+    # Extract all lines of the form xx_IOC_...
+    sed -n '/^\([[:alpha:]][[:alnum:]]\)_IOC_.*$/{s//\1/;p;}' \
+        "$SOURCE"/install/epics_ioc )"
+if [ -n "$LOCATIONS" ]; then
+    (($# > 0))  ||  Error "Must specify a location"
+    LOCATION="$1"
+    shift
+    # Check the location given is one of the ones we know
+    echo "$LOCATIONS" | grep "^$LOCATION\$" >/dev/null  ||
+        # Note that neither sort nor uniq are present on libera, so we can't
+        # filter $LOCATIONS, so it may be a bit repetitive!
+        Error "Invalid location $LOCATION: use one of" $LOCATIONS
+fi
+
+(($# != 0))  &&
+    Error 'Invalid arguments: try -h for help'
+    
+    
 # Ensure epics driver isn't running at the moment.
 if [ -e /var/run/ioc.pid ]; then
-    kill "$(cat /var/run/ioc.pid)"
-    rm -f /var/run/ioc.pid
+    if [ -x /etc/init.d/epics ]; then
+        /etc/init.d/epics stop
+    else
+        kill "$(cat /var/run/ioc.pid)"
+        rm -f /var/run/ioc.pid
+    fi
 fi
 
 # If final installation selected then copy over all the run-time files and
@@ -94,21 +125,31 @@ if [ $TARGET == final ]; then
     umask 22  &&
     mkdir -p "$IOC_TARGET"  &&
     cp -r "$SOURCE"/* "$IOC_TARGET"  &&
-    rm -rf "$IOC_TARGET"/install  &&
-
-    # Hack the configuration file so that it now points to the standard
-    # locations.  This allows a smooth transition from testing mode to release
-    # mode, but does make the use of CONFIG rather confused.  This is bound to
-    # change soon...
-    sed <"$SOURCE"/install/epics_ioc >/etc/sysconfig/epics_ioc '
-        /^EPICS_BASE=/s:=.*$:="'"$EPICS_TARGET"'":
-        /^LIBERA_IOC=/s:=.*$:="'"$IOC_TARGET"'/runioc":
-        /^IOC_STATE_PATH=/s:=.*$:="'"$STATE_DIR"'":
-    '
+    rm -rf "$IOC_TARGET"/install  
 else
-    # Just place the unmodified configuration file in place.
-    cp "$SOURCE"/install/epics_ioc /etc/sysconfig/epics_ioc
+    # Compute EPICS and IOC paths relative to this directory.  
+    PARENT="$(cd "$SOURCE/.."; pwd)"
+    EPICS_TARGET="$PARENT/epics"
+    IOC_TARGET="$PARENT/ioc"
+    # Check that the parent directory contains the right files!
+    [ "$IOC_TARGET" = "$SOURCE" -a -d "$EPICS_TARGET" ] ||
+        Error "Inconsistent test installation environment"
 fi  &&
+
+# Now install the epics_ioc file.
+(
+    # Add on the paths required for running the IOC
+    echo "EPICS_BASE='$EPICS_TARGET'"
+    echo "LIBERA_IOC='$IOC_TARGET/runioc'"
+    # We want to process three types of lines appropriately:
+    #  1. Lines starting $LOCATION_IOC_... are translated to IOC_...
+    #  2. Lines starting XX_IOC_... are discarded
+    #  3. All other lines are passed through unchanged
+    sed '
+        /^'"$LOCATION"'_\(IOC_.*\)$/ { s//\1/; b; }
+        /^[[:alpha:]][[:alnum:]]_IOC_/ d
+        ' "$SOURCE"/install/epics_ioc
+) > /etc/sysconfig/epics_ioc
 
 # Copy the startup script
 cp -f "$SOURCE"/install/epics /etc/init.d  &&
@@ -128,4 +169,6 @@ else
     rm -f /etc/rc3.d/S900epics /etc/rc6.d/K100epics
 fi
 
-
+if ((STARTNOW)); then
+    /etc/init.d/epics start
+fi

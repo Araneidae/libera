@@ -3,25 +3,24 @@
 
 # Version number of this software: automatically included in build and used
 # to build distribution files.
-VERSION=0.6.0
+VERSION=0.6.1
 
 # This is where installed files will be placed ready for deployment to the
-# Libera IOC.
+# Libera IOC.  The IOC files will be placed in $INSTALL_HOST/ioc and the
+# EPICS run-time files will be placed in $INSTALL_HOST/epics.
 INSTALL_HOST=/mt/libera/nfs/testing
-
-# This identifies where the epics files are searched on the IOC when running
-# a test installation.
-EPICS_TARGET=/mnt/nfs/testing/epics
-
-# This is where the IOC driver files are searched for on the IOC when
-# running a test installation.
-DRIVER_TARGET=/mnt/nfs/testing/ioc
 
 
 # ----------------------------------------------------------------------------
 #
 # The remaining definitions are IOC specific parameters used to configure the
 # running of the IOC.
+#
+# All symbols beginning IOC_ will be written to the IOC configuration file
+# which is stored to /etc/sysconfig/epics_ioc on Libera.
+#
+# All symbols beginning xx_IOC_ (where xx is any two character sequence) are
+# installation location specific.
 
 
 # If this symbol is empty then the IOC will run in a screen: screen must be
@@ -33,12 +32,18 @@ IOC_LOG=/var/log/ioc
 IOC_STATE_PATH=/opt/state
 
 # Length of Booster ramp to be monitored in units of 1024 turn-by-turn
-# samples.
-IOC_BN_LENGTH=190
+# samples.  Different ramp lengths are appropriate in the storage ring and
+# the booster: need to ensure that this length is less than the interval
+# between triggers.
+BO_IOC_BN_LENGTH=190
+SR_IOC_BN_LENGTH=80
 
 # Maximum number of points to be captured in a single long turn-by-turn
 # waveform.  This will consume 32 bytes per point, so don't set it too long!
-IOC_TT_LENGTH=196608
+# A TT buffer of 0.5M samples is a good practical limit: this consumes 16MB
+# of RAM, which we can afford, and gives us 0.5s of storage ring turn-by-turn
+# data, which is ample.
+IOC_TT_LENGTH=524288
 
 # Turn by turn readout window length.
 IOC_TT_WINDOW=16384
