@@ -1,4 +1,5 @@
-Libera EPICS driver version 0.6, for use with Libera drivers version 1.21.
+Libera EPICS driver version 0.6, for use with Libera drivers versions 1.20 and
+1.21.
 
 
 INSTALLATION INSTRUCTIONS
@@ -165,13 +166,21 @@ liberaApp/src if required.
 Preparing Libera for EPICS installation
 =======================================
 
-You will need to obtain the Libera SBC software release, version 1.00, from
-Instrumentations Technologies (www.i-tech.si) and follow the installation
-instructions.  This will ensure that you are running the correct version of
-Libera. 
+You will need to obtain the the appropriate version of the Libera SBC software
+release from Instrumentations Technologies (www.i-tech.si) and follow the
+installation instructions.  
 
-This EPICS driver may misbehave in obscure ways if the wrong version of Libera
-software is installed.
+This EPICS driver may misbehave in obscure ways, or more usually will refuse
+to start, if the wrong version of Libera software is installed.  The following
+table records all versions of the EPICS driver and the appropriate Libera
+driver version to use.
+
+    EPICS Driver (date)         Compatible Libera Drivers
+    -------------------         -------------------------
+    0.6.1 (2006-08-17)          1.20, 1.21
+    0.5   (2006-07-07)          1.00
+    0.4   (2006-03-13)          1.00
+    0.2   (2006-02-06)          0.92
 
 
 

@@ -40,7 +40,7 @@
 #include "hardware.h"
 #include "convert.h"
 #include "waveform.h"
-#include "support.h"
+#include "numeric.h"
 #include "interlock.h"
 
 #include "slowAcquisition.h"

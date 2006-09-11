@@ -2,4 +2,5 @@
 dbLoadDatabase("dbd/ioc.dbd",0,0)
 ioc_registerRecordDeviceDriver(pdbbase)
 dbLoadRecords("db/libera.db", "${LIBERA_MACROS}")
+dbLoadRecords("db/fastFeedback.db", "${LIBERA_MACROS}")
 iocInit()

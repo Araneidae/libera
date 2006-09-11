@@ -26,7 +26,7 @@
  *      michael.abbott@diamond.ac.uk
  */
 
-/* High efficiency support routines:
+/* High efficiency numeric support routines:
  *
  *      CLZ             Counts leading zeros.
  *      MulUU           Scaled multiplication routines
@@ -167,12 +167,6 @@ int to_dB(unsigned int X);
  * there is an offset of 16 on the shift, so the range of possible shift
  * values is 16 to 48. */
 unsigned int from_dB(int X, int &shift);
-
-
-/* A rather randomly placed helper routine.  This and its equivalents are
- * defined all over the place, but there doesn't appear to be a definitive
- * definition anywhere. */
-#define ARRAY_SIZE(a)   (sizeof(a)/sizeof((a)[0]))
 
 
 

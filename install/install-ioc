@@ -72,4 +72,15 @@ done  &&
 grep -E '^([[:alpha:]][[:alnum:]]_)?IOC_[[:alnum:]_]*=' \
     "$SOURCE"/install/CONFIG >>"$TARGET"/install/epics_ioc  &&
 
+# Prepare the list of possible location names for use by libera-install-ioc.
+# The set of location codes is determined by a simple pattern match, and we
+# filter out the unique set of locations.
+#    Locations are used in the CONFIG file to specify different configuration
+# for different locations on the ring.
+sed -n '/^\([[:alpha:]][[:alnum:]]\)_IOC_.*$/{s//\1/;p;}' \
+    "$TARGET"/install/epics_ioc |
+sort |
+uniq >"$TARGET"/install/locations  &&
+
+
 echo IOC installed in "$TARGET". 

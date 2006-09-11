@@ -36,6 +36,8 @@
 # We use the standard print_status and evaluate_retval functions.
 . /etc/init.d/functions
 
+# Sensible defaults
+IOC_LOG="${IOC_LOG:-/var/log/ioc}"
 
 case "$1" in
     start)
@@ -44,14 +46,8 @@ case "$1" in
             echo -n " - already running?"
             print_status failure
         else
-            if [ -z "$IOC_LOG" ]; then
-                # If no IOC log file specified then run in a screen.
-                screen -dmS epics "$LIBERA_IOC"
-            else
-                # If a log file is specified then run as a daemon with all
-                # output sent to this file.
-                "$LIBERA_IOC" -n >>"$IOC_LOG" 2>&1 </dev/null &
-            fi
+            # Run as a daemon with all output sent to log file.
+            "$LIBERA_IOC" -n >>"$IOC_LOG" 2>&1 </dev/null &
             evaluate_retval
         fi
         ;;
@@ -61,8 +57,7 @@ case "$1" in
         [ -e /var/run/ioc.pid ] && kill "$(cat /var/run/ioc.pid)"
         evaluate_retval
 
-        # For the moment, try for a rather more rigorous stop if the kill
-        # above failed.
+        # Try a rather more rigorous stop if the kill above failed.
         sleep 0.5
         [ -e /var/run/ioc.pid ] && kill -9 "$(cat /var/run/ioc.pid)"  &&
         echo >&2 'IOC killed forcibly!'

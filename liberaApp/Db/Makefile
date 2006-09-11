@@ -12,6 +12,8 @@ include $(TOP)/configure/CONFIG
 # databases, templates, substitutions like this
 DB += libera.db
 
+DB += fastFeedback.db
+
 
 #----------------------------------------------------
 # If <anyname>.db template is not named <anyname>*.template add

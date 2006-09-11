@@ -40,7 +40,7 @@
 #include "publish.h"
 #include "hardware.h"
 #include "cordic.h"
-#include "support.h"
+#include "numeric.h"
 #include "interlock.h"
 
 #include "convert.h"

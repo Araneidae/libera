@@ -50,9 +50,10 @@
 #include "publish.h"
 #include "thread.h"
 #include "trigger.h"
-#include "support.h"
 #include "interlock.h"
 #include "sensors.h"
+
+#include "fastFeedback.h"
 
 #include "events.h"
 #include "hardware.h"
@@ -232,6 +233,8 @@ static bool InitialiseLibera()
         /* Slow acquisition returns highly filtered positions at 10Hz. */
         InitialiseSlowAcquisition()  &&
 
+        InitialiseFastFeedback()  &&
+
         /* Background monitoring stuff: fan, temperature, memory, etcetera. */
         InitialiseSensors();
 }
@@ -248,6 +251,9 @@ static void TerminateLibera()
     TerminateSlowAcquisition();
     TerminateHardware();
     TerminatePersistentState();
+    
+    TerminateFastFeedback();
+        
     /* On orderly shutdown remove the pid file if we created it.  Do this
      * last of all. */
     if (PidFileName != NULL)

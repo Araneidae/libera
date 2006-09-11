@@ -28,8 +28,8 @@ CONFORM_CXXFLAGS_STRICT =
 
 PROD_IOC = ioc
 
-# ioc.dbd will be created from iocInclude.dbd
-DBD += ioc.dbd
+
+DBD += ioc.dbd                  # ioc.dbd will be created from iocInclude.dbd
 DBD += libera.dbd
 
 
@@ -51,11 +51,13 @@ ioc_SRCS += cordic.cpp          # Fast computation of sqrt(x*x+y*y)
 ioc_SRCS += convert.cpp         # Configuration parameters and conversions
 ioc_SRCS += hardware.cpp        # CSPI level hardware interface
 ioc_SRCS += events.cpp          # Reception of trigger and other CSPI events
-ioc_SRCS += support.cpp         # Fast arithmetic support
+ioc_SRCS += numeric.cpp         # Fast arithmetic support
 ioc_SRCS += thread.cpp          # Simple support for pthreads
 ioc_SRCS += persistent.cpp      # Persistent configuration settings
 ioc_SRCS += interlock.cpp       # Machine protection interlock
 ioc_SRCS += sensors.cpp         # Machine state sensors
+
+ioc_SRCS += fastFeedback.cpp    # Fast feedback register access
 
 ioc_LIBS += cspi
 ioc_LIBS += $(EPICS_BASE_IOC_LIBS) 
@@ -69,8 +71,8 @@ include $(TOP)/configure/RULES
 #  ADD RULES AFTER THIS LINE
 
 
-# The support module uses a pre-built lookup table.
-support.o: support-lookup.h
+# The numeric module uses a pre-built lookup table.
+numeric.o: numeric-lookup.h
 
 %.h: ../%.py
 	python $< >$@

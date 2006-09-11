@@ -56,7 +56,8 @@
 const char * Concat(
     const char * Prefix, const char * Body, const char * Suffix)
 {
-    char * Result = new char[strlen(Prefix) + strlen(Suffix) + 1];
+    char * Result = new char[
+        strlen(Prefix) + strlen(Body) + strlen(Suffix) + 1];
     strcpy(Result, Prefix);
     strcat(Result, Body);
     strcat(Result, Suffix);

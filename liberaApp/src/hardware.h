@@ -198,7 +198,7 @@ int EventSelector();
  * I/O command fails. */
 #define TEST_IO(var, error, command, args...) \
     ( var = command(args), \
-      var == -1 ? perror(error), false : true )
+      (int) var == -1 ? perror(error), false : true )
 
 /* Much the same as for TEST_IO, but for I/O commands which return 0 on
  * success and an ignorable non-zero code on failure.  No variable needs to be
@@ -209,3 +209,9 @@ int EventSelector();
 /* An even more simplified version of TEST_RC, where the error string is
  * simply the function name. */
 #define TEST_(command, args...)  TEST_RC(#command, command, args)
+
+
+/* A rather randomly placed helper routine.  This and its equivalents are
+ * defined all over the place, but there doesn't appear to be a definitive
+ * definition anywhere. */
+#define ARRAY_SIZE(a)   (sizeof(a)/sizeof((a)[0]))

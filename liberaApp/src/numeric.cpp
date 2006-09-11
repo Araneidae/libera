@@ -26,13 +26,13 @@
  *      michael.abbott@diamond.ac.uk
  */
 
-/* High efficiency support routines. */
+/* High efficiency numeric support routines. */
 
 #include <limits.h>
 
-#include "support.h"
+#include "numeric.h"
 
-#include "support-lookup.h"
+#include "numeric-lookup.h"
 
 
 /* Here we compute 2^61 / X with 22 bits of precision with a table lookup and

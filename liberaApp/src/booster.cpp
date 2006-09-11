@@ -42,7 +42,6 @@
 #include "events.h"
 #include "convert.h"
 #include "waveform.h"
-#include "support.h"
 
 #include "booster.h"
 

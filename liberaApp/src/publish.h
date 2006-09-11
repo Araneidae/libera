@@ -239,6 +239,10 @@ private:
  * be specified. */
 #define NULL_ACTION ((void(*)())NULL)
 
+#define PUBLISH_FUNCTION_OUT(record, Name, Value, Action) \
+    Publish_##record(Name, \
+        * new CONFIGURATION_VALUE<typeof(Value)>(Value, Action))
+
 
 /* Helper routine for concatenating strings. */
 const char * Concat(

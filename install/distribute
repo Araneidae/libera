@@ -40,9 +40,8 @@ cd "$(dirname "$0")/.." &&
 # Python library.  
 make &&
 mkdir install/prebuilt &&
-for f in sensors libera; do
-    sed '/^# \*\*\* Please do not edit/d' db/$f.db >install/prebuilt/$f.db
-done  &&
+sed '/^# \*\*\* Please do not edit/d' db/libera.db \
+    >install/prebuilt/libera.db  &&
 cp liberaApp/src/O.linux-arm/*.h install/prebuilt  &&
 
 # Make sure we now start with a fresh page
