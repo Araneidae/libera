@@ -54,10 +54,10 @@ MB      = KB*KB
 
 def RAW_ADC(length):
     return [
-        Waveform('RAW' + button, length,
-            DESC = 'Raw ADC for channel %s' % button,
+        Waveform('RAW' + channel, length,
+            DESC = 'Raw ADC for channel %s' % channel,
             LOPR = -2048, HOPR = 2047)
-        for button in 'ABCD']
+        for channel in '1234']
 
 def IQ_wf(length):
     return [
@@ -414,6 +414,8 @@ def Sensors():
     
     uptime = aIn('UPTIME', 0, 24*3600*5, 1./3600, 'h', 2,
         DESC = 'Total system up time')
+    epicsup = aIn('EPICSUP', 0, 24*3600*5, 1./3600, 'h', 2,
+        DESC = 'Time since EPICS started')
 
     # Aggregate all the alarm generating records into a single "health"
     # record.  Only the alarm status of this record is meaningful.
@@ -424,7 +426,7 @@ def Sensors():
             ['INP'+c for c in 'ABCDEFGHIJKL'],
             [PP(MS(f)) for f in alarmsensors])))
     
-    allsensors = alarmsensors + [uptime, health]
+    allsensors = alarmsensors + [uptime, epicsup, health]
     
     boolIn('PROCESS', '', '',
         DESC = 'Sensors scan',

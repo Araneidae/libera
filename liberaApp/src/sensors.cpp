@@ -54,10 +54,12 @@ static int MemoryFree;  // Nominal memory free (free + cached - ramfs)
 static int RamfsUsage;  // Number of bytes allocated in ram filesystems
 static int Uptime;      // Machine uptime in seconds
 static int CpuUsage;    // % CPU usage over the last sample interval
+static int EpicsUp;     // EPICS run time in seconds
 
 /* Supporting variables used for CPU calculation. */
 static double LastUptime;
 static double LastIdle;
+static double EpicsStarted;
 
 
 
@@ -247,7 +249,15 @@ static void ProcessUptimeAndIdle()
 
         LastUptime = NewUptime;
         LastIdle = NewIdle;
+        EpicsUp = int(NewUptime - EpicsStarted);
     }
+}
+
+
+static void InitialiseUptime()
+{
+    FILE_PARSER Parser("/proc/uptime");
+    Parser.ReadDouble(EpicsStarted);
 }
 
 
@@ -311,7 +321,7 @@ static void ProcessFreeMemory()
 }
 
 
-static bool ProcessSensors(bool&Value)
+static bool ProcessSensors(bool &Value)
 {
     ProcessUptimeAndIdle();
 
@@ -337,12 +347,15 @@ bool InitialiseSensors()
     Publish_longin("SE:FAN1",   FanSpeed1);
     Publish_longin("SE:FAN2",   FanSpeed2);
 
-    Publish_ai("SE:FREE",   MemoryFree);
-    Publish_ai("SE:RAMFS",  RamfsUsage);
-    Publish_ai("SE:UPTIME", Uptime);
-    Publish_ai("SE:CPU",    CpuUsage);
+    Publish_ai("SE:FREE",    MemoryFree);
+    Publish_ai("SE:RAMFS",   RamfsUsage);
+    Publish_ai("SE:UPTIME",  Uptime);
+    Publish_ai("SE:EPICSUP", EpicsUp);
+    Publish_ai("SE:CPU",     CpuUsage);
 
     PUBLISH_FUNCTION_IN(bi, "SE:PROCESS", ProcessSensors);
+
+    InitialiseUptime();
     
     return true;
 }

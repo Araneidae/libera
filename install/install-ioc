@@ -30,10 +30,10 @@
 # Install a build IOC in the target IOC directory.
 
 SOURCE="$(cd "$(dirname "$0")"/..; pwd)"  &&
+. "$SOURCE"/install/CONFIG  &&
 if (($# > 0)); then
     INSTALL_HOST="$1"
 else
-    . "$SOURCE"/install/CONFIG  &&
     : ${INSTALL_HOST:?Local installation path not defined}
 fi  &&
 [ -d "$INSTALL_HOST" ]  &&
@@ -53,14 +53,22 @@ cp "$SOURCE/bin/linux-arm"/* "$TARGET/bin"  &&
 cp "$SOURCE/dbd"/* "$TARGET/dbd"  &&
 cp "$SOURCE/db"/* "$TARGET/db"  &&
 
-for f in runioc st.cmd; do
-    cp "$SOURCE/install/$f" "$TARGET"
-done  &&
+cp "$SOURCE/install/runioc" "$TARGET"  &&
 
-# Also create installation support files.
+# Preprocess the startup script to ensure that only the appropriate databases
+# are included.  This is a very ad-hoc conditional build process: I'm sure we
+# can do better...
+if [ "$BUILD_FF_SUPPORT" = yes ]; then
+    SED_FF_ACTION=s///  # Keep FF support lines
+else
+    SED_FF_ACTION=d     # Delete FF support lines
+fi  &&
+sed '/^#if FF /'$SED_FF_ACTION'; /^#/d; /^ *$/d' \
+    "$SOURCE/install/st.cmd" >"$TARGET/st.cmd"  &&
+
+# Also create installation support files and place the ioc specific files
+# ready to be deployed on the ioc.
 mkdir -p "$TARGET"/install  &&
-
-# Also place the ioc specific files ready to be deployed on the ioc.
 for f in epics gain.conf libera-install-ioc offsets.conf; do
     cp "$SOURCE"/install/$f "$TARGET"/install
 done  &&

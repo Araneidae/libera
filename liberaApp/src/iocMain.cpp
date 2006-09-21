@@ -73,7 +73,10 @@ static bool RunIocShell = true;
 static sem_t ShutdownSemaphore;
 
 
-/* Configuration settable parameters. */
+/* Configuration settable parameters.
+ *
+ * Note that although defaults have been defined for all of these values, all
+ * of these parameters are normally passed in by the runioc script. */
 
 /* Maximum length of long turn by turn buffer. */
 static int LongTurnByTurnLength = 196608;       // 12 * default window length
@@ -86,6 +89,11 @@ static int DecimatedShortLength = 190;
 /* Synchrotron revolution frequency.  Used for labelling decimated data.
  * This default frequency is the Diamond booster frequency. */
 static float RevolutionFrequency = 1892629.155;
+
+/* Sampling ratio versus bunch frequency.  These are defaults for the Diamond
+ * storage ring. */
+static int Harmonic = 936;
+static int Decimation = 220;
 
 /* Location of the persistent state file. */
 static const char * StateFileName = NULL;
@@ -182,6 +190,8 @@ static void Usage(const char *IocName)
 "       TT      Length of short turn-by-turn buffer\n"
 "       TW      Length of turn-by-turn readout window\n"
 "       DD      Length of /1024 decimated data buffer\n"
+"       HA      Harmonic: number of bunches per revolution\n"
+"       DE      Decimation: number of samples per revolution\n"
 "    -s <state-file>    Read and record persistent state in <state-file>\n"
 "\n"
 "Note: This IOC application should normally be run from within runioc.\n",
@@ -217,7 +227,7 @@ static bool InitialiseLibera()
         /* Initialise interlock settings. */
         InitialiseInterlock()  &&
         /* First turn processing is designed for transfer path operation. */
-        InitialiseFirstTurn()  &&
+        InitialiseFirstTurn(Harmonic, Decimation)  &&
         /* Turn by turn is designed for long waveform capture at revolution
          * clock frequencies. */
         InitialiseTurnByTurn(LongTurnByTurnLength, TurnByTurnWindowLength)  &&
@@ -233,7 +243,10 @@ static bool InitialiseLibera()
         /* Slow acquisition returns highly filtered positions at 10Hz. */
         InitialiseSlowAcquisition()  &&
 
+#ifdef BUILD_FF_SUPPORT
+        /* Initialise the fast feedback interface. */
         InitialiseFastFeedback()  &&
+#endif
 
         /* Background monitoring stuff: fan, temperature, memory, etcetera. */
         InitialiseSensors();
@@ -252,7 +265,9 @@ static void TerminateLibera()
     TerminateHardware();
     TerminatePersistentState();
     
+#ifdef BUILD_FF_SUPPORT
     TerminateFastFeedback();
+#endif
         
     /* On orderly shutdown remove the pid file if we created it.  Do this
      * last of all. */
@@ -302,6 +317,8 @@ static bool ParseConfigInt(char *optarg)
         { "TW", TurnByTurnWindowLength },
         { "FR", FreeRunLength },
         { "BN", DecimatedShortLength },
+        { "HA", Harmonic },
+        { "DE", Decimation },
     };
 
     /* Parse the configuration setting into <key>=<integer>. */

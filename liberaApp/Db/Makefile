@@ -12,7 +12,9 @@ include $(TOP)/configure/CONFIG
 # databases, templates, substitutions like this
 DB += libera.db
 
+ifeq ($(BUILD_FF_SUPPORT),yes)
 DB += fastFeedback.db
+endif
 
 
 #----------------------------------------------------

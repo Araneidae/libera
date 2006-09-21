@@ -147,6 +147,8 @@ public:
 
     /* Capture button values from given IQ waveform. */
     void CaptureCordic(const IQ_WAVEFORMS & Source);
+    /* Special case for naming RAW waveforms. */
+    void PublishRaw(const char * Prefix) const;
 };
 
 class XYQS_WAVEFORMS : public WAVEFORMS<XYQS_ROW>

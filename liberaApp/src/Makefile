@@ -57,7 +57,10 @@ ioc_SRCS += persistent.cpp      # Persistent configuration settings
 ioc_SRCS += interlock.cpp       # Machine protection interlock
 ioc_SRCS += sensors.cpp         # Machine state sensors
 
+ifeq ($(BUILD_FF_SUPPORT),yes)
+USR_CXXFLAGS += -DBUILD_FF_SUPPORT
 ioc_SRCS += fastFeedback.cpp    # Fast feedback register access
+endif
 
 ioc_LIBS += cspi
 ioc_LIBS += $(EPICS_BASE_IOC_LIBS) 

@@ -286,6 +286,15 @@ void WAVEFORMS<ABCD_ROW>::Publish(
     PUBLISH_COLUMN("D", D);
 }
 
+void ABCD_WAVEFORMS::PublishRaw(const char * Prefix) const
+{
+    PREPARE_PUBLISH(Prefix, "RAW");
+    PUBLISH_COLUMN("1", A);
+    PUBLISH_COLUMN("2", B);
+    PUBLISH_COLUMN("3", C);
+    PUBLISH_COLUMN("4", D);
+}
+    
 void ABCD_WAVEFORMS::CaptureCordic(const IQ_WAVEFORMS & Source)
 {
     ActiveLength = Source.CaptureLength(0, CurrentLength);

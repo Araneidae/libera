@@ -84,7 +84,7 @@ static TRIGGER EnableReadback(false);
  * unexpectedly dropping the interlock.
  *    We start operation with holdoff enabled to avoid startup glitches
  * dropping the interlock. */
-#define HOLDOFF_COUNT   2       // 0.2 seconds seems enough
+#define HOLDOFF_COUNT   3       // Seem to need to wait 0.3 seconds?
 static int InterlockHoldoff = HOLDOFF_COUNT;
 
 /* We're going to need to use a mutex, as there are two possible threads

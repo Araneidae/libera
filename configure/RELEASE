@@ -10,6 +10,9 @@
 
 TEMPLATE_TOP=$(EPICS_BASE)/templates/makeBaseApp/top
 
+BUILD_FF_SUPPORT=$(shell \
+    sed -n '/^BUILD_FF_SUPPORT=/{s///;p;}' $(TOP)/install/CONFIG)
+
 # EPICS_BASE usually appears last so other apps can override stuff.
 # This location will need to be configured for each port of this application
 # to an environment other than Diamond, and will need to be updated each time

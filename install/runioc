@@ -61,14 +61,14 @@ IocParameter()
 # Use the ioc home directory as the startup directory.
 cd "$(dirname "$0")"
 
+# Read the libera configuration.  We're interested in FREV, HARMONIC and
+# DECIMATION at present.  Do this early to ensure our own definitions don't
+# get overwritten.
+. /etc/sysconfig/libera
+
 # Pick up the IOC specific configuration parameters together with the
 # location of the EPICS files.
 . /etc/sysconfig/epics_ioc
-
-# Pick up the revolution frequency from the libera configuration file.  Do it
-# this way to avoid picking up the entire file content.  Probably harmless,
-# but reduces the number of things we need to keep track of.
-eval $(grep '^FREV=' /etc/sysconfig/libera)
 
 export EPICS_BASE
 export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$EPICS_BASE/lib"
@@ -122,6 +122,9 @@ IocParameter -cBN= $((IOC_BN_LENGTH))
 IocParameter -cTT= $((IOC_TT_LENGTH))
 IocParameter -cTW= $((IOC_TT_WINDOW))
 IocParameter -cFR= $((IOC_FR_LENGTH))
+# Pass through harmonic and decimation parameters
+IocParameter -cHA= $((HARMONIC))
+IocParameter -cDE= $((DECIMATION))
 
 # Where the IOC should write its pid file
 IocParameter -p "$PIDFILE"

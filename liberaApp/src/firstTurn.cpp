@@ -32,6 +32,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include <math.h>       // Note: only used during initialisation
 
 #include "device.h"
 #include "persistent.h"
@@ -48,8 +49,11 @@
 #include "firstTurn.h"
 
 
-/* Recorded S level at 45dB attenuation and input power 0dBm. */
-#define S_0             2540000
+/* Recorded S level at 45dB attenuation and input power 0dBm.  The ratio
+ * between this value and the corresponding value in slowAcquisition.cpp
+ * determines the scaling between SA and FT current measurements.  This ratio
+ * should be purely a function of the FPGA signal processing chain. */
+#define S_0             321260
 
 
 
@@ -157,12 +161,12 @@ static void CondenseAdcData(
 class FIRST_TURN : I_EVENT
 {
 public:
-    FIRST_TURN() :
+    FIRST_TURN(int Harmonic, int Decimation) :
         PersistentOffset(Offset),
         PersistentLength(Length),
         RawAdc(ADC_LENGTH),
         Adc(ADC_LENGTH/4),
-        ChargeScale(PMFP(40) / (PMFP(S_0) * 117))
+        ChargeScale(PMFP(10) / (PMFP(S_0) * 117))
     {
         /* Sensible defaults for offset and length.  Must be bounded to lie
          * within the waveform.
@@ -174,6 +178,9 @@ public:
          * 34ns. */
         Offset = 5;
         Length = 31;
+
+        InitialiseRotation(Harmonic, Decimation);
+        
         /* Now initialise the persistence of these and initialise the length
          * state accordingly. */
         PersistentOffset.Initialise("FT:OFF");
@@ -181,7 +188,7 @@ public:
         SetLength(Length);
         
         /* Computed button totals and associated button values. */
-        RawAdc.Publish("FT", "RAW");
+        RawAdc.PublishRaw("FT");
         Adc.Publish("FT");
         Publish_ABCD("FT", ABCD);
         Publish_XYQS("FT", XYQS);
@@ -219,12 +226,13 @@ public:
         
         Interlock.Wait();
 
-        /* Read and process the ADC waveform into ABCD values. */
-        ProcessAdcWaveform();
+        /* Read and process the ADC waveform into ABCD values and extract the
+         * raw integrated charge. */
+        int RawCharge = ProcessAdcWaveform();
         /* Convert button values to XYQS values. */
         ABCDtoXYQS(&ABCD, &XYQS, 1);
-        /* Convert S into a charge. */
-        Charge = ComputeScaledCurrent(ChargeScale, XYQS.S);
+        /* Convert raw charge into displayable value in proper units. */
+        Charge = ComputeScaledCurrent(ChargeScale, RawCharge);
 
         /* Finally tell EPICS there's stuff to read. */
         Interlock.Ready();
@@ -232,22 +240,8 @@ public:
 
     
 private:
-    /* Function for computing the total charge (in arbitrary units) coming
-     * into a button. */
-    int Integrate(int Data[ADC_LENGTH/4])
-    {
-        int Total = 0;
-        for (int i = 0; i < Length; i ++)
-            /* Prescale data as we accumulate to ensure we don't overflow.
-             * We know that each data point is <2^30 (see the Capture()
-             * method of ADC_WAVEFORM), and there can be at most 2^8 points,
-             * so scaling by 2^-7 is safe.
-             *    Fortunately there are plenty of spare bits at the bottom of
-             * each sample, so we can afford to spend seven of them here! */
-            Total += Data[Offset + i] >> 7;
-        return Total;
-    }
-
+    FIRST_TURN();
+    
     /* Performs the fairly complex processing required to convert a raw ADC
      * waveform into published waveform and button values.  We perform the
      * following stages of processing:
@@ -263,7 +257,7 @@ private:
      *     write into Adc to be published to EPICS.
      *  6. Extract the integrated ABCD values from the permuted column.
      *  7. Finally compute XYQS. */
-    void ProcessAdcWaveform()
+    int ProcessAdcWaveform()
     {
         ADC_DATA RawData;
         ReadAdcWaveform(RawData);
@@ -275,6 +269,7 @@ private:
         
         /* Now work through each column and condense it, gain correct, and
          * publish it. */
+        int RawCharge = 0;
         for (int i = 0; i < 4; i ++)
         {
             /* One complication here is correcting for the input multiplexor
@@ -289,10 +284,104 @@ private:
             GainCorrect(Channel, Condensed, ADC_LENGTH/4);
             Adc.Write(Field, Condensed, ADC_LENGTH/4);
             
-            /* Also update the appropriate field of the ABCD structure. */
-            use_offset(int, ABCD, Field) = Integrate(Condensed);
+            /* Also update the appropriate field of the ABCD structure.  Note
+             * that we use different algorithms for computing button
+             * intensities and estimating the charge: it turns out that
+             * IntegrateIntensity() is better at position calulations, but
+             * much worse at computing charge (train length and profile has
+             * too much effect). */
+            use_offset(int, ABCD, Field) = IntegrateIntensity(Condensed);
+            /* Finally accumulate an integrated charge. */
+            RawCharge += IntegrateCharge(Extracted[Channel]);
+        }
+        return RawCharge;
+    }
+
+
+    
+    /* Function for computing the total charge (in arbitrary units) coming
+     * into a button.
+     *     The calculation here is similar in spirit to the calculation done in
+     * CondenseAdcData above.  The essential point is that integrating the
+     * frequency shifted waveform will give us a true estimate of the charge in
+     * the bunches which generated the waveform.
+     *     To be accurate we need to shift by the true frequency offset rather
+     * than by 0.25: although the difference is small, it can make a large
+     * difference to the calculated charge. */
+    int IntegrateCharge(const int Data[])
+    {
+        int TotalI = 0;
+        int TotalQ = 0;
+        for (int i = 4*Offset; i < 4*(Offset + Length); i++)
+        {
+            /* Let's do some bit arithmetic.  Each point is sign + 11 bits, we
+             * are accmulating 1024 samples on each of four buttons (that's 12
+             * bits) and the rotations are 30 bits plus sign (well, there's a
+             * boundary condition where the 31st bit gets used, but we don't
+             * need to worry too much about that): that's 53 bits plus sign.
+             * MulSS will discard 32 bits, and as we want the result to fit
+             * into 31 bits plus sign we want an extra 10 bits. */
+            int point = Data[i] << 10;
+            TotalI += MulSS(point, RotateI[i]);
+            TotalQ += MulSS(point, RotateQ[i]);
+        }
+        return CordicMagnitude(TotalI, TotalQ);
+    }
+
+
+    /* The total charge in a train of bunches is directly proportional to the
+     * intensity of the RF line of the sampled waveform.  We compute this as
+     * the sum
+     *              | /                           |
+     *          Q = | | w(t) exp(2 pi i f_0 t) dt |
+     *              | /                           |
+     *
+     * where w_0 is the frequency offset as a fraction of the sample
+     * frequency.  In practice f_0 is very close to 1/4, but the difference
+     * makes a significant difference.  Thus this routine precomputes the
+     * expression exp(2 pi i f_0 t) = cos(w_0 t) + i sin(w_0 t), w_0=2 pi f_0.
+     *
+     * The two arrays (real and imaginary, or I and Q) are scaled by 2^30.
+     *
+     * The parameter Harmonic is the number of bunches in a machine
+     * revolution, while Decimation is the number of samples in a revolution
+     * (936/220 for the Diamond storage ring, 264/62 for the Diamond
+     * booster).  These directly determine f_0. */
+    void InitialiseRotation(int Harmonic, int Decimation)
+    {
+        const double Offset = (double) (Harmonic % Decimation);
+        const double w_0 = 2.0 * M_PI * Offset / Decimation;
+        const double Scaling = (double) (1 << 30);
+        for (int i = 0; i < ADC_LENGTH; i ++)
+        {
+            RotateI[i] = lround(Scaling * cos(i * w_0));
+            RotateQ[i] = lround(Scaling * sin(i * w_0));
         }
     }
+
+
+
+    /* The button intensity is estimated simply by integrating the processed
+     * ADC waveform.  We could use IntegrateCharge() to compute this value,
+     * but that generally results in signifcantly more noise.  On the other
+     * hand, we could integrate power as a proxy for intensity, taking square
+     * roots at the end, but that doesn't gain a that much and is a good deal
+     * more work. */
+    int IntegrateIntensity(const int Data[])
+    {
+        int Total = 0;
+        for (int i = 0; i < Length; i ++)
+            /* Prescale data as we accumulate to ensure we don't overflow.  We
+             * know that each data point is <2^30 (see the Capture() method of
+             * ADC_WAVEFORM), and there can be at most 2^8 points, so scaling
+             * by 2^-7 is safe.
+             *    Fortunately there are plenty of spare bits at the bottom of
+             * each sample, so we can afford to spend seven of them here! */
+            Total += Data[Offset + i] >> 7;
+        return Total;
+    }
+
+
 
     /* Access methods for offset and length. */
     bool SetOffset(int newOffset)
@@ -356,10 +445,10 @@ private:
      *      Q = | I dt = SUM I(S/S_0) Dt
      *          /
      *
-     * where I(S/S_0) = ComputeScaledCurrent(1/S_0, S)
-     * and   Dt = 4 / 117MHz (four samples per accumulated point) then by
-     * taking unit scaling into account we can determine K = ChargeScale.
-     * The operation I(K,S) is bilinear, so we can also write
+     * where I(S/S_0) = ComputeScaledCurrent(1/S_0, S) and Dt = 1 / 117MHz
+     * (sample frequency) then by taking unit scaling into account we can
+     * determine K = ChargeScale.  The operation I(K,S) is bilinear, so we can
+     * also write
      *
      *      Q = I(Dt/S_0, SUM S)
      *  
@@ -367,27 +456,32 @@ private:
      * 10^-15 Coulombs (so giving a full scale range of 2 microculombs).
      * Thus we have:
      *
-     *            15    -8   (    4       1        )
+     *            15    -8   (    1       1        )
      *      Q = 10  * 10  * I(--------- * --, SUM S)
      *                       (        6   S        )
      *                       (117 * 10     0       )
      * and thus
      *
-     *      K = 40 / (117 * S_0)
+     *      K = 10 / (117 * S_0)
      *      
      * and we can compute
      *
      *      Q = I(K, SUM S)
      */
     const PMFP ChargeScale;
+
+    /* Precomputed rotation vector (I & Q components) for frequency shifting
+     * sampled waveform for charge computation. */
+    int RotateI[ADC_LENGTH];
+    int RotateQ[ADC_LENGTH];
 };
 
 
 
 static FIRST_TURN * FirstTurn = NULL;
 
-bool InitialiseFirstTurn()
+bool InitialiseFirstTurn(int Harmonic, int Decimation)
 {
-    FirstTurn = new FIRST_TURN();
+    FirstTurn = new FIRST_TURN(Harmonic, Decimation);
     return true;
 }

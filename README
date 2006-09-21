@@ -80,6 +80,10 @@ where:
     <record> is the remainder of the record name as specified below.
 
 In the list of records below we use a number of abbreviations:
+    <channel>
+        Refers to four channel number 1, 2, 3, 4 corresponding to four input
+        RF processing channels.  The correspondence between channel and
+        buttons depends on the multiplexor switch setting.
     <iq>
         refers to eight names AI, AQ, BI, BQ, CI, CQ, DI, CQ referring to
         button values in quadrature (typically at turn-by-turn rate).
@@ -101,9 +105,13 @@ The following EPICS records provided by this driver will be of interest:
 First Turn (<group> = FT):
 ==========================
 
+    RAW<channel>
+        Unprocessed ADC readings, one per input channel: 1024 points at
+        approximately 8.5ns sample intervals.  The permutation between channel
+        and button depends on the switch position.
     WF<buttons>
-        256 point arrays at approximately 32ns sampling interval, updated on
-        trigger
+        256 point arrays at approximately 34ns sampling interval, updated on
+        trigger.
     <buttons>
         Button values integrated within the window specified by OFF and LEN.
     <positions>

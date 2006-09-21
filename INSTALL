@@ -132,6 +132,11 @@ line, but the Libera driver will only use the linux-arm target.
     $ $LIBERA_EPICS/install/install-epics
 
 
+Note that the EPICS build has library and header file dependencies including
+readline and curses: these may need to be resolved before the build above is
+successful.
+
+
 
 Building the Libera EPICS driver
 ================================
