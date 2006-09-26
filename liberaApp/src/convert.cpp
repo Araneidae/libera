@@ -32,6 +32,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
+#include <sys/mman.h>
+#include <sys/reboot.h>
+#include <fcntl.h>
+#include <signal.h>
+#include <errno.h>
+#include <limits.h>
 
 #include <dbFldTypes.h>
 
@@ -88,13 +98,27 @@ static int ManualSwitch = 3;
 /* Selected attenuation.  The default is quite high for safety. */
 static int CurrentAttenuation = 60;
 
+/* Sample clock detune state: we toggle the frequency offset of the sample
+ * clock between two modes, tuned and detuned.
+ *    This is a temporary hack until the detune is built in. */
+static int DetuneFactor = 400;
+enum LMTD_STATE
+{
+    LMTD_TUNED = 0,
+    LMTD_DETUNED = 1,
+    LMTD_DOUBLE_DETUNE = 2
+};
+static int DetuneState = LMTD_TUNED;
+
+static bool Dummy;
+
 
 /* Current scaling factor.  This is used to program the nominal beam current
  * for an input power of 0dBm, or equivalently, the beam current
  * corresponding to a button current of 4.5mA.
  *    This is recorded in units of 10nA, giving a maximum 0dBm current of
  * 20A. */
-int CurrentScale = 100000000;
+static int CurrentScale = 100000000;
 
 
 /* Rescales value by gain factor making use of the GAIN_OFFSET defined above.
@@ -384,21 +408,41 @@ static void UpdateCurrentScale()
 }
 
 
-static void UpdateAttenuation(int NewAttenuation)
+void DelayedUpdateAttenuation()
 {
-    /* Mask out the interlocks while we change attenuation.
-     * It's quite important here that we mask out interlocks before *any*
-     * part of the new attenuation value is written.  In particular, the slow
-     * acquisition reads the current attenuation and uses this to communicate
-     * with the interlock layer: this should also be prevented from having an
-     * unexpected effect. */
-    TemporaryMaskInterlock();
-    CurrentAttenuation = NewAttenuation;
     WriteAttenuation(CurrentAttenuation);
 
     /* Update the scaling factors. */
     AttenuatorScalingFactor = PMFP(from_dB, ReadCorrectedAttenuation() - A_0);
     UpdateCurrentScale();
+}
+
+
+static void UpdateAttenuation(int NewAttenuation)
+{
+    /* Mask out the interlocks while we change attenuation.
+     * 
+     * It's quite important here that we mask out interlocks before *any*
+     * part of the new attenuation value is written: there are two parts of
+     * the system that are affected by this:
+     *
+     * 1. Changing the attenuators will cause a glitch in position: this can
+     *    cause the interlock to be dropped if we don't mask it out first.
+     *
+     * 2. Changing the attenuators will cause a glitch in the observed
+     *    current: this can cause the interlocks to be enabled unexpectedly
+     *    (and thus dropped).
+     *
+     * Thus changing attenuators is done in close cooperation with the
+     * interlock layer. */
+//    TemporaryMaskInterlock();
+    CurrentAttenuation = NewAttenuation;
+    InterlockedUpdateAttenuation();
+//     WriteAttenuation(CurrentAttenuation);
+// 
+//     /* Update the scaling factors. */
+//     AttenuatorScalingFactor = PMFP(from_dB, ReadCorrectedAttenuation() - A_0);
+//     UpdateCurrentScale();
 }
 
 
@@ -408,6 +452,101 @@ int ComputeScaledCurrent(const PMFP & IntensityScale, int Intensity)
     return Denormalise(IntensityScale * ScaledCurrentFactor * Intensity);
 }
 
+
+
+/* Switches the LMTD between two states.
+ *
+ * This implementation is a bit involved, as we need to kill and restart the
+ * LMTD process each time the setting changes. */
+
+static void UpdateLmtdState()
+{
+    const char * PidFilename = "/var/run/lmtd.pid";
+    /* If the lmtd.pid file is missing then we have a problem.  Unfortunately
+     * I don't see what to do about it.
+     *    One possible reason for no lmtd.pid file is that the lmtd process
+     * hasn't finished starting yet.  To ensure this isn't the problem we
+     * give it a while to appear. */
+    struct stat StatBuf;
+    if (stat(PidFilename, &StatBuf) == -1  &&  (sleep(2), true)  &&
+        stat(PidFilename, &StatBuf) == -1)
+        /* Damn: there's still no .pid file, even after waiting.  Can't do
+         * anything more, unfortunately. */
+        printf("Can't find %s\n", PidFilename);
+    else
+    {
+        FILE * PidFile = fopen(PidFilename, "r");
+        if (PidFile == NULL)
+            perror("Error opening lmtd pid file");
+        else
+        {
+            pid_t LmtdPid;
+            if (fscanf(PidFile, "%d", &LmtdPid) != 1)
+                perror("Malformed lmtd pid file");
+            else
+            {
+                /* Now kill the old lmtd and wait for it to finish.  Note that
+                 * this will hang if something goes wrong... */
+                if (TEST_(kill, LmtdPid, SIGTERM))
+                {
+                    int rc = waitpid(LmtdPid, NULL, 0);
+                    if (rc == -1  &&  errno != ECHILD)
+                        perror("Error waiting for lmtd to finish");
+                }
+            }
+            fclose(PidFile);
+        }
+    }
+
+    /* Now, whatever happened above, fire up a new lmtd. */
+    pid_t NewPid = fork();
+    if (NewPid == -1)
+        perror("Unable to fork");
+    else if (NewPid == 0)
+    {
+        /* Restore default signal handling. */
+        for (int i = 0; i < 32; i ++)
+            signal(i, SIG_DFL);
+        sigset_t sigset;
+        TEST_(sigfillset, &sigset);
+        TEST_(sigprocmask, SIG_UNBLOCK, &sigset, NULL);
+
+        /* Close all the open file handles.  The new lmtd gets into trouble
+         * if we don't do this. */
+        for (int i = 0; i < sysconf(_SC_OPEN_MAX); i ++)
+            close(i);
+
+        /* Finally we can actually exec the new process... */
+        char Offset[20];
+        sprintf(Offset, "-f%d", DetuneState == LMTD_TUNED ? 0 : DetuneFactor);
+        execl("/opt/bin/lmtd", "/opt/bin/lmtd",
+            "-p53382", "-d220", Offset, NULL);
+        perror("Unexpected return from execl");
+    }
+
+    /* Finally sort out the double detune. */
+    int DevMem = open("/dev/mem", O_RDWR | O_SYNC);
+    char * Page = (char *) mmap(0, 0x1000, PROT_READ | PROT_WRITE, MAP_SHARED,
+        DevMem, 0x14014000);
+    int * Register = (int *) (Page + 4);
+
+    if (DetuneState == LMTD_DOUBLE_DETUNE)
+        /* Correct intermediate NC oscillator for detune. */
+        *Register = 0x4129E413 - int(1556.6 * DetuneFactor);  // .85?
+    else
+        /* Operate intermediate oscillator at default frequency. */
+        *Register = 0x4129E413;
+        
+    munmap(Page, 0x1000);
+    close(DevMem);
+}
+
+
+void DoReboot()
+{
+    if (fork() == 0)
+        execl("/sbin/halt", "/sbin/reboot", NULL);
+}
 
 
 #define PUBLISH_CALIBRATION(Name, Value) \
@@ -443,13 +582,18 @@ bool InitialiseConvert()
         ManualSwitch, UpdateManualSwitch);
     PUBLISH_CONFIGURATION("CF:ATTEN", longout,
         CurrentAttenuation, UpdateAttenuation);
-    PUBLISH_CONFIGURATION("CF:ISCALE", ao,
-        CurrentScale, UpdateCurrentScale);
+    PUBLISH_CONFIGURATION("CF:ISCALE", ao, CurrentScale, UpdateCurrentScale);
+
+    PUBLISH_CONFIGURATION("CF:LMTD", mbbo, DetuneState, UpdateLmtdState);
+    PUBLISH_CONFIGURATION("CF:DETUNE", longout, DetuneFactor, UpdateLmtdState);
+
+    PUBLISH_FUNCTION_OUT(bo, "CF:REBOOT", Dummy, DoReboot);
 
     /* Write the initial state to the hardware. */
     WriteAgcMode(CSPI_AGC_MANUAL);
-    UpdateAttenuation(CurrentAttenuation);
+//    UpdateAttenuation(CurrentAttenuation);
     UpdateAutoSwitch();
+    UpdateLmtdState();
 
     return true;
 }

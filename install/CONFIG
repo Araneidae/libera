@@ -3,7 +3,7 @@
 
 # Version number of this software: automatically included in build and used
 # to build distribution files.
-VERSION=0.6.1-dev
+VERSION=0.6.2
 
 # This is where installed files will be placed ready for deployment to the
 # Libera IOC.  The IOC files will be placed in $INSTALL_HOST/ioc and the
@@ -11,7 +11,7 @@ VERSION=0.6.1-dev
 INSTALL_HOST=/mt/libera/nfs/testing
 
 # Set this to yes to enable fast feedback support, any other value to disable.
-BUILD_FF_SUPPORT=yes
+BUILD_FF_SUPPORT=no
 
 
 # ----------------------------------------------------------------------------

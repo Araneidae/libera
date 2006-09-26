@@ -44,6 +44,7 @@
 #include "thread.h"
 #include "trigger.h"
 #include "events.h"
+#include "convert.h"
 
 #include "interlock.h"
 
@@ -84,7 +85,9 @@ static TRIGGER EnableReadback(false);
  * unexpectedly dropping the interlock.
  *    We start operation with holdoff enabled to avoid startup glitches
  * dropping the interlock. */
-#define HOLDOFF_COUNT   3       // Seem to need to wait 0.3 seconds?
+#define HOLDOFF_COUNT   4       // Seem to need to wait up to 0.4 seconds?!
+/* When the holdoff count drops to this point we write the interlock state. */
+#define HOLDOFF_ACTION  (HOLDOFF_COUNT-2)
 static int InterlockHoldoff = HOLDOFF_COUNT;
 
 /* We're going to need to use a mutex, as there are two possible threads
@@ -178,7 +181,13 @@ void NotifyInterlockCurrent(int Current)
          * holdoff period. */
         InterlockHoldoff -= 1;
         if (InterlockHoldoff == 0)
+            /* When the interlock has finally expired update the interlock
+             * state. */
             WriteInterlockState();
+        else if (InterlockHoldoff == HOLDOFF_ACTION)
+            /* At the appropriate point in the interlock holdoff interval
+             * update the attenuators. */
+            DelayedUpdateAttenuation();
     }
     else
     {
@@ -201,12 +210,24 @@ void NotifyInterlockCurrent(int Current)
  * temporarily disable interlocking to prevent the position glitch (which
  * follows from setting the interlock) from dropping the interlock. */
 
-void TemporaryMaskInterlock()
+void InterlockedUpdateAttenuation()
+//void TemporaryMaskInterlock()
 {
     Lock();
-    InterlockHoldoff = HOLDOFF_COUNT;
+
+    /* If the interlock is currently completely disabled then we can update
+     * the attenuators immediately: we don't care what happens.  Otherwise
+     * we'll need to hang on a bit... */
+    if (MasterInterlockEnable  ||  OverflowEnable)
+    {
+        /* Need to be clever: start the state machine running. */
+        InterlockHoldoff = HOLDOFF_COUNT;
+        WriteInterlockState();
+    }
+    else
+        /* Easy case: do the update right now! */
+        DelayedUpdateAttenuation();
     
-    WriteInterlockState();
     Unlock();
 }
 

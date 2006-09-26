@@ -62,7 +62,9 @@ BUILD_TARGET=/mt/libera/nfs/Libera
 
 cd "$(dirname "$0")/.."
 
-DISTRIBUTION="${2?Specify distribution target directory}"
+# If an external distribution is to be made, this should be the second
+# argument.
+DISTRIBUTION="$2"
 
 
 # First check that we're publishing the version we expect.
@@ -97,7 +99,9 @@ make  ||
 ./install/install-ioc "$BUILD_TARGET/$VERSION"  &&
 
 # Finally prepare the release
-./install/distribute "$DISTRIBUTION"  &&
+if [ -n "$DISTRIBUTION" ]; then
+    ./install/distribute "$DISTRIBUTION"
+fi  &&
 
 # Finally tidy away the temporary directory
 cd /tmp  &&

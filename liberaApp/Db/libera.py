@@ -313,15 +313,20 @@ def Config():
     boolOut('AUTOSW', 'Fixed', 'Automatic',
         DESC = 'Configure rotating switches')
     # Select switch to use when automatic switching off
-    longOut('SETSW', 0, 15,
-        DESC = 'Fixed multiplexor switch')
+    longOut('SETSW', 0, 15, DESC = 'Fixed multiplexor switch')
     # Control attenuation
-    longOut('ATTEN', 0, 62, EGU = 'dB',
-        DESC = 'Attenuator setting')
+    longOut('ATTEN', 0, 62, EGU = 'dB', DESC = 'Attenuator setting')
+
+    # Control LMTD configuration: either tuned or detuned
+    mbbOut('LMTD', ('Tuned', 0), ('Detuned', 1), ('Double Detune', 2),
+        DESC = 'Sample clock detune')
+    longOut('DETUNE', 0, 1000, DESC = 'LMTD detune factor')
 
     aOut('ISCALE', 0, 20000, 
         DESC = 'Input current at 0dBm power',
         EGU  = 'mA', ESLO = 1e-5, PREC = 1)
+
+    boolOut('REBOOT', 'Reboot', None, DESC = 'Reboot Libera')
 
     UnsetChannelName()
 

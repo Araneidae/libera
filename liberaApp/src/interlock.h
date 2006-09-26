@@ -34,4 +34,5 @@ bool InitialiseInterlock();
 void NotifyInterlockCurrent(int Current);
 
 /* Called when attenuators are changed to temporarily mask out interlocks. */
-void TemporaryMaskInterlock();
+//void TemporaryMaskInterlock();
+void InterlockedUpdateAttenuation();
