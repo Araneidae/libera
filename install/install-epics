@@ -36,7 +36,6 @@ else
     . "$SOURCE"/install/CONFIG  &&
     : ${INSTALL_HOST:?Local installation path not defined}
 fi  &&
-[ -d "$INSTALL_HOST" ]  &&
 
 # Figure out where Epics base is from the epics directory.
 EPICS_BASE="$(

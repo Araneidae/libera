@@ -55,9 +55,6 @@
 #define FF_BASE_ADDRESS         0x1402A000
 #define FF_CONTROL_ADDRESS      0x14029FFC
 
-#define PAGE_SIZE               0x1000
-#define PAGE_MASK               (-PAGE_SIZE)
-
 
 struct FF_CONFIG_SPACE
 {
@@ -122,22 +119,24 @@ static bool Ignored = false;
 
 static bool MapFastFeedbackMemory()
 {
+    const int PageSize = getpagesize();         // 0x1000
+    const int PageMask = PageSize - 1;          // 0x0FFF
     bool Ok = 
         TEST_IO(DevMem, "Opening /dev/mem",
             open, "/dev/mem", O_RDWR | O_SYNC)  &&
         TEST_IO(FF_AddressSpace, "Mapping memory",
             mmap, 0, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED,
-            DevMem, FF_BASE_ADDRESS)  &&
+            DevMem, FF_BASE_ADDRESS & ~PageMask)  &&
         TEST_IO(FF_ControlSpace, "Mapping memory",
             mmap, 0, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED,
-            DevMem, FF_CONTROL_ADDRESS & PAGE_MASK);
+            DevMem, FF_CONTROL_ADDRESS & ~PageMask);
     if (Ok)
     {
-        ConfigSpace = (FF_CONFIG_SPACE *) FF_AddressSpace;
-        StatusSpace = (FF_STATUS_SPACE *) ((char *) FF_AddressSpace + 0x200);
+        ConfigSpace = (FF_CONFIG_SPACE *)
+            ((char *) FF_AddressSpace + (FF_BASE_ADDRESS & PageMask));
+        StatusSpace = (FF_STATUS_SPACE *) ((char *) ConfigSpace + 0x200);
         ControlRegister = (volatile int *)
-            (((char *) FF_ControlSpace +
-                (FF_CONTROL_ADDRESS & (PAGE_SIZE-1))));
+            ((char *) FF_ControlSpace + (FF_CONTROL_ADDRESS & PageMask));
     }
         
     return Ok;
@@ -268,10 +267,11 @@ bool InitialiseFastFeedback()
 
 void TerminateFastFeedback()
 {
+    const int PageSize = getpagesize();
     if (ConfigSpace != NULL)
-        TEST_(munmap, FF_AddressSpace, PAGE_SIZE);
+        TEST_(munmap, FF_AddressSpace, PageSize);
     if (StatusSpace != NULL)
-        TEST_(munmap, FF_ControlSpace, PAGE_SIZE);
+        TEST_(munmap, FF_ControlSpace, PageSize);
     if (DevMem != -1)
         close(DevMem);
 }

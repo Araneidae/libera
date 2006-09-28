@@ -61,9 +61,9 @@ IocParameter()
 # Use the ioc home directory as the startup directory.
 cd "$(dirname "$0")"
 
-# Read the libera configuration.  We're interested in FREV, HARMONIC and
-# DECIMATION at present.  Do this early to ensure our own definitions don't
-# get overwritten.
+# Read the libera configuration.  We're interested in FREV, HARMONIC,
+# DECIMATION and MCPRESC at present.  Do this early to ensure our own
+# definitions don't get overwritten.
 . /etc/sysconfig/libera
 
 # Pick up the IOC specific configuration parameters together with the
@@ -122,9 +122,10 @@ IocParameter -cBN= $((IOC_BN_LENGTH))
 IocParameter -cTT= $((IOC_TT_LENGTH))
 IocParameter -cTW= $((IOC_TT_WINDOW))
 IocParameter -cFR= $((IOC_FR_LENGTH))
-# Pass through harmonic and decimation parameters
+# Pass through fundamental ring parameters
 IocParameter -cHA= $((HARMONIC))
 IocParameter -cDE= $((DECIMATION))
+IocParameter -cLP= $((MCPRESC))
 
 # Where the IOC should write its pid file
 IocParameter -p "$PIDFILE"

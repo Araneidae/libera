@@ -30,9 +30,15 @@
 /* Interlock management initialisation. */
 bool InitialiseInterlock();
 
-/* Called by slow acquisition to notify current level. */
+/* Called by slow acquisition at approximately 10Hz to notify current level.
+ * This is also used as a clock tick to advance the interlock holdoff state
+ * machine. */
 void NotifyInterlockCurrent(int Current);
 
-/* Called when attenuators are changed to temporarily mask out interlocks. */
-//void TemporaryMaskInterlock();
-void InterlockedUpdateAttenuation();
+/* Updating the attenuators is a slightly tricky business.  We need to
+ * synchronise with the interlocks, and indeed do some carefully timed
+ * waiting about, to ensure that the interlock isn't dropped as a result of a
+ * measured position or current glitch caused by the attenuator change.
+ *    Thus this routine acts as a request to call the true
+ * UpdateAttenuation() routine at a later convenient time. */
+void InterlockedUpdateAttenuation(int NewAttenuation);

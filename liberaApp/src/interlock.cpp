@@ -79,16 +79,39 @@ static int OverflowTime = 5;
 static bool MasterInterlockEnable = false;
 static TRIGGER EnableReadback(false);
 
-/* This is used to temporarily disable interlocks: while this holdoff count
- * is greater than zero, interlock checking is disabled.  This is used to
- * prevent position and current glitches during attenuator changes from
- * unexpectedly dropping the interlock.
- *    We start operation with holdoff enabled to avoid startup glitches
- * dropping the interlock. */
-#define HOLDOFF_COUNT   4       // Seem to need to wait up to 0.4 seconds?!
-/* When the holdoff count drops to this point we write the interlock state. */
-#define HOLDOFF_ACTION  (HOLDOFF_COUNT-2)
-static int InterlockHoldoff = HOLDOFF_COUNT;
+
+/* The interlock holdoff mechanism is required to ensure that when we change
+ * the attenuators we don't also affect the state of the interlock: in
+ * particular, we need to take care not to drop the interlock!
+ *
+ * It's quite important here that we mask out interlocks before *any* part of
+ * the new attenuation value is written: there are two parts of the system
+ * that are affected by this:
+ *
+ * 1. Changing the attenuators will cause a glitch in position: this can
+ *    cause the interlock to be dropped if we don't mask it out first.
+ *
+ * 2. Changing the attenuators will cause a glitch in the observed
+ *    current: this can cause the interlocks to be enabled unexpectedly
+ *    (and thus dropped).
+ *
+ * This is managed by means of the InterlockHoldoff count which is used to
+ * disable interlocks while attenuators are changed.
+ *
+ * At present the strategies are rather experimental.  The code is structured
+ * to allow a delay between disabling the interlock and updating the
+ * attenuators, but this is probably not necessary.  On the other hand, the
+ * delay before the interlock is updated again is more of a problem.
+ *
+ * We currently support two holdoff delays, one for use when there is no
+ * interlock used to guard the current, and a different delay for use when
+ * interlock is enabled.  This second delay is currently programmable. */
+
+static const int CurrentHoldoffCount = 3;       // 300ms seems ample for this
+static int InterlockHoldoffCount = 3;           // Not so clear what's suitable
+
+static int InterlockHoldoff = 3;
+
 
 /* We're going to need to use a mutex, as there are two possible threads
  * coming through here and interactions between them need to be guarded.  One
@@ -184,10 +207,6 @@ void NotifyInterlockCurrent(int Current)
             /* When the interlock has finally expired update the interlock
              * state. */
             WriteInterlockState();
-        else if (InterlockHoldoff == HOLDOFF_ACTION)
-            /* At the appropriate point in the interlock holdoff interval
-             * update the attenuators. */
-            DelayedUpdateAttenuation();
     }
     else
     {
@@ -210,25 +229,27 @@ void NotifyInterlockCurrent(int Current)
  * temporarily disable interlocking to prevent the position glitch (which
  * follows from setting the interlock) from dropping the interlock. */
 
-void InterlockedUpdateAttenuation()
-//void TemporaryMaskInterlock()
+void InterlockedUpdateAttenuation(int NewAttenuation)
 {
     Lock();
 
-    /* If the interlock is currently completely disabled then we can update
-     * the attenuators immediately: we don't care what happens.  Otherwise
-     * we'll need to hang on a bit... */
+    /* Figure out which holdoff we need. */
     if (MasterInterlockEnable  ||  OverflowEnable)
     {
-        /* Need to be clever: start the state machine running. */
-        InterlockHoldoff = HOLDOFF_COUNT;
+        /* Interlock is currently (potentially) enabled.  Disable it while we
+         * perform the update. */
+        InterlockHoldoff = InterlockHoldoffCount;
         WriteInterlockState();
     }
     else
-        /* Easy case: do the update right now! */
-        DelayedUpdateAttenuation();
+        /* Interlock is not currently enabled, so all we need to watch out
+         * for is the current spike. */
+        InterlockHoldoff = CurrentHoldoffCount;
     
     Unlock();
+
+    /* The interlock is now off, so just update the attenuators now. */
+    UpdateAttenuation(NewAttenuation);
 }
 
 
@@ -292,6 +313,9 @@ bool InitialiseInterlock()
     /* The interlock enable is dynamic state. */
     Publish_bo("IL:ENABLE",    *new INTERLOCK_ENABLE);
     Publish_bi("IL:ENABLE_RB", EnableReadback);
+
+    PUBLISH_CONFIGURATION("IL:HOLDOFF", longout,
+        InterlockHoldoffCount, NULL_ACTION);
     
     new INTERLOCK_EVENT("IL:TRIG");
     
@@ -299,4 +323,3 @@ bool InitialiseInterlock()
 
     return true;
 }
-

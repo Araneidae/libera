@@ -295,7 +295,7 @@ void GainCorrect(int Channel, int *Column, int Count)
 
 /****************************************************************************/
 /*                                                                          */
-/*                  Switches and Miscellaneous Settings                     */
+/*                         Switches and Calibration                         */
 /*                                                                          */
 /****************************************************************************/
 
@@ -339,7 +339,7 @@ static void UpdateManualSwitch()
 
 /****************************************************************************/
 /*                                                                          */
-/*                    Attenuation and Switch Management                     */
+/*                          Attenuation Management                          */
 /*                                                                          */
 /****************************************************************************/
 
@@ -408,44 +408,21 @@ static void UpdateCurrentScale()
 }
 
 
-void DelayedUpdateAttenuation()
-{
-    WriteAttenuation(CurrentAttenuation);
+/* Updates the attenuators and the associated current scaling factors. */
 
+void UpdateAttenuation(int NewAttenuation)
+{
+    CurrentAttenuation = NewAttenuation;
+    WriteAttenuation(CurrentAttenuation);
     /* Update the scaling factors. */
     AttenuatorScalingFactor = PMFP(from_dB, ReadCorrectedAttenuation() - A_0);
     UpdateCurrentScale();
 }
 
 
-static void UpdateAttenuation(int NewAttenuation)
-{
-    /* Mask out the interlocks while we change attenuation.
-     * 
-     * It's quite important here that we mask out interlocks before *any*
-     * part of the new attenuation value is written: there are two parts of
-     * the system that are affected by this:
-     *
-     * 1. Changing the attenuators will cause a glitch in position: this can
-     *    cause the interlock to be dropped if we don't mask it out first.
-     *
-     * 2. Changing the attenuators will cause a glitch in the observed
-     *    current: this can cause the interlocks to be enabled unexpectedly
-     *    (and thus dropped).
-     *
-     * Thus changing attenuators is done in close cooperation with the
-     * interlock layer. */
-//    TemporaryMaskInterlock();
-    CurrentAttenuation = NewAttenuation;
-    InterlockedUpdateAttenuation();
-//     WriteAttenuation(CurrentAttenuation);
-// 
-//     /* Update the scaling factors. */
-//     AttenuatorScalingFactor = PMFP(from_dB, ReadCorrectedAttenuation() - A_0);
-//     UpdateCurrentScale();
-}
 
-
+/* Converts a raw current (or charge) intensity value into a scaled current
+ * value. */
 
 int ComputeScaledCurrent(const PMFP & IntensityScale, int Intensity)
 {
@@ -454,12 +431,25 @@ int ComputeScaledCurrent(const PMFP & IntensityScale, int Intensity)
 
 
 
-/* Switches the LMTD between two states.
- *
- * This implementation is a bit involved, as we need to kill and restart the
- * LMTD process each time the setting changes. */
+/*****************************************************************************/
+/*                                                                           */
+/*                             Tuning Management                             */
+/*                                                                           */
+/*****************************************************************************/
 
-static void UpdateLmtdState()
+/* The following magic numbers are required for controlling the LMTD and
+ * computing the intermediate frequency scaler. */
+
+static int LmtdPrescale;
+static int SamplesPerTurn;
+static int BunchesPerTurn;
+
+
+
+/* This routine makes a best effort to kill any running LMTD process.  Apart
+ * from logging, we carry on regardless even if this fails! */
+
+static void KillLmtd()
 {
     const char * PidFilename = "/var/run/lmtd.pid";
     /* If the lmtd.pid file is missing then we have a problem.  Unfortunately
@@ -497,55 +487,158 @@ static void UpdateLmtdState()
             fclose(PidFile);
         }
     }
+}
 
-    /* Now, whatever happened above, fire up a new lmtd. */
-    pid_t NewPid = fork();
-    if (NewPid == -1)
+
+/* Fairly generic routine to start a new detached process in a clean
+ * environment. */
+
+void DetachProcess(const char *Process, char *const argv[])
+{
+    /* We fork twice to avoid leaving "zombie" processes behind.  These are
+     * harmless enough, but annoying.  The double-fork is a simple enough
+     * trick. */
+    pid_t MiddlePid = fork();
+    if (MiddlePid == -1)
         perror("Unable to fork");
-    else if (NewPid == 0)
+    else if (MiddlePid == 0)
     {
-        /* Restore default signal handling. */
-        for (int i = 0; i < 32; i ++)
-            signal(i, SIG_DFL);
-        sigset_t sigset;
-        TEST_(sigfillset, &sigset);
-        TEST_(sigprocmask, SIG_UNBLOCK, &sigset, NULL);
+        pid_t NewPid = fork();
+        if (NewPid == -1)
+            perror("Unable to fork");
+        else if (NewPid == 0)
+        {
+            /* This is the new doubly forked process.  We still need to make
+             * an effort to clean up the environment before letting the new
+             * image have it. */
 
-        /* Close all the open file handles.  The new lmtd gets into trouble
-         * if we don't do this. */
-        for (int i = 0; i < sysconf(_SC_OPEN_MAX); i ++)
-            close(i);
+            /* Ensure the new process has a clean environment. */
+            clearenv();
 
-        /* Finally we can actually exec the new process... */
-        char Offset[20];
-        sprintf(Offset, "-f%d", DetuneState == LMTD_TUNED ? 0 : DetuneFactor);
-        execl("/opt/bin/lmtd", "/opt/bin/lmtd",
-            "-p53382", "-d220", Offset, NULL);
-        perror("Unexpected return from execl");
+            /* Set a sensible home directory. */
+            TEST_(chdir, "/");
+
+            /* Restore default signal handling.  I'd like to hope this step
+             * isn't needed, particularly as I'm not sure about this "32". */
+            for (int i = 0; i < 32; i ++)
+                signal(i, SIG_DFL);
+
+            /* Enable all signals. */
+            sigset_t sigset;
+            TEST_(sigfillset, &sigset);
+            TEST_(sigprocmask, SIG_UNBLOCK, &sigset, NULL);
+
+            /* Close all the open file handles.  The new lmtd gets into trouble
+             * if we don't do this. */
+            for (int i = 0; i < sysconf(_SC_OPEN_MAX); i ++)
+                close(i);
+
+            /* Finally we can actually exec the new process... */
+            TEST_(execv, Process, argv);
+        }
+        else
+            /* The middle process simply exits without further ceremony.  The
+             * idea here is that this orphans the new process, which means
+             * that the parent process doesn't have to wait() for it, and so
+             * it won't generate a zombie when it exits. */
+            _exit(0);
     }
+    else
+        /* Wait for the middle process to finish. */
+        if (waitpid(MiddlePid, NULL, 0) == -1)
+            perror("Error waiting for middle process");
+}
 
-    /* Finally sort out the double detune. */
+
+/* The phase advance per sample for the intermediate frequency generator is
+ * controlled by writing to register 0x14014004.  The phase advance is in
+ * units of 2^32*f_if/f_s, where f_if is the intermediate frequency and f_s
+ * is the sample clock frequency. 
+ *     If we write P=prescale, D=decimation, H=bunches per turn and F=detune
+ * then the detuned sample frequency is
+ *
+ *          f_s = (D/H + F/HP) f_rf
+ *
+ * and the desired intermediate frequency scaling factor (to ensure that the
+ * resampled RF frequency is equal to the IF) is
+ *
+ *          N = 2^32 frac(f_rf/f_s).
+ */
+
+#define IF_REGISTER     0x14014004
+
+static void SetIntermediateFrequency(int detune)
+{
+    /* Access the IF register by mapping it into memory. */
+    const int PageSize = getpagesize();
+    const int PageMask = PageSize - 1;
     int DevMem = open("/dev/mem", O_RDWR | O_SYNC);
     char * Page = (char *) mmap(0, 0x1000, PROT_READ | PROT_WRITE, MAP_SHARED,
-        DevMem, 0x14014000);
-    int * Register = (int *) (Page + 4);
+        DevMem, IF_REGISTER & ~PageMask);
+    int * Register = (int *) (Page + (IF_REGISTER & PageMask));
 
-    if (DetuneState == LMTD_DOUBLE_DETUNE)
-        /* Correct intermediate NC oscillator for detune. */
-        *Register = 0x4129E413 - int(1556.6 * DetuneFactor);  // .85?
-    else
-        /* Operate intermediate oscillator at default frequency. */
-        *Register = 0x4129E413;
+    /* Compute N = 2^32 frac(HP/(DP+F)) using floating point arithmetic: it's
+     * not like this happens very often! */
+    double frf_fs =
+        (BunchesPerTurn*LmtdPrescale)/
+        ((double) SamplesPerTurn*LmtdPrescale + detune);
+    int NyquistFactor = BunchesPerTurn / SamplesPerTurn;
+    double two_32 = 65536.0*65536.0;    // (double)(1<<32) ?!  Alas not...
+    int NewN = int(two_32 * (frf_fs - NyquistFactor));
+    *Register = NewN;
         
-    munmap(Page, 0x1000);
+    munmap(Page, PageSize);
     close(DevMem);
 }
 
 
+/* Switches the LMTD between two states, tuned or detuned, and also optionally
+ * implements "double-detune".
+ *
+ * This implementation is a bit involved, as we need to kill and restart the
+ * LMTD process each time the setting changes.
+ *
+ * This code will either disappear as the detune is built into libera, or
+ * else will need rework to make it more portable. */
+
+static void UpdateLmtdState()
+{
+    /* Try to ensure the LMTD isn't running! */
+    KillLmtd();
+
+    /* Work out how much we're going to detune by. */
+    int detune = DetuneState == LMTD_TUNED ? 0 : DetuneFactor;
+        
+    /* Now, whatever happened above, fire up a new lmtd. */
+    char _p[20];  sprintf(_p, "-p%d", LmtdPrescale);
+    char _d[20];  sprintf(_d, "-d%d", SamplesPerTurn);
+    char _f[20];  sprintf(_f, "-f%d", detune);
+    char * Args[] = { "/opt/bin/lmtd", _p, _d, _f, NULL };
+    DetachProcess(Args[0], Args);
+    
+    /* Finally sort out the double detune. */
+    if (DetuneState == LMTD_DETUNED)
+        /* In single detune state we don't apply any detune to the IF. */
+        detune = 0;
+    SetIntermediateFrequency(detune);
+}
+
+
+
+/****************************************************************************/
+/*                                                                          */
+
 void DoReboot()
 {
-    if (fork() == 0)
-        execl("/sbin/halt", "/sbin/reboot", NULL);
+    char * Args[] = { "/sbin/halt", "/sbin/reboot", NULL };
+    DetachProcess(Args[0], Args);
+}
+
+
+void DoRestart()
+{
+    char * Args[] = { "/etc/init.d/epics", "restart", NULL };
+    DetachProcess(Args[0], Args);
 }
 
 
@@ -556,8 +649,13 @@ void DoReboot()
     PUBLISH_CONFIGURATION(Name, ao, Value, NULL_ACTION)
 
 
-bool InitialiseConvert()
+bool InitialiseConvert(
+    int _LmtdPrescale, int _SamplesPerTurn, int _BunchesPerTurn)
 {
+    LmtdPrescale   = _LmtdPrescale;
+    SamplesPerTurn = _SamplesPerTurn;
+    BunchesPerTurn = _BunchesPerTurn;
+    
     if (!ReadAttenuatorOffsets())
         return false;
     
@@ -568,8 +666,6 @@ bool InitialiseConvert()
     PUBLISH_CALIBRATION("CF:KQ", K_Q);
     PUBLISH_CALIBRATION("CF:X0", X_0);
     PUBLISH_CALIBRATION("CF:Y0", Y_0);
-    /* Write the current state to the hardware. */
-    UpdateCalibration();
 
     PUBLISH_GAIN("CF:G0", ChannelGain[0]);
     PUBLISH_GAIN("CF:G1", ChannelGain[1]);
@@ -580,18 +676,26 @@ bool InitialiseConvert()
         AutoSwitchEnabled, UpdateAutoSwitch);
     PUBLISH_CONFIGURATION("CF:SETSW", longout,
         ManualSwitch, UpdateManualSwitch);
-    PUBLISH_CONFIGURATION("CF:ATTEN", longout,
-        CurrentAttenuation, UpdateAttenuation);
     PUBLISH_CONFIGURATION("CF:ISCALE", ao, CurrentScale, UpdateCurrentScale);
 
+    /* Note that updating the attenuators is done via the
+     * InterlockedUpdateAttenuation() routine: this will not actually update
+     * the attenuators (by calling UpdateAttenuation() above) until the
+     * interlock mechanism is ready. */
+    PUBLISH_CONFIGURATION("CF:ATTEN", longout,
+        CurrentAttenuation, InterlockedUpdateAttenuation);
+    
     PUBLISH_CONFIGURATION("CF:LMTD", mbbo, DetuneState, UpdateLmtdState);
     PUBLISH_CONFIGURATION("CF:DETUNE", longout, DetuneFactor, UpdateLmtdState);
 
     PUBLISH_FUNCTION_OUT(bo, "CF:REBOOT", Dummy, DoReboot);
+    PUBLISH_FUNCTION_OUT(bo, "CF:RESTART", Dummy, DoRestart);
 
-    /* Write the initial state to the hardware. */
+    /* Write the initial state to the hardware and initialise everything that
+     * needs initialising. */
+    UpdateCalibration();
     WriteAgcMode(CSPI_AGC_MANUAL);
-//    UpdateAttenuation(CurrentAttenuation);
+    InterlockedUpdateAttenuation(CurrentAttenuation);
     UpdateAutoSwitch();
     UpdateLmtdState();
 

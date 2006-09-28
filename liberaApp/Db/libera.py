@@ -326,7 +326,8 @@ def Config():
         DESC = 'Input current at 0dBm power',
         EGU  = 'mA', ESLO = 1e-5, PREC = 1)
 
-    boolOut('REBOOT', 'Reboot', None, DESC = 'Reboot Libera')
+    boolOut('REBOOT',  'Reboot',  None, DESC = 'Reboot Libera IOC')
+    boolOut('RESTART', 'Restart', None, DESC = 'Restart EPICS driver')
 
     UnsetChannelName()
 
@@ -367,6 +368,8 @@ def Interlock():
     longOut('TIME', 1, 1024,
         DESC = 'ADC overflow duration')
 
+    # Interlock holdoff delay
+    longOut('HOLDOFF', 0, 1000, DESC = 'Interlock holdoff delay')
     
     # Interlock state.  This is a bit nasty: we get repeated triggers on TRIG
     # while the interlock is active (ie, reporting signal bad).  The records

@@ -90,10 +90,11 @@ static int DecimatedShortLength = 190;
  * This default frequency is the Diamond booster frequency. */
 static float RevolutionFrequency = 1892629.155;
 
-/* Sampling ratio versus bunch frequency.  These are defaults for the Diamond
- * storage ring. */
-static int Harmonic = 936;
-static int Decimation = 220;
+/* Fundamental ring parameters.  The defaults are for the Diamond storage
+ * ring. */
+static int Harmonic = 936;              // Bunches per revolution
+static int Decimation = 220;            // Samples per revolution
+static int LmtdPrescale = 53382;        // Prescale for lmtd
 
 /* Location of the persistent state file. */
 static const char * StateFileName = NULL;
@@ -192,6 +193,7 @@ static void Usage(const char *IocName)
 "       DD      Length of /1024 decimated data buffer\n"
 "       HA      Harmonic: number of bunches per revolution\n"
 "       DE      Decimation: number of samples per revolution\n"
+"       LP      LMTD prescale factor\n"
 "    -s <state-file>    Read and record persistent state in <state-file>\n"
 "\n"
 "Note: This IOC application should normally be run from within runioc.\n",
@@ -215,7 +217,7 @@ static bool InitialiseLibera()
         InitialiseHardware()  &&
         /* Initialise conversion code.  This needs to be done fairly early as
          * it is used globally. */
-        InitialiseConvert()  &&
+        InitialiseConvert(LmtdPrescale, Decimation, Harmonic)  &&
         /* Get the event receiver up and running.  This spawns a background
          * thread for dispatching trigger events. */
         InitialiseEventReceiver()  &&
@@ -319,6 +321,7 @@ static bool ParseConfigInt(char *optarg)
         { "BN", DecimatedShortLength },
         { "HA", Harmonic },
         { "DE", Decimation },
+        { "LP", LmtdPrescale },
     };
 
     /* Parse the configuration setting into <key>=<integer>. */
