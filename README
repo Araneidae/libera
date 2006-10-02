@@ -109,18 +109,24 @@ First Turn (<group> = FT):
         Unprocessed ADC readings, one per input channel: 1024 points at
         approximately 8.5ns sample intervals.  The permutation between channel
         and button depends on the switch position.
+
     WF<buttons>
         256 point arrays at approximately 34ns sampling interval, updated on
         trigger.
+
     <buttons>
         Button values integrated within the window specified by OFF and LEN.
+
     <positions>
         Position data derived from <buttons>, in mm.
+
     OFF_S, LEN_S
         These two fields determine the window within WF<buttons> used to
         compute the integrated <buttons> values.
+
     ENABLE_S
         If set to Disabled then FT processing will not occur.
+
     CHARGE
         Train charge as integrated within the integration window, and scaled
         by CF:ISCALE.
@@ -133,6 +139,7 @@ Free Running (<group> = FR):
     WF<buttons>
     WF<positions>
         2048 point arrays updated on each trigger at turn-by-turn frequency.
+
     ENABLE_S
         If set to Disabled then FR processing will not occur.
 
@@ -143,20 +150,26 @@ Turn by Turn (<group> = TT):
     ARM
         1 must be written to this record to enable capture of a full
         turn-by-turn waveform at the next trigger.
+
     READY
         This record becomes set to 1 when a waveform has been captured.
+
     CAPLEN
         Programs the number of points to be captured into the internal long
         waveform.  A maximum of 524,288 points can be specified.
+
     CAPTURED
         Records how many points were captured.  At Diamond's booster frequency
         (1.893MHz) something over 524,288 points can be reliably captured.
+
     OFFSET_S, OFFSET
         Used to set the offset into the long buffer for reading out waveforms,
         together with readback used for synchronisation.
+
     LENGTH_S
         Used to set how many points are read from the long buffer.  The
         default (and maximum) value is 16384.
+
     WF<buttons>, WF<positions>
         Waveforms of up to 1024 points read from the internal captured long
         waveform using the specified OFFSET and LENGTH.
@@ -188,13 +201,21 @@ Booster (<group> = BN):
     WF<iq>
     WF<buttons>
     WF<positions>
-        3040 point waveforms of the 100ms booster ramp at booster turn-by-turn
-        frequency reduced by 64.
+        Decimated waveforms reduced from turn-by-turn frequency by a factor
+        of 64, updated on each trigger.  The length of each waveform is equal
+        to 16 times the value IOC_BN_LENGTH, as defined in
+            /etc/sysconfig/epics_ioc
+
     WFS<positions>
-        190 point waveforms of the 100ms booster ramp reduced by a factor of
-        1024 from turn-by-turn frequency.
+        Decimated waveforms reduced from turn-by-turn frequency by a factor of
+        1024, equal in length to IOC_BN_LENGTH.
+
     ENABLE_S
         If set to Disabled then BN processing will not occur.
+
+Note that if BN processing is enabled then care should be taken to ensure that
+1024*IOC_BN_LENGTH divided by machine revolution frequency is no longer than
+the interval between triggers, otherwise triggers will be lost.
 
 
 Slow Acquisition (<group> = SA):
@@ -203,10 +224,10 @@ Slow Acquisition (<group> = SA):
     <buttons>
     <positions>
         Averaged button readings and positions updating at approximately 10Hz.
-
+        
     POWER
         Absolute input power in dBm.  The scaling here is hard-wired and not
-        especially accurate.
+        particularly accurate.
 
     CURRENT
         Beam current.  This is scaled by CF:ISCALE.
@@ -230,19 +251,24 @@ Interlock Control (<group> = IL):
         closed (unless OVERFLOW_S is also set to Enabled to enable overflow
         detection).  When set to Enabled the interlock output is only active
         while the beam position lies within the interlock window.
+
     MINX_S, MAXX_S, MINY_S, MAXY_S
         Interlock window: when the interlock is enabled the interlock output
         is closed ("active") so long as the beam position lies within this
         window. 
+
     OVER_S, TIME_S
         ADC overflow detection parameters: the interlock is dropped if the ADC
         input exceeds value OVER for at least TIME samples.
+
     OVERFLOW_S
         This can be set to Enabled to enable ADC overflow detection even when
         the interlock is otherwise disabled.
+
     ILIMIT_S
         The interlock will automatically Enabled when the beam current,
         measured by SA:CURRENT, exceeds this value.
+
     STATE, LATCH
         STATE records whether the interlock is currently dropped or has been
         dropped within the last 0.5 seconds.  LATCH is set if the interlock
@@ -253,30 +279,46 @@ Configuration (<group> = CF):
 =============================
 
     DIAG_S
-        Configures button or stripline orientation
+        Configures button or stripline orientation.
+
     KX_S, KY_S, KQ_S
         Scaling factor in mm.  These are determined by the physical geometry
         of the button or stripline pickups.  At Diamond typical values are
         17mm for the transfer path striplines and 10.6mm and 11mm (horizontal
         and vertical) for the booster buttons.
+
     X0_S, Y0_S
         Zero point offsets.  It is intended that these can be used to define a
         logical "centre" point once the centre of the focusing system has been
         located precisely.
+
     G0_S, G1_S, G2_S, G3_S
         Gain offsets can be set for individual RF channels to compensate for
         channel imbalances within Libera.  This is only used in FT mode.
+
     AUTOSW_S
         Controls automatic cycling of switches with DSC (Digital Signal
         Conditioning), for sub-kHz position measurements, or fixed switch
         positions for high frequency measurements.
+
     SETSW_S
         Switch position to use when AUTOSW_S is set to Fixed.
+
     ATTEN_S
         Attenuator settings in dB: a value between 0 and 62dB can be set.
+
     ISCALE_S
         Nominal beam current at 0dBm input power as seen by Libera.  This is
         used to compute SA:CURRENT and FT:CHARGE.
+
+    LMTD_S
+    DETUNE_S
+        This controls the "double detune" feature.  If LMTD_S is set to
+        "Tuned" then the normal sample clock frequency will be used.  To
+        eliminate beating between the RF frequency and a revolution frequency
+        sideband of the third harmonic, "Double Detune" should be selected.
+            In this case DETUNE_S determines the sample clock frequency
+        offset in multiples of approximately 10Hz.
 
 
 Sensors (<group> = SE):
@@ -305,6 +347,9 @@ Sensors (<group> = SE):
     UPTIME
         Time since Libera was last rebooted in hours.
 
+    EPICSUP
+        Time since the EPICS IOC was restarted in hours.
+
 
 
 Other (no group):
@@ -319,3 +364,9 @@ Other (no group):
     TICK
         Counts the number of seconds (in 0.1s steps) since the last trigger,
         and records an alarm state if the delay is more than 1 second.
+
+    REBOOT
+        Processing this record will cause the Libera IOC to reboot.
+
+    RESTART
+        Processing this record will case the EPICS IOC to restart.

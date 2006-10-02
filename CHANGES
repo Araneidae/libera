@@ -1,5 +1,32 @@
 Change history of Libera EPICS Driver development
 
+2006/10/02 Version 0.6.3
+========================
+Minor changes from Version 0.6.1
+
+Significant changes:
+ - Add control over lmtd to provide support for "double detune": this is
+   designed to reduce interference from revolution frequency sidebands.
+ - New PVs to remotely restart EPICS and remotely reboot the IOC.
+ - Improve the calculation of FT:CHARGE.  The new algorithm is virtually
+   independent of the profile of the bunch train, though it is still not
+   particularly accurate for low signal levels.
+ - Add support for integrating IOC startup process into libera startup script.
+
+Minor changes:
+ - Changed name of FT:RAW waveforms from <buttons> to <channel> to reflect the
+   fact that these waveforms do not follow the buttons as the switch changes.
+ - New EPICSUP field to record EPICS IOC up time.
+ - Diamond specific fast feedback support is present in this release, but not
+   compiled in in the default configuration.
+ - Revisit interlock and attenuator handshaking to try avoiding dropping the
+   interlock when changing the interlock.  This is still work in progress...
+ - support files renamed to numeric to more accurately reflect their role.
+ - Incorporate rather unfortunate patch to release 0.6.1!
+ - Remove screen support from /etc/init.d/epics startup script.
+ - The libera test application now builds in this environment.
+
+
 2006/08/17 Version 0.6.1
 ========================
 Works with Libera 1.21 

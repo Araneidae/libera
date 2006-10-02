@@ -326,9 +326,6 @@ def Config():
         DESC = 'Input current at 0dBm power',
         EGU  = 'mA', ESLO = 1e-5, PREC = 1)
 
-    boolOut('REBOOT',  'Reboot',  None, DESC = 'Reboot Libera IOC')
-    boolOut('RESTART', 'Restart', None, DESC = 'Restart EPICS driver')
-
     UnsetChannelName()
 
 
@@ -472,6 +469,9 @@ def Miscellaneous():
     boolIn('TICK_TRIG', '', '',
         DESC = 'Trigger event',
         SCAN = 'I/O Intr', FLNK = tick_reset)
+
+    boolOut('REBOOT',  'Reboot',  None, DESC = 'Reboot Libera IOC')
+    boolOut('RESTART', 'Restart', None, DESC = 'Restart EPICS driver')
 
     
 

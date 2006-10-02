@@ -1,0 +1,11 @@
+#!/bin/sh
+
+VERSION=${1?Version to deploy}
+
+ARGS=-fls
+
+TARGET=/mnt/nfs/Libera/$VERSION/ioc
+COMMAND="$TARGET/install/libera-install-ioc $ARGS"
+
+liberas 'LB|BR|BS' $COMMAND BR
+liberas 'SR'       $COMMAND SR

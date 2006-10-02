@@ -34,17 +34,18 @@
 # IOC: testing (installed on the remote file system) or final (copied to the
 # local file system).
 
-# Ensure this isn't run by accident on the development machine.
-[ "$(uname -m)" != armv5tel ]  &&
-    Error This should be run on Libera
-
-SOURCE="$(cd "$(dirname "$0")"/..; pwd)"
-
 function Error()
 {
     echo >&2 "$@"
     exit 1
 }
+
+
+# Ensure this isn't run by accident on the development machine.
+[ "$(uname -m)" != armv5tel ]  &&
+    Error This should be run on Libera
+
+SOURCE="$(cd "$(dirname "$0")"/..; pwd)"
 
 
 # Parse local installation options

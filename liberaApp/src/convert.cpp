@@ -519,8 +519,8 @@ void DetachProcess(const char *Process, char *const argv[])
             TEST_(chdir, "/");
 
             /* Restore default signal handling.  I'd like to hope this step
-             * isn't needed, particularly as I'm not sure about this "32". */
-            for (int i = 0; i < 32; i ++)
+             * isn't needed. */
+            for (int i = 0; i < NSIG; i ++)
                 signal(i, SIG_DFL);
 
             /* Enable all signals. */
@@ -535,6 +535,8 @@ void DetachProcess(const char *Process, char *const argv[])
 
             /* Finally we can actually exec the new process... */
             TEST_(execv, Process, argv);
+
+            // Consider using execve(2) instead.
         }
         else
             /* The middle process simply exits without further ceremony.  The
@@ -577,8 +579,7 @@ static void SetIntermediateFrequency(int detune)
         DevMem, IF_REGISTER & ~PageMask);
     int * Register = (int *) (Page + (IF_REGISTER & PageMask));
 
-    /* Compute N = 2^32 frac(HP/(DP+F)) using floating point arithmetic: it's
-     * not like this happens very often! */
+    /* Compute N = 2^32 frac(HP/(DP+F)) using floating point arithmetic. */
     double frf_fs =
         (BunchesPerTurn*LmtdPrescale)/
         ((double) SamplesPerTurn*LmtdPrescale + detune);
@@ -688,8 +689,8 @@ bool InitialiseConvert(
     PUBLISH_CONFIGURATION("CF:LMTD", mbbo, DetuneState, UpdateLmtdState);
     PUBLISH_CONFIGURATION("CF:DETUNE", longout, DetuneFactor, UpdateLmtdState);
 
-    PUBLISH_FUNCTION_OUT(bo, "CF:REBOOT", Dummy, DoReboot);
-    PUBLISH_FUNCTION_OUT(bo, "CF:RESTART", Dummy, DoRestart);
+    PUBLISH_FUNCTION_OUT(bo, "REBOOT", Dummy, DoReboot);
+    PUBLISH_FUNCTION_OUT(bo, "RESTART", Dummy, DoRestart);
 
     /* Write the initial state to the hardware and initialise everything that
      * needs initialising. */

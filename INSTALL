@@ -182,6 +182,7 @@ driver version to use.
 
     EPICS Driver (date)         Compatible Libera Drivers
     -------------------         -------------------------
+    0.6.3 (2006-10-03)          1.20, 1.21
     0.6.1 (2006-08-17)          1.20, 1.21
     0.5   (2006-07-07)          1.00
     0.4   (2006-03-13)          1.00
@@ -255,9 +256,9 @@ Final Installation
     either:
     # $INSTALL_TARGET/ioc/install/libera-install-ioc -f
     or:
-    # $INSTALL_TARGET/ioc/install/libera-install-ioc -fa
+    # $INSTALL_TARGET/ioc/install/libera-install-ioc -fl
 
-    Using the -a option ensures that the libera IOC is automatically started
+    Using the -l option ensures that the libera IOC is automatically started
     on reboot.
 
 
