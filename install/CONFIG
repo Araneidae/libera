@@ -11,7 +11,7 @@ VERSION=0.6.3
 INSTALL_HOST=/mt/libera/nfs/testing
 
 # Set this to yes to enable fast feedback support, any other value to disable.
-BUILD_FF_SUPPORT=no
+BUILD_FF_SUPPORT=yes
 
 
 # ----------------------------------------------------------------------------

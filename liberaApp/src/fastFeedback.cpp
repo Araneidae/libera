@@ -125,10 +125,10 @@ static bool MapFastFeedbackMemory()
         TEST_IO(DevMem, "Opening /dev/mem",
             open, "/dev/mem", O_RDWR | O_SYNC)  &&
         TEST_IO(FF_AddressSpace, "Mapping memory",
-            mmap, 0, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED,
+            mmap, 0, PageSize, PROT_READ | PROT_WRITE, MAP_SHARED,
             DevMem, FF_BASE_ADDRESS & ~PageMask)  &&
         TEST_IO(FF_ControlSpace, "Mapping memory",
-            mmap, 0, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED,
+            mmap, 0, PageSize, PROT_READ | PROT_WRITE, MAP_SHARED,
             DevMem, FF_CONTROL_ADDRESS & ~PageMask);
     if (Ok)
     {
