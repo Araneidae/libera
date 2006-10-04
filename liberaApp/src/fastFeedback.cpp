@@ -63,7 +63,7 @@ struct FF_CONFIG_SPACE
     int PowerDown;                      // :ENABLE
     int LoopBack;                       // :LOOPBACK
     int ClearDelay;                     // CLEAR_DELAY
-} __attribute__((packed));
+};
 
 
 struct FF_STATUS_SPACE
@@ -78,12 +78,11 @@ struct FF_STATUS_SPACE
     int FrameErrorCount[4];             // :FRAME_ERR
     int ReceivedPacketCount[4];         // :RX_CNT
     int TransmittedPacketCount[4];      // :TX_CNT
-    short ProcessTimeMin;               //
-    short ProcessTimeMax;               //
+    int ProcessTimeMin_Max;             //
     int ProcessTime;                    //
     int BpmCount;                       //
     int TestErrorStatus;                //
-} __attribute__((packed));
+};
 
 
 
