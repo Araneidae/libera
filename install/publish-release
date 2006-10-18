@@ -110,7 +110,7 @@ svn cp "$SVN_EDM_FILES" .  ||
     Error "Problem preparing final release"
 
 # Finally we can commit this release.
-cd "$TEMP_ROOT"  &&
+cd "$TEMP_ROOT/Libera"  &&
 svn -m "Libera: Release $VERSION" commit  ||
     Error "Problem making subversion release"
 
