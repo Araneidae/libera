@@ -43,6 +43,7 @@ public:
 };
 
 void RegisterTriggerEvent(I_EVENT &Event, int Priority);
+void RegisterTriggerSetEvent(I_EVENT &Event, int Priority);
 void RegisterPostmortemEvent(I_EVENT &Event, int Priority);
 void RegisterInterlockEvent(I_EVENT &Event, int Priority);
 

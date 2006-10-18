@@ -30,18 +30,6 @@
 /* Libera position calculations and conversions. */
 
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/wait.h>
-#include <sys/mman.h>
-#include <sys/reboot.h>
-#include <fcntl.h>
-#include <signal.h>
-#include <errno.h>
-#include <limits.h>
 
 #include <dbFldTypes.h>
 
@@ -97,20 +85,6 @@ static bool AutoSwitchEnabled = false;
 static int ManualSwitch = 3;
 /* Selected attenuation.  The default is quite high for safety. */
 static int CurrentAttenuation = 60;
-
-/* Sample clock detune state: we toggle the frequency offset of the sample
- * clock between two modes, tuned and detuned.
- *    This is a temporary hack until the detune is built in. */
-static int DetuneFactor = 400;
-enum LMTD_STATE
-{
-    LMTD_TUNED = 0,
-    LMTD_DETUNED = 1,
-    LMTD_DOUBLE_DETUNE = 2
-};
-static int DetuneState = LMTD_TUNED;
-
-static bool Dummy;
 
 
 /* Current scaling factor.  This is used to program the nominal beam current
@@ -431,217 +405,8 @@ int ComputeScaledCurrent(const PMFP & IntensityScale, int Intensity)
 
 
 
-/*****************************************************************************/
-/*                                                                           */
-/*                             Tuning Management                             */
-/*                                                                           */
-/*****************************************************************************/
-
-/* The following magic numbers are required for controlling the LMTD and
- * computing the intermediate frequency scaler. */
-
-static int LmtdPrescale;
-static int SamplesPerTurn;
-static int BunchesPerTurn;
-
-
-
-/* This routine makes a best effort to kill any running LMTD process.  Apart
- * from logging, we carry on regardless even if this fails! */
-
-static void KillLmtd()
-{
-    const char * PidFilename = "/var/run/lmtd.pid";
-    /* If the lmtd.pid file is missing then we have a problem.  Unfortunately
-     * I don't see what to do about it.
-     *    One possible reason for no lmtd.pid file is that the lmtd process
-     * hasn't finished starting yet.  To ensure this isn't the problem we
-     * give it a while to appear. */
-    struct stat StatBuf;
-    if (stat(PidFilename, &StatBuf) == -1  &&  (sleep(2), true)  &&
-        stat(PidFilename, &StatBuf) == -1)
-        /* Damn: there's still no .pid file, even after waiting.  Can't do
-         * anything more, unfortunately. */
-        printf("Can't find %s\n", PidFilename);
-    else
-    {
-        FILE * PidFile = fopen(PidFilename, "r");
-        if (PidFile == NULL)
-            perror("Error opening lmtd pid file");
-        else
-        {
-            pid_t LmtdPid;
-            if (fscanf(PidFile, "%d", &LmtdPid) != 1)
-                perror("Malformed lmtd pid file");
-            else
-            {
-                /* Now kill the old lmtd and wait for it to finish.  Note that
-                 * this will hang if something goes wrong... */
-                if (TEST_(kill, LmtdPid, SIGTERM))
-                {
-                    int rc = waitpid(LmtdPid, NULL, 0);
-                    if (rc == -1  &&  errno != ECHILD)
-                        perror("Error waiting for lmtd to finish");
-                }
-            }
-            fclose(PidFile);
-        }
-    }
-}
-
-
-/* Fairly generic routine to start a new detached process in a clean
- * environment. */
-
-void DetachProcess(const char *Process, char *const argv[])
-{
-    /* We fork twice to avoid leaving "zombie" processes behind.  These are
-     * harmless enough, but annoying.  The double-fork is a simple enough
-     * trick. */
-    pid_t MiddlePid = fork();
-    if (MiddlePid == -1)
-        perror("Unable to fork");
-    else if (MiddlePid == 0)
-    {
-        pid_t NewPid = fork();
-        if (NewPid == -1)
-            perror("Unable to fork");
-        else if (NewPid == 0)
-        {
-            /* This is the new doubly forked process.  We still need to make
-             * an effort to clean up the environment before letting the new
-             * image have it. */
-
-            /* Ensure the new process has a clean environment. */
-            clearenv();
-
-            /* Set a sensible home directory. */
-            TEST_(chdir, "/");
-
-            /* Restore default signal handling.  I'd like to hope this step
-             * isn't needed. */
-            for (int i = 0; i < NSIG; i ++)
-                signal(i, SIG_DFL);
-
-            /* Enable all signals. */
-            sigset_t sigset;
-            TEST_(sigfillset, &sigset);
-            TEST_(sigprocmask, SIG_UNBLOCK, &sigset, NULL);
-
-            /* Close all the open file handles.  The new lmtd gets into trouble
-             * if we don't do this. */
-            for (int i = 0; i < sysconf(_SC_OPEN_MAX); i ++)
-                close(i);
-
-            /* Finally we can actually exec the new process... */
-            TEST_(execv, Process, argv);
-
-            // Consider using execve(2) instead.
-        }
-        else
-            /* The middle process simply exits without further ceremony.  The
-             * idea here is that this orphans the new process, which means
-             * that the parent process doesn't have to wait() for it, and so
-             * it won't generate a zombie when it exits. */
-            _exit(0);
-    }
-    else
-        /* Wait for the middle process to finish. */
-        if (waitpid(MiddlePid, NULL, 0) == -1)
-            perror("Error waiting for middle process");
-}
-
-
-/* The phase advance per sample for the intermediate frequency generator is
- * controlled by writing to register 0x14014004.  The phase advance is in
- * units of 2^32*f_if/f_s, where f_if is the intermediate frequency and f_s
- * is the sample clock frequency. 
- *     If we write P=prescale, D=decimation, H=bunches per turn and F=detune
- * then the detuned sample frequency is
- *
- *          f_s = (D/H + F/HP) f_rf
- *
- * and the desired intermediate frequency scaling factor (to ensure that the
- * resampled RF frequency is equal to the IF) is
- *
- *          N = 2^32 frac(f_rf/f_s).
- */
-
-#define IF_REGISTER     0x14014004
-
-static void SetIntermediateFrequency(int detune)
-{
-    /* Access the IF register by mapping it into memory. */
-    const int PageSize = getpagesize();
-    const int PageMask = PageSize - 1;
-    int DevMem = open("/dev/mem", O_RDWR | O_SYNC);
-    char * Page = (char *) mmap(0, 0x1000, PROT_READ | PROT_WRITE, MAP_SHARED,
-        DevMem, IF_REGISTER & ~PageMask);
-    int * Register = (int *) (Page + (IF_REGISTER & PageMask));
-
-    /* Compute N = 2^32 frac(HP/(DP+F)) using floating point arithmetic. */
-    double frf_fs =
-        (BunchesPerTurn*LmtdPrescale)/
-        ((double) SamplesPerTurn*LmtdPrescale + detune);
-    int NyquistFactor = BunchesPerTurn / SamplesPerTurn;
-    double two_32 = 65536.0*65536.0;    // (double)(1<<32) ?!  Alas not...
-    int NewN = int(two_32 * (frf_fs - NyquistFactor));
-    *Register = NewN;
-        
-    munmap(Page, PageSize);
-    close(DevMem);
-}
-
-
-/* Switches the LMTD between two states, tuned or detuned, and also optionally
- * implements "double-detune".
- *
- * This implementation is a bit involved, as we need to kill and restart the
- * LMTD process each time the setting changes.
- *
- * This code will either disappear as the detune is built into libera, or
- * else will need rework to make it more portable. */
-
-static void UpdateLmtdState()
-{
-    /* Try to ensure the LMTD isn't running! */
-    KillLmtd();
-
-    /* Work out how much we're going to detune by. */
-    int detune = DetuneState == LMTD_TUNED ? 0 : DetuneFactor;
-        
-    /* Now, whatever happened above, fire up a new lmtd. */
-    char _p[20];  sprintf(_p, "-p%d", LmtdPrescale);
-    char _d[20];  sprintf(_d, "-d%d", SamplesPerTurn);
-    char _f[20];  sprintf(_f, "-f%d", detune);
-    char * Args[] = { "/opt/bin/lmtd", _p, _d, _f, NULL };
-    DetachProcess(Args[0], Args);
-    
-    /* Finally sort out the double detune. */
-    if (DetuneState == LMTD_DETUNED)
-        /* In single detune state we don't apply any detune to the IF. */
-        detune = 0;
-    SetIntermediateFrequency(detune);
-}
-
-
-
 /****************************************************************************/
 /*                                                                          */
-
-void DoReboot()
-{
-    char * Args[] = { "/sbin/halt", "/sbin/reboot", NULL };
-    DetachProcess(Args[0], Args);
-}
-
-
-void DoRestart()
-{
-    char * Args[] = { "/etc/init.d/epics", "restart", NULL };
-    DetachProcess(Args[0], Args);
-}
-
 
 #define PUBLISH_CALIBRATION(Name, Value) \
     PUBLISH_CONFIGURATION(Name, ao, Value, UpdateCalibration)
@@ -650,13 +415,8 @@ void DoRestart()
     PUBLISH_CONFIGURATION(Name, ao, Value, NULL_ACTION)
 
 
-bool InitialiseConvert(
-    int _LmtdPrescale, int _SamplesPerTurn, int _BunchesPerTurn)
+bool InitialiseConvert()
 {
-    LmtdPrescale   = _LmtdPrescale;
-    SamplesPerTurn = _SamplesPerTurn;
-    BunchesPerTurn = _BunchesPerTurn;
-    
     if (!ReadAttenuatorOffsets())
         return false;
     
@@ -686,19 +446,12 @@ bool InitialiseConvert(
     PUBLISH_CONFIGURATION("CF:ATTEN", longout,
         CurrentAttenuation, InterlockedUpdateAttenuation);
     
-    PUBLISH_CONFIGURATION("CF:LMTD", mbbo, DetuneState, UpdateLmtdState);
-    PUBLISH_CONFIGURATION("CF:DETUNE", longout, DetuneFactor, UpdateLmtdState);
-
-    PUBLISH_FUNCTION_OUT(bo, "REBOOT", Dummy, DoReboot);
-    PUBLISH_FUNCTION_OUT(bo, "RESTART", Dummy, DoRestart);
-
     /* Write the initial state to the hardware and initialise everything that
      * needs initialising. */
     UpdateCalibration();
     WriteAgcMode(CSPI_AGC_MANUAL);
     InterlockedUpdateAttenuation(CurrentAttenuation);
     UpdateAutoSwitch();
-    UpdateLmtdState();
 
     return true;
 }

@@ -49,6 +49,7 @@ ioc_SRCS += postmortem.cpp      # Postmortem (PM) mode
 ioc_SRCS += waveform.cpp        # Waveform management support
 ioc_SRCS += cordic.cpp          # Fast computation of sqrt(x*x+y*y)
 ioc_SRCS += convert.cpp         # Configuration parameters and conversions
+ioc_SRCS += timestamps.cpp      # Synchronisation and timestamp support
 ioc_SRCS += hardware.cpp        # CSPI level hardware interface
 ioc_SRCS += events.cpp          # Reception of trigger and other CSPI events
 ioc_SRCS += numeric.cpp         # Fast arithmetic support

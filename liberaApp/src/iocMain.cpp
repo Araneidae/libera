@@ -58,6 +58,7 @@
 #include "events.h"
 #include "hardware.h"
 #include "convert.h"
+#include "timestamps.h"
 
 
 /* This variable records the PID file: if successfully written then it will
@@ -217,12 +218,14 @@ static bool InitialiseLibera()
         InitialiseHardware()  &&
         /* Initialise conversion code.  This needs to be done fairly early as
          * it is used globally. */
-        InitialiseConvert(LmtdPrescale, Decimation, Harmonic)  &&
+        InitialiseConvert()  &&
         /* Get the event receiver up and running.  This spawns a background
          * thread for dispatching trigger events. */
         InitialiseEventReceiver()  &&
         /* Ensure the trigger interlock mechanism is working. */
         InitialiseTriggers()  &&
+        /* Timestamps.  This also restarts the lmtd (if appropriate). */
+        InitialiseTimestamps(LmtdPrescale, Decimation, Harmonic)  &&
 
         /* Now we can initialise the mode specific components. */
 
@@ -262,6 +265,7 @@ static bool InitialiseLibera()
 
 static void TerminateLibera()
 {
+    TerminateTimestamps();
     TerminateEventReceiver();
     TerminateSlowAcquisition();
     TerminateHardware();

@@ -125,5 +125,4 @@ int ComputeScaledCurrent(const PMFP & IntensityScale, int Intensity);
 void UpdateAttenuation(int NewAttenuation);
 
 /* Publishes conversion control PVs to EPICS. */
-bool InitialiseConvert(
-    int _LmtdPrescale, int _SamplesPerTurn, int _BunchesPerTurn);
+bool InitialiseConvert();

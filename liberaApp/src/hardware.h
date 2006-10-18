@@ -165,6 +165,10 @@ bool ReadSwitches(int &Switches);
 bool ReadAttenuation(int &Attenuation);
 
 
+/* Set clock synchronisation. */
+bool SetClockTime(struct timespec & NewTime);
+
+
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                        Direct Event Connection                            */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */

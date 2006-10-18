@@ -57,7 +57,7 @@ SEMAPHORE::SEMAPHORE(bool InitialReady)
     /* Initialise our internal resources. */
     Ready = InitialReady;
     TEST_(pthread_cond_init, &ReadyCondition, NULL);
-    pthread_mutex_init(&ReadyMutex, NULL);
+    TEST_(pthread_mutex_init, &ReadyMutex, NULL);
 }
 
 bool SEMAPHORE::Wait(int Seconds)

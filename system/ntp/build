@@ -1,0 +1,42 @@
+#!/bin/sh
+
+VERSION=4.2.2p3
+TAR_FILE=ntp-$VERSION.tar.gz
+
+TAR_DIR=/scratch/incoming
+
+HERE="$(dirname "$0")"
+TOP="$HERE/../.."
+
+BUILD_DIR="$HERE/../ntp-$VERSION"
+INSTALL_DIR=/mt/libera/nfs/install/ntp
+
+
+# Figure out where the cross-compiler is.  We do this by asking the EPICS
+# makefile, which certainly knows!
+GNU_DIR="$(
+    cd "$TOP"
+    make -pn 2>/dev/null |
+    sed -n '/^GNU_DIR = /{s///;p;q;}')"
+
+export PATH="$PATH:$GNU_DIR/bin"
+
+rm -rf "$BUILD_DIR"
+
+# Build everything
+cd "$HERE"  &&
+tar xzf "$TAR_DIR/$TAR_FILE"  &&
+cd "$BUILD_DIR"  &&
+./configure --host=arm-linux --disable-all-clocks --disable-parse-clocks  &&
+make  || {
+    echo Error building ntpd >&2
+    exit 1
+}
+
+# Place where required
+rm -rf "$INSTALL_DIR" &&
+mkdir -p "$INSTALL_DIR/etc/init.d" "$INSTALL_DIR/usr/sbin"  &&
+cp "$BUILD_DIR/ntpd/ntpd" "$INSTALL_DIR/usr/sbin"  &&
+cp "$BUILD_DIR/install-ntpd" "$INSTALL_DIR"  &&
+cp "$BUILD_DIR/ntpd" "$INSTALL_DIR/etc/init.d"  &&
+cp "$BUILD_DIR/ntp.conf" "$INSTALL_DIR/etc"  

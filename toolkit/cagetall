@@ -6,7 +6,7 @@ NAME_LIST="$(dirname "$(readlink -fn "$0")")/allbpms"
 MATCH="$1"
 PV="$2"
 
-caget -w5 $(
+caget -a -w5 $(
     for BPM in $(grep -E "$MATCH" "$NAME_LIST"); do
         echo "$BPM:$PV"
     done)

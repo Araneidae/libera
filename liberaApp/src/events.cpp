@@ -323,6 +323,10 @@ void RegisterTriggerEvent(I_EVENT &Event, int Priority)
     EventReceiver->Register(Event, CSPI_EVENT_TRIGGET, Priority);
 }
 
+void RegisterTriggerSetEvent(I_EVENT &Event, int Priority)
+{
+    EventReceiver->Register(Event, CSPI_EVENT_TRIGSET, Priority);
+}
 
 void RegisterPostmortemEvent(I_EVENT &Event, int Priority)
 {

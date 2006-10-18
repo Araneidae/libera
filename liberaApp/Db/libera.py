@@ -326,6 +326,12 @@ def Config():
         DESC = 'Input current at 0dBm power',
         EGU  = 'mA', ESLO = 1e-5, PREC = 1)
 
+    # Clock synchronisation
+    boolOut('SYNC', 'Synchronise', None, DESC = 'Synchronise clocks')
+    boolIn('SYNCSTATE', 'Normal', 'Waiting for Trigger',
+        SCAN = 'I/O Intr',      PINI = 'YES',
+        DESC = 'Synchronisation state')
+
     UnsetChannelName()
 
 

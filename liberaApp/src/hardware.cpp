@@ -188,6 +188,16 @@ bool ReadAttenuation(int &Attenuation)
 
 
 
+bool SetClockTime(struct timespec & NewTime)
+{
+    CSPI_TIMESTAMP Timestamp;
+    Timestamp.st = NewTime;
+    Timestamp.mt = 0;
+    return CSPI_(cspi_settime,
+        CspiEnv, &Timestamp, CSPI_TIME_MT | CSPI_TIME_ST);
+}
+
+
 /*****************************************************************************/
 /*                                                                           */
 /*                   Reading waveform data from the FPGA.                    */
@@ -339,6 +349,7 @@ private:
         CSPI_CONPARAMS ConParams;
         ConParams.event_mask =
             CSPI_EVENT_TRIGGET |
+            CSPI_EVENT_TRIGSET | 
             CSPI_EVENT_PM |
             CSPI_EVENT_INTERLOCK;
         ConParams.handler = CspiSignal;
@@ -440,11 +451,6 @@ static bool InitialiseConnection(CSPIHCON &Connection, int Mode)
 
 bool InitialiseHardware()
 {
-//     /* A default attenuator setting of 20/20 (40 dB total) ensures a safe
-//      * starting point on initialisation. */
-//     static const ATTENUATORS DefaultAttenuators =
-//         { 20, 20, 20, 20, 20, 20, 20, 20 };
-
     CSPI_LIBPARAMS LibParams;
     LibParams.superuser = 1;    // Allow us to change settings!
     return
@@ -457,9 +463,6 @@ bool InitialiseHardware()
         InitialiseConnection(CspiConDd, CSPI_MODE_DD)  &&
         InitialiseConnection(CspiConSa, CSPI_MODE_SA)  &&
         InitialiseConnection(CspiConPm, CSPI_MODE_PM)  &&
-        /* Set the attenuators and switches into a sensible default state. */
-//        WriteAttenuators(DefaultAttenuators)  &&
-//        WriteSwitches(0)  &&
         /* Finally start receiving events. */
         OpenEventStream();
 }

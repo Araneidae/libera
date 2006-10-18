@@ -1,0 +1,17 @@
+#!/bin/sh
+
+cd "$(dirname "$0")"
+
+if [ -e /var/run/ntpd.pid ]; then kill "$(cat /var/run/ntpd.pid)"; fi  &&
+
+rm -f /etc/rc3.d/*setclock  &&
+
+cp usr/sbin/ntpd /usr/sbin  &&
+cp etc/ntp.conf /etc  &&
+cp etc/init.d/ntpd /etc/init.d  &&
+
+ln -sfn ../init.d/ntpd /etc/rc3.d/S270ntpd  &&
+ln -sfn ../init.d/ntpd /etc/rcS.d/K270ntpd  &&
+
+/etc/init.d/ntpd start
+
