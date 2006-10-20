@@ -59,7 +59,7 @@ case "$1" in
 
         # Try a rather more rigorous stop if the kill above failed.  Give the
         # process a couple of seconds to die.
-        for ((i = 0; i < 20; i ++)); do
+        for ((i = 0; i < 20; i++)); do
             [ -e /var/run/ioc.pid ]  ||  break
             sleep 0.1
         done
