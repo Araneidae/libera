@@ -30,15 +30,17 @@
 /* Simple trigger event notification to EPICS and related functionality. */
 
 
-/* A simple trigger class designed to publish I/O Intr events to EPICS. */
+/* A simple trigger class designed to publish I/O Intr events to EPICS
+ * together with timestamps. */
 
 class TRIGGER : public I_bi
 {
 public:
-    TRIGGER(bool InitialValue=true);
+    TRIGGER(bool InitialValue = true);
 
-    /* This method is used to signal EPICS that this trigger is ready. */
-    bool Ready();
+    /* This method is used to signal EPICS that this trigger is ready.  If no
+     * timestamp is given then we use the current time. */
+    bool Ready(const struct timespec *Timestamp = NULL);
 
     /* This changes the trigger value and also signals EPICS. */
     void Write(bool NewValue);
@@ -49,11 +51,14 @@ public:
 private:
     bool read(bool &Value);
     bool EnableIoIntr(I_INTR & Intr);
+    bool GetTimestamp(struct timespec & Result);
 
     /* Callback used to notify trigger event to EPICS. */
     I_INTR * iIntr;
     /* Internal value. */
     bool Value;
+    /* Timestamp for this trigger. */
+    struct timespec Timestamp;
 };
 
 
@@ -98,11 +103,11 @@ public:
     INTERLOCK();
 
     /* This method actually publishes the trigger and done records. */
-    void Publish(const char * Prefix);
+    void Publish(const char * Prefix, bool PublishMC = false);
 
     /* This signals EPICS that there is data to be read and sets the
      * interlock up ready to be read. */
-    void Ready();
+    void Ready(const CSPI_TIMESTAMP &NewTimestamp = *(CSPI_TIMESTAMP*)NULL);
 
     /* This blocks until EPICS reports back by processing the DONE record.
      * The first call must be made before calling Ready() and will wait for
@@ -113,6 +118,8 @@ private:
     bool ReportDone(bool);
 
     bool Value;
+    int MachineClockLow;
+    int MachineClockHigh;
     TRIGGER Trigger;
     SEMAPHORE Interlock;
     const char * Name;

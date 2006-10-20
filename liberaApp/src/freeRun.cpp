@@ -37,8 +37,8 @@
 #include "persistent.h"
 #include "publish.h"
 #include "thread.h"
-#include "trigger.h"
 #include "hardware.h"
+#include "trigger.h"
 #include "events.h"
 #include "convert.h"
 #include "waveform.h"
@@ -59,7 +59,7 @@ public:
         WaveformIq.Publish("FR");
         WaveformAbcd.Publish("FR");
         WaveformXyqs.Publish("FR");
-        Interlock.Publish("FR");
+        Interlock.Publish("FR", true);
         Enable.Publish("FR");
         /* Announce our interest in the trigger. */
         RegisterTriggerEvent(*this, PRIORITY_FR);
@@ -85,7 +85,7 @@ public:
         WaveformXyqs.CaptureConvert(WaveformAbcd);
 
         /* Let EPICS know there's stuff to read. */
-        Interlock.Ready();
+        Interlock.Ready(WaveformIq.GetTimestamp());
     }
 
     

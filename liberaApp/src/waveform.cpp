@@ -142,6 +142,7 @@ WAVEFORMS<T>::WAVEFORMS(size_t WaveformSize) :
 {
     CurrentLength = WaveformSize;
     ActiveLength = 0;
+    memset(&Timestamp, 0, sizeof(Timestamp));
 }
 
 
@@ -213,6 +214,7 @@ void WAVEFORMS<T>::CaptureFrom(const WAVEFORMS<T> & Source, size_t Offset)
 {
     ActiveLength = Source.CaptureLength(Offset, CurrentLength);
     memcpy(Data, Source.Data + Offset, ActiveLength * sizeof(*Data));
+    Timestamp = Source.Timestamp;
 }
 
 
@@ -262,12 +264,13 @@ void WAVEFORMS<IQ_ROW>::Publish(const char * Prefix, const char *SubName) const
 void IQ_WAVEFORMS::Capture(int Decimation)
 {
     ActiveLength = ReadWaveform(
-        Decimation, CurrentLength, (LIBERA_ROW *) Data);
+        Decimation, CurrentLength, (LIBERA_ROW *) Data, Timestamp);
 }
 
 void IQ_WAVEFORMS::CapturePostmortem()
 {
-    ActiveLength = ReadPostmortem(CurrentLength, (LIBERA_ROW *) Data);
+    ActiveLength = ReadPostmortem(
+        CurrentLength, (LIBERA_ROW *) Data, Timestamp);
 }
 
 
@@ -299,6 +302,7 @@ void ABCD_WAVEFORMS::CaptureCordic(const IQ_WAVEFORMS & Source)
 {
     ActiveLength = Source.CaptureLength(0, CurrentLength);
     IQtoABCD(Source.Data, Data, ActiveLength);
+    Timestamp = Source.Timestamp;
 }
 
 
@@ -320,6 +324,7 @@ void XYQS_WAVEFORMS::CaptureConvert(const ABCD_WAVEFORMS &Source)
 {
     ActiveLength = Source.CaptureLength(0, CurrentLength);
     ABCDtoXYQS(Source.Data, Data, ActiveLength);
+    Timestamp = Source.Timestamp;
 }
 
 

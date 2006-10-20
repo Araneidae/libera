@@ -112,14 +112,25 @@ def XYQS_(prec, logMax=0, suffix=''):
 def Enable():
     boolOut('ENABLE', 'Disabled', 'Enabled', DESC = 'Enable %s mode')
 
-def Trigger(*positions):
+def Trigger(MC, *positions):
+    # If MC is requested then generate MC machine clock records as well.
+    # These return the 64 bit revolution clock as a pair of 32 bit values.
+    if MC:
+        positions = positions + (
+            longIn('MCL', EGU='turns', DESC = 'Revolution clock (low)'),
+            longIn('MCH', EGU='turns', DESC = 'Revolution clock (high)'))
+
+    
     # The DONE record must be processed after all other triggered records are
     # processed: this is used as an interlock to synchronise with the Libera
     # driver.
     done = Libera.bo('DONE', DESC = 'Report trigger done')
-    Libera.bi('TRIG', DESC = 'Trigger processing',
-        SCAN = 'I/O Intr',  
+    trigger = Libera.bi('TRIG', DESC = 'Trigger processing',
+        SCAN = 'I/O Intr',
+        TSE  = -2,          # Ensures that device timestamp is used
         FLNK = create_fanout('FAN', *positions + (done,)))
+    for record in positions:
+        record.TSEL = trigger.TIME
 
         
 # ----------------------------------------------------------------------------
@@ -144,8 +155,8 @@ def FirstTurn():
     charge = aIn('CHARGE', 0, 2000, 1e-6, 'nC', 2,
         DESC = 'Charge of bunch train')
 
-    Trigger(*
-        # Raw wavefors as read from the ADC rate buffer
+    Trigger(False, *
+        # Raw waveforms as read from the ADC rate buffer
         RAW_ADC(LONG_LENGTH) + [maxadc, charge] +
         # ADC data reduced by 1/4 by recombination
         ABCD_wf(SHORT_LENGTH) +
@@ -172,7 +183,7 @@ def Booster():
     SetChannelName('BN')
     Enable()
     
-    Trigger(*
+    Trigger(True, *
         # IQ data
         IQ_wf(LONG_LENGTH) + 
         # Raw decimated /64 button values
@@ -201,7 +212,7 @@ def FreeRunning():
 
     # In this mode we provide all the available data: raw IQ, buttons and
     # computed positions.
-    Trigger(*IQ_wf(LENGTH) + ABCD_wf(LENGTH) + XYQS_wf(LENGTH))
+    Trigger(True, *IQ_wf(LENGTH) + ABCD_wf(LENGTH) + XYQS_wf(LENGTH))
     
     UnsetChannelName()
         
@@ -213,7 +224,7 @@ def Postmortem():
     SetChannelName('PM')
 
     # All turn-by-turn data is provided.
-    Trigger(*IQ_wf(LENGTH) + ABCD_wf(LENGTH) + XYQS_wf(LENGTH))
+    Trigger(True, *IQ_wf(LENGTH) + ABCD_wf(LENGTH) + XYQS_wf(LENGTH))
     
     UnsetChannelName()
         
@@ -263,7 +274,7 @@ def TurnByTurn():
     offset = longIn('OFFSET', 0, LONG_LENGTH, PINI = 'YES',
         DESC = 'TT readout offset readback')
 
-    Trigger(*
+    Trigger(True, *
         # Raw I and Q values
         IQ_wf(WINDOW_LENGTH) + 
         # Button values
@@ -282,7 +293,8 @@ def SlowAcquisition():
         DESC = 'Absolute input power')
     current = aIn('CURRENT', 0, 500, 1e-5, 'mA', 3,
         DESC = 'SA input current')
-    Trigger(*ABCD_() + XYQS_(4) + XYQS_(4, suffix='C') + [power, current])
+    Trigger(False,
+        *ABCD_() + XYQS_(4) + XYQS_(4, suffix='C') + [power, current])
     UnsetChannelName()
 
 

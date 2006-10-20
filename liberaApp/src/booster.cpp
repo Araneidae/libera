@@ -37,8 +37,8 @@
 #include "persistent.h"
 #include "publish.h"
 #include "thread.h"
-#include "trigger.h"
 #include "hardware.h"
+#include "trigger.h"
 #include "events.h"
 #include "convert.h"
 #include "waveform.h"
@@ -80,7 +80,7 @@ public:
         Publish_waveform("BN:AXISS", ShortAxis);
 
         /* Trigger and interlock. */
-        Interlock.Publish("BN");
+        Interlock.Publish("BN", true);
         Enable.Publish("BN");
 
         /* Announce our interest in the trigger. */
@@ -104,7 +104,7 @@ public:
         LongXyqs.CaptureConvert(LongAbcd);
         ProcessShortWaveforms();
 
-        Interlock.Ready();
+        Interlock.Ready(LongIq.GetTimestamp());
     }
 
     

@@ -105,6 +105,9 @@ public:
      * waveform. */
     void CaptureFrom(const WAVEFORMS<T> & Source, size_t Offset);
 
+    /* Reads the timestamp. */
+    const CSPI_TIMESTAMP & GetTimestamp() { return Timestamp; }
+
     
 protected:
     void PublishColumn(
@@ -120,6 +123,8 @@ protected:
     size_t ActiveLength;
     /* The waveform itself. */
     T * const Data;
+    /* The timestamp of the waveform. */
+    CSPI_TIMESTAMP Timestamp;
 
     /* Some tiresome problems with C++ access management.  Anything that
      * looks across instances needs special helper declarations here. */

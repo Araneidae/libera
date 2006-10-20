@@ -77,6 +77,12 @@ public:
      * returned if required.
      *    The default implementation returns no alarm. */
     virtual epicsAlarmSeverity AlarmStatus() { return epicsSevNone; }
+
+    /* This method is also called immediately after other process, and can be
+     * overridden to define a custom timestamp.  To ensure that this
+     * timestamp isn't subsequently overwritten by record support, the record
+     * definition should set TSE=-2 (and ensure TSEL is not set). */
+    virtual bool GetTimestamp(struct timespec &time) { return false; }
 };
 
 

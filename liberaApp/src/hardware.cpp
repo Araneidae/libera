@@ -205,7 +205,9 @@ bool SetClockTime(struct timespec & NewTime)
 /*****************************************************************************/
 
 
-size_t ReadWaveform(int Decimation, size_t WaveformLength, LIBERA_ROW * Data)
+size_t ReadWaveform(
+    int Decimation, size_t WaveformLength, LIBERA_ROW * Data,
+    CSPI_TIMESTAMP & Timestamp)
 {
     CSPI_CONPARAMS_DD ConParams;
     ConParams.dec = Decimation;
@@ -218,7 +220,9 @@ size_t ReadWaveform(int Decimation, size_t WaveformLength, LIBERA_ROW * Data)
         // Seek to the trigger point
         CSPI_(cspi_seek, CspiConDd, &Offset, CSPI_SEEK_TR)  &&
         // Read the data
-        CSPI_(cspi_read_ex, CspiConDd, Data, WaveformLength, &Read, NULL);
+        CSPI_(cspi_read_ex, CspiConDd, Data, WaveformLength, &Read, NULL)  &&
+        // Finally read the timestamp: needs to be done after data read.
+        CSPI_(cspi_gettimestamp, CspiConDd, &Timestamp);
 
     if (Ok)
         return Read;
@@ -227,13 +231,16 @@ size_t ReadWaveform(int Decimation, size_t WaveformLength, LIBERA_ROW * Data)
 }
 
 
-size_t ReadPostmortem(size_t WaveformLength, LIBERA_ROW * Data)
+size_t ReadPostmortem(
+    size_t WaveformLength, LIBERA_ROW * Data, CSPI_TIMESTAMP & Timestamp)
 {
     size_t Read;
-    if (CSPI_(cspi_read_ex, CspiConPm, Data, 16384, &Read, NULL))
-        return Read;
-    else
-        return 0;
+    bool Ok =
+        CSPI_(cspi_read_ex, CspiConPm, Data, 16384, &Read, NULL)  &&
+        // Finally read the timestamp: needs to be done after data read.
+        CSPI_(cspi_gettimestamp, CspiConDd, &Timestamp);
+
+    return Ok ? Read : 0;
 }
 
 

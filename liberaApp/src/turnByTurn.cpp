@@ -37,8 +37,8 @@
 #include "persistent.h"
 #include "publish.h"
 #include "thread.h"
-#include "trigger.h"
 #include "hardware.h"
+#include "trigger.h"
 #include "events.h"
 #include "convert.h"
 #include "waveform.h"
@@ -96,7 +96,7 @@ public:
          * that a waveform has been read into memory. */
         PUBLISH_METHOD_OUT(bo, "TT:ARM", SetArm, Armed);
         Publish_bi("TT:READY", LongTrigger);
-        Interlock.Publish("TT");
+        Interlock.Publish("TT", true);
 
         /* Announce our interest in the trigger. */
         RegisterTriggerEvent(*this, PRIORITY_TT);
@@ -228,7 +228,7 @@ private:
         WindowXyqs.CaptureConvert(WindowAbcd);
 
         /* Let EPICS know there's stuff to read. */
-        Interlock.Ready();
+        Interlock.Ready(LongWaveform.GetTimestamp());
     }
     
 

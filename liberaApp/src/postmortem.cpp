@@ -37,8 +37,8 @@
 #include "persistent.h"
 #include "publish.h"
 #include "thread.h"
-#include "trigger.h"
 #include "hardware.h"
+#include "trigger.h"
 #include "events.h"
 #include "convert.h"
 #include "waveform.h"
@@ -61,7 +61,7 @@ public:
         WaveformIq.Publish("PM");
         WaveformAbcd.Publish("PM");
         WaveformXyqs.Publish("PM");
-        Interlock.Publish("PM");
+        Interlock.Publish("PM", true);
         /* Announce our interest in the postmortem event. */
         RegisterPostmortemEvent(*this, PRIORITY_PM);
     }
@@ -77,7 +77,7 @@ public:
         WaveformXyqs.CaptureConvert(WaveformAbcd);
 
         /* Let EPICS know there's stuff to read. */
-        Interlock.Ready();
+        Interlock.Ready(WaveformIq.GetTimestamp());
     }
 
     

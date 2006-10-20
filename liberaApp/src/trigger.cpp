@@ -37,6 +37,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <errno.h>
 #include <pthread.h>
 
@@ -62,29 +63,45 @@
 TRIGGER::TRIGGER(bool InitialValue)
 {
     Value = InitialValue;
+    memset(&Timestamp, 0, sizeof(Timestamp));
     iIntr = NULL;
 }
 
 /* This method signals that the trigger is ready. */
-bool TRIGGER::Ready()
+bool TRIGGER::Ready(const struct timespec *NewTimestamp)
 {
+    /* If we've been given a timestamp then use that, otherwise fetch the
+     * current time as our timestamp. */
+    if (NewTimestamp == NULL)
+        TEST_(clock_gettime, CLOCK_REALTIME, & Timestamp);
+    else
+        Timestamp = *NewTimestamp;
+
+    /* If epics is listening, let it know. */
     if (iIntr == NULL)
         return false;
     else
         return iIntr->IoIntr();
 }
 
-/* Epics support routine: actually, nothing to do! */
+
+/* Epics support routine: just return our value. */
 bool TRIGGER::read(bool &ValueRead)
 {
     ValueRead = Value;
     return true;
 }
 
-/* Support I/O Intr functionality: overrides I_bo method. */
+/* Support I/O Intr functionality. */
 bool TRIGGER::EnableIoIntr(I_INTR & Intr)
 {
     iIntr = &Intr;
+    return true;
+}
+
+bool TRIGGER::GetTimestamp(struct timespec & Result)
+{
+    Result = Timestamp;
     return true;
 }
 
@@ -233,22 +250,40 @@ INTERLOCK::INTERLOCK() :
 {
     Name = NULL;
     Value = true;
+    MachineClockLow = 0;
+    MachineClockHigh = 0;
 }
 
 
-void INTERLOCK::Publish(const char * Prefix)
+void INTERLOCK::Publish(const char * Prefix, bool PublishMC)
 {
     Name = Prefix;
     Publish_bi(Concat(Prefix, ":TRIG"), Trigger);
     PUBLISH_METHOD_OUT(bo, Concat(Prefix, ":DONE"), ReportDone, Value);
+
+    if (PublishMC)
+    {
+        Publish_longin(Concat(Prefix, ":MCL"), MachineClockLow);
+        Publish_longin(Concat(Prefix, ":MCH"), MachineClockHigh);
+    }
 }
 
-void INTERLOCK::Ready()
+void INTERLOCK::Ready(const CSPI_TIMESTAMP &Timestamp)
 {
-    /* Inform EPICS, which is now responsible for calling ReportDone(). */
-    Trigger.Ready();
+    if (&Timestamp == NULL)
+        /* No timestamp: let the trigger use current time. */
+        Trigger.Ready();
+    else
+    {
+        /* Give the trigger the true timestamp, and update our internal
+         * machine clock. */ 
+        Trigger.Ready(&Timestamp.st);
+        /* Return the machine clock in two pieces.  Because EPICS longs are
+         * signed, we truncate both parts to 31 bits each. */
+        MachineClockLow  = (int) (Timestamp.mt & 0x7FFFFFFF);
+        MachineClockHigh = (int) ((Timestamp.mt >> 31) & 0x7FFFFFFF);
+    }
 }
-
 
 void INTERLOCK::Wait()
 {
@@ -259,7 +294,9 @@ void INTERLOCK::Wait()
      * Unfortunately experience tells us that the post we're waiting for can
      * go astray.  To guard against this possibility we wait on a timeout and
      * go ahead anyway(!) if the event never arrives.  Of course, if events
-     * have become permanently lost then we're dead... */
+     * have become permanently lost then we're dead...
+     *    Oddly enough, this message does occasionally appear in the ioc log.
+     * No idea why, as yet. */
     if (!Interlock.Wait(2))
         printf("%s:DONE timed out waiting for EPICS handshake\n", Name);
 }
@@ -301,6 +338,8 @@ private:
         Ready();
     }
 };
+
+
 
 bool InitialiseTriggers()
 {

@@ -120,10 +120,13 @@ void TerminateHardware();
  * decimation into the given block of data.  Returns the number of rows
  * actually read.
  *     At present only decimation values of 1 or 64 are suppported. */
-size_t ReadWaveform(int Decimation, size_t WaveformLength, LIBERA_ROW * Data);
+size_t ReadWaveform(
+    int Decimation, size_t WaveformLength, LIBERA_ROW * Data,
+    CSPI_TIMESTAMP & Timestamp);
 
 /* Reads the postmortem buffer. */
-size_t ReadPostmortem(size_t WaveformLength, LIBERA_ROW * Data);
+size_t ReadPostmortem(
+    size_t WaveformLength, LIBERA_ROW * Data, CSPI_TIMESTAMP & Timestamp);
 
 /* Reads a full 1024 point ADC waveform. */
 bool ReadAdcWaveform(ADC_DATA &Data);

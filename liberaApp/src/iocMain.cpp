@@ -39,6 +39,7 @@
 
 #include <iocsh.h>
 
+#include "hardware.h"
 #include "firstTurn.h"
 #include "booster.h"
 #include "turnByTurn.h"
@@ -56,7 +57,6 @@
 #include "fastFeedback.h"
 
 #include "events.h"
-#include "hardware.h"
 #include "convert.h"
 #include "timestamps.h"
 

@@ -295,6 +295,23 @@ static bool init_record_(
 
 
 
+/* Common record post-processing.  Updates the alarm state as appropriate,
+ * and checks if the timestamp should be written here. */
+
+static void post_process(dbCommon *pr, epicsEnum16 nsta, I_RECORD *iRecord)
+{
+    recGblSetSevr(pr, nsta, iRecord->AlarmStatus());
+    struct timespec Timestamp;
+    if (iRecord->GetTimestamp(Timestamp))
+    {
+        pr->time.secPastEpoch = Timestamp.tv_sec;
+        pr->time.nsec = Timestamp.tv_nsec;
+    }
+}
+
+
+
+
 /*****************************************************************************/
 /*                                                                           */
 /*                    Boilerplate generation support.                        */
@@ -388,7 +405,7 @@ static bool init_record_(
     { \
         GET_RECORD(record, pr, iRecord); \
         bool Ok = DO_ACTION(record, iRecord->action, pr->VAL(record)); \
-        SET_ALARM(pr, ACTION, iRecord); \
+        post_process((dbCommon *)pr, ACTION##_ALARM, iRecord); \
         return Ok ? OK : ERROR; \
     }
 
@@ -459,7 +476,7 @@ static long read_waveform(waveformRecord * pr)
 {
     GET_RECORD(waveform, pr, i_waveform);
     pr->nord = i_waveform->read(pr->bptr, pr->nelm);
-    SET_ALARM(pr, READ, i_waveform);
+    post_process((dbCommon *)pr, READ_ALARM, i_waveform);
     /* Note, by the way, that the waveform record support carefully ignores
      * my return code! */
     return pr->nord > 0 ? OK : ERROR;

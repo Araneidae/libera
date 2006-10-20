@@ -99,6 +99,7 @@ TempRoot release  &&
 
 cd "$TEMP_ROOT"   &&
 svn checkout -qN $SVN_RELEASE  &&
+cd Libera  &&
 svn cp "$SVN_TRUNK" $VERSION  &&
 # Also fix up the edm files: here we have to replace the svn:externals
 # reference with a true copy of the files.  Would be nice if `svn cp` could
