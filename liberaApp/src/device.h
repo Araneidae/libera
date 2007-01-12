@@ -81,7 +81,9 @@ public:
     /* This method is also called immediately after other process, and can be
      * overridden to define a custom timestamp.  To ensure that this
      * timestamp isn't subsequently overwritten by record support, the record
-     * definition should set TSE=-2 (and ensure TSEL is not set). */
+     * definition should set TSE=-2 (and ensure TSEL is not set).
+     *    Note that the timestamp here should be in Unix time, not EPICS
+     * time: the appropriate correction is done in device.cpp. */
     virtual bool GetTimestamp(struct timespec &time) { return false; }
 };
 

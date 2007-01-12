@@ -233,6 +233,9 @@ bool InitialiseFastFeedback()
      * other treatment is required. */
     PUBLISH_FUNCTION_OUT(bo, "FF:PROCESS", Ignored, ProcessRead);
 
+    /* Sensible defaults for frame length and clear delay. */
+    ConfigSpace->TimerFrameCountDown = 9000;
+    ConfigSpace->ClearDelay = 8000;
     
     PUBLISH_CONFIGURATION("FF:BPMID", longout,
         ConfigSpace->BpmId, ProcessWrite);
