@@ -321,7 +321,7 @@ static void UpdateLmtdState()
          */
         char _p[20];  sprintf(_p, "-p%d", LmtdPrescale);
         char _d[20];  sprintf(_d, "-d%d", SamplesPerTurn);
-        char _f[20];  sprintf(_f, "-f%d", detune);
+        char _f[20];  sprintf(_f, "-o%d", detune);
         char * Args[] = { "/opt/bin/lmtd", _p, _d, _f, NULL };
         DetachProcess(Args[0], Args);
 

@@ -1,5 +1,24 @@
 Change history of Libera EPICS Driver development
 
+2007/01/15 Version 1.40.0
+=========================
+Preliminary release to support iTech Libera 1.40 driver.
+
+This is a stop-gap release to provide EPICS support for the 1.40 Libera
+driver: this release does not support any new Libera functionality.  A more
+fully featured release providing support for for 1.40 features will follow
+soon.
+
+Significant changes:
+ - Incorporate CSPI 1.40 support including updated CSPI files.
+ - Add support for precision timestamps in EPICS for datatypes where this is
+   available (modes BN, FR, PM, TT).
+
+Minor changes:
+ - Fix bash compatibility bug introduced in /etc/init.d/epics script in 0.6.3.
+ - Version numbering now changed to track Libera driver version numbers.
+
+
 2006/10/02 Version 0.6.3
 ========================
 Minor changes from Version 0.6.1

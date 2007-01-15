@@ -1,4 +1,4 @@
-/* $Id: ebpp.h,v 1.9 2005/12/16 17:22:55 ales Exp $ */
+/* $Id: ebpp.h,v 1.21 2006/11/21 10:55:55 ales Exp $ */
 
 /** \file ebpp.h */
 /** Public include file for Libera Electron Beam Position Processor (EBPP). */
@@ -31,20 +31,19 @@ or visit http://www.gnu.org
 
 /** EBPP specific CFG parameters. */
 typedef enum {
-    LIBERA_CFG_XOFFSET = LIBERA_CFG_CUSTOM_FIRST, //!< Horizontal lectrical/magnetic offset.
+    LIBERA_CFG_XOFFSET = LIBERA_CFG_CUSTOM_FIRST,        //!< Horizontal electrical/magnetic offset.
     LIBERA_CFG_YOFFSET,        //!< Vertical electrical/magnetic offset.
     LIBERA_CFG_QOFFSET,        //!< Electrical offset.
     LIBERA_CFG_KX,             //!< Horizontal calibration coefficient.
     LIBERA_CFG_KY,             //!< Vertical calibration coefficient.
-    LIBERA_CFG_ILK_XLOW,        // Interlock X low limit
-    LIBERA_CFG_ILK_XHIGH,       // Interlock Y high limit
-    LIBERA_CFG_ILK_YLOW,        // Interlock Y low limit
-    LIBERA_CFG_ILK_YHIGH,       // Interlock Y high limit
-    LIBERA_CFG_ILK_MODE,        // Interlock mode
-    LIBERA_CFG_ILK_OVERFLOW_LIMIT,      // ADC data overflow limit
-    LIBERA_CFG_ILK_OVERFLOW_DUR,        // Overflow duration for interlock
-    LIBERA_CFG_ILK_GAIN_LIMIT,  // Interlock gain limit
-        
+    LIBERA_CFG_ILK_XLOW,           //!< Horizontal interlock threshold (LOW).
+    LIBERA_CFG_ILK_XHIGH,          //!< Horizontal interlock threshold (HIGH).
+    LIBERA_CFG_ILK_YLOW,           //!< Vertical interlock threshold (LOW).
+    LIBERA_CFG_ILK_YHIGH,          //!< Vertical interlock threshold (HIGH).
+    LIBERA_CFG_ILK_MODE,       //!< Interlock  mode
+    LIBERA_CFG_ILK_OVERFLOW_LIMIT,     //!< Interlock overflow limit (ADC count)
+    LIBERA_CFG_ILK_OVERFLOW_DUR,  //!< Interlock overflow duration (ADC clock periods)
+    LIBERA_CFG_ILK_GAIN_LIMIT, //!< Gain limit (dBm) for gain-dependant interlock
     LIBERA_CFG_CUSTOM_LAST,
 } LIBERA_CFG_EBPP_GENERIC;
 
@@ -99,7 +98,7 @@ typedef struct {
 typedef struct {
     /* 4 amplitudes */
     libera_S32_t Va, Vb, Vc, Vd;
-    /* 4 synthetic values -> X, Y, Q & Sum */
+    /* 4 synthetic values -> Sum, Q, X, Y */
     libera_S32_t Sum, Q, X, Y;
     /* Cx and Cy for FF */
     libera_S32_t Cx, Cy;

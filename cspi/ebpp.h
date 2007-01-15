@@ -1,4 +1,4 @@
-// $Id: ebpp.h,v 1.16 2006/07/06 09:27:51 ales Exp $
+// $Id: ebpp.h,v 1.31 2006/11/29 18:57:29 ales Exp $
 
 //! \file ebpp.h
 //! Electron Beam Position Processor specific definitions.
@@ -57,6 +57,14 @@ CSPI_ADC_ATOM;
 
 //--------------------------------------------------------------------------
 
+/** DSC Compensation parameters. */
+struct DSC_COMPPARAMS
+{
+        float ampl[16][4];
+        float phase[16][4];
+        int status;
+};
+
 /** Environment parameters or attributes. */
 struct tagCSPI_ENVPARAMS
 {
@@ -84,6 +92,7 @@ struct tagCSPI_ENVPARAMS
 		// Gain limit (dBm) for gain-dependant interlock.
 		int gain_limit;
 	} ilk;
+
 };
 
 /** Libera EBPP specific environment bitflags. */
@@ -126,16 +135,14 @@ CSPI_AGCMODE;
 
 /** Available DSC modes. */
 typedef enum {
-	/** Disable signal conditioning with DSC daemon. */	
+	/** Disable DSC. Keep current DSC coefficients. */
 	CSPI_DSC_OFF = 0,
-	/** Enable signal conditioning with DSC daemon. */	
+	/** Disable DSC. Apply unitiy DSC coefficients. */
+	CSPI_DSC_UNITY,
+	/** Enable signal conditioning with DSC daemon in AUTO mode. */	
 	CSPI_DSC_AUTO,
-	/** Enable factory preset configuration. */
-	CSPI_DSC_DEFAULT,
-	/** Enable last good configuration determined by DSC daemon. */
-	CSPI_DSC_LASTGOOD,
-	/** Enable user defined configuration in /opt/dsc/custom.cfg.*/
-	CSPI_DSC_CUSTOM,
+	/** Save current DSC coefficients onto FLASH /opt/dsc/lastgood.dat. */
+	CSPI_DSC_SAVE_LASTGOOD,
 }
 CSPI_DSCMODE;
 
@@ -150,28 +157,56 @@ typedef enum {
 }
 CSPI_ILKMODE;
 
+
+/** Event specific values for event CSPI_EVENT_INTERLOCK. */
+typedef enum {
+        /** IL: position X out of limit. */
+        CSPI_INTERLOCK_X    = LIBERA_INTERLOCK_X,
+
+        /** IL: position Y out of limit. */
+        CSPI_INTERLOCK_Y    = LIBERA_INTERLOCK_Y,
+
+        /** IL: Attenuators set higher than predefined value. */
+        CSPI_INTERLOCK_ATTN = LIBERA_INTERLOCK_ATTN,
+
+        /** IL: ADC Overflow  (filtered). */
+        CSPI_INTERLOCK_ADCF = LIBERA_INTERLOCK_ADCF,
+
+        /** IL: ADC Overflow  (not filtered). */
+        CSPI_INTERLOCK_ADC = LIBERA_INTERLOCK_ADC,
+} CSPI_ILKCAUSE;
+
 //--------------------------------------------------------------------------
 
-/** Derived from CSPI_CONPARAMS to handle DD specific
+/** Derived from CSPI_CONPARAMS to handle EBPP specific
  *  parameters or attributes.
  */
 typedef struct {
 	/** Common connection parameters. */
 	CSPI_CONPARAMS_BASE;
 
-	/** Decimation factor. */
+	/** DD decimation factor. */
 	size_t dec;
+
+	/** SA non-blocking mode. */
+	size_t nonblock;
 }
-CSPI_CONPARAMS_DD;
+CSPI_CONPARAMS_EBPP;
 
 //--------------------------------------------------------------------------
 
-/** Bit flags corresponding to the CSPI_CONPARAMS_DD structure.
- *  See CSPI_CONPARAMS_DD structure for descriptions.
+/** Bit flags corresponding to the CSPI_CONPARAMS_EBPP structure.
+ *  See CSPI_CONPARAMS_EBPP structure for descriptions.
  */
 typedef enum {
-	CSPI_CON_DEC = CUSTOM_CON_BIT(0),
+	CSPI_CON_DEC        = CUSTOM_CON_BIT(0),
+	CSPI_CON_SANONBLOCK = CUSTOM_CON_BIT(1),
 }
-CSPI_CONFLAGS_DD;
+CSPI_CONFLAGS_EBPP;
+
+/** Backward compatibility */
+typedef CSPI_CONFLAGS_EBPP  CSPI_CONFLAGS_DD;
+/** Backward compatibility */
+typedef CSPI_CONPARAMS_EBPP  CSPI_CONPARAMS_DD;
 
 #endif	// _EBPP_H

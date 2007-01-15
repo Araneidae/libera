@@ -55,8 +55,10 @@ def FastFeedback():
             longIn('LINK%d:HARD_ERR' % i,  DESC = 'Hard error count'),
             longIn('LINK%d:RX_CNT' % i,    DESC = 'Received packet count'),
             longIn('LINK%d:TX_CNT' % i,    DESC = 'Transmitted packet count'),
-            boolIn('LINK%d:UP' % i, 'Link Down', 'Link Up',
-                DESC = 'Link status')]]
+            boolIn('LINK%d:TX_UP' % i, 'Link Down', 'Link Up',
+                DESC = 'Transmit link status'),
+            boolIn('LINK%d:RX_UP' % i, 'Link Down', 'Link Up',
+                DESC = 'Receive link status')]]
 
     boolOut('PROCESS',
         DESC = 'Update FF fields',
@@ -81,8 +83,6 @@ def FastFeedback():
     # CR 1 - position or time
     boolOut('DATA_SELECT', 'Positions', 'Timestamps',
         DESC = 'Position data select')
-    # CR 2 - action, auto clears
-    boolOut('SEND_ID', DESC = 'Send BPM ID command')
 
     UnsetChannelName()
     

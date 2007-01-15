@@ -1,4 +1,4 @@
-// $Id: cspi.c,v 1.62 2006/06/27 05:40:18 ales Exp $
+// $Id: cspi.c,v 1.69 2006/11/21 12:22:17 ales Exp $
 
 //! \file cspi.c
 //! Implements Control System Programming Interface.
@@ -31,6 +31,7 @@ validate input parameters in debug build only.
 TAB = 4 spaces.
 */
 
+#include <stdio.h>
 #include <math.h>
 #include <fcntl.h>
 #include <signal.h>
@@ -45,6 +46,7 @@ TAB = 4 spaces.
 
 #include "cspi.h"
 #include "cspi_impl.h"
+#include "msp.h"
 
 /** A list of error messages corresponding to error codes. */
 const char* err_list[] = {
@@ -581,6 +583,97 @@ int get_libparam( Library *module, CSPI_LIBPARAMS *p, CSPI_BITMASK flags )
 
 //--------------------------------------------------------------------------
 
+int cspi_sethealthparam(Environment *e, const CSPI_ENVPARAMS *p,
+                        CSPI_BITMASK flags)
+{
+        // SET not supported for HEALTH parameters
+        if ( flags & CSPI_ENV_HEALTH ) 
+            return CSPI_E_ILLEGAL_CALL;
+
+	return CSPI_OK;
+}
+
+//--------------------------------------------------------------------------
+
+int cspi_health_get_temp( int *temp, const char *proc_filename )
+{
+    int max, min;
+
+    FILE *fp = fopen (proc_filename, "r" );
+    if ( !fp ) return CSPI_E_SYSTEM;
+
+    fscanf( fp, "%d\t%d\t%d\n", &max, &min, temp );
+    fclose( fp );
+
+    return CSPI_OK;
+}
+
+int cspi_health_get_fan( int *speed, const char *proc_filename )
+{
+    FILE *fp = fopen( proc_filename, "r" );
+    if ( !fp ) return CSPI_E_SYSTEM;
+
+    fscanf( fp, "%d\n", speed );
+    fclose( fp );
+
+    return CSPI_OK;
+}
+
+int cspi_health_get_voltages( int *voltage )
+{
+    int rc = CSPI_OK;
+    size_t nread, i;
+    msp_atom_t msp_atom;
+    const char *mspdev = "/dev/msp0";
+
+    int fd = open(mspdev, O_RDONLY);
+    if ( fd < 0 ) return CSPI_E_SYSTEM;
+
+    nread = read( fd, &msp_atom, sizeof(msp_atom_t));
+    if ( ( nread != sizeof(msp_atom_t) ) &&
+         ( nread < 0 ) ) 
+        rc = CSPI_E_SYSTEM;
+
+    for (i = 0; i < 8; i++)
+        *(voltage + i) = msp_atom.voltage[i];
+
+    close(fd);
+    return rc;
+}
+
+//--------------------------------------------------------------------------
+
+int cspi_gethealthparam(Environment *e, CSPI_ENVPARAMS *p,
+                        CSPI_BITMASK flags)
+{
+    const char *proc_temp = "/proc/sys/dev/sensors/max1617a-i2c-0-29/temp1";
+    const char *proc_fan0 = "/proc/sys/dev/sensors/max6650-i2c-0-4b/fan1";
+    const char *proc_fan1 = "/proc/sys/dev/sensors/max6650-i2c-0-48/fan1";
+
+    int rc = CSPI_OK;
+
+    if ( flags & CSPI_ENV_HEALTH ) {
+
+        // Temperature
+        rc = cspi_health_get_temp( &p->health.temp, proc_temp );
+        if ( CSPI_OK != rc ) return rc;
+
+        // Front fan
+        rc = cspi_health_get_fan( &p->health.fan[0], proc_fan0 );
+        if ( CSPI_OK != rc ) return rc;
+        // Back fan
+        rc = cspi_health_get_fan( &p->health.fan[1], proc_fan1 );
+        if ( CSPI_OK != rc ) return rc;
+        
+        // PS voltages
+        rc = cspi_health_get_voltages( p->health.voltage );
+        if ( CSPI_OK != rc ) return rc;
+    }
+    return rc;
+}
+
+//--------------------------------------------------------------------------
+
 int cspi_setenvparam( CSPIHENV h, const CSPI_ENVPARAMS *p, CSPI_BITMASK flags )
 {
 	CSPI_LOG("%s(%p, %p, %u)", __FUNCTION__, h, p, flags);
@@ -602,6 +695,8 @@ int cspi_setenvparam( CSPIHENV h, const CSPI_ENVPARAMS *p, CSPI_BITMASK flags )
 
 int base_setenvparam( Environment *e, const CSPI_ENVPARAMS *p, CSPI_BITMASK flags )
 {
+        int rc = CSPI_OK;
+
 	ASSERT(e);
 	ASSERT(p);
 
@@ -614,13 +709,25 @@ int base_setenvparam( Environment *e, const CSPI_ENVPARAMS *p, CSPI_BITMASK flag
 	Param_map map[] = {
 
 		PARAM( TRIGMODE, &p->trig_mode, is_validtrigmode ),
+                
+		//PARAM( SCPLL, p->pll.sc, 0 ), // PLL status _SET_ not viable.
+		//PARAM( MCPLL, p->pll.mc, 0 ), // PLL status _SET_ not viable.
+
 		//...
 
 		// Note: must be null terminated!
 		{ 0, {0, 0} },
 	};
 
-	return handle_params( e->fd, map, flags, SET );
+        // Handle base params
+	rc = handle_params( e->fd, map, flags, SET );
+	if ( CSPI_OK == rc ) {
+
+            // Handle HEALTH params.
+            rc = cspi_sethealthparam( e, p, flags );
+	}
+
+        return rc;
 }
 
 //--------------------------------------------------------------------------
@@ -710,8 +817,13 @@ int get_param( int fd, int *p, const Param_traits *traits )
 
 //--------------------------------------------------------------------------
 
+#define CSPI_ENV_SCPLL		CSPI_ENV_PLL
+#define CSPI_ENV_MCPLL		CSPI_ENV_PLL
+
 int base_getenvparam( Environment *e, CSPI_ENVPARAMS *p, CSPI_BITMASK flags )
 {
+        int rc = CSPI_OK;
+
 	ASSERT(e);
 	ASSERT(p);
 
@@ -724,13 +836,25 @@ int base_getenvparam( Environment *e, CSPI_ENVPARAMS *p, CSPI_BITMASK flags )
 	Param_map map[] = {
 
 		PARAM( TRIGMODE, &p->trig_mode, 0 ),
+
+		PARAM( SCPLL, &p->pll.sc, 0 ),
+		PARAM( MCPLL, &p->pll.mc, 0 ),
+
 		//...
 
 		// Note: must be null terminated!
 		{ 0, {0, 0} },
 	};
 
-	return handle_params( e->fd, map, flags, GET );
+        // Handle base params
+	rc = handle_params( e->fd, map, flags, GET );
+	if ( CSPI_OK == rc ) {
+
+            // Handle HEALTH params.
+            rc = cspi_gethealthparam( e, p, flags );
+	}
+
+        return rc;
 }
 
 //--------------------------------------------------------------------------
@@ -1139,7 +1263,7 @@ int cspi_gettimestamp( CSPIHCON h, CSPI_TIMESTAMP *ts )
 
 //--------------------------------------------------------------------------
 
-int cspi_settime( CSPIHENV h, CSPI_TIMESTAMP *ts, CSPI_BITMASK flags )
+int cspi_settime( CSPIHENV h, CSPI_SETTIMESTAMP *ts, CSPI_BITMASK flags )
 {
 	CSPI_LOG("%s(%p, %p, %u)", __FUNCTION__, h, ts, flags);
 
@@ -1153,10 +1277,10 @@ int cspi_settime( CSPIHENV h, CSPI_TIMESTAMP *ts, CSPI_BITMASK flags )
 	int rc = 0;
 
 	if ( flags & CSPI_TIME_MT )
-		rc = ioctl( fd, LIBERA_EVENT_SET_MT, &ts->mt );
+		rc = ioctl( fd, LIBERA_EVENT_SET_MT, ts );
 
 	if ( -1 != rc &&  (flags & CSPI_TIME_ST) )
-		rc = ioctl( fd, LIBERA_EVENT_SET_ST, &ts->st );
+		rc = ioctl( fd, LIBERA_EVENT_SET_ST, ts );
 
 	close(fd);
 	return 0 == rc ? CSPI_OK : CSPI_E_SYSTEM;

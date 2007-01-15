@@ -1,4 +1,4 @@
-// $Id: cspi.h,v 1.35 2006/06/02 05:48:26 miha Exp $
+// $Id: cspi.h,v 1.38 2006/11/21 12:22:17 ales Exp $
 
 //! \file cspi.h
 //! Public CSPI header file.
@@ -357,20 +357,43 @@ struct tagCSPI_ENVPARAMS;
  */
 typedef struct tagCSPI_ENVPARAMS CSPI_ENVPARAMS;
 
+/** Represents CSPI health environment parameters.
+ *  Temperature, fans & PS voltages.
+ */
+typedef struct {
+        int temp;
+        int fan[2];
+        int voltage[8];
+}
+cspi_health_t;
+
+/** Represents CSPI PLL status environment parameters. */
+typedef struct {
+    unsigned long sc;
+    unsigned long mc;
+}
+cspi_pll_t;
+
 /** Declares environment parameters common to all members of the Libera
  *  family. Derived structures use this macro to declare 'base' members.
  */
 #define CSPI_ENVPARAMS_BASE \
+	/** Health info. Temperature, fans & PS voltages. */ \
+	cspi_health_t health; \
+	/** PLL status. */ \
+	cspi_pll_t pll; \
 	/** Trigger mode. See enum CSPI_TRIGGER (R/W). */ \
-	int trig_mode; \
+	int trig_mode;
 
 /** Bitmasks corresponding to the common environment parameters.
  *  See CSPI_ENVPARAMS structure and CSPI_ENVPARAMS_BASE macro for more 
  *  information.
  */
 typedef enum {
-	CSPI_ENV_TRIGMODE	= BIT(0),
-	// CSPI_ENV_reserved = BIT(1)...BIT(7),
+	CSPI_ENV_HEALTH 	= BIT(0),
+	CSPI_ENV_TRIGMODE	= BIT(1),
+	CSPI_ENV_PLL    	= BIT(2),
+	// CSPI_ENV_reserved = BIT(2)...BIT(7),
 }
 CSPI_ENVFLAGS;
 
@@ -728,6 +751,9 @@ int cspi_read_ex( CSPIHCON h, void *dest, size_t count, size_t *nread,
 /** Represents a timestamp -- a (System Time, Machine Time) pair. */
 typedef libera_timestamp_t CSPI_TIMESTAMP;
 
+/** Represents a high resolution (set)timestamp -- System Time, Machine Time + offset. */
+typedef libera_HRtimestamp_t CSPI_SETTIMESTAMP;
+
 /** \brief Retrieve a timestamp.
  *
  *  Retrieves a timestamp associated with the last successfull cspi_read
@@ -795,7 +821,7 @@ CSPI_TIMEFLAGS;
  *  @param flags Bitmask specifying which time to set. This can be
  *               any combination of CSPI_TIMEFLAGS flags.
  */
-int cspi_settime( CSPIHENV h, CSPI_TIMESTAMP *ts, CSPI_BITMASK flags );
+int cspi_settime( CSPIHENV h, CSPI_SETTIMESTAMP *ts, CSPI_BITMASK flags );
 
 #if defined(EBPP)
 #include "ebpp.h"		// EBPP-specific declarations

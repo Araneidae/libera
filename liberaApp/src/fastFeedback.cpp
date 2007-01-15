@@ -52,8 +52,8 @@
 
 
 
-#define FF_BASE_ADDRESS         0x1402A000
-#define FF_CONTROL_ADDRESS      0x14029FFC
+#define FF_BASE_ADDRESS         0x14028000
+#define FF_CONTROL_ADDRESS      0x1402A000
 
 
 struct FF_CONFIG_SPACE
@@ -103,7 +103,8 @@ static volatile int * ControlRegister;
 
 /* Boolean values extracted from LinkUp field.  This array is updated once a
  * second. */
-static bool LinkUp[4];
+static bool TxLinkUp[4];
+static bool RxLinkUp[4];
 
 /* Mirrors of configuration values.  These values cannot be read and written
  * directly, and so are instead read and written here. */
@@ -160,7 +161,10 @@ static void ProcessRead()
 {
     int UpMask = StatusSpace->LinkUp;
     for (int i = 0; i < 4; i ++)
-        LinkUp[i] = (UpMask & (1 << i)) != 0;
+    {
+        RxLinkUp[i] = (UpMask & (1 << i)) != 0;
+        TxLinkUp[i] = (UpMask & (1 << (i + 4))) != 0;
+    }
 }
 
 
@@ -168,12 +172,11 @@ static void ProcessRead()
  * value.  The Handshake bit is used to enable the reading of configuration
  * space values on its rising edge. */
 
-inline static int ControlValue(bool Handshake, bool SendBpmId)
+inline static int ControlValue(bool Handshake)
 {
     return
         (Handshake << 0) | 
         (SendTimeFrames << 1) | 
-        (SendBpmId << 2) | 
         (GlobalEnable << 3);
 }
 
@@ -195,18 +198,10 @@ static void ProcessWrite()
 
     /* Force the configuration values to be read by toggling the handshake
      * bit in the control register. */
-    *ControlRegister = ControlValue(true, false);
-    *ControlRegister = ControlValue(false, false);
+    *ControlRegister = ControlValue(true);
+    *ControlRegister = ControlValue(false);
 }
 
-
-
-static void ProcessSendId()
-{
-    /* Request sending of BPM id by toggling the send id bit. */
-    *ControlRegister = ControlValue(false, true);
-    *ControlRegister = ControlValue(false, false);
-}
 
 
 
@@ -226,7 +221,8 @@ bool InitialiseFastFeedback()
     PUBLISH_BLOCK(longin, "HARD_ERR", StatusSpace->HardErrorCount);
     PUBLISH_BLOCK(longin, "RX_CNT", StatusSpace->ReceivedPacketCount);
     PUBLISH_BLOCK(longin, "TX_CNT", StatusSpace->TransmittedPacketCount);
-    PUBLISH_BLOCK(bi, "UP", LinkUp);
+    PUBLISH_BLOCK(bi, "TX_UP", TxLinkUp);
+    PUBLISH_BLOCK(bi, "RX_UP", RxLinkUp);
 
     /* The ProcessRead function updates the LinkUp array.  All the other
      * fields can be read directly by EPICS, as no special synchronisation or
@@ -256,8 +252,6 @@ bool InitialiseFastFeedback()
     PUBLISH_FUNCTION_OUT(bo, "FF:DATA_SELECT", SendTimeFrames, ProcessWrite);
     PUBLISH_FUNCTION_OUT(bo, "FF:ENABLE", GlobalEnable, ProcessWrite);
     
-    PUBLISH_FUNCTION_OUT(bo, "FF:SEND_ID", Ignored, ProcessSendId);
-
     
     /* Initialise the FPGA by writing the current configuration. */
     ProcessWrite();

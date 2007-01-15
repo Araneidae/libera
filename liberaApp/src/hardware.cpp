@@ -190,9 +190,10 @@ bool ReadAttenuation(int &Attenuation)
 
 bool SetClockTime(struct timespec & NewTime)
 {
-    CSPI_TIMESTAMP Timestamp;
+    CSPI_SETTIMESTAMP Timestamp;
     Timestamp.st = NewTime;
     Timestamp.mt = 0;
+    Timestamp.phase = 0;
     return CSPI_(cspi_settime,
         CspiEnv, &Timestamp, CSPI_TIME_MT | CSPI_TIME_ST);
 }

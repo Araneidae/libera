@@ -1,4 +1,4 @@
-/* $Id$ */
+/* $Id: libera.h,v 1.78 2006/11/21 10:55:55 ales Exp $ */
 
 /** \file libera.h */
 /** Public include file for GNU/Linux Libera driver. */
@@ -73,6 +73,13 @@ typedef struct
     struct timespec  st;   //!< System Time
     libera_hw_time_t mt;   //!< Machine Time
 } libera_timestamp_t;
+/** Libera High resolution userland timing pair, MT + D & ST */
+typedef struct 
+{
+    struct timespec  st;    //!< System Time
+    libera_hw_time_t mt;    //!< Machine Time
+    unsigned long    phase; //!< LMT phase (0...D-1)
+} libera_HRtimestamp_t;
 
 
 /** Libera event structure */
@@ -112,14 +119,14 @@ typedef enum
     LIBERA_TRIG_FA_SC1,          //!< FA SC trigger #1
 } libera_event_param_t;
 
-/* Libera interlock control flags. */
+/** Libera interlock parameter values. */
 typedef enum
 {
-    LIBERA_INTERLOCK_X    = (1<<0),
-    LIBERA_INTERLOCK_Y    = (1<<1),
-    LIBERA_INTERLOCK_ATTN = (1<<2),
-    LIBERA_INTERLOCK_ADCF = (1<<3),
-    LIBERA_INTERLOCK_ADC  = (1<<4),
+    LIBERA_INTERLOCK_X    = (1<<0), //!< IL position X out of limit
+    LIBERA_INTERLOCK_Y    = (1<<1), //!< IL position Y out of limit
+    LIBERA_INTERLOCK_ATTN = (1<<2), //!< Attenuators set higher than predefined value
+    LIBERA_INTERLOCK_ADCF = (1<<3), //!< ADC Overflow  (filtered)
+    LIBERA_INTERLOCK_ADC  = (1<<4), //!< ADC Overflow  (not filtered)
 } libera_interlock_param_t;
 
 /** Available modes of operation. */
@@ -207,6 +214,10 @@ typedef struct
 typedef enum {
     /** Trigger mode (set, get, ...) */
     LIBERA_CFG_TRIGMODE = 0,
+    /** MC PLL status */
+    LIBERA_CFG_MCPLL,
+    /** SC PLL status */
+    LIBERA_CFG_SCPLL,
     /** First custom (Libera member specific) parameter */
     LIBERA_CFG_CUSTOM_FIRST = 128,
 } LIBERA_CFG_COMMON;
@@ -300,7 +311,10 @@ typedef enum
     LIBERA_EVENT_SCPHI,
     LIBERA_EVENT_MC_TRIGGER_1,
     LIBERA_EVENT_MC_TRIGGER_0,
-        
+    LIBERA_EVENT_NCO,
+    LIBERA_EVENT_MCPLL,
+    LIBERA_EVENT_SCPLL,
+
     /* All DEBUG IDs have to be declared at the bottom of enum! */
 #ifdef DEBUG
     LIBERA_EVENT_PEEK_POKE,
@@ -365,7 +379,7 @@ enum libera_event_ids_t
 					  struct timespec),
     LIBERA_EVENT_SET_ST            = _IOW(LIBERA_EVENT_MAGIC,
 					  LIBERA_EVENT_ST,
-					  struct timespec),
+					  libera_HRtimestamp_t),
     
     /* MT: Machine Time */
     LIBERA_EVENT_GET_MT            = _IOR(LIBERA_EVENT_MAGIC,
@@ -373,7 +387,7 @@ enum libera_event_ids_t
 					  libera_hw_time_t),
     LIBERA_EVENT_SET_MT            = _IOW(LIBERA_EVENT_MAGIC,
 					  LIBERA_EVENT_MT,
-					  libera_hw_time_t),
+					  libera_HRtimestamp_t),
     
     /* Transfer of measured MC frequency f_MC */
     LIBERA_EVENT_GET_FLMC          = _IOR(LIBERA_EVENT_MAGIC,
@@ -424,7 +438,7 @@ enum libera_event_ids_t
     LIBERA_EVENT_ACQ_PM            = _IOW(LIBERA_EVENT_MAGIC,
 					  LIBERA_EVENT_PMBUF,
 					  libera_U32_t),
-    
+
     LIBERA_EVENT_GET_MC_TRIGGER_1 = _IOR(LIBERA_EVENT_MAGIC,
                                          LIBERA_EVENT_MC_TRIGGER_1,
                                          libera_hw_time_t),
@@ -432,6 +446,18 @@ enum libera_event_ids_t
     LIBERA_EVENT_GET_MC_TRIGGER_0 = _IOR(LIBERA_EVENT_MAGIC,
                                          LIBERA_EVENT_MC_TRIGGER_0,
                                          libera_hw_time_t),
+
+    LIBERA_EVENT_SET_NCO           = _IOW(LIBERA_EVENT_MAGIC,
+                                          LIBERA_EVENT_NCO,
+                                          libera_U32_t),
+
+    LIBERA_EVENT_SET_MCPLL         = _IOW(LIBERA_EVENT_MAGIC,
+                                          LIBERA_EVENT_MCPLL,
+                                          libera_U32_t),
+
+    LIBERA_EVENT_SET_SCPLL         = _IOW(LIBERA_EVENT_MAGIC,
+                                          LIBERA_EVENT_SCPLL,
+                                          libera_U32_t),
     
     /* All DEBUG IDs have to be declared at the bottom of enum! */
 #ifdef DEBUG

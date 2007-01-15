@@ -1,4 +1,4 @@
-// $Id: dscd.h,v 1.1 2006/06/02 05:49:14 miha Exp $
+// $Id: dscd.h,v 1.3 2006/10/17 10:21:53 ales Exp $
 
 //! \file dscd.h
 //! Declares interface for the DSC Daemon.

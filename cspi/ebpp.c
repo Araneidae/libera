@@ -1,4 +1,4 @@
-// $Id: ebpp.c,v 1.34 2006/07/06 09:27:51 ales Exp $
+// $Id: ebpp.c,v 1.45 2006/11/21 12:22:17 ales Exp $
 
 //! \file ebpp.c
 //! Electron Beam Position Processor (EBPP) specific module.
@@ -168,6 +168,11 @@ int ebpp_dsc_message( size_t msg_type, int *msg_val )
 
 		*msg_val = msg.val;
 		rc = msg.status;
+                /* Interpret DSC errors */
+                if (0 > rc) {
+                    errno = -rc;
+                    rc = CSPI_E_SYSTEM;
+                }
 	}
 	close(fd);
 
@@ -355,11 +360,10 @@ inline int ebpp_is_validagc( const void *p )
 inline int ebpp_is_validdsc( const void *p )
 {
 	const size_t dsc = *(size_t *)p;
-	return dsc == CSPI_DSC_OFF ||
-               dsc == CSPI_DSC_AUTO ||
-	       dsc == CSPI_DSC_DEFAULT ||
-	       dsc == CSPI_DSC_LASTGOOD ||
-	       dsc == CSPI_DSC_CUSTOM;
+	return dsc == CSPI_DSC_OFF    ||
+	       dsc == CSPI_DSC_UNITY  ||
+               dsc == CSPI_DSC_AUTO   ||
+	       dsc == CSPI_DSC_SAVE_LASTGOOD;
 }
 
 //--------------------------------------------------------------------------
@@ -423,10 +427,8 @@ inline int ebpp_get_overflowlimit( const void *p )
  */
 inline int ebpp_is_validoverflowdur( const void *p )
 {
-        const unsigned int MAX = 31;
-	unsigned int dur = *(unsigned int *)p;
-
-	return dur <= MAX;
+        /* Checks made in Libera driver due to DDC decimation dependency. */
+        return 1;
 }
 
 //--------------------------------------------------------------------------
@@ -533,8 +535,8 @@ int ebpp_setdscparam(Environment *e, const CSPI_ENVPARAMS *p,
 	const DSC_param_map map[] = {
 
 		DSC_WPARAM( SWITCH, &p->switches, ebpp_is_validswitch ),
-		DSC_WPARAM( GAIN,   &p->gain,     ebpp_is_validgain   ),
 		DSC_WPARAM( AGC,    &p->agc,      ebpp_is_validagc    ),
+		DSC_WPARAM( GAIN,   &p->gain,     ebpp_is_validgain   ),
 		DSC_WPARAM( DSC,    &p->dsc,      ebpp_is_validdsc    ),
 		{0, {0,0}}
 	};
@@ -707,17 +709,35 @@ int custom_setconparam( Connection *con, const CSPI_CONPARAMS *p, CSPI_BITMASK f
 	int rc = base_setconparam( con, p, flags );
 	if ( CSPI_OK != rc ) return rc;
 
-	// Handle DD connection params, specific to the EBPP.
+	// Handle DD connection params, specific to EBPP.
 	if ( flags & CSPI_CON_DEC ) {
 
 		if ( -1 == con->fd ) return CSPI_E_SEQUENCE;	// Connect first!
 		if ( CSPI_MODE_DD != con->mode ) return CSPI_E_ILLEGAL_CALL;
 
-		const CSPI_CONPARAMS_DD *q = (CSPI_CONPARAMS_DD *)p;
+		const CSPI_CONPARAMS_EBPP *q = (CSPI_CONPARAMS_EBPP *)p;
 		if ( !ebpp_is_validdec( &q->dec ) ) return CSPI_E_INVALID_PARAM;
 
 		ASSERT(-1 != con->fd);
-		if (-1 == ioctl( con->fd, LIBERA_IOC_SET_DEC, &q->dec )) rc = CSPI_E_SYSTEM;
+		if (-1 == ioctl( con->fd, LIBERA_IOC_SET_DEC, &q->dec )) return CSPI_E_SYSTEM;
+	}
+
+        // Handle SA connection params, specific to EBPP.
+	if ( flags & CSPI_CON_SANONBLOCK ) {
+
+		if ( -1 == con->fd ) return CSPI_E_SEQUENCE;	// Connect first!
+		if ( CSPI_MODE_SA != con->mode ) return CSPI_E_ILLEGAL_CALL;
+
+		const CSPI_CONPARAMS_EBPP *q = (CSPI_CONPARAMS_EBPP *)p;
+
+		ASSERT(-1 != con->fd);
+                int sa_flags = fcntl( con->fd, F_GETFL, 0);
+                if (-1 == sa_flags) return CSPI_E_SYSTEM;
+                if ( q->nonblock )
+                    sa_flags |= O_NONBLOCK;
+                else
+                    sa_flags &= ~O_NONBLOCK;
+		if (-1 == fcntl( con->fd, F_SETFL, sa_flags )) return CSPI_E_SYSTEM;
 	}
 
 	return rc;
@@ -739,7 +759,7 @@ int custom_getconparam( Connection *con, CSPI_CONPARAMS *p, CSPI_BITMASK flags )
 
 		if ( CSPI_MODE_DD != con->mode ) return CSPI_E_ILLEGAL_CALL;
 
-		const CSPI_CONPARAMS_DD *q = (CSPI_CONPARAMS_DD *)p;
+		const CSPI_CONPARAMS_EBPP *q = (CSPI_CONPARAMS_EBPP *)p;
 
 		ASSERT(-1 != con->fd);
 		if (-1 == ioctl( con->fd, LIBERA_IOC_GET_DEC, &q->dec )) rc = CSPI_E_SYSTEM;

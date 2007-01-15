@@ -158,10 +158,11 @@ int dtor(CSPIHENV henv, CSPIHCON hcon)
 int test(CSPIHENV henv)
 {
 	CSPI_EVENTHDR msg;
+        int timeout = 300;
 
 	while (1) {
 
-		if (sleep(30)) {
+		if (sleep(timeout)) {
 			if (-1==read(_fd[RD], &msg, sizeof(msg))) {
 				perror("read");
 				break;
@@ -169,7 +170,7 @@ int test(CSPIHENV henv)
 			dump_event(&msg);
 		}
 		else {
-			fprintf(stderr, "No event within 30 seconds.\n");
+			fprintf(stderr, "No event within %d seconds.\n", timeout);
 			break;
 		}
 	}

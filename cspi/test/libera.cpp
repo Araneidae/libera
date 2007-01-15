@@ -1,4 +1,4 @@
-// $Id: libera.cpp,v 1.14 2006/07/11 07:06:24 ales Exp $
+// $Id: libera.cpp,v 1.23 2006/11/21 12:34:19 ales Exp $
 
 // \file libera.cpp
 // Simple utility for configuration and data acquisition.
@@ -223,8 +223,10 @@ void usage(const char* argv0)
 	"  -v, --version    print version information, then exit\n"
 	"\n"
 	"SIZE    number of samples to acquire\n"
-	"TIME    a colon separated MT:ST pair: [MT]:[YYYYMMDDhhmm.ss]\n"
+	"TIME    a colon separated MT:ST pair: [MT.P]:[YYYYMMDDhhmm.ss]\n"
 	"To set MT or ST only, use 'MT:' or ':ST', respectively.\n"
+	"P in MT.P notation is the LMT phase (sub-MT timing resolution).\n"
+	"Limitation: 0 <= P < DDC_decimation\n"
 	"\n"
 	"Option --using-sa ignores --on-trigger.\n"
 	"Options --using-adc and --set-time imply --on-trigger.\n"
@@ -303,6 +305,7 @@ struct config
 		settime_specific() : mt(0), st(0) {}
 
 		unsigned long long mt;		// machine time
+                unsigned long phase;	        // LMT phase
 		time_t st;					// system time (seconds since 1/1/1970)
 	} time;
 
@@ -517,6 +520,7 @@ size_t option_parser::verify_atomcount(size_t N)
 void option_parser::assign_time(const char* time)
 {
 	const char delim = ':';
+	const char delim_phase = '.';
 	std::string s(time);
 
 	size_t p = s.find(delim);
@@ -524,9 +528,26 @@ void option_parser::assign_time(const char* time)
 
 	std::string s2(s.substr(0, p-0));
 	if (!s2.empty()) {
+            
+            cfg.mask |= config::want_setmt;
 
+            size_t p_phase = s2.find(delim_phase);
+            if (std::string::npos == p_phase) {
+                // No LMT Phase specified
 		cfg.time.mt = atoll(s2.c_str());
-		cfg.mask |= config::want_setmt;
+		cfg.time.phase = 0;
+                
+            } else {
+                // MT + LMT Phase specified
+                std::string s_mt(s2.substr(0, p_phase-0));
+                std::string s_phase(s2.substr(p_phase+1));
+
+		cfg.time.mt = atoll(s_mt.c_str());
+                if (!s_phase.empty())
+                    cfg.time.phase = atoll(s_phase.c_str());
+                else
+                    cfg.time.phase = 0;
+            }
 	}
 
 	s2 = s.substr(p+1);
@@ -550,12 +571,13 @@ void option_parser::assign_time(const char* time)
 // dump CSPI_ENVPARAMS members with descriptions
 std::ostream& operator<<(std::ostream& os, const CSPI_ENVPARAMS& obj)
 {
+        const size_t tab = 15;
 	const char* labels[] = {
 		"TRIGmode",
-		"Kx", "Ky",
-		"Xoffset", "Yoffset", "Qoffset",
+		"Kx [nm]", "Ky [nm]",
+		"Xoffset [nm]", "Yoffset [nm]", "Qoffset [nm]",
 		"Switches",
-		"Level",
+		"Level [dBm]",
 		"AGC",
 		"DSC",
 		//"Interlock",
@@ -563,16 +585,43 @@ std::ostream& operator<<(std::ostream& os, const CSPI_ENVPARAMS& obj)
 	};
 
 	const int *p = reinterpret_cast<const int*>(&obj);
+
+        // Health
+        os << std::setw(tab) << "Temp [C]" << ": ";
+        os << *p++ << std::endl;
+
+        os << std::setw(tab) << "Fans [rpm]" << ": ";
+        os << *p++ << " " << *p++ << std::endl;
+
+        os << std::setw(tab) << "Voltages [mV]" << ": ";
+
+	for (size_t i=0; i<8; ++i) {
+
+            os << *p++ << " ";
+	}
+        os << std::endl;
+
+        os << std::setw(tab) << "SC PLL" << ": ";
+        os << (*p++ ? "locked" : "unlocked") << std::endl;
+
+        os << std::setw(tab) << "MC PLL" << ": ";
+        os << (*p++ ? "locked" : "unlocked") << std::endl;
+
+        // From TRIGMode on
 	for (size_t i=0; labels[i]; ++i) {
 
-		os << std::setw(12) << labels[i] << ": " << *p++ << std::endl;
+		os << std::setw(tab) << labels[i] << ": " << *p++ << std::endl;
 	}
 
-	os << std::setw(12) << "Interlock" << ": ";
+	os << std::setw(tab) << "Interlock" << ": ";
 	const int *q = p + ILK_PARAMCOUNT - 1;
 
 	std::copy(p, q, std::ostream_iterator<int>(std::cout," "));
-	return os << *q << std::endl;
+	os << *q << std::endl;
+        p += ILK_PARAMCOUNT;
+
+        return os << std::endl;
+        
 }
 
 //--------------------------------------------------------------------------
@@ -866,7 +915,7 @@ protected:
 class streaming_acq_task : public acq_task
 {
 public:
-	explicit streaming_acq_task(config& c) : acq_task(c) {}
+        explicit streaming_acq_task(config& c) : acq_task(c) {}
 	~streaming_acq_task() {}
 
 	typedef CSPI_SA_ATOM atom_type;
@@ -923,7 +972,7 @@ public:
 
 		if (cfg.dd.decimation) {
 	
-			CSPI_CONPARAMS_DD p;
+			CSPI_CONPARAMS_EBPP p;
 			p.dec = cfg.dd.decimation;
 
 			int rc = cspi_setconparam(hcon, (CSPI_CONPARAMS *)&p, CSPI_CON_DEC);
@@ -966,13 +1015,14 @@ protected:
 
 int settime_task::run()
 {
-	CSPI_TIMESTAMP ts;
+	CSPI_SETTIMESTAMP ts;
 	CSPI_BITMASK mask = 0;
 
 	if (cfg.mask & config::want_setmt) {
 
 		mask |= CSPI_TIME_MT;
-		ts.mt = cfg.time.mt;
+		ts.mt    = cfg.time.mt;
+		ts.phase = cfg.time.phase;
 	}
 	if (cfg.mask & config::want_setst) {
 

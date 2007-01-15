@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.25 2006/01/05 09:16:37 miha Exp $
+# $Id: Makefile,v 1.36 2006/10/17 22:50:11 ales Exp $
 #
 # Copyright (C) 2004, 2005 Instrumentation Technologies
 # See the COPYING file for copying conditions.
@@ -21,14 +21,19 @@
 #
 
 #
-# TARGET: Set to EBPP or BBFP.
+# TARGET: Set to family member ID.
 #
 export TARGET = EBPP
 
 #
 # drvdir: Where to look for Libera GNU/Linux driver .h files.
 #
-drvdir = ../driver
+drvdir = ../../driver/src
+
+#
+# mspdir: Where to look for MSP driver .h files.
+#
+mspdir = ../../msp/src
 
 #
 # DEBUG: Debug level. Set to non-zero for debug build or
@@ -56,7 +61,17 @@ CFLAGS = -std=gnu99 -Wall
 #
 # CPPFLAGS: Options to pass to the preprocessor.
 #
-CPPFLAGS = -D$(TARGET) -DCORDIC_IGNORE_GAIN -I$(drvdir)
+CPPFLAGS = -D$(TARGET) -DCORDIC_IGNORE_GAIN -D_REENTRANT -I$(drvdir) -I$(mspdir)
+
+#
+# LDFLAGS: Options to pass to the linker.
+#
+LDFLAGS = -L.
+
+#
+# LIBS: Additional libs to pass to the linker.
+#
+LIBS = -lpthread
 
 #
 # AR: The command to invoke the archiver program.
@@ -132,9 +147,12 @@ endif
 ifeq ($(TARGET),BBFP)
 	SRCS += bbfp.c
 endif
+ifeq ($(TARGET),HBPP)
+	SRCS += hbpp.c
+endif
 
 
-.PHONY : all cspi test doc install install-dirs install-sbc src bin clean clean_except_docs dep
+.PHONY : all cspi test doc install install-dirs install-all src bin lpm clean clean_except_docs dep
 
 
 all: -lcspi leventd test
@@ -151,6 +169,9 @@ cspi: -lcspi
 
 leventd: eventd.o
 	$(CC) $(LDFLAGS) -o $@ $<
+
+
+leventd: -lcspi
 
 
 $(OBJS) eventd.o: .depend
@@ -172,16 +193,16 @@ install-dirs:
 	$(INSTALL) -d -o root -g root $(includedir) $(libdir) $(bindir)
 
 
-install-sbc: install-dirs
-	@echo Making install-sbc
+install: install-dirs
+	@echo Making install
 	$(CROSS_COMPILE)strip leventd
 	$(INSTALL) -m 755 -o root -g root leventd $(bindir)
 	# Get absolute prefix path to pass to the sub-make
 	cd $(testdir) && $(MAKE) prefix=$(shell cd $(prefix) && pwd) install
 
 
-install: install-dirs install-sbc
-	@echo Making install
+install-all: install-dirs install
+	@echo Making install-all
 	$(INSTALL) -m 644 -o root -g root cspi.h $(includedir)
 	$(INSTALL) -m 644 -o root -g root libcspi.a $(libdir)
 
@@ -205,14 +226,33 @@ src: clean doc
 	fi
 
 
+# BIN & LPM package dir
+PKGDIR       := ../..
+
+
 # BIN package
 B_NAME       := $(S_NAME)
 B_NAME_VER   := $(B_NAME)-$(RELEASE_VERSION)
-B_ARCHIVE    := $(B_NAME_VER)-bin.tar.gz
+B_ARCHIVE    := $(PKGDIR)/$(B_NAME_VER)-$(TARGET)-bin.tar.gz
 bin: clean all
-	$(MAKE) prefix=../tmp/$(patsubst /%,%,$(prefix)) install-sbc
-	@echo -e "Creating BIN package in ../../$(B_ARCHIVE)"; \
-	cd ../tmp; tar -cvzf ../../$(B_ARCHIVE) . ; \
+	$(MAKE) prefix=../tmp/$(patsubst /%,%,$(prefix)) install
+	@echo -e "Creating BIN package in $(B_ARCHIVE)"; \
+	cd ../tmp; tar cvzfp $(B_ARCHIVE) . ; \
+	cd -; \
+	$(RM) -r ../tmp; \
+	sync;
+
+
+# LPM package
+L_NAME       := $(S_NAME)
+L_NAME_INST  := $(L_NAME)-install
+L_NAME_VER   := $(L_NAME)-$(RELEASE_VERSION)
+L_ARCHIVE    := $(PKGDIR)/$(L_NAME_VER)-$(TARGET).lpm
+lpm: clean all
+	$(MAKE) prefix=../tmp/$(patsubst /%,%,$(prefix)) install
+	@echo -e "Creating LPM package in $(L_ARCHIVE)"; \
+	cd ../tmp; cp ../../../sys/src/$(L_NAME_INST) ./install ; \
+	tar cvfp $(L_ARCHIVE) . ; \
 	cd -; \
 	$(RM) -r ../tmp; \
 	sync;
@@ -221,7 +261,7 @@ bin: clean all
 clean:
 	@echo Making clean
 	-$(RM) *~ *.o *.a .depend leventd
-	-$(RM) -r ../bin
+	-$(RM) -r ../tmp
 	-$(RM) -r $(docdir)/cspi-reference*.pdf $(docdir)/latex $(docdir)/html
 	cd $(testdir) && $(MAKE) clean
 
