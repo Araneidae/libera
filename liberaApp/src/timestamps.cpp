@@ -30,6 +30,7 @@
 
 
 #include <stdio.h>
+#include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -219,10 +220,10 @@ static void DetachProcess(const char *Process, char *const argv[])
             /* Set a sensible home directory. */
             TEST_(chdir, "/");
 
-            /* Restore default signal handling.  I'd like to hope this step
-             * isn't needed. */
-            for (int i = 0; i < NSIG; i ++)
-                signal(i, SIG_DFL);
+//             /* Restore default signal handling.  I'd like to hope this step
+//              * isn't needed. */
+//             for (int i = 0; i < NSIG; i ++)
+//                 signal(i, SIG_DFL);
 
             /* Enable all signals. */
             sigset_t sigset;
@@ -297,6 +298,35 @@ static void SetIntermediateFrequency(int detune)
 
 
 
+/* Sends a command to the lmtd daemon with full error checking. */
+
+static bool SendLmtdCommand(const char * format, ...)
+{
+    va_list args;
+    va_start(args, format);
+    
+    bool Ok = false;
+    char Message[128];
+    int Length = vsnprintf(Message, sizeof(Message), format, args);
+    if (0 <= Length  &&  Length < (int) sizeof(Message))
+    {
+        int CommandFile;
+        if (TEST_IO(CommandFile, "Error opening lmtd command file", open,
+                "/tmp/lmtd.command", O_WRONLY|O_NONBLOCK))
+        {
+            int Written;
+            TEST_IO(Written, "Error writing lmtd command", write,
+                CommandFile, Message, Length);
+            TEST_(close, CommandFile);
+            Ok = Written == Length;
+        }
+    }
+    else
+        fprintf(stderr, "Error (%d) formatting LMTD command\n", errno);
+    return Ok;
+}
+
+
 /* Switches the LMTD between two states, tuned or detuned, and also optionally
  * implements "double-detune".
  *
@@ -308,6 +338,7 @@ static void SetIntermediateFrequency(int detune)
 
 static void UpdateLmtdState()
 {
+#if 0
     /* Work out how much we're going to detune by. */
     int detune = DetuneState == LMTD_TUNED ? 0 : DetuneFactor;
 
@@ -349,6 +380,13 @@ static void UpdateLmtdState()
     if (DetuneState == LMTD_DETUNED)
         /* In single detune state we don't apply any detune to the IF. */
         detune = 0;
+#endif
+
+    /* Work out how much we're going to detune by. */
+    int detune = DetuneState == LMTD_TUNED ? 0 : DetuneFactor;
+
+    SendLmtdCommand("o%d", detune);
+    
     SetIntermediateFrequency(detune);
 }
 
@@ -530,7 +568,7 @@ static bool Dummy;
 
 static void DoReboot()
 {
-    char * Args[] = { "/sbin/halt", "/sbin/reboot", NULL };
+    char * Args[] = { "/sbin/reboot", NULL };
     DetachProcess(Args[0], Args);
 }
 

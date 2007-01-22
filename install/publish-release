@@ -129,7 +129,6 @@ make  ||
     Error "Problem building final release"
 
 # Publish the build files locally
-./install/install-epics "$BUILD_TARGET/$VERSION"  &&
 ./install/install-ioc   "$BUILD_TARGET/$VERSION"  &&
 
 # Finally prepare the external release if required.

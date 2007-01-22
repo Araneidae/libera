@@ -70,25 +70,25 @@ cd "$(dirname "$0")"
 # location of the EPICS files.
 . /etc/sysconfig/epics_ioc
 
-export EPICS_BASE
-export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$EPICS_BASE/lib"
-export PATH="$PATH:$EPICS_BASE/bin"
 export EPICS_CA_MAX_ARRAY_BYTES=1000000
 export DEVICE="$(hostname)"
 
 PIDFILE=/var/run/ioc.pid
 
 # Check for arguments
-while getopts 'd:nfh' option; do
+RESTART_LMTD=0
+while getopts 'd:nflh' option; do
     case "$option" in
     d)  DEVICE="$OPTARG" ;;
     n)  IocParameter -n  ;;
     f)  rm -f "$PIDFILE" ;;
+    l)  RESTART_LMTD=1   ;;
     h)  cat <<'EOF' 
 Usage: runioc [options]
     -d <device>:  use supplied device name instead of hostname
     -n            run non-interactive without an IOC shell
     -f            run even if pid file already present
+    -l            restart lmtd even if it's already running properly
 EOF
         exit 0 ;;
     *)  echo >&2 'Invalid option: try -h for help'
@@ -101,12 +101,21 @@ if (($# >= OPTIND)); then
     exit 1
 fi
 
+
 # Don't run if the ioc.pid file is present: this is a simple technique to
 # prevent us interfering with an already running instance.
 if [ -e "$PIDFILE" ]; then
     echo >&2 'PID file found: check epics is not already running'
     exit 1
 fi
+
+# Ensure that we're running our own version of lmtd
+if ((RESTART_LMTD))  ||  ! [ -e /tmp/lmtd.command ]; then
+    [ -e /var/run/lmtd.pid ]  &&  kill $(cat /var/run/lmtd.pid)
+    [ "$COMPENSATE_TUNE" == yes ] && LMTD_FLAGS="$LMTD_FLAGS -c"
+    ./bin/lmtd -p$MCPRESC -d$DECIMATION -o$OFFSET_TUNE $LMTD_FLAGS -n&
+fi
+
 
 # Export the database parameters needed to configure libera.db.  These are
 # record lengths which need to be defined at IOC startup.
@@ -136,7 +145,7 @@ IocParameter -f $FREV
 
 # Start the repeater first and background it properly to avoid possible
 # conflicts (for instance, it can hold important file handles open!)
-caRepeater </dev/null >/dev/null 2>&1 &
+#caRepeater </dev/null >/dev/null 2>&1 &
 # Now run the IOC.
 echo 'Starting IOC at' $(date)
 ./bin/ioc "${IOC_PARAMETERS[@]}" st.cmd

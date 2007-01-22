@@ -112,7 +112,6 @@ fi
 # update the configuration file to point to them.
 if [ $TARGET == final ]; then
     # Hard-wired targets on local file system
-    EPICS_TARGET=/opt/epics
     IOC_TARGET=/opt/ioc
     STATE_DIR=/opt/state
 
@@ -129,17 +128,15 @@ if [ $TARGET == final ]; then
 else
     # Compute EPICS and IOC paths relative to this directory.  
     PARENT="$(cd "$SOURCE/.."; pwd)"
-    EPICS_TARGET="$PARENT/epics"
     IOC_TARGET="$PARENT/ioc"
     # Check that the parent directory contains the right files!
-    [ "$IOC_TARGET" = "$SOURCE" -a -d "$EPICS_TARGET" ] ||
+    [ "$IOC_TARGET" = "$SOURCE" ] ||
         Error "Inconsistent test installation environment"
 fi  &&
 
 # Now install the epics_ioc file.
 (
     # Add on the paths required for running the IOC
-    echo "EPICS_BASE='$EPICS_TARGET'"
     echo "LIBERA_IOC='$IOC_TARGET/runioc'"
     # We want to process three types of lines appropriately:
     #  1. Lines starting $LOCATION_IOC_... are translated to IOC_...

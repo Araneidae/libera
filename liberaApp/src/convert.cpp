@@ -78,9 +78,24 @@ static int ChannelGain[4] =
 
 /* Control configuration. */
 
-/* Controls whether automatic switching is enabled (DSC, Digital Signal
- * Conditioning, is enabled or disabled at the same time. */
-static bool AutoSwitchEnabled = false;
+/* Controls the state of the rotating switches and the associated DSC daemon.
+ * These are combined into a single setting here, but separated out in the
+ * CSPI interface.
+ *    The AutoSwitchState is set to one of the following enumeration values,
+ * but has to be declared here as an integer so that it can be passed by
+ * reference to the EPICS interface layer. */
+enum AUTO_SWITCH_STATE
+{
+    /* Switches fixed to manual setting, gains set to unity. */
+    AUTO_SWITCH_FIXED_UNITY = 0,
+    /* Switches fixed to manual setting, gains fixed to last good setting. */
+    AUTO_SWITCH_FIXED = 1,
+    /* Switches automatically rotating, gains fixed to last good setting. */
+    AUTO_SWITCH_ENABLED_NO_DSC = 2,
+    /* Switches automatically rotating, DSC running normally. */
+    AUTO_SWITCH_ENABLED_DSC = 3
+};
+static int AutoSwitchState = 0;
 /* Selects which switch setting to use in manual mode. */
 static int ManualSwitch = 3;
 /* Selected attenuation.  The default is quite high for safety. */
@@ -288,25 +303,52 @@ static void UpdateCalibration()
 
 static void UpdateAutoSwitch()
 {
-    if (AutoSwitchEnabled)
+    switch ((AUTO_SWITCH_STATE)AutoSwitchState)
     {
-        /* Switch mode is now automatic.  Turn on DSC as well. */
-        WriteSwitchState(CSPI_SWITCH_AUTO);
-        WriteDscMode(CSPI_DSC_AUTO);
-    }
-    else
-    {
-        /* Switch to manual mode. */
-        WriteDscMode(CSPI_DSC_OFF);
-        WriteSwitchState((CSPI_SWITCHMODE) ManualSwitch);
+        case AUTO_SWITCH_FIXED_UNITY:
+            /* Set the channel gains to unity, this completely disabling any
+             * DSC effect, and set the selected switch position. */
+            WriteDscMode(CSPI_DSC_UNITY);
+            WriteSwitchState((CSPI_SWITCHMODE) ManualSwitch);
+            break;
+        case AUTO_SWITCH_FIXED:
+            /* Turn the DSC off and set the currently selected fixed switch
+             * position. */
+            WriteDscMode(CSPI_DSC_OFF);
+            WriteSwitchState((CSPI_SWITCHMODE) ManualSwitch);
+            break;
+        case AUTO_SWITCH_ENABLED_NO_DSC:
+            /* Enable automatic switching with the DSC disabled, but holding
+             * the last good position. */
+            WriteDscMode(CSPI_DSC_OFF);
+            WriteSwitchState(CSPI_SWITCH_AUTO);
+            break;
+        case AUTO_SWITCH_ENABLED_DSC:
+            /* Enable automatic switching and turn the DSC on.  We try to
+             * avoid having DSC running with switching disabled, hence the
+             * change of order. */
+            WriteSwitchState(CSPI_SWITCH_AUTO);
+            WriteDscMode(CSPI_DSC_AUTO);
+            break;
     }
 }
 
 
 static void UpdateManualSwitch()
 {
-    if (!AutoSwitchEnabled)
-        WriteSwitchState((CSPI_SWITCHMODE) ManualSwitch);
+    switch ((AUTO_SWITCH_STATE)AutoSwitchState)
+    {
+        case AUTO_SWITCH_FIXED_UNITY:
+        case AUTO_SWITCH_FIXED:
+            /* If the switches are in a fixed mode then write the new manual
+             * switch setting directly to the switches. */
+            WriteSwitchState((CSPI_SWITCHMODE) ManualSwitch);
+            break;
+        case AUTO_SWITCH_ENABLED_NO_DSC:
+        case AUTO_SWITCH_ENABLED_DSC:
+            /* If the switches are in automatic mode leave them alone. */
+            break;
+    }
 }
 
 
@@ -433,8 +475,8 @@ bool InitialiseConvert()
     PUBLISH_GAIN("CF:G2", ChannelGain[2]);
     PUBLISH_GAIN("CF:G3", ChannelGain[3]);
 
-    PUBLISH_CONFIGURATION("CF:AUTOSW", bo,
-        AutoSwitchEnabled, UpdateAutoSwitch);
+    PUBLISH_CONFIGURATION("CF:AUTOSW", mbbo,
+        AutoSwitchState, UpdateAutoSwitch);
     PUBLISH_CONFIGURATION("CF:SETSW", longout,
         ManualSwitch, UpdateManualSwitch);
     PUBLISH_CONFIGURATION("CF:ISCALE", ao, CurrentScale, UpdateCurrentScale);

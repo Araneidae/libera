@@ -38,6 +38,7 @@
 #include <string.h>
 
 #include <iocsh.h>
+#include <epicsThread.h>
 
 #include "hardware.h"
 #include "firstTurn.h"
@@ -59,6 +60,13 @@
 #include "events.h"
 #include "convert.h"
 #include "timestamps.h"
+
+
+/* External declaration of caRepeater thread.  This should really be
+ * published by a standard EPICS header file, but for the time being we pick
+ * it up like this. */
+extern "C" void caRepeaterThread(void *);
+
 
 
 /* This variable records the PID file: if successfully written then it will
@@ -199,6 +207,23 @@ static void Usage(const char *IocName)
 "\n"
 "Note: This IOC application should normally be run from within runioc.\n",
         IocName);
+}
+
+
+
+/* This routine spawns a caRepeater thread, as recommended by Andrew Johnson
+ * (private communication, 2006/12/04).  This means that this IOC has no
+ * external EPICS dependencies. */
+
+static bool StartCaRepeater()
+{
+    epicsThreadId caRepeaterId = epicsThreadCreate(
+        "CAC-repeater", epicsThreadPriorityLow,
+        epicsThreadGetStackSize(epicsThreadStackMedium),
+        caRepeaterThread, 0);
+    if (caRepeaterId == 0)
+        perror("Error starting caRepeater thread");
+    return caRepeaterId != 0;
 }
 
 
@@ -423,6 +448,7 @@ int main(int argc, char *argv[])
     /* Consume any option arguments and start the driver. */
     bool Ok =
         ProcessOptions(argc, argv)  &&
+        StartCaRepeater()  &&
         InitialiseLibera();
 
     /* Consume any remaining script arguments by running them through the IOC

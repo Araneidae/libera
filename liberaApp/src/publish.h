@@ -244,6 +244,6 @@ private:
         * new CONFIGURATION_VALUE<typeof(Value)>(Value, Action))
 
 
-/* Helper routine for concatenating strings. */
+/* Helper routine for concatenating or just copying strings. */
 const char * Concat(
-    const char * Prefix, const char * Body, const char * Suffix="");
+    const char * Prefix, const char * Body="", const char * Suffix="");

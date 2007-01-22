@@ -3,7 +3,7 @@
 
 # Version number of this software: automatically included in build and used
 # to build distribution files.
-VERSION=1.40.0
+VERSION=1.40.1-pre
 
 # This is where installed files will be placed ready for deployment to the
 # Libera IOC.  The IOC files will be placed in $INSTALL_HOST/ioc and the
@@ -26,9 +26,7 @@ BUILD_FF_SUPPORT=yes
 # installation location specific.
 
 
-# If this symbol is empty then the IOC will run in a screen: screen must be
-# installed on Libera for this to work.  Otherwise the IOC will run as a
-# daemon with output redirected to this file.
+# The IOC normally runs as a daemon with output redirected to this file.
 IOC_LOG=/var/log/ioc
 
 # Location where the IOC will look for its persistent state.  

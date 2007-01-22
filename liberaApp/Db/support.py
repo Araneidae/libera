@@ -127,9 +127,10 @@ def extend(dictionary, key, value):
 
 # Functions for creating libera records
 
-def aIn(name, LOPR, HOPR, ESLO=1e-6, EGU='', PREC=0, EOFF=0, **fields):
+def aIn(name, LOPR, HOPR,
+        ESLO=1e-6, EGU='', PREC=0, EOFF=0, MDEL=-1, **fields):
     return Libera.ai(name,
-        MDEL = -1,
+        MDEL = MDEL,
         ESLO = ESLO,  EOFF = EOFF,  LINR = 'LINEAR', 
         LOPR = LOPR,  HOPR = HOPR,  EGUL = LOPR,  EGUF = HOPR,  
         EGU = EGU,  PREC = PREC,
@@ -154,9 +155,9 @@ def boolOut(name, ZNAM=None, ONAM=None, **fields):
         ZNAM = ZNAM, ONAM = ONAM, **fields)
 
 
-def longIn(name, LOPR=None, HOPR=None, EGU=None, **fields):
+def longIn(name, LOPR=None, HOPR=None, EGU=None, MDEL=-1, **fields):
     return Libera.longin(name,
-        MDEL = -1,    EGU  = EGU,
+        MDEL = MDEL,  EGU  = EGU,
         LOPR = LOPR,  HOPR = HOPR, **fields)
 
 def longOut(name, LOPR=None, HOPR=None, **fields):

@@ -269,10 +269,9 @@ Interlock Control (<group> = IL):
         The interlock will automatically Enabled when the beam current,
         measured by SA:CURRENT, exceeds this value.
 
-    STATE, LATCH
+    STATE
         STATE records whether the interlock is currently dropped or has been
-        dropped within the last 0.5 seconds.  LATCH is set if the interlock
-        has been dropped at any time since it was last reset.
+        dropped within the last 0.5 seconds.  
 
 
 Configuration (<group> = CF):

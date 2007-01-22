@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -41,15 +42,18 @@
 #include "device.h"
 #include "persistent.h"
 #include "publish.h"
+#include "hardware.h"
 
 #include "sensors.h"
 
 
 
 /* Sensor variables. */
-static int Temperature; // Internal case temperature
-static int FanSpeed1;   // Fan speeds
-static int FanSpeed2;
+
+/* The internal temperature, fan speeds and motherboard voltages are all read
+ * through CSPI. */
+static cspi_health_t Health;
+
 static int MemoryFree;  // Nominal memory free (free + cached - ramfs)
 static int RamfsUsage;  // Number of bytes allocated in ram filesystems
 static int Uptime;      // Machine uptime in seconds
@@ -63,170 +67,32 @@ static double EpicsStarted;
 
 
 
-/* Class to support reading fields from a file. */
+/* Helper routine for using scanf to parse a file. */
 
-class FILE_PARSER
+static bool ParseFile(
+    const char * Filename, int Count, const char * Format, ...)
+    __attribute__((format(scanf, 3, 4)));
+static bool ParseFile(
+    const char * Filename, int Count, const char * Format, ...)
 {
-public:
-    FILE_PARSER(const char * FileName) :
-        FileName(FileName),
-        Input(fopen(FileName, "r"))
+    bool Ok = false;
+    FILE * input = fopen(Filename, "r");
+    if (input == NULL)
     {
-        Field = NULL;
-        NextField = NULL;
-        LineNumber = 0;
-        FieldNumber = 0;
-        
-        Ok = Input != NULL;
+        char Message[80];
+        snprintf(Message, sizeof(Message), "Unable to open file %s", Filename);
+        perror(Message);
+    }
+    else
+    {
+        va_list args;
+        va_start(args, Format);
+        Ok = vfscanf(input, Format, args) == Count;
         if (!Ok)
-            printf("Unable to open file \"%s\"\n", FileName);
-
-        /* If the file was successfully open, prime the pump by reading the
-         * first line. */
-        if (Ok)
-            ReadLine();
+            printf("Error parsing %s\n", Filename);
+        fclose(input);
     }
-
-    ~FILE_PARSER()
-    {
-        if (Input != NULL)
-            fclose(Input);
-    }
-
-    bool Good() { return Ok; }
-
-    bool SkipLines(int Lines)
-    {
-        for (int i = 0; Ok && i < Lines; i ++)
-            if (!ReadLine())
-                printf("Run out of lines skipping %d (%d) in \"%s\"\n",
-                    Lines, i, FileName);
-        return Ok;
-    }
-
-    bool SkipFields(int Fields)
-    {
-        for (int i = 0; Ok && i < Fields; i ++)
-            if (!ReadField())
-                printf("Run out of fields skipping %d (%d) in \"%s\"\n",
-                    Fields, i, FileName);
-        return Ok;
-    }
-
-    bool ReadInt(int &Result)
-    {
-        if (ReadField())
-        {
-            char * End;
-            Result = strtol(Field, &End, 10);
-            Ok = Field < End  &&  *End == '\0';
-            if (!Ok)
-                printf("Field \"%s\" in \"%s\" is not a good integer\n",
-                    Field, FileName);
-        }
-        return Ok;
-    }
-    
-    bool ReadDouble(double &Result)
-    {
-        if (ReadField())
-        {
-            char * End;
-            Result = strtod(Field, &End);
-            Ok = Field < End  &&  *End == '\0';
-            if (!Ok)
-                printf("Field \"%s\" in \"%s\" is not a good double\n",
-                    Field, FileName);
-        }
-        return Ok;
-    }
-
-    bool Expect(const char *Expectation)
-    {
-        if(ReadField())
-        {
-            Ok = strcmp(Field, Expectation) == 0;
-            if (!Ok)
-                printf("Expected \"%s\", got \"%s\", "
-                    "field %d, line %d in \"%s\"\n",
-                    Expectation, Field, FieldNumber, LineNumber, FileName);
-        }
-        return Ok;
-    }
-
-    /* If this call is successful, the returned string is valid until the
-     * next operation on this class. */
-    bool ReadString(const char *&Result)
-    {
-        if (ReadField())
-            Result = Field;
-        return Ok;
-    }
-
-
-private:
-    bool ReadLine()
-    {
-        if (Ok)
-        {
-            LineNumber += 1;
-            Ok = fgets(Line, sizeof(Line), Input) == Line;
-            if (Ok)
-            {
-                /* Trim the trailing \n and set up for reading fields from
-                 * this line. */
-                int Length = strlen(Line);
-                if (Length > 0  &&  Line[Length - 1] == '\n')
-                    Line[Length - 1] = '\0';
-                NextField = Line;
-                FieldNumber = 0;
-                Field = NULL;
-            }
-            else
-                printf("Error reading line %d in \"%s\"\n",
-                    LineNumber, FileName);
-        }
-        return Ok;
-    }
-
-    bool ReadField()
-    {
-        if (Ok)
-        {
-            FieldNumber += 1;
-            NextField += strspn(NextField, " ");
-            Field = strsep(&NextField, " ");
-            Ok = Field != NULL;
-            if (!Ok)
-                printf("Unable to read field %d on line %d in \"%s\"\n",
-                    FieldNumber, LineNumber, FileName);
-        }
-        return Ok;
-    }
-
-    
-    bool Ok;
-    char Line[1024];
-    char *Field, *NextField;
-    int LineNumber;
-    int FieldNumber;
-    
-    const char * const FileName;
-    FILE * const Input;
-};
-
-
-
-
-static bool ReadFileInt(
-    int &Result, const char * FileName,
-    int SkipFields = 0, int SkipLines = 0)
-{
-    FILE_PARSER Parser(FileName);
-    return
-        Parser.SkipLines(SkipLines) &&
-        Parser.SkipFields(SkipFields) &&
-        Parser.ReadInt(Result);
+    return Ok;
 }
 
 
@@ -237,9 +103,8 @@ static bool ReadFileInt(
 
 static void ProcessUptimeAndIdle()
 {
-    FILE_PARSER Parser("/proc/uptime");
     double NewUptime, NewIdle;
-    if (Parser.ReadDouble(NewUptime)  && Parser.ReadDouble(NewIdle))
+    if (ParseFile("/proc/uptime", 2, "%lf %lf", &NewUptime, &NewIdle))
     {
         Uptime = int(NewUptime);
 
@@ -256,8 +121,7 @@ static void ProcessUptimeAndIdle()
 
 static void InitialiseUptime()
 {
-    FILE_PARSER Parser("/proc/uptime");
-    Parser.ReadDouble(EpicsStarted);
+    ParseFile("/proc/uptime", 1, "%lf", &EpicsStarted);
 }
 
 
@@ -308,12 +172,9 @@ static int FindRamfsUsage()
 
 static void ProcessFreeMemory()
 {
-    /* First read the free and cached values. */
-    FILE_PARSER Parser("/proc/meminfo");
     int Free, Cached;
-    if (Parser.SkipLines(1)   &&  Parser.Expect("Mem:")  &&
-        Parser.SkipFields(2)  &&  Parser.ReadInt(Free)  &&
-        Parser.SkipFields(2)  &&  Parser.ReadInt(Cached))
+    if (ParseFile("/proc/meminfo", 2, "%*[^\n]\nMem: %*d %*d %d %*d %*d %d",
+            &Free, &Cached))
     {
         RamfsUsage = FindRamfsUsage();
         MemoryFree = Free + Cached - RamfsUsage;
@@ -324,28 +185,31 @@ static void ProcessFreeMemory()
 static bool ProcessSensors(bool &Value)
 {
     ProcessUptimeAndIdle();
-
     ProcessFreeMemory();
-
-    /* Temperatures and fan speeds are just read directly from the
-     * appropriate procfs files. */
-    ReadFileInt(Temperature,
-        "/proc/sys/dev/sensors/max1617a-i2c-0-29/temp1", 2);
-    ReadFileInt(FanSpeed1,
-        "/proc/sys/dev/sensors/max6650-i2c-0-48/fan1");
-    ReadFileInt(FanSpeed2,
-        "/proc/sys/dev/sensors/max6650-i2c-0-4b/fan1");
+    ReadHealth(Health);
     
     Value = true;
     return true;
 }
 
 
+
+#define PUBLISH_BLOCK(Type, BaseName, Array) \
+    ( { \
+        for (unsigned int i = 0; i < ARRAY_SIZE(Array); i ++) \
+        { \
+            char Number[10]; \
+            sprintf(Number, "%d", i+1); \
+            Publish_##Type(Concat(BaseName, Number), Array[i]); \
+        } \
+    } )
+
+
 bool InitialiseSensors()
 {
-    Publish_longin("SE:TEMP",   Temperature);
-    Publish_longin("SE:FAN1",   FanSpeed1);
-    Publish_longin("SE:FAN2",   FanSpeed2);
+    Publish_longin("SE:TEMP",   Health.temp);
+    PUBLISH_BLOCK(longin, "SE:FAN",  Health.fan);
+    PUBLISH_BLOCK(ai,     "SE:VOLT", Health.voltage);
 
     Publish_ai("SE:FREE",    MemoryFree);
     Publish_ai("SE:RAMFS",   RamfsUsage);

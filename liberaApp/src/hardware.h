@@ -172,6 +172,10 @@ bool ReadAttenuation(int &Attenuation);
 bool SetClockTime(struct timespec & NewTime);
 
 
+/* Health interrogation.  Returns cspi_health_t directly. */
+bool ReadHealth(cspi_health_t &Health);
+
+
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                        Direct Event Connection                            */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */

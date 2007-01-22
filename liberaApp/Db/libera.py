@@ -321,8 +321,12 @@ def Config():
     aOut('G2', 0, 1.5,  ESLO = 2**-30, DESC = 'Channel 2 gain adjustment')
     aOut('G3', 0, 1.5,  ESLO = 2**-30, DESC = 'Channel 3 gain adjustment')
 
-    # Switch automatic switching on or off
-    boolOut('AUTOSW', 'Fixed', 'Automatic',
+    # Configure automatic switch state
+    mbbOut('AUTOSW',
+        ('Fixed+DSC unity', 0),     # Manual switches, DSC with unit gains
+        ('Fixed+DSC fixed', 1),     # Use manually set switch setting
+        ('Auto+DSC fixed',  2),     # Auto switches, DSC in fixed state
+        ('Auto+DSC auto',   3),     # Use automatic switches with DSC
         DESC = 'Configure rotating switches')
     # Select switch to use when automatic switching off
     longOut('SETSW', 0, 15, DESC = 'Fixed multiplexor switch')
@@ -400,14 +404,76 @@ def Interlock():
         OMSL = 'supervisory',
         ZNAM = 'Ready',         ZSV  = 'NO_ALARM',
         ONAM = 'Interlocked',   OSV  = 'MAJOR')
-    latch = records.bi('LATCH',
-        VAL  = 0,  PINI = 'YES',
-        ZNAM = 'Ready',         ZSV  = 'NO_ALARM',
-        ONAM = 'Interlocked',   OSV  = 'MAJOR')
-    trigger.FLNK = create_dfanout('POKE', PP(state), PP(latch),
+    trigger.FLNK = create_dfanout('POKE', PP(state), 
         DOL  = trigger, OMSL = 'closed_loop')
     
     UnsetChannelName()
+
+
+    
+# -----------------------------------------------------------------------------
+
+
+
+def AggregateSeverity(name, description, *recs):
+    ''' Aggregates the severity of all the given records into a single record.
+    The value of the record is constant, but its SEVR value reflects the
+    maximum severity of all of the given records.'''
+    
+    assert len(recs) <= 12, 'Too many records to aggregate'
+    return records.calc(name,
+        CALC = 1, DESC = description,
+        # Assign each record of interest to a calc record input with MS.
+        # This then automatically propagates to the severity of the whole
+        # record.
+        **dict(zip(['INP'+c for c in 'ABCDEFGHIJKL'], map(MS, recs))))
+
+
+    
+def Voltages():
+    '''Prepares records for all the eight voltage readouts.  Two values are
+    returned: all records generated, in the correct order for scan processing,
+    and the aggregated health record, to be combined with the global health
+    status record.'''
+
+    def VoltageSensor(i, description, nominal, limits=True):
+        LoLo = nominal - 0.05 * abs(nominal)
+        Low  = nominal - 0.10 * abs(nominal)
+        High = nominal + 0.05 * abs(nominal)
+        HiHi = nominal + 0.10 * abs(nominal)
+        if limits:
+            LimitFields = dict(
+                LOLO = LoLo,    LLSV = 'MAJOR',
+                LOW  = Low,     LSV  = 'MINOR',
+                HIGH = High,    HSV  = 'MINOR',
+                HIHI = HiHi,    HHSV = 'MAJOR')
+        else:
+            LimitFields = dict()
+        return aIn('VOLT%d' % i, Low, High,
+            DESC = description,
+            ESLO = 1e-3, EGU  = 'V', PREC = 3, **LimitFields)
+
+    voltages = [
+        VoltageSensor(1, 'Virtex core power supply',    1.5),
+        VoltageSensor(2, 'Unused voltage',              1.8, False),
+        VoltageSensor(3, 'Virtex ADC interface',        2.5),
+        VoltageSensor(4, 'SBC & SDRAM power supply',    3.3),
+        VoltageSensor(5, 'PMC +5V power supply',        5.0),
+        VoltageSensor(6, 'Fans power supply',           12.0),
+        VoltageSensor(7, 'PMC -12V power supply',       -12.0),
+        VoltageSensor(8, 'Attenuators & switches ctrl', -5.0)]
+
+    
+    health = AggregateSeverity('VOLTSOK', 'Voltage health', *voltages)
+    health_display = records.mbbi('VHEALTH',
+        DESC = 'Voltage health display',
+        INP  = MS(health.SEVR),
+        ZRVL = 0,   ZRST = 'Ok',
+        ONVL = 1,   ONST = 'Warning',
+        TWVL = 2,   TWST = 'Fault')
+
+    return voltages + [health, health_display], health
+    
 
 
 def Sensors():
@@ -434,6 +500,8 @@ def Sensors():
         DESC = 'CPU usage',
         HIGH = 80,      HSV  = 'MINOR',
         HIHI = 95,      HHSV = 'MAJOR')
+
+    voltages, voltage_health = Voltages()
     
     uptime = aIn('UPTIME', 0, 24*3600*5, 1./3600, 'h', 2,
         DESC = 'Total system up time')
@@ -442,14 +510,10 @@ def Sensors():
 
     # Aggregate all the alarm generating records into a single "health"
     # record.  Only the alarm status of this record is meaningful.
-    alarmsensors = [temp, memfree, ramfs, cpu] + fans;
-    health = records.calc('HEALTH', CALC = 1,
-        DESC = 'Aggregated health',
-        **dict(zip(
-            ['INP'+c for c in 'ABCDEFGHIJKL'],
-            [PP(MS(f)) for f in alarmsensors])))
+    alarmsensors = fans + [temp, memfree, ramfs, cpu, voltage_health]
+    health = AggregateSeverity('HEALTH', 'Aggregated health', *alarmsensors)
     
-    allsensors = alarmsensors + [uptime, epicsup, health]
+    allsensors = alarmsensors + voltages + [uptime, epicsup, health]
     
     boolIn('PROCESS', '', '',
         DESC = 'Sensors scan',

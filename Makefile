@@ -1,5 +1,5 @@
 #Makefile at top of application tree
 TOP = .
 include $(TOP)/configure/CONFIG
-DIRS := $(DIRS) configure cspi liberaApp 
+DIRS := $(DIRS) configure cspi system/lmtd liberaApp 
 include $(TOP)/configure/RULES_TOP

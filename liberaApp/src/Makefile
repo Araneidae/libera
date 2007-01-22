@@ -22,6 +22,8 @@ USR_CXXFLAGS += -DBUILD_DATE_TIME='"$(shell \
 CONFORM_CFLAGS_STRICT = 
 CONFORM_CXXFLAGS_STRICT = 
 
+STATIC_BUILD = YES
+
 
 #=============================
 # build an ioc application

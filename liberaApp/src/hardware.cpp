@@ -199,6 +199,17 @@ bool SetClockTime(struct timespec & NewTime)
 }
 
 
+bool ReadHealth(cspi_health_t &Health)
+{
+    CSPI_ENVPARAMS EnvParams;
+    bool Ok = CSPI_(cspi_getenvparam, CspiEnv, &EnvParams, CSPI_ENV_HEALTH);
+    if (Ok)
+        Health = EnvParams.health;
+    return Ok;
+}
+
+
+
 /*****************************************************************************/
 /*                                                                           */
 /*                   Reading waveform data from the FPGA.                    */
