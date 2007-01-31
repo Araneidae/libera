@@ -333,20 +333,10 @@ def Config():
     # Control attenuation
     longOut('ATTEN', 0, 62, EGU = 'dB', DESC = 'Attenuator setting')
 
-    # Control LMTD configuration: either tuned or detuned
-    mbbOut('LMTD', ('Tuned', 0), ('Detuned', 1), ('Double Detune', 2),
-        DESC = 'Sample clock detune')
-    longOut('DETUNE', 0, 1000, DESC = 'LMTD detune factor')
-
+    # Scaling factor for conversion to bunch charge and stored current.
     aOut('ISCALE', 0, 20000, 
         DESC = 'Input current at 0dBm power',
         EGU  = 'mA', ESLO = 1e-5, PREC = 1)
-
-    # Clock synchronisation
-    boolOut('SYNC', 'Synchronise', None, DESC = 'Synchronise clocks')
-    boolIn('SYNCSTATE', 'Normal', 'Waiting for Trigger',
-        SCAN = 'I/O Intr',      PINI = 'YES',
-        DESC = 'Synchronisation state')
 
     UnsetChannelName()
 
@@ -430,6 +420,38 @@ def AggregateSeverity(name, description, *recs):
 
 
     
+# Clock configuation control records.  Used for managing clocks and
+# synchronisation.
+def Clock():
+    SetChannelName('CK')
+
+    # LMTD detune control
+    longOut('DETUNE', -1000, 1000, DESC = 'Sample clock detune')
+    longOut('IFOFF',  -1000, 1000, DESC = 'IF clock detune')
+    longOut('PHASE', DESC = 'Phase offset')
+    
+    # Clock synchronisation
+    boolOut('SYNC', 'Synchronise', None, DESC = 'Synchronise clocks')
+    boolIn('SYNCSTATE', 'Normal', 'Waiting for Trigger',
+        SCAN = 'I/O Intr',      PINI = 'YES',
+        DESC = 'Synchronisation state')
+
+    # LMTD monitoring PVS
+    Trigger(False,
+        mbbIn('LMTD',
+            ('No Clock',        0, 'MAJOR'),
+            ('Seek Frequency',  1, 'MINOR'),
+            ('Slewing',         2, 'MINOR'),
+            ('Phase Locked',    3, 'NO_ALARM'),
+            DESC = 'Machine clock status'),
+        longIn('DAC', 0, 65535, DESC = 'LMTD VCXO DAC setting'),
+        longIn('PHASE_E', DESC = 'LMTD phase error'),
+        longIn('FREQ_E', DESC = 'LMTD frequency error'))
+
+
+    UnsetChannelName()
+
+    
 def Voltages():
     '''Prepares records for all the eight voltage readouts.  Two values are
     returned: all records generated, in the correct order for scan processing,
@@ -510,7 +532,7 @@ def Sensors():
 
     # Aggregate all the alarm generating records into a single "health"
     # record.  Only the alarm status of this record is meaningful.
-    alarmsensors = fans + [temp, memfree, ramfs, cpu, voltage_health]
+    alarmsensors = fans + [temp, memfree, ramfs, cpu] #, voltage_health]
     health = AggregateSeverity('HEALTH', 'Aggregated health', *alarmsensors)
     
     allsensors = alarmsensors + voltages + [uptime, epicsup, health]
@@ -568,6 +590,7 @@ Postmortem()        # PM - fixed length pre-postmortem trigger waveforms
 
 Config()            # CF - general configuration records
 Interlock()         # IL - interlock configuration records
+Clock()             # CK - clock monitoring and control
 Sensors()           # SE - temperatures, fan speeds, memory and CPU usage etc
 Miscellaneous()     # Other records
 

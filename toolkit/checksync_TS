@@ -1,0 +1,41 @@
+#!/bin/sh
+
+caput TS-DI-EVR-01:TRIG:MODE Synchronised
+
+sleep 1
+
+#echo -e \\n Arming Get-Time: \\n
+#labliberas '/opt/bin/libera -apt0 1 2>&1 >/dev/null  ' | sort | uniq &
+
+#echo -e \\n Waiting 3s for all Liberas to arm: \\n
+#sleep 3
+
+#echo -e \\n Sending Get-Time event: \\n
+#caput LI-TI-MTGEN-01:SR-DI 1
+#caput LI-TI-MTGEN-01:SR-DI 0
+
+#echo -e \\n
+#sleep 3
+
+echo Checking for unlocked lmtd:
+echo
+labliberas 'grep lmtd /var/log/messages |tail -n 1' |grep -v phase_locked
+
+labliberas /mnt/nfs/bin/timestamp &
+echo
+echo Waiting 3s for all Liberas to arm:
+echo
+sleep 3
+
+echo -e Sending Get-Time event: \\n
+caput LI-TI-MTGEN-01:SR-DI 1
+caput LI-TI-MTGEN-01:SR-DI 0
+
+sleep 3
+
+caput TS-DI-EVR-01:TRIG:MODE Normal
+
+sleep 1
+
+echo -e \\n Done.\\n
+

@@ -188,14 +188,20 @@ bool ReadAttenuation(int &Attenuation)
 
 
 
-bool SetClockTime(struct timespec & NewTime)
+bool SetMachineClockTime()
+{
+    CSPI_SETTIMESTAMP Timestamp;
+    Timestamp.mt = 0;
+    Timestamp.phase = 0;
+    return CSPI_(cspi_settime, CspiEnv, &Timestamp, CSPI_TIME_MT);
+}
+
+
+bool SetSystemClockTime(struct timespec & NewTime)
 {
     CSPI_SETTIMESTAMP Timestamp;
     Timestamp.st = NewTime;
-    Timestamp.mt = 0;
-    Timestamp.phase = 0;
-    return CSPI_(cspi_settime,
-        CspiEnv, &Timestamp, CSPI_TIME_MT | CSPI_TIME_ST);
+    return CSPI_(cspi_settime, CspiEnv, &Timestamp, CSPI_TIME_ST);
 }
 
 
@@ -217,6 +223,10 @@ bool ReadHealth(cspi_health_t &Health)
 /*****************************************************************************/
 
 
+#define READ_CHUNK_SIZE         65536
+#define CHUNK_SIZE(Length) \
+    ((Length) > READ_CHUNK_SIZE ? READ_CHUNK_SIZE : (Length))
+
 size_t ReadWaveform(
     int Decimation, size_t WaveformLength, LIBERA_ROW * Data,
     CSPI_TIMESTAMP & Timestamp)
@@ -224,7 +234,12 @@ size_t ReadWaveform(
     CSPI_CONPARAMS_DD ConParams;
     ConParams.dec = Decimation;
     unsigned long long Offset = 0;
-    size_t Read;
+
+    /* Don't read more than a single chunk at a time: managing the blocks
+     * like this prevents us from starving other activities. */
+    size_t ChunkSize = CHUNK_SIZE(WaveformLength);
+    
+    size_t TotalRead;
     bool Ok =
         // Set the decimation mode
         CSPI_(cspi_setconparam, CspiConDd,
@@ -232,14 +247,43 @@ size_t ReadWaveform(
         // Seek to the trigger point
         CSPI_(cspi_seek, CspiConDd, &Offset, CSPI_SEEK_TR)  &&
         // Read the data
-        CSPI_(cspi_read_ex, CspiConDd, Data, WaveformLength, &Read, NULL)  &&
+        CSPI_(cspi_read_ex, CspiConDd, Data, ChunkSize, &TotalRead, NULL)  &&
         // Finally read the timestamp: needs to be done after data read.
         CSPI_(cspi_gettimestamp, CspiConDd, &Timestamp);
 
-    if (Ok)
-        return Read;
-    else
-        return 0;
+    /* Check if we need to do multiple reads (and if we managed to perform a
+     * complete read in the first place). */
+    if (Ok  &&  TotalRead == ChunkSize  &&  ChunkSize < WaveformLength)
+    {
+        /* One chunk wasn't enough.  Unfortunately there is a quirk in the
+         * driver: repeated reads after CSPI_SEEK_TR don't actually give us
+         * successive data blocks!  Instead we'll need to perform an absolute
+         * seek: then we can read the rest in sequence.
+         *    In this extra bit of code we are rather less fussy about
+         * errors: we've already got good data in hand, so there's no point
+         * in not returning what we have if anything subsequent fails. */
+        Offset = Timestamp.mt + ChunkSize;
+        if (CSPI_(cspi_seek, CspiConDd, &Offset, CSPI_SEEK_MT))
+        {
+            int cspi_rc;
+            do
+            {
+                /* Count off the chunk just read and prepare for the next. */
+                WaveformLength -= ChunkSize;
+                Data += ChunkSize;
+                ChunkSize = CHUNK_SIZE(WaveformLength);
+                /* Read incoming chunks until either we've read everything or
+                 * a read comes up short. */
+                size_t Read;
+                cspi_rc = cspi_read_ex(
+                    CspiConDd, Data, ChunkSize, &Read, NULL);
+                if (cspi_rc == CSPI_OK  ||  cspi_rc == CSPI_W_INCOMPLETE)
+                    TotalRead += Read;
+            } while (cspi_rc == CSPI_OK  &&  ChunkSize < WaveformLength);
+        }
+    }
+
+    return Ok ? TotalRead : 0;
 }
 
 

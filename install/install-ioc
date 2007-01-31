@@ -27,7 +27,8 @@
 #      OX11 0DE
 #      michael.abbott@diamond.ac.uk
 
-# Install a build IOC in the target IOC directory.
+# Install a built IOC in the target IOC directory.
+
 
 SOURCE="$(cd "$(dirname "$0")"/..; pwd)"  &&
 . "$SOURCE"/install/CONFIG  &&

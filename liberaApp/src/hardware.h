@@ -169,7 +169,8 @@ bool ReadAttenuation(int &Attenuation);
 
 
 /* Set clock synchronisation. */
-bool SetClockTime(struct timespec & NewTime);
+bool SetMachineClockTime();
+bool SetSystemClockTime(struct timespec & NewTime);
 
 
 /* Health interrogation.  Returns cspi_health_t directly. */

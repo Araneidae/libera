@@ -165,15 +165,27 @@ def longOut(name, LOPR=None, HOPR=None, **fields):
         OMSL = 'supervisory',
         LOPR = LOPR, HOPR = HOPR, **fields)
 
+_mbbPrefixes = [
+    'ZR', 'ON', 'TW', 'TH', 'FR', 'FV', 'SX', 'SV',     # 0-7
+    'EI', 'NI', 'TE', 'EL', 'TV', 'TT', 'FT', 'FF']     # 8-15
+
 def mbbOut(name, *option_values, **fields):
-    mbbPrefixes = [
-        'ZR', 'ON', 'TW', 'TH', 'FR', 'FV', 'SX', 'SV',     # 0-7
-        'EI', 'NI', 'TE', 'EL', 'TV', 'TT', 'FT', 'FF']     # 8-15
-    for prefix, (option, value) in zip(mbbPrefixes, option_values):
+    for prefix, (option, value) in zip(_mbbPrefixes, option_values):
         extend(fields, prefix + 'ST', option)
         extend(fields, prefix + 'VL', value)
     return Libera.mbbo(name + '_S', address=name,
         OMSL = 'supervisory', **fields)
+    
+
+def mbbIn(name, *option_values, **fields):
+    def process_value(prefix, option, value, severity=None):
+        extend(fields, prefix + 'ST', option)
+        extend(fields, prefix + 'VL', value)
+        if severity:
+            extend(fields, prefix + 'SV', severity)
+    for prefix, value in zip(_mbbPrefixes, option_values):
+        process_value(prefix, *value)
+    return Libera.mbbi(name, **fields)
     
 
 def Waveform(name, length, FTVL='LONG', **fields):
@@ -190,4 +202,5 @@ def Waveform(name, length, FTVL='LONG', **fields):
 __all__ = [
     'Libera', 'ChannelName',
     'aIn',      'aOut',     'boolIn',   'boolOut',
-    'longIn',   'longOut',  'mbbOut',   'Waveform']
+    'longIn',   'longOut',  'mbbOut',   'mbbIn',
+    'Waveform']

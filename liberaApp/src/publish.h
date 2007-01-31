@@ -154,6 +154,28 @@ template<class T> class ID : public T { };
     PUBLISH_METHOD_OUT(record_out, name, method_write, method_read)
 
 
+/* Something quite a bit simpler: a closure for a method with no arguments,
+ * used for simple actions where the value of the record is immaterial. */
+
+template<class T>
+class CLOSURE_ACTION : public I_bo
+{
+public:
+    CLOSURE_ACTION(T&t, bool (T::*f)()): t(t), f(f) {}
+    bool init(bool& arg) { arg = true; return true; }
+    bool write(bool) { return (t.*f)(); }
+private:
+    T & t;
+    bool (T::*f)();
+};
+
+#define PUBLISH_ACTION(name, method) \
+    Publish_bo(name, \
+        * new CLOSURE_ACTION<typeof(*this)>( \
+            *this, &ID<typeof(*this)>::method))
+
+
+
 /* We can play the same game for unbound functions, though of course here the
  * story is somewhat simpler. */
 

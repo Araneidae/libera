@@ -1,0 +1,41 @@
+#!/bin/sh
+
+cd "$(dirname "$0")"
+
+echo
+echo Stopping trigger:
+echo
+for n in $(seq -f%02g 24); do
+    caput SR${n}C-DI-EVR-01:TRIG:MODE Synchronised
+done
+
+sleep 1
+
+echo
+echo Arming Liberas
+echo
+./caputall.py SR CF:SYNC_S Synchronise
+
+#     echo -e \\n Stopping EPICS: \\n
+#     liberas BR /etc/init.d/epics stop |cat|wc -l
+# 
+#     echo -e \\n Arming Set-Time: \\n
+#     liberas BR /opt/bin/libera -x -t $(date +0:%Y%m%d%H%M.%S)|cat
+
+sleep 4
+echo
+echo Sending Set-Time event:
+echo
+
+caput LI-TI-MTGEN-01:SR-DI 1
+caput LI-TI-MTGEN-01:SR-DI 0
+sleep 3
+
+# echo -e \\n Starting EPICS: \\n
+# liberas BR /etc/init.d/epics start |cat|wc -l
+
+for n in $(seq -f%02g 24); do
+    caput SR${n}C-DI-EVR-01:TRIG:MODE Normal
+done
+
+echo -e \\n Done.\\n

@@ -100,7 +100,7 @@ static int DecimatedShortLength = 190;
 static float RevolutionFrequency = 1892629.155;
 
 /* Fundamental ring parameters.  The defaults are for the Diamond storage
- * ring. */
+ * ring, but these are always overwritten when called from runioc. */
 static int Harmonic = 936;              // Bunches per revolution
 static int Decimation = 220;            // Samples per revolution
 static int LmtdPrescale = 53382;        // Prescale for lmtd
@@ -249,8 +249,8 @@ static bool InitialiseLibera()
         InitialiseEventReceiver()  &&
         /* Ensure the trigger interlock mechanism is working. */
         InitialiseTriggers()  &&
-        /* Timestamps.  This also restarts the lmtd (if appropriate). */
-        InitialiseTimestamps(LmtdPrescale, Decimation, Harmonic)  &&
+        /* Timestamp and clock management. */
+        InitialiseTimestamps()  &&
 
         /* Now we can initialise the mode specific components. */
 

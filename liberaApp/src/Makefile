@@ -69,7 +69,7 @@ ioc_LIBS += cspi
 ioc_LIBS += $(EPICS_BASE_IOC_LIBS) 
 
 # Point to the Libera CSPI and device driver includes
-USR_INCLUDES += -I$(CSPI)/driver -I$(CSPI)
+USR_INCLUDES += -I$(CSPI)/driver -I$(CSPI) -I$(LIBERA_PLL)
 
 
 include $(TOP)/configure/RULES

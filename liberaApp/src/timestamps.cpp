@@ -47,6 +47,8 @@
 
 #include <dbFldTypes.h>
 
+#include "libera_pll.h"
+
 #include "device.h"
 #include "persistent.h"
 #include "publish.h"
@@ -62,332 +64,137 @@
 
 /*****************************************************************************/
 /*                                                                           */
-/*                             Tuning Management                             */
+/*                              LMTD Interface                               */
 /*                                                                           */
 /*****************************************************************************/
 
-#define LMTD_STATE_FILE "/tmp/lmtd.state"
-#define LMTD_PID_FILE   "/var/run/lmtd.pid"
+
+/* Commands to the LMTD are transmitted through this file handle. */
+FILE * LmtdCommandFile = NULL;
 
 
-/* Sample clock detune state: we toggle the frequency offset of the sample
- * clock between two modes, tuned and detuned.
- *    This is a temporary hack until the detune is built in. */
-static int DetuneFactor = 400;
-enum LMTD_STATE
-{
-    LMTD_TUNED = 0,
-    LMTD_DETUNED = 1,
-    LMTD_DOUBLE_DETUNE = 2
-};
-static int DetuneState = LMTD_TUNED;
+/* LMTD configuration: each of these is written to the LMTD. */
+static int SampleClockDetune = 0;   // CK:DETUNE - frequency offset
+static int IfClockDetune = 0;       // CK:IFOFF - IF offset ("double detune")
+static int PhaseOffset = 0;         // CK:PHASE - phase offset
 
 
 
-/* The following magic numbers are required for controlling the LMTD and
- * computing the intermediate frequency scaler. */
+/* Sends a command to the LMTD daemon. */
 
-static int LmtdPrescale;
-static int SamplesPerTurn;
-static int BunchesPerTurn;
-
-
-/* Tries the given test repeatedly until it succeeds.  We try every 10ms for
- * up to a second before giving up. */
-#define TRY_WITH_TIMEOUT(TEST) \
-    ( { \
-        bool __ok = (TEST); \
-        for (int __i = 0; !__ok && __i < 100; __i ++) \
-        { \
-            usleep(10000); \
-            __ok = (TEST); \
-        } \
-        __ok; \
-    } )
-
-
-static bool ReadLmtdPid(pid_t &LmtdPid)
-{
-    /* The default return is failure, couldn't read the pid file. */
-    bool Ok = false;
-    
-    /* If the lmtd.pid file is missing then we have a problem.  Unfortunately
-     * I don't see what to do about it.
-     *    One possible reason for no lmtd.pid file is that the lmtd process
-     * hasn't finished starting yet.  To ensure this isn't the problem we
-     * give it a while to appear. */
-    struct stat StatBuf;
-    if (TRY_WITH_TIMEOUT(stat(LMTD_PID_FILE, &StatBuf) == 0))
-    {
-        FILE * PidFile = fopen(LMTD_PID_FILE, "r");
-        if (PidFile == NULL)
-            perror("Error opening lmtd pid file");
-        else
-        {
-            if (fscanf(PidFile, "%d", &LmtdPid) == 1)
-                Ok = true;
-            else
-                perror("Malformed lmtd pid file");
-            fclose(PidFile);
-        }
-    }
-    else
-        /* Damn: there's still no .pid file, even after waiting.  Can't do
-         * anything more, unfortunately. */
-        printf("Can't find %s\n", LMTD_PID_FILE);
-    
-    return Ok;
-}
-
-
-static bool ReadLmtdState(pid_t &LmtdPid, int &Offset)
-{
-    bool Ok = false;
-    FILE * StateFile = fopen(LMTD_STATE_FILE, "r");
-    if (StateFile != NULL)
-    {
-        if (fscanf(StateFile, "%d %d", &LmtdPid, &Offset) == 2)
-            Ok = true;
-        else
-            perror("Malformed lmtd state file");
-        fclose(StateFile);
-    }
-    return Ok;
-}
-
-
-
-/* Kills the LMTD if necessary, returning true iff a new LMTD needs to be
- * started. */
-
-static bool KillLmtd(int detune)
-{
-    pid_t LmtdPid, SavedPid;
-    int SavedOffset;
-    bool ReadPid = ReadLmtdPid(LmtdPid);
-    bool ReadSaved = ReadLmtdState(SavedPid, SavedOffset);
-    /* Only keep the currently running LMTD if the state we've read is
-     * consistent and if the current detune offset is the one we want. */
-    bool KeepLmtd =
-        ReadSaved  &&
-        ReadPid  &&
-        LmtdPid == SavedPid &&
-        SavedOffset == detune;
-    
-    /* Only actually kill the LMTD if we need to and we have a valid pid to
-     * kill. */
-    if (!KeepLmtd && ReadPid)
-    {
-        /* Now kill the old lmtd and wait for it to finish. */
-        if (TEST_(kill, LmtdPid, SIGTERM))
-        {
-            /* Wait for the process to finish.  I'd love to call waitpid(2),
-             * but alas this only works for child processes, so instead we
-             * keep probing for its presence until it's gone. */
-            if (!TRY_WITH_TIMEOUT(kill(LmtdPid, 0) != 0))
-                printf("Timed out waiting for LMTD to die\n");
-        }
-    }
-    return ! KeepLmtd;
-}
-
-
-/* Fairly generic routine to start a new detached process in a clean
- * environment. */
-
-static void DetachProcess(const char *Process, char *const argv[])
-{
-    /* We fork twice to avoid leaving "zombie" processes behind.  These are
-     * harmless enough, but annoying.  The double-fork is a simple enough
-     * trick. */
-    pid_t MiddlePid = fork();
-    if (MiddlePid == -1)
-        perror("Unable to fork");
-    else if (MiddlePid == 0)
-    {
-        pid_t NewPid = fork();
-        if (NewPid == -1)
-            perror("Unable to fork");
-        else if (NewPid == 0)
-        {
-            /* This is the new doubly forked process.  We still need to make
-             * an effort to clean up the environment before letting the new
-             * image have it. */
-
-            /* Ensure the new process has a clean environment. */
-            clearenv();
-
-            /* Set a sensible home directory. */
-            TEST_(chdir, "/");
-
-//             /* Restore default signal handling.  I'd like to hope this step
-//              * isn't needed. */
-//             for (int i = 0; i < NSIG; i ++)
-//                 signal(i, SIG_DFL);
-
-            /* Enable all signals. */
-            sigset_t sigset;
-            TEST_(sigfillset, &sigset);
-            TEST_(sigprocmask, SIG_UNBLOCK, &sigset, NULL);
-
-            /* Close all the open file handles.  The new lmtd gets into trouble
-             * if we don't do this. */
-            for (int i = 0; i < sysconf(_SC_OPEN_MAX); i ++)
-                close(i);
-
-            /* Finally we can actually exec the new process... */
-            TEST_(execv, Process, argv);
-
-            // Consider using execve(2) instead.
-        }
-        else
-            /* The middle process simply exits without further ceremony.  The
-             * idea here is that this orphans the new process, which means
-             * that the parent process doesn't have to wait() for it, and so
-             * it won't generate a zombie when it exits. */
-            _exit(0);
-    }
-    else
-    {
-        /* Wait for the middle process to finish. */
-        if (waitpid(MiddlePid, NULL, 0) == -1)
-            perror("Error waiting for middle process");
-    }
-}
-
-
-/* The phase advance per sample for the intermediate frequency generator is
- * controlled by writing to register 0x14014004.  The phase advance is in
- * units of 2^32*f_if/f_s, where f_if is the intermediate frequency and f_s
- * is the sample clock frequency. 
- *     If we write P=prescale, D=decimation, H=bunches per turn and F=detune
- * then the detuned sample frequency is
- *
- *          f_s = (D/H + F/HP) f_rf
- *
- * and the desired intermediate frequency scaling factor (to ensure that the
- * resampled RF frequency is equal to the IF) is
- *
- *          N = 2^32 frac(f_rf/f_s).
- */
-
-#define IF_REGISTER     0x14014004
-
-static void SetIntermediateFrequency(int detune)
-{
-    /* Access the IF register by mapping it into memory. */
-    const int PageSize = getpagesize();
-    const int PageMask = PageSize - 1;
-    int DevMem = open("/dev/mem", O_RDWR | O_SYNC);
-    char * Page = (char *) mmap(0, 0x1000, PROT_READ | PROT_WRITE, MAP_SHARED,
-        DevMem, IF_REGISTER & ~PageMask);
-    int * Register = (int *) (Page + (IF_REGISTER & PageMask));
-
-    /* Compute N = 2^32 frac(HP/(DP+F)) using floating point arithmetic. */
-    double frf_fs =
-        (BunchesPerTurn*LmtdPrescale)/
-        ((double) SamplesPerTurn*LmtdPrescale + detune);
-    int NyquistFactor = BunchesPerTurn / SamplesPerTurn;
-    double two_32 = 65536.0*65536.0;    // (double)(1<<32) ?!  Alas not...
-    int NewN = int(two_32 * (frf_fs - NyquistFactor));
-    *Register = NewN;
-        
-    munmap(Page, PageSize);
-    close(DevMem);
-}
-
-
-
-/* Sends a command to the lmtd daemon with full error checking. */
-
-static bool SendLmtdCommand(const char * format, ...)
+static void SendLmtdCommand(const char * format, ...)
 {
     va_list args;
     va_start(args, format);
-    
-    bool Ok = false;
-    char Message[128];
-    int Length = vsnprintf(Message, sizeof(Message), format, args);
-    if (0 <= Length  &&  Length < (int) sizeof(Message))
-    {
-        int CommandFile;
-        if (TEST_IO(CommandFile, "Error opening lmtd command file", open,
-                "/tmp/lmtd.command", O_WRONLY|O_NONBLOCK))
-        {
-            int Written;
-            TEST_IO(Written, "Error writing lmtd command", write,
-                CommandFile, Message, Length);
-            TEST_(close, CommandFile);
-            Ok = Written == Length;
-        }
-    }
-    else
-        fprintf(stderr, "Error (%d) formatting LMTD command\n", errno);
-    return Ok;
+    vfprintf(LmtdCommandFile, format, args);
+    fflush(LmtdCommandFile);
 }
 
 
-/* Switches the LMTD between two states, tuned or detuned, and also optionally
- * implements "double-detune".
- *
- * This implementation is a bit involved, as we need to kill and restart the
- * LMTD process each time the setting changes.
- *
- * This code will either disappear as the detune is built into libera, or
- * else will need rework to make it more portable. */
+
+/* Manage the configured LMTD state by sending the appropropriate commands to
+ * the LMTD. */
 
 static void UpdateLmtdState()
 {
-#if 0
-    /* Work out how much we're going to detune by. */
-    int detune = DetuneState == LMTD_TUNED ? 0 : DetuneFactor;
+    SendLmtdCommand("o%d\n", SampleClockDetune);
+    SendLmtdCommand("n%d\n", IfClockDetune + SampleClockDetune);
+    SendLmtdCommand("p%d\n", PhaseOffset);
+}
 
-    /* See if we need a new LMTD.  We only restart the LMTD if we have to, as
-     * doing so causes synchronisation to be lost. */
-    if (KillLmtd(detune))
+
+
+/* This thread manages the lmtd state reporting thread.  All status reported
+ * from the LMTD is read and converted into updating EPICS PVs. */
+
+class LMTD_MONITOR : public THREAD
+{
+public:
+    LMTD_MONITOR()
     {
-        /* Now, whatever happened above, fire up a new lmtd with the command
-         * line
-         *      lmtd -p<prescale> -d<samples> -f<detune>
-         */
-        char _p[20];  sprintf(_p, "-p%d", LmtdPrescale);
-        char _d[20];  sprintf(_d, "-d%d", SamplesPerTurn);
-        char _f[20];  sprintf(_f, "-o%d", detune);
-        char * Args[] = { "/opt/bin/lmtd", _p, _d, _f, NULL };
-        DetachProcess(Args[0], Args);
+        Publish_mbbi("CK:LMTD", LmtdState);
+        Publish_longin("CK:DAC", DacSetting);
+        Publish_longin("CK:PHASE_E", PhaseError);
+        Publish_longin("CK:FREQ_E", FrequencyError);
+        Interlock.Publish("CK");
+    }
+    
+private:
+    /* Decodes a single status line read from the LMTD and ensures that
+     * updates are reported as appropriate. */
+    void ProcessStatusLine(const char * Line)
+    {
+        int Scanned = sscanf(Line, "%d %d %d %d\n",
+            &LmtdState, &FrequencyError, &PhaseError, &DacSetting);
+        if (Scanned != 4)
+            printf("Error scanning lmtd status line \"%s\"\n", Line);
+    }
+    
+    void Thread()
+    {
+        FILE * LmtdStatus = fopen("/tmp/lmtd.status", "r");
+        if (LmtdStatus == NULL)
+            return;
+        StartupOk();
 
-        /* Try to read the new lmtd pid, and if successful write a new state
-         * file.  Otherwise ensure we get rid of any state file. */
-        pid_t LmtdPid;
-        if (ReadLmtdPid(LmtdPid))
+        char * Line = NULL;
+        size_t LineLength = 0;
+        while (Running())
         {
-            /* Record the current LMTD parameters. */
-            FILE * LmtdState = fopen(LMTD_STATE_FILE, "w");
-            if (LmtdState == NULL)
-                perror("Unable to write LMTD state");
+            if (getline(&Line, &LineLength, LmtdStatus) == -1)
+                perror("Error reading lmtd status");
             else
             {
-                fprintf(LmtdState, "%d %d\n", LmtdPid, detune);
-                fclose(LmtdState);
+                Interlock.Wait();
+                ProcessStatusLine(Line);
+                Interlock.Ready();
             }
         }
-        else
-            unlink(LMTD_STATE_FILE);
+        fclose(LmtdStatus);
     }
 
-    /* Finally sort out the double detune.  We always apply this step, as
-     * it has no side effects. */
-    if (DetuneState == LMTD_DETUNED)
-        /* In single detune state we don't apply any detune to the IF. */
-        detune = 0;
-#endif
 
-    /* Work out how much we're going to detune by. */
-    int detune = DetuneState == LMTD_TUNED ? 0 : DetuneFactor;
+    /* LMTD status variables. */
+    int LmtdState;
+    int DacSetting;
+    int PhaseError;
+    int FrequencyError;
 
-    SendLmtdCommand("o%d", detune);
+    INTERLOCK Interlock;
+};
+
+
+static LMTD_MONITOR * LmtdMonitorThread = NULL;
+
+static bool InitialiseLmtdState()
+{
+    LmtdCommandFile = fopen(LMTD_COMMAND_FIFO, "w");
+    if (LmtdCommandFile == NULL)
+    {
+        perror("Unable to open LMTD command fifo");
+        return false;
+    }
+
+    PUBLISH_CONFIGURATION("CK:DETUNE", longout,
+        SampleClockDetune, UpdateLmtdState);
+    PUBLISH_CONFIGURATION("CK:IFOFF", longout,
+        IfClockDetune, UpdateLmtdState);
+    PUBLISH_CONFIGURATION("CK:PHASE", longout,
+        PhaseOffset, UpdateLmtdState);
     
-    SetIntermediateFrequency(detune);
+    UpdateLmtdState();
+    
+    LmtdMonitorThread = new LMTD_MONITOR;
+    return LmtdMonitorThread->StartThread();
+}
+
+
+static void TerminateLmtdState()
+{
+    if (LmtdCommandFile != NULL)
+        fclose(LmtdCommandFile);
+    if (LmtdMonitorThread != NULL)
+        LmtdMonitorThread->Terminate();
 }
 
 
@@ -399,17 +206,19 @@ static void UpdateLmtdState()
 /*****************************************************************************/
 
 
+/* This class manages system clock synchronisation. */
+
 class SYNCHRONISE_CLOCKS : public THREAD, I_EVENT
 {
 public:
     SYNCHRONISE_CLOCKS() :
         SyncState(false)
     {
-        Dummy = false;
         RunningState = WAITING;
         
-        PUBLISH_METHOD_OUT(bo, "CF:SYNC", SynchroniseClocks, Dummy);
-        Publish_bi("CF:SYNCSTATE", SyncState);
+        PUBLISH_ACTION("CK:SYNCSC", SynchroniseSystemClock);
+        PUBLISH_ACTION("CK:SYNCMC", SynchroniseMachineClock);
+        Publish_bi("CK:SYNCSTATE", SyncState);
         
         RegisterTriggerSetEvent(*this, 100);
 
@@ -450,7 +259,7 @@ private:
                  * to expect it on the next whole second. */
                 NewTime.tv_sec += 1;
                 NewTime.tv_nsec = 0;
-                SetClockTime(NewTime);
+                SetSystemClockTime(NewTime);
 
                 /* Now wait until 200ms past this new second.  This gives us
                  * enough time to receive the trigger, if it's coming,
@@ -467,6 +276,39 @@ private:
     }
 
 
+    /* Called during shutdown to request orderly thread termination. */
+    void OnTerminate()
+    {
+        Lock();
+        RunningState = TERMINATING;
+        Signal();
+        Unlock();
+    }
+
+    /* This is called in response to processing the CK:SYNCSC record, to tell
+     * us that the next trigger will be a system clock synchronisation
+     * trigger.  We wake up the main thread to do this work for us. */
+    bool SynchroniseSystemClock()
+    {
+        Lock();
+        if (RunningState == WAITING)
+            RunningState = SYNCHRONISING;
+        SyncState.Write(true);
+        Signal();
+        Unlock();
+        return true;
+    }
+
+
+    /* This is called in response to processing the CK:SYNCMC record: the
+     * next trigger is a machine clock synchronisation trigger.  In response
+     * we need to let LMTD know that a sync is about to happen. */
+    bool SynchroniseMachineClock()
+    {
+        SetMachineClockTime();
+        return true;
+    }
+
 
     /* This is called when the TRIGSET event is received: this informs us
      * that the clock setting trigger has been received and so clock setting
@@ -480,60 +322,16 @@ private:
         Signal();
         Unlock();
     }
-
-
-    /* Called during shutdown to request orderly thread termination. */
-    void OnTerminate()
-    {
-        Lock();
-        RunningState = TERMINATING;
-        Signal();
-        Unlock();
-    }
-
-
-    /* This is called in response to processing the CF:SYNC record, to tell
-     * us that the next trigger will be a clock synchronisation trigger.  We
-     * wake up the main thread to do this work for us. */
-    bool SynchroniseClocks(bool)
-    {
-        Lock();
-        if (RunningState == WAITING)
-            RunningState = SYNCHRONISING;
-        SyncState.Write(true);
-        Signal();
-        Unlock();
-        return true;
-    }
-        
-
+    
 
     /* Wrappers for synchronisation. */
-
-    void Lock()
-    {
-        TEST_(pthread_mutex_lock, &Mutex);
-    }
-    
-    void Unlock()
-    {
-        TEST_(pthread_mutex_unlock, &Mutex);
-    }
-
-    void Signal()
-    {
-        TEST_(pthread_cond_signal, &Condition);
-    }
-
-    void Wait()
-    {
-        /* Note that Mutex must be locked before calling this. */
-        TEST_(pthread_cond_wait, &Condition, &Mutex);
-    }
+    void Lock()   { TEST_(pthread_mutex_lock,   &Mutex); }
+    void Unlock() { TEST_(pthread_mutex_unlock, &Mutex); }
+    void Signal() { TEST_(pthread_cond_signal,  &Condition); }
+    void Wait()   { TEST_(pthread_cond_wait,    &Condition, &Mutex); }
     
     
     TRIGGER SyncState;
-    bool Dummy;
 
     enum RUNNING_STATE { WAITING, SYNCHRONISING, TERMINATING };
     RUNNING_STATE RunningState;
@@ -561,8 +359,74 @@ static void TerminateSynchroniseClocks()
 
 
 
-/****************************************************************************/
-/*                                                                          */
+/*****************************************************************************/
+/*                                                                           */
+/*                        Reboot and Restart Support                         */
+/*                                                                           */
+/*****************************************************************************/
+
+/* This code is somewhat out of place here. */
+
+
+/* Fairly generic routine to start a new detached process in a clean
+ * environment. */
+
+static void DetachProcess(const char *Process, char *const argv[])
+{
+    /* We fork twice to avoid leaving "zombie" processes behind.  These are
+     * harmless enough, but annoying.  The double-fork is a simple enough
+     * trick. */
+    pid_t MiddlePid = fork();
+    if (MiddlePid == -1)
+        perror("Unable to fork");
+    else if (MiddlePid == 0)
+    {
+        pid_t NewPid = fork();
+        if (NewPid == -1)
+            perror("Unable to fork");
+        else if (NewPid == 0)
+        {
+            /* This is the new doubly forked process.  We still need to make
+             * an effort to clean up the environment before letting the new
+             * image have it. */
+
+            /* Set a sensible home directory. */
+            TEST_(chdir, "/");
+
+//             /* Restore default signal handling.  I'd like to hope this step
+//              * isn't needed. */
+//             for (int i = 0; i < NSIG; i ++)
+//                 signal(i, SIG_DFL);
+
+            /* Enable all signals. */
+            sigset_t sigset;
+            TEST_(sigfillset, &sigset);
+            TEST_(sigprocmask, SIG_UNBLOCK, &sigset, NULL);
+
+            /* Close all the open file handles.  The new lmtd gets into trouble
+             * if we don't do this. */
+            for (int i = 0; i < sysconf(_SC_OPEN_MAX); i ++)
+                close(i);
+
+            /* Finally we can actually exec the new process... */
+            char * envp[] = { NULL };
+            TEST_(execve, Process, argv, envp);
+        }
+        else
+            /* The middle process simply exits without further ceremony.  The
+             * idea here is that this orphans the new process, which means
+             * that the parent process doesn't have to wait() for it, and so
+             * it won't generate a zombie when it exits. */
+            _exit(0);
+    }
+    else
+    {
+        /* Wait for the middle process to finish. */
+        if (waitpid(MiddlePid, NULL, 0) == -1)
+            perror("Error waiting for middle process");
+    }
+}
+
 
 static bool Dummy;
 
@@ -581,20 +445,16 @@ static void DoRestart()
 
 
 
-bool InitialiseTimestamps(
-    int _LmtdPrescale, int _SamplesPerTurn, int _BunchesPerTurn)
+/****************************************************************************/
+/*                                                                          */
+
+
+bool InitialiseTimestamps()
 {
     if (!InitialiseSynchroniseClocks())
         return false;
     
-    LmtdPrescale   = _LmtdPrescale;
-    SamplesPerTurn = _SamplesPerTurn;
-    BunchesPerTurn = _BunchesPerTurn;
-    
-    PUBLISH_CONFIGURATION("CF:LMTD", mbbo, DetuneState, UpdateLmtdState);
-    PUBLISH_CONFIGURATION("CF:DETUNE", longout, DetuneFactor, UpdateLmtdState);
-
-    UpdateLmtdState();
+    InitialiseLmtdState();
 
     /* Also a couple of rather miscellanous PVs that could go anywhere.  They
      * currently live here so that they can share the DetachProcess() api. */
@@ -608,4 +468,5 @@ bool InitialiseTimestamps(
 void TerminateTimestamps()
 {
     TerminateSynchroniseClocks();
+    TerminateLmtdState();
 }

@@ -1,0 +1,31 @@
+#!/bin/sh
+
+for n in $(seq 4); do
+    caput BR0${n}C-DI-EVR-01:TRIG:MODE Synchronised
+done
+
+sleep 1
+
+echo -e \\n Arming Get-Time: \\n
+liberas BR '/opt/bin/libera -apt0 1 2>&1 >/dev/null  ' | sort | uniq &
+
+echo -e \\n Waiting 10s for all Liberas to arm: \\n
+sleep 10
+
+echo -e \\n Sending Get-Time event: \\n
+caput LI-TI-MTGEN-01:SR-DI 1
+caput LI-TI-MTGEN-01:SR-DI 0
+
+echo -e \\n
+sleep 3
+
+for n in $(seq 4); do
+    caput BR0${n}C-DI-EVR-01:TRIG:MODE Normal
+done
+
+echo -e \\n Checking for unlocked lmtd:\\n
+liberas BR 'grep lmtd /var/log/messages |tail -n 1' |grep -v locked
+
+echo -e \\n Done.\\n
+
+

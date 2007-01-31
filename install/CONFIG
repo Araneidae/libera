@@ -47,7 +47,7 @@ SR_IOC_BN_LENGTH=80
 IOC_TT_LENGTH=524288
 
 # Turn by turn readout window length.
-IOC_TT_WINDOW=16384
+IOC_TT_WINDOW=32768
 
 # Turn by turn small waveform length (continuously updating TT data).
 IOC_FR_LENGTH=2048

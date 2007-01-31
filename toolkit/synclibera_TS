@@ -1,0 +1,25 @@
+caput TS-DI-EVR-01:TRIG:MODE Synchronised
+
+sleep 1
+
+# echo -e \\n Stopping EPICS: \\n
+# labliberas /etc/init.d/epics stop |cat|wc -l
+#  
+# echo -e \\n Arming Set-Time: \\n
+# labliberas /opt/bin/libera -x -t $(date +0:%Y%m%d%H%M.%S)|cat
+
+for i in 1 2 3 4 5 6; do
+    caput TS-DI-EBPM-0$i:CF:SYNC_S Synchronise
+done
+
+
+sleep 1
+echo -e \\n Sending Set-Time event: \\n
+
+caput LI-TI-MTGEN-01:SR-DI 1
+caput LI-TI-MTGEN-01:SR-DI 0
+sleep 3
+
+caput TS-DI-EVR-01:TRIG:MODE Normal
+
+echo -e \\n Done.\\n

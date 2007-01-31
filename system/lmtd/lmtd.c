@@ -49,6 +49,7 @@ or visit http://www.gnu.org
 
 #include "debug.h"
 #include "libera_pll.h"
+#include "common.h"
 
 
 
@@ -56,37 +57,40 @@ or visit http://www.gnu.org
 //--------------------------------------------------------------------------
 // Globals.
 
-/** Pointer to the application file name: this is used to label log entries. */
+/* Pointer to the application file name: this is used to label log entries. */
 const char *argv0 = 0;
 
-/** Libera device file descriptor, used to interface to the machine clock
- *  control . */
+/* Libera device file descriptor, used to interface to the machine clock
+ * control . */
 int event_fd = -1;
 
-/** Default MC precaler */
+/* Default MC precaler: number of machine clocks between MC tick events. */
 unsigned long mc_presc = LMTD_DEFAULT_MCPRESC;
 
-/** Default decimation */
+/* Default decimation: number of samples per revolution */
 unsigned long ddc_decimation = LMTD_DEFAULT_DEC;
+
+/* Default harmonic number: number of bunches per revolution  */
+unsigned long harmonic = LMTD_DEFAULT_HARMONIC;
 
 /* Nominal number of ticks expected between successive clock count samples.
  * Always equal to mc_presc*ddc_decimation. */
 unsigned int system_prescale = LMTD_DEFAULT_MCPRESC * LMTD_DEFAULT_DEC;
 
-/** Default DAC nominal offset */
+/* Default DAC nominal offset */
 unsigned long u_nominal = LMTD_DEFAULT_UNOMINAL;
 
-/** Compensated offset-tune flag (NCO shift) */
-int nco_shift = FALSE;
+/* Maximum allowable phase error before we unlock phase. */
+long MaximumPhaseError = ERR_LMT_UNLOCK;
 
-/** Debug filename */
+/* Debug filename */
 char *plldebug_fname = "/tmp/lmtd_debug.dat";
-
-/** Debug file pointer */
+/* Debug file pointer */
 FILE *f_plldebug = NULL;
-
-/** Debug flag */
+/* Debug flag */
 int plldebug = FALSE;
+
+/* Whether to detach as a daemon: set to false for debug. */
 bool daemon_mode = true;
 
 
@@ -94,24 +98,20 @@ bool daemon_mode = true;
  * operation. */
 long frequency_offset = 0;
 
+/* Phase offset.  Only really meaningful after clock synchronisation. */
 long phase_offset = 0;
+
+/* We allow the NCO offset to differ from the frequency offset for special
+ * applications, but normally these should coincide. */
 long nco_offset = 0;
 
+/* Synchronisation state. */
 bool synchronised = false;
 
+/* Pipe used to receive status messages. */
 int status_pipe = -1;
 
 
-
-// #ifdef NO_DAEMON
-// /* Nasty hackery: when not running as a daemon, send any error reports
-//  * directly to the terminal!  Otherwise they just go into system log. */
-// #define syslog(level, format, ...) \
-//     ( { \
-//         printf("syslog %d\n", level); \
-//         printf(format, ##__VA_ARGS__); \
-//     } )
-// #endif
 
 
 
@@ -139,99 +139,37 @@ void die(const char *function, int line, const char *what)
 
 
 
-//--------------------------------------------------------------------------
 
-void ParseCommandInt(const char *Command, long *Target)
-{
-    char * End;
-    int NewValue = strtol(Command + 1, &End, 10);
-    if (Command + 1 < End  &&  *End == '\0')
-        /* Good, read a new value. */
-        *Target = NewValue;
-    else
-        _LOG_CRIT("Invalid number in %c command: \"%s\"\n",
-            Command[0], Command + 1);
-}
-
-
-void* CommandThread(void*Context)
-{
-    mkfifo(LMTD_COMMAND_FIFO, 0666);
-    while (true)
-    {
-        int CommandPipe = open("/tmp/lmtd.command", O_RDONLY);
-        if (CommandPipe == -1)  EXIT("Unable to open command pipe");
-        char Command[80];
-        int Read = read(CommandPipe, Command, sizeof(Command) - 1);
-        if (Read > 0)
-        {
-            Command[Read] = '\0';
-            printf("Read \"%s\"\n", Command);
-            switch (Command[0])
-            {
-                case 'o':
-                    ParseCommandInt(Command, &frequency_offset);
-                    break;
-                case 'p':
-                    ParseCommandInt(Command, &phase_offset);
-                    break;
-                case 'n':
-                    ParseCommandInt(Command, &nco_offset);
-                    break;
-                case 's':
-                    synchronised = true;
-                    break;
-
-                default:
-                    _LOG_ERR("Unknown command \"%s\"\n", Command);
-            }
-        }
-        else
-            _LOG_ERR("Reading command (%d)", errno);
-        close(CommandPipe);
-    }
-    return NULL;
-}
-
-
-
-typedef enum
-{
-    LMTD_NO_CLOCK,          // Clock lost
-    LMTD_FREQUENCY_SEEK,    // Seeking requested frequency
-    LMTD_PHASE_SEEK,        // Wide band phase lock
-    LMTD_PHASE_LOCKED       // Narrow band phase lock
-} LMTD_STATE;
 
 #define PHASE_LOCKED(State) \
     ((State) == LMTD_PHASE_SEEK  ||  (State) == LMTD_PHASE_SEEK)
 
-/* Log messages on transition between each of the states above. */
-const char * LmtdStateLogMessage[4][4] = {
+/* Log messages on transition between each of the states above.  We only log
+ * certain transitions.  In particular, transitions between the two phase
+ * locked states aren't logged. */
+const char * LmtdStateLogMessage
+    [LMTD_LOCK_STATE_COUNT][LMTD_LOCK_STATE_COUNT] =
+{
     { NULL,          "Clock lost",  "Clock lost",       "Clock lost" },
     { "Clock found", NULL,          "Phase lock lost",  "Error 3->1" },
+//     { "Error 0->2",  "Phase locked", NULL,              NULL },
+//     { "Error 0->3",  "Error 1->3",   NULL,              NULL }
     { "Error 0->2",  "Phase locked", NULL,              "Phase slip" },
     { "Error 0->3",  "Error 1->3",   "Full phase lock", NULL }
 };
 
-LMTD_STATE LastKnownState = LMTD_NO_CLOCK;
+
+LMTD_LOCK_STATE LastKnownState = LMTD_NO_CLOCK;
 bool PipeOverflow = false;
+
 
 
 /* This reports the LMTD state.  The full state is written to the status
  * pipe, and significant changes in state are reported to the log and the
- * device driver.
- *     The following state is reported:
- *
- *      Basic loop state:
- *              no clock, seeking frequency, phase locked, deep phase lock
- *      Loop error:
- *              frequency error when frequency seeking, phase error in phase
- *              seek and locked modes.
- *      DAC setting
- */
+ * device driver. */
 
-void ReportLmtdState(LMTD_STATE LmtdState, int LoopError, int DAC)
+void ReportLmtdState(
+    LMTD_LOCK_STATE LmtdState, int FrequencyError, int PhaseError, int DAC)
 {
     /* Report state changes to log file and driver. */
     const char * LogMessage = LmtdStateLogMessage[LmtdState][LastKnownState];
@@ -253,9 +191,8 @@ void ReportLmtdState(LMTD_STATE LmtdState, int LoopError, int DAC)
     
     /* Prepare status message to send to monitor. */
     char StatusMessage[80];
-    sprintf(StatusMessage, "%s%c %d %d\n",
-        PipeOverflow ? "O\n" : "",
-        "XfpL"[LmtdState], LoopError, DAC);
+    sprintf(StatusMessage, "%d %d %d %d\n",
+        LmtdState, FrequencyError, PhaseError, DAC);
 
     /* Write message to pipe. */
     PipeOverflow =
@@ -265,30 +202,12 @@ void ReportLmtdState(LMTD_STATE LmtdState, int LoopError, int DAC)
 
 
 
-/* All commands are received on a separate thread. */
-
-void InitialiseCommandThread(void)
-{
-    /* Create thread to receive commands. */
-    pthread_t ThreadId;
-    pthread_create(&ThreadId, NULL, CommandThread, NULL);
-
-    /* Create the status FIFO ready to receive our status reports. */
-    mkfifo(LMTD_STATUS_FIFO, 0666);
-    open(LMTD_STATUS_FIFO, O_RDONLY | O_NONBLOCK);
-    status_pipe = open(LMTD_STATUS_FIFO, O_WRONLY | O_NONBLOCK);
-}
-
-
-//--------------------------------------------------------------------------
-
 /*****************************************************************************/
 /*                                                                           */
-/*                          Frequency Locked Loop                            */
+/*                          Interface to Machine                             */
 /*                                                                           */
 /*****************************************************************************/
 
-//--------------------------------------------------------------------------
 
 /* Returns the current absolute machine time and (if Counts is not NULL) the
  * (estimated) number of tick intervals since the last machine time.  When
@@ -299,15 +218,17 @@ void InitialiseCommandThread(void)
 
 bool GetMachineTime(unsigned long long * MachineTime)
 {
-    unsigned long long LastMachineTime = *MachineTime;
+    /* This ioctl returns the number of 125MHz system clock ticks at the
+     * current MC tick report.  We don't use this (though it could be used to
+     * infer the machine frequency), but it needs to be read otherwise the
+     * device driver will complain.  This data stream is probably a historical
+     * relic. */
+    unsigned long long SystemTime;
+    ioctl(event_fd, LIBERA_EVENT_GET_SC_TRIGGER_10, &SystemTime);
     
     /* Read the machine time.  This ioctl will block until the a machine time
      * can be read (100ms), or a timeout occurs, in which case the ioctl will
-     * fail and errno is set to EAGAIN.
-     *    For strange (probably historical) reasons we also need to read the
-     * SC trigger, even though we immediately throw it away.  If we don't,
-     * the log fills up with SC overflow messages! */
-    ioctl(event_fd, LIBERA_EVENT_GET_SC_TRIGGER_10, MachineTime);
+     * fail and errno is set to EAGAIN. */
     bool mc_ok =
         ioctl(event_fd, LIBERA_EVENT_GET_MC_TRIGGER_10, MachineTime) == 0;
 
@@ -315,42 +236,8 @@ bool GetMachineTime(unsigned long long * MachineTime)
      * almost certainly because the machine clock trigger isn't connected.
      * We only want to log something if neither of these cases holds. */
     if (!mc_ok  &&  errno != EAGAIN)
-        /* Hmm.  Log something. */
         _LOG_CRIT("Unable to get MC trigger: %s", strerror(errno));
 
-    if (!mc_ok)
-        printf("Clock lost\n");
-
-    if (mc_ok)
-    {
-        unsigned long long McTimeDelta = *MachineTime - LastMachineTime;
-        int Count =
-            (int) ((McTimeDelta + system_prescale/2) / system_prescale);
-
-        static struct timespec Before;
-        struct timespec Now;
-        clock_gettime(CLOCK_REALTIME, &Now);
-        int ns_delta = Now.tv_nsec - Before.tv_nsec;
-        int s_delta = Now.tv_sec - Before.tv_sec;
-        if (ns_delta < 0)
-        {
-            ns_delta += 1000000000;
-            s_delta -= 1;
-        }
-
-         if (Count != 1 || s_delta != 0 ||
-             80000000 > ns_delta || ns_delta > 120000000)
-//        if (Count != 1)
-        {
-            printf(
-                "Delta = %llu, delta = %d.%09d, count=%d, residue = %lld\n",
-                McTimeDelta, 
-                s_delta, ns_delta, Count,
-                McTimeDelta - Count * system_prescale);
-        }
-        Before = Now;
-    }
-    
     return mc_ok;
 }
 
@@ -396,20 +283,45 @@ void ReportPhase(long long mcphi)
 
 
 
-/* Control constants for PLL. */
+/* The phase advance per sample for the intermediate frequency generator is
+ * controlled by an ioctl.  The phase advance is in units of 2^32*f_if/f_s,
+ * where f_if is the desired intermediate frequency and f_s is the sample clock
+ * frequency.
+ *     If we write P=prescale, D=decimation, H=bunches per turn and
+ * F=frequency offset then the sample clock satisfies:
+ *
+ *          f_s = (D/H + F/HP) f_rf
+ *
+ * We normally want to set f_if = f_rf (modulo f_s), in which case the desired
+ * intermediate frequency scaling factor (to ensure that the resampled RF
+ * frequency is equal to the IF) is
+ *                                                HP
+ *          N = 2^32 frac(f_rf/f_s) = 2^32 frac ------
+ *                                              PD + F
+ */
 
-/* Frequency locking. */
-#define FF_FK   18      // Frequency scale
-#define FF_IIR  0.5     // Lock detect IIR factor
+void SetNcoFrequency()
+{
+    /* We need to calculate the fractional part of f_rf/f_s to get the correct
+     * value for N.  As the frequency offset F is always quite small (and is
+     * guaranteed to be less than frac(H/D)), we can accurately calculate the
+     * integer part of HP/(PD+F) as the integer part of H/D. */
+    unsigned long nco = (unsigned long) (
+        (double)(1ULL << 32) * (
+            ((double) harmonic * mc_presc) /
+                ((double) system_prescale + nco_offset) -
+            harmonic / ddc_decimation));
+    if (ioctl(event_fd, LIBERA_EVENT_SET_NCO, &nco) != 0)
+        _LOG_CRIT( "failed to set NCO" );
+}
 
-/* Phase searching. */
-#define FP_KP   20      // Proportionality constant
-#define FP_IIR  0.25
 
-/* Phase locking. */
-#define LP_KP   0.5
-#define LP_KI   0.05
-#define LP_IIR  0.05
+
+/*****************************************************************************/
+/*                                                                           */
+/*                          Frequency Locked Loop                            */
+/*                                                                           */
+/*****************************************************************************/
 
 
 /* This routine tunes the MC clock until the correct frequency is found.  As
@@ -417,10 +329,10 @@ void ReportPhase(long long mcphi)
  * machine time and the corresponding DAC setting.  If the clock is lost
  * during this process false is returned instead. */
 
+#define FF_FK   20      // Frequency scale
+
 bool run_find_frequency(unsigned long long *mctime, int *target_dac)
 {
-    /* Smoothed squared error for lock detection. */
-    double var_err = 1e2;
     /* Computed DAC output. */
     int dac = *target_dac;
 
@@ -433,17 +345,15 @@ bool run_find_frequency(unsigned long long *mctime, int *target_dac)
         /* The frequency error is determined by the prescale (which
          * determines the nominal number of ticks) together with the
          * frequency offset. */
-        int error = system_prescale + frequency_offset - mc_diff;
-        dac = ClipDAC(dac + FF_FK * error);
+        int frequency_error = system_prescale + frequency_offset - mc_diff;
+        dac = ClipDAC(dac + FF_FK * frequency_error);
 
-        ReportLmtdState(LMTD_FREQUENCY_SEEK, error, dac);
+        ReportLmtdState(LMTD_FREQUENCY_SEEK, frequency_error, 0, dac);
         SetMachineClockDAC(dac);
         mctime_1 = mctime_2;
 
-        /* Also run a simple IIR to detect when the error stabilises for long
-         * enough.  If the error stabilises small enough, we can now lock. */
-        var_err = FF_IIR * (double) error * error + (1 - FF_IIR) * var_err;
-        if (var_err < 1.5)
+        /* Return once the target frequency is reached. */
+        if (abs(frequency_error) <= 1)
         {
             *mctime = mctime_2;
             *target_dac = dac;
@@ -452,7 +362,7 @@ bool run_find_frequency(unsigned long long *mctime, int *target_dac)
     }
     
     /* If we fall through to here then machine time was lost. */
-    ReportLmtdState(LMTD_NO_CLOCK, 0, dac);
+    ReportLmtdState(LMTD_NO_CLOCK, 0, 0, dac);
     return false;
 }
 
@@ -463,6 +373,18 @@ bool run_find_frequency(unsigned long long *mctime, int *target_dac)
  *    On successful capture of the desired phase true is returned together
  * with the updated nominal machine time and the current DAC setting.
  *    If phase is lost or if the clock is lost false is returned. */
+
+/* These P&I constants are chosen to match the open loop gain of the VCXO
+ * DAC, which is approximately 0.03 sample clocks per ~10Hz MC tick per unit
+ * of DAC setting.
+ *    These values are chosen for a reasonably rapid DAC response with
+ * reduced risk of instability. */
+#define FP_KP   20      // Proportionality constant
+#define FP_KI   9       // Integration constant
+
+/* This "lock in" time constant is used to determine how long we wait before
+ * handing on to the narrow band locked loop. */
+#define FP_IIR  0.15    // Lock in time constant
 
 bool run_find_phase(unsigned long long *mctime, int *dac)
 {
@@ -480,9 +402,9 @@ bool run_find_phase(unsigned long long *mctime, int *dac)
     /* All DAC computations will be offsets from the nominal DAC set on
      * entry. */
     int nominal_dac = *dac;
-    
-//    unsigned long long mctime_1 = *mctime;
+
     unsigned long long new_mctime = *mctime;
+    unsigned long long last_mctime = new_mctime;
     while (GetMachineTime(&new_mctime))
     {
         /* Accumulate the clock count and compute the corresponding phase
@@ -490,28 +412,43 @@ bool run_find_phase(unsigned long long *mctime, int *dac)
          * into account. */
         nominal_clock_count += system_prescale + frequency_offset;
         long long mcphi = nominal_clock_count - new_mctime;
-        int error = (int) (mcphi - phase_offset);
+        int phase_error = (int) (mcphi - phase_offset);
+        tI += phase_error;
 
-        tI += error;
-        *dac = ClipDAC(nominal_dac + FP_KP * error + tI);
+        *dac = ClipDAC(nominal_dac + FP_KP * phase_error + FP_KI * tI);
+
+        /* If the DAC hits the limits we have a problem.  If we let the
+         * integrator continue to run then we end up overcompensating, and and
+         * then oscillating for ages afterwards. If, on the other hand, we
+         * simply reset the integrater then we can oscillate forever if we
+         * bounce off the limits.  Thus here we simply don't integrate this
+         * term -- seems to work. */
+        if (*dac == 0  ||  *dac == 0xFFFF)
+            tI -= phase_error;
+
+        /* Compute the frequency error, just as in run_find_frequency, so
+         * that we can report how the frequency changes as we slew. */
+        int frequency = new_mctime - last_mctime;
+        last_mctime = new_mctime;
+        int frequency_error = system_prescale + frequency_offset - frequency;
+        ReportFrequency(frequency);
 
         ReportPhase(mcphi);
-        ReportLmtdState(LMTD_PHASE_SEEK, error, *dac);
+        ReportLmtdState(LMTD_PHASE_SEEK, frequency_error, phase_error, *dac);
         SetMachineClockDAC(*dac);
-//         ReportFrequency(new_mctime - mctime_1);
-//         mctime_1 = new_mctime;
-
         
-        // unlock the phase
-        if (abs(error) > ERR_LMT_UNLOCK)
+        /* If the phase error grows too large give up trying to hold the
+         * locked phase and hand control back to the frequency seeking code.
+         * */
+        if (abs(phase_error) > MaximumPhaseError)
         {
             *mctime = new_mctime;
             return false;
         }
 
-        
-        var_err = FP_IIR * error * error + (1 - FP_IIR) * var_err;
-//printf("find_phase: %d (%g) => %d\n", error, var_err, dac);
+        /* Finally check for stable phase lock: once the phase lock is
+         * sufficiently stable, we can hand off to the narrow lock filter. */
+        var_err = FP_IIR * phase_error * phase_error + (1 - FP_IIR) * var_err;
         if (var_err < 2)
         {
             *mctime = nominal_clock_count;
@@ -520,9 +457,15 @@ bool run_find_phase(unsigned long long *mctime, int *dac)
     }
     
     /* If we fall through to here the machine time was lost. */
-    ReportLmtdState(LMTD_NO_CLOCK, 0, *dac);
+    ReportLmtdState(LMTD_NO_CLOCK, 0, 0, *dac);
     return false;
 }
+
+
+
+/* A couple of experimental filters. */
+//#define FILTER_SMOOTH_PI
+#define FILTER_SECOND_ORDER
 
 
 
@@ -533,15 +476,49 @@ bool run_find_phase(unsigned long long *mctime, int *dac)
  * the phase error is too large for the narrow bandwidth lock, and the wider
  * bandwidth find_phase process needs to be run instead. */
 
+#ifdef FILTER_SMOOTH_PI
+#define LP_KP   0.5
+#define LP_KI   0.05
+#endif
+#ifdef FILTER_SECOND_ORDER
+/* These filter coefficients define a second order IIR filter which is used to
+ * managed the phase error.  The goal is to keep the phase error low (to
+ * within +-1 or 2 sample clocks) with neither excessive excursions in
+ * frequency or long term oscillations -- it turns out that designing such a
+ * filter is quite tricky.  The coefficients below work for a system with an
+ * open loop gain of approximately 0.03. */
+#if 0
+#define B_0     0.97
+#define B_1     -1.1
+#define B_2     0.17
+#else
+#define B_0     0.3
+#define B_1     0.14
+#define B_2     -0.41
+#endif
+#define A_1     -1.8
+#define A_2     0.8
+#endif
+
+#define LP_IIR  0.05
+
 bool run_lock_phase(unsigned long long *mctime, int *dac)
 {
     /* Accumulated target phase. */
     unsigned long long nominal_clock_count = *mctime;
 
+#ifdef FILTER_SMOOTH_PI
     /* Running average of errors.  We just use a simple IIR for this. */
     double smoothed_error = 0;
     /* Integrator. */
     int integrated_error = 0;
+#endif
+#ifdef FILTER_SECOND_ORDER
+    /* Second order IIR.  We have to keep a history of the last two terms and
+     * the last two corrections. */
+    int   last_error[2] = { 0, 0 };
+    float last_out  [2] = { 0.0, 0.0 };
+#endif
 
     int nominal_dac = *dac;
     unsigned long long new_mctime = *mctime;
@@ -551,13 +528,26 @@ bool run_lock_phase(unsigned long long *mctime, int *dac)
         long long mcphi = nominal_clock_count - new_mctime;
         int this_error = (int) (mcphi - phase_offset);
 
+#ifdef FILTER_SMOOTH_PI
         integrated_error += this_error;
         smoothed_error = LP_IIR * this_error + (1 - LP_IIR) * smoothed_error;
         *dac = ClipDAC(nominal_dac + (int) round(
             LP_KP * smoothed_error + LP_KI * integrated_error));
+#endif
+#ifdef FILTER_SECOND_ORDER
+        /* Compute this stage of the filter. */
+        float this_output =
+            B_0 * this_error + B_1 * last_error[0] + B_2 * last_error[1] -
+            A_1 * last_out[0] - A_2 * last_out[1];
+        /* Advance the historical records. */
+        last_out[1]   = last_out[0];    last_out[0]   = this_output;
+        last_error[1] = last_error[0];  last_error[0] = this_error;
+        /* Compute the required correction to output for this step. */
+        *dac = ClipDAC(nominal_dac + (int) round(this_output));
+#endif
 
         ReportPhase(mcphi);
-        ReportLmtdState(LMTD_PHASE_LOCKED, this_error, *dac);
+        ReportLmtdState(LMTD_PHASE_LOCKED, 0, this_error, *dac);
         SetMachineClockDAC(*dac);
 //        ReportFrequency(new_mctime - mctime_1);
 
@@ -573,9 +563,10 @@ bool run_lock_phase(unsigned long long *mctime, int *dac)
     }
     
     /* If we fall through to here the machine time was lost. */
-    ReportLmtdState(LMTD_NO_CLOCK, 0, *dac);
+    ReportLmtdState(LMTD_NO_CLOCK, 0, 0, *dac);
     return false;
 }
+
 
 
 void run()
@@ -601,7 +592,7 @@ void run()
             /* At this point we are completely untied: there is no external
              * machine clock available, so there is nothing we can do except
              * report this. */
-            ReportLmtdState(LMTD_NO_CLOCK, 0, dac);
+            ReportLmtdState(LMTD_NO_CLOCK, 0, 0, dac);
 
         /* Alternately acquire frequency and then lock the phase.  While the
          * machine is locked we maintain the machine time, and the dac is also
@@ -619,13 +610,99 @@ void run()
 
 /*****************************************************************************/
 /*                                                                           */
+/*                         LMTD Command Processing                           */
+/*                                                                           */
+/*****************************************************************************/
+
+
+void DispatchCommand(char *Command)
+{
+    char * Newline = strchr(Command, '\n');
+    if (Newline == NULL)
+        _LOG_ERR("Malformed command \"%s\"", Command);
+    else
+    {
+        *Newline = '\0';
+printf("Read \"%s\"\n", Command);
+        switch (*Command++)
+        {
+            case 'o':
+                frequency_offset = atoi(Command);
+                break;
+            case 'p':
+                phase_offset = atoi(Command);
+                break;
+            case 'n':
+                nco_offset = atoi(Command);
+                SetNcoFrequency();
+                break;
+            case 's':
+                synchronised = true;
+                break;
+            case 'w':
+                MaximumPhaseError = atoi(Command);
+                break;
+
+            default:
+                _LOG_ERR("Unknown command \"%s\"", Command-1);
+        }
+    }
+}
+
+
+
+void* CommandThread(void*Context)
+{
+    mkfifo(LMTD_COMMAND_FIFO, 0666);
+    while (true)
+    {
+        FILE * CommandPipe = fopen(LMTD_COMMAND_FIFO, "r");
+        if (CommandPipe == NULL)
+        {
+            _LOG_ERR("Error opening command pipe");
+            /* Wait 10 seconds before trying again.  Means we don't give up,
+             * but also means we can flood the error log... */
+            sleep(10);
+        }
+        else
+        {
+            char Command[80];
+            while (fgets(Command, sizeof(Command), CommandPipe) != NULL)
+                DispatchCommand(Command);
+            fclose(CommandPipe);
+        }
+    }
+    return NULL;
+}
+
+
+/* All commands are received on a separate thread. */
+
+void InitialiseCommandThread(void)
+{
+    /* Create thread to receive commands. */
+    pthread_t ThreadId;
+    pthread_create(&ThreadId, NULL, CommandThread, NULL);
+
+    /* Create the status FIFO ready to receive our status reports. */
+    mkfifo(LMTD_STATUS_FIFO, 0666);
+    open(LMTD_STATUS_FIFO, O_RDONLY | O_NONBLOCK);
+    status_pipe = open(LMTD_STATUS_FIFO, O_WRONLY | O_NONBLOCK);
+}
+
+
+
+
+/*****************************************************************************/
+/*                                                                           */
 /*                          Daemon Initialisation                            */
 /*                                                                           */
 /*****************************************************************************/
 
 
-/** Find if there is another instance of the lmtd already running, returns
- ** true iff found. */
+
+/* Find if there is another instance of the lmtd already running, returns
+ * true iff found. */
 
 bool find_instance( const char *fname )
 {
@@ -655,9 +732,9 @@ bool find_instance( const char *fname )
     }
 }
 
-//--------------------------------------------------------------------------
 
-/** Cleanup function.
+
+/* Cleanup function.
  *  Remove the process identification (PID) file. */
 
 void cleanup()
@@ -683,11 +760,11 @@ void cleanup()
     unlink(LMTD_STATUS_FIFO);
 }
 
-//--------------------------------------------------------------------------
+
 
 volatile sig_atomic_t termination_in_progress = 0;
 
-/** Signal handler.
+/* Signal handler.
  *  Handle SIGINT (Ctrl-C) and other termination signals to allow the
  *  application to terminate gracefully (after cleanup).
  *  @param signo Signal number. */
@@ -717,10 +794,9 @@ void signal_handler( int signo )
 
 
 
-/** Initialize this instance -- i.e. register signal handler,
- *  atexit handler, create a process identification (PID) file and
- *  daemonize this instance.
- *  Returns 0. */
+/* Initialize this instance -- i.e. register signal handler, atexit handler,
+ * create a process identification (PID) file and daemonize this instance.
+ * Returns 0. */
 
 int init()
 {
@@ -786,11 +862,15 @@ int init()
     if ( 0 > ioctl( event_fd,
             LIBERA_EVENT_ENABLE_SC_TRIG,
             TRIGGER_BIT(6) ) ) // M3 prescaler = 6
-    EXIT("ioctl");
+        EXIT("ioctl");
     if ( 0 > ioctl( event_fd,
             LIBERA_EVENT_ENABLE_MC_TRIG,
             TRIGGER_BIT(6) ) ) // M3 prescaler = 6
-    EXIT("ioctl");
+        EXIT("ioctl");
+
+    /* Ensure the intermediate frequency NCO is set to the appropriate
+     * frequency. */
+    SetNcoFrequency();
     
     // Unlocked initially
     unsigned int init_locked = FALSE;    
@@ -815,23 +895,23 @@ int init()
 /*****************************************************************************/
 
 
-/** Print usage information. */
+/* Print usage information. */
 
 void usage()
 {
     const char *format =
-    "Usage: %s [OPTION]...\n"
-    "\n"
-    "-d decimation   Decimation factor (default = %lu)\n"
-    "-o offset-tune  RF-VCXO detuning offset (*40Hz), integer (default = %lu)\n"   
-    "-c              Compensate tune; Shifts NCO accoording to RF-VCXO.\n"
-    "-u u_nominal    DAC nominal offset (default = 0x%x)\n"
-    "-p prescaler    MC prescaler (default = %lu)\n"
-    "-t file         Test mode. Write debug signals to file.\n"
-    "-n              Non-daemon: do not run as a daemon, debug mode.\n"
-    "-h              Print this message and exit.\n"
-    "-v              Print version information and exit.\n"
-    "\n";
+"Usage: %s [OPTION]...\n"
+"\n"
+"-d decimation   Decimation factor (default = %lu)\n"
+"-o offset-tune  RF-VCXO detuning offset (*40Hz), integer (default = %lu)\n"   
+"-c              Compensate tune; Shifts NCO accoording to RF-VCXO.\n"
+"-u u_nominal    DAC nominal offset (default = 0x%x)\n"
+"-p prescaler    MC prescaler (default = %lu)\n"
+"-t file         Test mode. Write debug signals to file.\n"
+"-n              Non-daemon: do not run as a daemon, debug mode.\n"
+"-h              Print this message and exit.\n"
+"-v              Print version information and exit.\n"
+"\n";
 
     fprintf( stderr, format, argv0,
          ddc_decimation,
@@ -842,16 +922,17 @@ void usage()
 
 
 
-/** Print version information. */
+/* Print version information. */
 
 void version()
 {
     const char *format =
     "%s %s (%s %s)\n"
     "\n"
-    "Copyright 2004, 2005 Instrumentation Technologies.\n"
-    "This is free software; see the source for copying conditions. "
-    "There is NO warranty; not even for MERCHANTABILITY or FITNESS "
+    "Copyright 2004-2006 Instrumentation Technologies.\n"
+    "Copyright 2006-2007 Michael Abbott, Diamond Light Source Ltd.\n"
+    "This is free software; see the source for copying conditions.\n"
+    "There is NO warranty; not even for MERCHANTABILITY or FITNESS\n"
     "FOR A PARTICULAR PURPOSE.\n\n";
 
     printf( format, argv0, XSTR(RELEASE_VERSION), __DATE__, __TIME__ );
@@ -870,52 +951,57 @@ int main(int argc, char *argv[])
     else
         argv0 = argv[0];        // Use full pathname instead.
 
+    bool nco_shift = false;
     int ch;
     while (
-        ch = getopt(argc, argv, "d:f:hco:p:u:vt:n"),
+        ch = getopt(argc, argv, "d:f:hco:p:r:u:vt:n"),
         ch != -1)
     {
-        switch ( ch )
+        switch (ch)
         {
-        case 'p':
-            mc_presc = atol(optarg);
-            break;
+            case 'p':
+                mc_presc = atol(optarg);
+                break;
 
-        case 'd':
-            ddc_decimation = atol(optarg);
-            break;
+            case 'd':
+                ddc_decimation = atol(optarg);
+                break;
 
-        case 'u':
-            u_nominal = atol(optarg);
-            break;
-            
-        case 'o':
-            frequency_offset = atol(optarg);
-            break;
-            
-        case 'c':
-            nco_shift = TRUE;
-            break;
+            case 'u':
+                u_nominal = atol(optarg);
+                break;
 
-        case 'h':
-            usage();
-            exit( EXIT_SUCCESS );
-            
-        case 'v':
-            version();
-            exit( EXIT_SUCCESS );
-            
-        case 't':
-            plldebug = TRUE;
-            plldebug_fname = optarg;
-            break;
+            case 'o':
+                frequency_offset = atol(optarg);
+                break;
 
-        case 'n':
-            daemon_mode = false;
-            break;
+            case 'c':
+                nco_shift = true;
+                break;
 
-        default:
-            exit( EXIT_FAILURE );
+            case 'r':
+                harmonic = atol(optarg);
+                break;
+
+            case 'h':
+                usage();
+                exit( EXIT_SUCCESS );
+
+            case 'v':
+                version();
+                exit( EXIT_SUCCESS );
+
+            case 't':
+                plldebug = TRUE;
+                plldebug_fname = optarg;
+                break;
+
+            case 'n':
+                daemon_mode = false;
+                break;
+
+            default:
+                exit( EXIT_FAILURE );
         }
     }
     argc -= optind;
@@ -928,6 +1014,9 @@ int main(int argc, char *argv[])
 
     /* Compute system_prescale. */
     system_prescale = mc_presc * ddc_decimation;
+    if (nco_shift)
+        /* If -c is not selected, the default offset is zero. */
+        nco_offset = frequency_offset;
 
     init();
     run();

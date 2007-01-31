@@ -28,8 +28,5 @@
 
 /* Timestamps and synchronisation. */
 
-
-bool InitialiseTimestamps(
-    int _LmtdPrescale, int _SamplesPerTurn, int _BunchesPerTurn);
-
+bool InitialiseTimestamps();
 void TerminateTimestamps();

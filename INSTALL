@@ -1,4 +1,4 @@
-Libera EPICS driver version 1.40.0, for use with Libera drivers version 1.40.
+Libera EPICS driver version 1.40.1, for use with Libera drivers version 1.40.
 
 
 INSTALLATION INSTRUCTIONS
@@ -15,6 +15,8 @@ This software depends on the following components:
    that linux-arm support is provided.
         Paches against 3.14.6 and 3.14.7 are also provided.
 
+   EPICS version 3.14.9 can be used without applying any patches.
+
  * Libera 1.40.  To run the driver a complete Libera system must be used
    together with the full Libera distribution.  Libera can be obtained from
    Instrumentation Technologies at: http://www.i-tech.si. 
@@ -22,7 +24,7 @@ This software depends on the following components:
    distribution.  Its makefile has been modified to integrate with the EPICS
    build.
 
- * System updates.  The Libera system must be upgraded to version 1.21.
+ * System updates.  The Libera system must be upgraded to version 1.40.
 
 
 The instructions below are divided into the following stages:
@@ -59,7 +61,7 @@ INSTALL_TARGET  Where to find installation files on Libera.
 
 Other symbols:
 
-EPICS_VERSION   One of 3.14.6, 3.14.7 or 3.14.8.2 for this release.
+EPICS_VERSION   Any of 3.14.6, 3.14.7, 3.14.8.2, 3.14.9 for this release.
 
 
 The instructions below assume that you have already extracted
@@ -90,7 +92,7 @@ Building EPICS for linux-arm
 ============================
 
 The instructions below assume that you don't already have a copy of EPICS
-installed, and we assume the use of version 3.14.6, 3.14.7 or 3.14.8.2.
+installed, and we assume the use of version 3.14.6, 3.14.7, 3.14.8.2 or 3.14.9.
 
 1.  Install a suitable cross compiler.  This release was built with a version
 of gcc 3.3.3 configured as a cross compiler with prefix arm-linux.  Let
@@ -102,12 +104,12 @@ $ARM_LINUX_GCC/bin/arm-linux-gcc.
 into a suitable directory.  Let EPICS_BASE be the path to the root directory
 of this distribution.
 
-3.  Apply the patch thus:
+3.  If the EPICS version is earlier than 3.14.9, apply the patch thus:
     $ cd $EPICS_BASE
     $ patch -p0 <$LIBERA_EPICS/install/patch-epics-$EPICS_VERSION
 Note that the correct patch must be used depending on which version of epics
-is installed.  With luck the linux-arm patch will be fully incorporated into
-3.14.9.
+is installed.  The linux-arm patches are fully incorporated into 3.14.9 and
+do not need to be applied.
 
 4.  Unless $ARM_LINUX_GCC is /usr you will need to tell EPICS where to find
 its cross compiler by editing the site configuration file
@@ -127,8 +129,6 @@ line, but the Libera driver will only use the linux-arm target.
     $ cd $EPICS_BASE
     $ make
 
-7.  Extract the Libera EPICS files to $INSTALL_HOST by running
-    $ $LIBERA_EPICS/install/install-epics
 
 
 Note that the EPICS build has library and header file dependencies including
