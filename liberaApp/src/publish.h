@@ -169,7 +169,7 @@ private:
     bool (T::*f)();
 };
 
-#define PUBLISH_ACTION(name, method) \
+#define PUBLISH_METHOD_ACTION(name, method) \
     Publish_bo(name, \
         * new CLOSURE_ACTION<typeof(*this)>( \
             *this, &ID<typeof(*this)>::method))
@@ -264,6 +264,24 @@ private:
 #define PUBLISH_FUNCTION_OUT(record, Name, Value, Action) \
     Publish_##record(Name, \
         * new CONFIGURATION_VALUE<typeof(Value)>(Value, Action))
+
+
+/* Yet another wrapper.  A bit of refactoring is going to be needed soon...
+ * This wraps a record with an action but no associated data. */
+class ACTION_VALUE : public I_bo
+{
+public:
+    ACTION_VALUE(void (*Action)()) : Action(Action) {}
+    bool init (bool &Result) { Result = true; return true; }
+    bool write(bool) { Action(); return true; }
+private:
+    void (*Action)();
+};
+
+/* Associates an action with processing a record.  No value is handled. */
+#define PUBLISH_ACTION(Name, Action) \
+    Publish_bo(Name, * new ACTION_VALUE(Action))
+
 
 
 /* Helper routine for concatenating or just copying strings. */

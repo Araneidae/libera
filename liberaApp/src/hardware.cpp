@@ -36,6 +36,7 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <linux/unistd.h>
+#include <sys/mman.h>
 
 #include "thread.h"
 #include "hardware.h"
@@ -202,6 +203,19 @@ bool SetSystemClockTime(struct timespec & NewTime)
     CSPI_SETTIMESTAMP Timestamp;
     Timestamp.st = NewTime;
     return CSPI_(cspi_settime, CspiEnv, &Timestamp, CSPI_TIME_ST);
+}
+
+
+bool GetClockState(bool &LmtdLocked, bool &LstdLocked)
+{
+    CSPI_ENVPARAMS EnvParams;
+    bool Ok = CSPI_(cspi_getenvparam, CspiEnv, &EnvParams, CSPI_ENV_PLL);
+    if (Ok)
+    {
+        LmtdLocked = EnvParams.pll.mc;
+        LstdLocked = EnvParams.pll.sc;
+    }
+    return Ok;
 }
 
 
@@ -496,9 +510,80 @@ static void CloseEventStream()
 
 /*****************************************************************************/
 /*                                                                           */
+/*                           Raw Register Access                             */
+/*                                                                           */
+/*****************************************************************************/
+
+/* Uses /dev/mem to directly access a specified hardware address. */
+
+
+/* The following handle to /dev/mem is held open for direct hardware register
+ * access. */
+static int DevMem = -1;
+/* Paging information. */
+static unsigned int OsPageSize;         // 0x1000
+static unsigned int OsPageMask;         // 0x0FFF
+
+
+static unsigned int * MapRawRegister(unsigned int Address)
+{
+    char * MemMap = (char *) mmap(
+        0, OsPageSize, PROT_READ | PROT_WRITE, MAP_SHARED,
+        DevMem, Address & ~OsPageMask);
+    if (MemMap == MAP_FAILED)
+    {
+        perror("Unable to map register into memory");
+        return NULL;
+    }
+    else
+        return (unsigned int *)(MemMap + (Address & OsPageMask));
+}
+
+static void UnmapRawRegister(unsigned int *MappedAddress)
+{
+    void * BaseAddress = (void *) (
+        ((unsigned int) MappedAddress) & ~OsPageMask);
+    munmap(BaseAddress, OsPageSize);
+}
+
+
+bool WriteRawRegister(unsigned int Address, unsigned int Value)
+{
+    unsigned int * Register = MapRawRegister(Address);
+    if (Register == NULL)
+        return false;
+    else
+    {
+printf("*$%08x <= $%08x\n", Address, Value);
+        *Register = Value;
+        UnmapRawRegister(Register);
+        return true;
+    }
+}
+
+
+bool ReadRawRegister(unsigned int Address, unsigned int &Value)
+{
+    unsigned int * Register = MapRawRegister(Address);
+    if (Register == NULL)
+        return false;
+    else
+    {
+        Value = *Register;
+printf("*$%08x => $%08x\n", Address, Value);
+        UnmapRawRegister(Register);
+        return true;
+    }
+}
+
+
+
+/*****************************************************************************/
+/*                                                                           */
 /*                      Initialisation and Shutdown                          */
 /*                                                                           */
 /*****************************************************************************/
+
 
 
 static bool InitialiseConnection(CSPIHCON &Connection, int Mode)
@@ -514,9 +599,12 @@ static bool InitialiseConnection(CSPIHCON &Connection, int Mode)
 
 bool InitialiseHardware()
 {
+    OsPageSize = getpagesize();
+    OsPageMask = OsPageSize - 1;
+    
     CSPI_LIBPARAMS LibParams;
     LibParams.superuser = 1;    // Allow us to change settings!
-    return
+    bool Ok =
         /* First ensure that the library allows us to change settings! */
         CSPI_(cspi_setlibparam, &LibParams, CSPI_LIB_SUPERUSER)  &&
         /* Open the CSPI environment and then open CSPI handles for each of
@@ -526,8 +614,12 @@ bool InitialiseHardware()
         InitialiseConnection(CspiConDd, CSPI_MODE_DD)  &&
         InitialiseConnection(CspiConSa, CSPI_MODE_SA)  &&
         InitialiseConnection(CspiConPm, CSPI_MODE_PM)  &&
+        /* Open /dev/mem for register access. */
+        TEST_IO(DevMem, "Unable to open /dev/mem",
+            open, "/dev/mem", O_RDWR | O_SYNC)  &&
         /* Finally start receiving events. */
         OpenEventStream();
+    return Ok;
 }
 
 
@@ -549,4 +641,5 @@ void TerminateHardware()
     TerminateConnection(CspiConSa);
     TerminateConnection(CspiConAdc);
     CSPI_(cspi_freehandle, CSPI_HANDLE_ENV, CspiEnv);
+    if (DevMem != -1)  close(DevMem);
 }

@@ -43,7 +43,7 @@ extern "C" {
 #define LSTD_PID_PATHNAME           "/var/run/lstd.pid"
 
 
-/* LMTD internal state, as reports on the status pipe. */
+/* LMTD internal state, as reported on the status pipe. */
 typedef enum
 {
     LMTD_NO_CLOCK,          // Clock lost
@@ -53,6 +53,16 @@ typedef enum
 
     LMTD_LOCK_STATE_COUNT = LMTD_PHASE_LOCKED+1
 } LMTD_LOCK_STATE;
+
+/* The synchronisation state is used to track the state of machine clock
+ * synchronisation: full synchronisation means that the machine clock has been
+ * phase locked to an external trigger, and locking has not been lost. */
+typedef enum
+{
+    SYNC_NO_SYNC = 0,           // Not synchronised;
+    SYNC_TRACKING = 1,          // Tracking synchronisation (waiting trigger)
+    SYNC_SYNCHRONISED = 2,      // Fully synchronised
+} LMTD_SYNC_STATE;
 
 
 

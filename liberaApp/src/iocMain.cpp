@@ -36,6 +36,7 @@
 #include <signal.h>
 #include <semaphore.h>
 #include <string.h>
+#include <sys/wait.h>
 
 #include <iocsh.h>
 #include <epicsThread.h>
@@ -121,7 +122,7 @@ static void StartupMessage()
 "\n"
 "Libera EPICS Driver, Version %s.  Built: %s.\n"
 "\n"
-"Copyright (C) 2005-2006 Michael Abbott, Diamond Light Source.\n"
+"Copyright (C) 2005-2007 Michael Abbott, Diamond Light Source.\n"
 "This program comes with ABSOLUTELY NO WARRANTY.  This is free software,\n"
 "and you are welcome to redistribute it under certain conditions.\n"
 "For details see the GPL or the attached file COPYING.\n",
@@ -239,7 +240,8 @@ static bool InitialiseLibera()
         /* Initialise the persistent state system early on so that other
          * components can make use of it. */
         InitialisePersistentState(StateFileName)  &&
-        /* Initialise the connections to the Libera device. */
+        /* Initialise the connections to the Libera device.  This also needs
+         * to be done early, as this is used by other initialisation code. */
         InitialiseHardware()  &&
         /* Initialise conversion code.  This needs to be done fairly early as
          * it is used globally. */
@@ -440,10 +442,101 @@ static bool ProcessOptions(int &argc, char ** &argv)
 }
 
 
+
+/*****************************************************************************/
+/*                                                                           */
+/*                        Reboot and Restart Support                         */
+/*                                                                           */
+/*****************************************************************************/
+
+
+/* Fairly generic routine to start a new detached process in a clean
+ * environment. */
+
+static void DetachProcess(const char *Process, char *const argv[])
+{
+    /* We fork twice to avoid leaving "zombie" processes behind.  These are
+     * harmless enough, but annoying.  The double-fork is a simple enough
+     * trick. */
+    pid_t MiddlePid = fork();
+    if (MiddlePid == -1)
+        perror("Unable to fork");
+    else if (MiddlePid == 0)
+    {
+        pid_t NewPid = fork();
+        if (NewPid == -1)
+            perror("Unable to fork");
+        else if (NewPid == 0)
+        {
+            /* This is the new doubly forked process.  We still need to make
+             * an effort to clean up the environment before letting the new
+             * image have it. */
+
+            /* Set a sensible home directory. */
+            TEST_(chdir, "/");
+
+//             /* Restore default signal handling.  I'd like to hope this step
+//              * isn't needed. */
+//             for (int i = 0; i < NSIG; i ++)
+//                 signal(i, SIG_DFL);
+
+            /* Enable all signals. */
+            sigset_t sigset;
+            TEST_(sigfillset, &sigset);
+            TEST_(sigprocmask, SIG_UNBLOCK, &sigset, NULL);
+
+            /* Close all the open file handles.  It's rather annoying: there
+             * seems to be no good way to do this in general.  Fortunately in
+             * our case _SC_OPEN_MAX is managably small. */
+            for (int i = 0; i < sysconf(_SC_OPEN_MAX); i ++)
+                close(i);
+
+            /* Finally we can actually exec the new process... */
+            char * envp[] = { NULL };
+            TEST_(execve, Process, argv, envp);
+        }
+        else
+            /* The middle process simply exits without further ceremony.  The
+             * idea here is that this orphans the new process, which means
+             * that the parent process doesn't have to wait() for it, and so
+             * it won't generate a zombie when it exits. */
+            _exit(0);
+    }
+    else
+    {
+        /* Wait for the middle process to finish. */
+        if (waitpid(MiddlePid, NULL, 0) == -1)
+            perror("Error waiting for middle process");
+    }
+}
+
+
+static void DoReboot()
+{
+    char * Args[] = { "/sbin/reboot", NULL };
+    DetachProcess(Args[0], Args);
+}
+
+
+static void DoRestart()
+{
+    char * Args[] = { "/etc/init.d/epics", "restart", NULL };
+    DetachProcess(Args[0], Args);
+}
+
+
+
+/****************************************************************************/
+/*                                                                          */
+
+
 int main(int argc, char *argv[])
 {
+    /* A handful of global PVs with no other natural home. */
     Publish_stringin("VERSION", VersionString);
     Publish_stringin("BUILD", BuildDate);
+    PUBLISH_ACTION("REBOOT",  DoReboot);
+    PUBLISH_ACTION("RESTART", DoRestart);
     
     /* Consume any option arguments and start the driver. */
     bool Ok =

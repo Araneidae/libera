@@ -105,8 +105,8 @@ long phase_offset = 0;
  * applications, but normally these should coincide. */
 long nco_offset = 0;
 
-/* Synchronisation state. */
-bool synchronised = false;
+
+LMTD_SYNC_STATE synchronised = SYNC_NO_SYNC;
 
 /* Pipe used to receive status messages. */
 int status_pipe = -1;
@@ -142,7 +142,7 @@ void die(const char *function, int line, const char *what)
 
 
 #define PHASE_LOCKED(State) \
-    ((State) == LMTD_PHASE_SEEK  ||  (State) == LMTD_PHASE_SEEK)
+    ((State) == LMTD_PHASE_SEEK  ||  (State) == LMTD_PHASE_LOCKED)
 
 /* Log messages on transition between each of the states above.  We only log
  * certain transitions.  In particular, transitions between the two phase
@@ -152,10 +152,10 @@ const char * LmtdStateLogMessage
 {
     { NULL,          "Clock lost",  "Clock lost",       "Clock lost" },
     { "Clock found", NULL,          "Phase lock lost",  "Error 3->1" },
-//     { "Error 0->2",  "Phase locked", NULL,              NULL },
-//     { "Error 0->3",  "Error 1->3",   NULL,              NULL }
-    { "Error 0->2",  "Phase locked", NULL,              "Phase slip" },
-    { "Error 0->3",  "Error 1->3",   "Full phase lock", NULL }
+    { "Error 0->2",  "Phase locked", NULL,              NULL },
+    { "Error 0->3",  "Error 1->3",   NULL,              NULL }
+//     { "Error 0->2",  "Phase locked", NULL,              "Phase slip" },
+//     { "Error 0->3",  "Error 1->3",   "Full phase lock", NULL }
 };
 
 
@@ -188,11 +188,16 @@ void ReportLmtdState(
         
     LastKnownState = LmtdState;
 
+    /* Ensure the synchronised flag is valid: invalidate it if we ever lose
+     * machine clock phase lock. */
+    if (!PHASE_LOCKED(LmtdState))
+        synchronised = SYNC_NO_SYNC;
+
     
     /* Prepare status message to send to monitor. */
     char StatusMessage[80];
-    sprintf(StatusMessage, "%d %d %d %d\n",
-        LmtdState, FrequencyError, PhaseError, DAC);
+    sprintf(StatusMessage, "%d %d %d %d %d\n",
+        LmtdState, FrequencyError, PhaseError, DAC, synchronised);
 
     /* Write message to pipe. */
     PipeOverflow =
@@ -319,9 +324,47 @@ void SetNcoFrequency()
 
 /*****************************************************************************/
 /*                                                                           */
-/*                          Frequency Locked Loop                            */
+/*                            Phase Locked Loop                              */
 /*                                                                           */
 /*****************************************************************************/
+
+
+#if 0
+/* The following global state is managed as part of the phase locked loop. */
+
+/* The last successfully read machine time. */
+unsigned long long LastMachineTime;
+/* The nominal machine time, if everything is tracking properly. */
+unsigned long long NominalMachineTime = 0;
+
+
+bool GetPhaseError(int *phase_error, int *frequency_error)
+{
+    unsigned long long NewMachineTime;
+    if (GetMachineTime(&NewMachineTime))
+    {
+        /* Compute the phase error and report our phase to the driver.  Note
+         * that we have to report the phase error to the driver *before*
+         * applying our programmed phase offset. */
+        NominalMachineTime += system_prescale + frequency_offset;
+        long long mcphi = NominalMachineTime - NewMachineTime;
+        *phase_error = (int) (mcphi + phase_offset);
+        ReportPhase(mcphi);
+
+        /* Also compute the frequency error (for what it's worth). */
+        int frequency = NewMachineTime - LastMachineTime;
+        LastMachineTime = NewMachineTime;
+        *frequency_error = system_prescale + frequency_offset - frequency;
+        ReportFrequency(frequency);
+        
+        return true;
+    }
+    else
+        /* No clock, return error. */
+        return false;
+}
+#endif
+
 
 
 /* This routine tunes the MC clock until the correct frequency is found.  As
@@ -412,7 +455,7 @@ bool run_find_phase(unsigned long long *mctime, int *dac)
          * into account. */
         nominal_clock_count += system_prescale + frequency_offset;
         long long mcphi = nominal_clock_count - new_mctime;
-        int phase_error = (int) (mcphi - phase_offset);
+        int phase_error = (int) (mcphi + phase_offset);
         tI += phase_error;
 
         *dac = ClipDAC(nominal_dac + FP_KP * phase_error + FP_KI * tI);
@@ -526,7 +569,7 @@ bool run_lock_phase(unsigned long long *mctime, int *dac)
     {
         nominal_clock_count += system_prescale + frequency_offset;
         long long mcphi = nominal_clock_count - new_mctime;
-        int this_error = (int) (mcphi - phase_offset);
+        int this_error = (int) (mcphi + phase_offset);
 
 #ifdef FILTER_SMOOTH_PI
         integrated_error += this_error;
@@ -627,8 +670,13 @@ printf("Read \"%s\"\n", Command);
         switch (*Command++)
         {
             case 'o':
-                frequency_offset = atoi(Command);
+            {
+                int new_frequency_offset = atoi(Command);
+                if (new_frequency_offset != frequency_offset)
+                    synchronised = SYNC_NO_SYNC;
+                frequency_offset = new_frequency_offset;
                 break;
+            }
             case 'p':
                 phase_offset = atoi(Command);
                 break;
@@ -637,7 +685,29 @@ printf("Read \"%s\"\n", Command);
                 SetNcoFrequency();
                 break;
             case 's':
-                synchronised = true;
+                /* Updates the synchronisation state.  The two important
+                 * cases are s1 and s2.
+                 *    Note that we really should lock our threads: there are
+                 * some interesting race conditions below! */
+                switch (atoi(Command))
+                {
+                    case SYNC_NO_SYNC:
+                        /* Supported, but not so useful... */
+                        synchronised = SYNC_NO_SYNC;
+                        break;
+                    case SYNC_TRACKING:
+                        /* Only allow synchronisation tracking if we're phase
+                         * locked. */
+                        if (PHASE_LOCKED(LastKnownState))
+                            synchronised = SYNC_TRACKING;
+                        break;
+                    case SYNC_SYNCHRONISED:
+                        /* Don't allow a jump from NO_SYNC to SYNCHRONISED:
+                         * means synchronisation got lost somewhere. */
+                        if (synchronised == SYNC_TRACKING)
+                            synchronised = SYNC_SYNCHRONISED;
+                        break;
+                }
                 break;
             case 'w':
                 MaximumPhaseError = atoi(Command);

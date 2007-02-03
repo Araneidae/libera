@@ -78,26 +78,19 @@ static int ChannelGain[4] =
 
 /* Control configuration. */
 
-/* Controls the state of the rotating switches and the associated DSC daemon.
- * These are combined into a single setting here, but separated out in the
- * CSPI interface.
- *    The AutoSwitchState is set to one of the following enumeration values,
- * but has to be declared here as an integer so that it can be passed by
- * reference to the EPICS interface layer. */
-enum AUTO_SWITCH_STATE
-{
-    /* Switches fixed to manual setting, gains set to unity. */
-    AUTO_SWITCH_FIXED_UNITY = 0,
-    /* Switches fixed to manual setting, gains fixed to last good setting. */
-    AUTO_SWITCH_FIXED = 1,
-    /* Switches automatically rotating, gains fixed to last good setting. */
-    AUTO_SWITCH_ENABLED_NO_DSC = 2,
-    /* Switches automatically rotating, DSC running normally. */
-    AUTO_SWITCH_ENABLED_DSC = 3
-};
-static int AutoSwitchState = 0;
+/* Controls the rotating switches: manual or automatic mode. */
+static bool AutoSwitchState = false;
 /* Selects which switch setting to use in manual mode. */
 static int ManualSwitch = 3;
+
+/* Selects internal or external triggering for the rotating switches. */
+static bool ExternalSwitchTrigger = false;
+/* Selects the delay from external trigger for the switches. */
+static int SwitchTriggerDelay = 0;
+
+/* Controls the Digital Signal Conditioning daemon state. */
+static int DscState = 0;
+
 /* Selected attenuation.  The default is quite high for safety. */
 static int CurrentAttenuation = 60;
 
@@ -301,54 +294,50 @@ static void UpdateCalibration()
 
 /* Called whenever the autoswitch mode has changed. */
 
-static void UpdateAutoSwitch()
+static void UpdateManualSwitch()
 {
-    switch ((AUTO_SWITCH_STATE)AutoSwitchState)
-    {
-        case AUTO_SWITCH_FIXED_UNITY:
-            /* Set the channel gains to unity, this completely disabling any
-             * DSC effect, and set the selected switch position. */
-            WriteDscMode(CSPI_DSC_UNITY);
-            WriteSwitchState((CSPI_SWITCHMODE) ManualSwitch);
-            break;
-        case AUTO_SWITCH_FIXED:
-            /* Turn the DSC off and set the currently selected fixed switch
-             * position. */
-            WriteDscMode(CSPI_DSC_OFF);
-            WriteSwitchState((CSPI_SWITCHMODE) ManualSwitch);
-            break;
-        case AUTO_SWITCH_ENABLED_NO_DSC:
-            /* Enable automatic switching with the DSC disabled, but holding
-             * the last good position. */
-            WriteDscMode(CSPI_DSC_OFF);
-            WriteSwitchState(CSPI_SWITCH_AUTO);
-            break;
-        case AUTO_SWITCH_ENABLED_DSC:
-            /* Enable automatic switching and turn the DSC on.  We try to
-             * avoid having DSC running with switching disabled, hence the
-             * change of order. */
-            WriteSwitchState(CSPI_SWITCH_AUTO);
-            WriteDscMode(CSPI_DSC_AUTO);
-            break;
-    }
+    /* Only update the switches if they're in manual mode. */
+    if (!AutoSwitchState)
+        WriteSwitchState((CSPI_SWITCHMODE) ManualSwitch);
 }
 
 
-static void UpdateManualSwitch()
+static void UpdateAutoSwitch()
 {
-    switch ((AUTO_SWITCH_STATE)AutoSwitchState)
+    if (AutoSwitchState)
+        WriteSwitchState(CSPI_SWITCH_AUTO);
+    else
+        UpdateManualSwitch();
+}
+
+
+#define REGISTER_SWITCH_TRIGGER         0x1400C038
+#define REGISTER_SWITCH_DELAY           0x1400C03C
+
+static void UpdateSwitchTrigger()
+{
+    printf("Trigger = %d\n", ExternalSwitchTrigger);
+    /* Read the current trigger setting (to get the interval count) and
+     * update the top bit as required to control the trigger source. */
+    unsigned int SwitchControl;
+    if (ReadRawRegister(REGISTER_SWITCH_TRIGGER, SwitchControl))
     {
-        case AUTO_SWITCH_FIXED_UNITY:
-        case AUTO_SWITCH_FIXED:
-            /* If the switches are in a fixed mode then write the new manual
-             * switch setting directly to the switches. */
-            WriteSwitchState((CSPI_SWITCHMODE) ManualSwitch);
-            break;
-        case AUTO_SWITCH_ENABLED_NO_DSC:
-        case AUTO_SWITCH_ENABLED_DSC:
-            /* If the switches are in automatic mode leave them alone. */
-            break;
+        SwitchControl =
+            (SwitchControl & 0x7FFFFFFF) | (ExternalSwitchTrigger << 31);
+        WriteRawRegister(REGISTER_SWITCH_TRIGGER, SwitchControl);
     }
+}
+
+static void UpdateSwitchTriggerDelay()
+{
+    printf("Delay = %d\n", SwitchTriggerDelay);
+    WriteRawRegister(REGISTER_SWITCH_DELAY, SwitchTriggerDelay);
+}
+
+
+static void UpdateDsc()
+{
+    WriteDscMode((CSPI_DSCMODE) DscState);
 }
 
 
@@ -475,10 +464,15 @@ bool InitialiseConvert()
     PUBLISH_GAIN("CF:G2", ChannelGain[2]);
     PUBLISH_GAIN("CF:G3", ChannelGain[3]);
 
-    PUBLISH_CONFIGURATION("CF:AUTOSW", mbbo,
+    PUBLISH_CONFIGURATION("CF:AUTOSW", bo,
         AutoSwitchState, UpdateAutoSwitch);
     PUBLISH_CONFIGURATION("CF:SETSW", longout,
         ManualSwitch, UpdateManualSwitch);
+    PUBLISH_CONFIGURATION("CF:TRIGSW", bo,
+        ExternalSwitchTrigger, UpdateSwitchTrigger);
+    PUBLISH_CONFIGURATION("CF:DELAYSW", longout,
+        SwitchTriggerDelay, UpdateSwitchTriggerDelay);
+    PUBLISH_CONFIGURATION("CF:DSC", mbbo, DscState, UpdateDsc);
     PUBLISH_CONFIGURATION("CF:ISCALE", ao, CurrentScale, UpdateCurrentScale);
 
     /* Note that updating the attenuators is done via the
@@ -494,6 +488,8 @@ bool InitialiseConvert()
     WriteAgcMode(CSPI_AGC_MANUAL);
     InterlockedUpdateAttenuation(CurrentAttenuation);
     UpdateAutoSwitch();
+    UpdateSwitchTrigger();
+    UpdateSwitchTriggerDelay();
 
     return true;
 }

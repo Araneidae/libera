@@ -322,14 +322,22 @@ def Config():
     aOut('G3', 0, 1.5,  ESLO = 2**-30, DESC = 'Channel 3 gain adjustment')
 
     # Configure automatic switch state
-    mbbOut('AUTOSW',
-        ('Fixed+DSC unity', 0),     # Manual switches, DSC with unit gains
-        ('Fixed+DSC fixed', 1),     # Use manually set switch setting
-        ('Auto+DSC fixed',  2),     # Auto switches, DSC in fixed state
-        ('Auto+DSC auto',   3),     # Use automatic switches with DSC
+    boolOut('AUTOSW', 'Manual', 'Automatic',
         DESC = 'Configure rotating switches')
     # Select switch to use when automatic switching off
     longOut('SETSW', 0, 15, DESC = 'Fixed multiplexor switch')
+    # Switch trigger selection and delay from trigger
+    boolOut('TRIGSW', 'Internal', 'External',
+        DESC = 'Switching trigger source')
+    longOut('DELAYSW', 0, DESC = 'Switches trigger delay')
+    
+    # DSC control
+    mbbOut('DSC',
+        ('Fixed gains', 0),     # Use last good DSC settings
+        ('Unity gains', 1),     # Disable DSC, use fixed gains
+        ('Automatic', 2),       # Run DSC
+        DESC = 'Digitial Signal Conditioning')
+    
     # Control attenuation
     longOut('ATTEN', 0, 62, EGU = 'dB', DESC = 'Attenuator setting')
 
@@ -430,23 +438,45 @@ def Clock():
     longOut('IFOFF',  -1000, 1000, DESC = 'IF clock detune')
     longOut('PHASE', DESC = 'Phase offset')
     
-    # Clock synchronisation
-    boolOut('SYNC', 'Synchronise', None, DESC = 'Synchronise clocks')
-    boolIn('SYNCSTATE', 'Normal', 'Waiting for Trigger',
-        SCAN = 'I/O Intr',      PINI = 'YES',
-        DESC = 'Synchronisation state')
+#     # System clock synchronisation
+#     boolIn('SYNCSTATE', 'Normal', 'Waiting for Trigger',
+#         SCAN = 'I/O Intr',      PINI = 'YES',
+#         DESC = 'Synchronisation state')
 
-    # LMTD monitoring PVS
-    Trigger(False,
-        mbbIn('LMTD',
+    # Synchronise commands for clock synchronisation
+    boolOut('MC_SYNC', 'Synchronise', None, DESC = 'Synchronise machine clock')
+    boolOut('SC_SYNC', 'Synchronise', None, DESC = 'Synchronise system clock')
+
+    alarmsensors = [
+        # MC monitoring PVS
+        mbbIn('MC_LOCK',
             ('No Clock',        0, 'MAJOR'),
             ('Seek Frequency',  1, 'MINOR'),
             ('Slewing',         2, 'MINOR'),
             ('Phase Locked',    3, 'NO_ALARM'),
-            DESC = 'Machine clock status'),
+            DESC = 'Machine clock lock status'),
+        mbbIn('MC_SYNC',
+            ('Not Synched',     0, 'MINOR'),
+            ('Waiting Trigger', 1, 'MINOR'),
+            ('Synchronised',    2, 'NO_ALARM'),
+            DESC = 'Machine clock sync state'),
+
+        # LSTD monitoring PVS
+        boolIn('SC_LOCK', 'Unlocked', 'Locked',
+            DESC = 'System clock lock status',
+            ZSV  = 'MINOR',     OSV  = 'NO_ALARM'),
+        mbbIn('SC_SYNC',
+            ('Not Synched',     0, 'MINOR'),
+            ('Waiting Trigger', 1, 'MINOR'),
+            ('Synchronised',    2, 'NO_ALARM'),
+            DESC = 'System clock sync state')]
+    
+    health = AggregateSeverity('HEALTH', 'Clock status', *alarmsensors)
+    Trigger(False,
         longIn('DAC', 0, 65535, DESC = 'LMTD VCXO DAC setting'),
         longIn('PHASE_E', DESC = 'LMTD phase error'),
-        longIn('FREQ_E', DESC = 'LMTD frequency error'))
+        longIn('FREQ_E', DESC = 'LMTD frequency error'),
+        *alarmsensors + [health,])
 
 
     UnsetChannelName()
@@ -459,8 +489,8 @@ def Voltages():
     status record.'''
 
     def VoltageSensor(i, description, nominal, limits=True):
-        LoLo = nominal - 0.05 * abs(nominal)
-        Low  = nominal - 0.10 * abs(nominal)
+        LoLo = nominal - 0.10 * abs(nominal)
+        Low  = nominal - 0.05 * abs(nominal)
         High = nominal + 0.05 * abs(nominal)
         HiHi = nominal + 0.10 * abs(nominal)
         if limits:

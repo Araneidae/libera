@@ -69,10 +69,6 @@
 /*****************************************************************************/
 
 
-/* Commands to the LMTD are transmitted through this file handle. */
-FILE * LmtdCommandFile = NULL;
-
-
 /* LMTD configuration: each of these is written to the LMTD. */
 static int SampleClockDetune = 0;   // CK:DETUNE - frequency offset
 static int IfClockDetune = 0;       // CK:IFOFF - IF offset ("double detune")
@@ -80,14 +76,23 @@ static int PhaseOffset = 0;         // CK:PHASE - phase offset
 
 
 
-/* Sends a command to the LMTD daemon. */
+/* Sends a command to the LMTD daemon.  We close the file handle between
+ * commands to allow other (generally debugging) commands to be sent from
+ * other processes. */
 
 static void SendLmtdCommand(const char * format, ...)
 {
-    va_list args;
-    va_start(args, format);
-    vfprintf(LmtdCommandFile, format, args);
-    fflush(LmtdCommandFile);
+    FILE * LmtdCommandFile = fopen(LMTD_COMMAND_FIFO, "w");
+    if (LmtdCommandFile == NULL)
+        perror("Unable to open LMTD command fifo");
+    else
+    {
+        va_list args;
+        va_start(args, format);
+        vfprintf(LmtdCommandFile, format, args);
+        fprintf(LmtdCommandFile, "\n");
+        fclose(LmtdCommandFile);
+    }
 }
 
 
@@ -97,9 +102,9 @@ static void SendLmtdCommand(const char * format, ...)
 
 static void UpdateLmtdState()
 {
-    SendLmtdCommand("o%d\n", SampleClockDetune);
-    SendLmtdCommand("n%d\n", IfClockDetune + SampleClockDetune);
-    SendLmtdCommand("p%d\n", PhaseOffset);
+    SendLmtdCommand("o%d", SampleClockDetune);
+    SendLmtdCommand("n%d", IfClockDetune + SampleClockDetune);
+    SendLmtdCommand("p%d", PhaseOffset);
 }
 
 
@@ -112,11 +117,44 @@ class LMTD_MONITOR : public THREAD
 public:
     LMTD_MONITOR()
     {
-        Publish_mbbi("CK:LMTD", LmtdState);
+        LmtdState = LMTD_NO_CLOCK;
+        DacSetting = 0;
+        PhaseError = 0;
+        FrequencyError = 0;
+        MachineClockSynchronised = SYNC_NO_SYNC;
+        SystemClockSynchronised  = SYNC_NO_SYNC;
+        LstdLocked = false;
+
+        Publish_mbbi  ("CK:MC_LOCK", LmtdState);
+        Publish_bi    ("CK:SC_LOCK", LstdLocked);
         Publish_longin("CK:DAC", DacSetting);
         Publish_longin("CK:PHASE_E", PhaseError);
         Publish_longin("CK:FREQ_E", FrequencyError);
+        Publish_mbbi  ("CK:MC_SYNC", MachineClockSynchronised);
+        Publish_mbbi  ("CK:SC_SYNC", SystemClockSynchronised);
         Interlock.Publish("CK");
+    }
+
+
+    /* These methods will migrate into SC status reports from the PLL daemon,
+     * but for the moment we hear from the clock synchronisation thread
+     * directly. */
+    void ScWaiting()
+    {
+        if (LstdLocked)
+            SystemClockSynchronised = SYNC_TRACKING;
+    }
+
+    void ScTriggered()
+    {
+        if (SystemClockSynchronised == SYNC_TRACKING)
+            SystemClockSynchronised = SYNC_SYNCHRONISED;
+    }
+
+
+    bool IsSystemClockSynchronised()
+    {
+        return SystemClockSynchronised == SYNC_SYNCHRONISED;
     }
     
 private:
@@ -124,15 +162,25 @@ private:
      * updates are reported as appropriate. */
     void ProcessStatusLine(const char * Line)
     {
-        int Scanned = sscanf(Line, "%d %d %d %d\n",
-            &LmtdState, &FrequencyError, &PhaseError, &DacSetting);
-        if (Scanned != 4)
+        if (sscanf(Line, "%d %d %d %d %d\n",
+                &LmtdState, &FrequencyError, &PhaseError, &DacSetting,
+                &MachineClockSynchronised) != 5)
             printf("Error scanning lmtd status line \"%s\"\n", Line);
+
+        /* Pick up the LSTD state: this one we just pick up directly from
+         * CSPI.  Longer term we probably want to integrate LSTD and LMTD
+         * together and just use the status pipe. */
+        bool Dummy;
+        GetClockState(Dummy, LstdLocked);
+        /* Also update the synchronisation state accordingly: on loss of lock
+         * force the state to no sync. */
+        if (!LstdLocked)
+            SystemClockSynchronised = SYNC_NO_SYNC;
     }
     
     void Thread()
     {
-        FILE * LmtdStatus = fopen("/tmp/lmtd.status", "r");
+        FILE * LmtdStatus = fopen(LMTD_STATUS_FIFO, "r");
         if (LmtdStatus == NULL)
             return;
         StartupOk();
@@ -159,43 +207,15 @@ private:
     int DacSetting;
     int PhaseError;
     int FrequencyError;
+    int MachineClockSynchronised;
+    int SystemClockSynchronised;
+    bool LstdLocked;
 
     INTERLOCK Interlock;
 };
 
 
 static LMTD_MONITOR * LmtdMonitorThread = NULL;
-
-static bool InitialiseLmtdState()
-{
-    LmtdCommandFile = fopen(LMTD_COMMAND_FIFO, "w");
-    if (LmtdCommandFile == NULL)
-    {
-        perror("Unable to open LMTD command fifo");
-        return false;
-    }
-
-    PUBLISH_CONFIGURATION("CK:DETUNE", longout,
-        SampleClockDetune, UpdateLmtdState);
-    PUBLISH_CONFIGURATION("CK:IFOFF", longout,
-        IfClockDetune, UpdateLmtdState);
-    PUBLISH_CONFIGURATION("CK:PHASE", longout,
-        PhaseOffset, UpdateLmtdState);
-    
-    UpdateLmtdState();
-    
-    LmtdMonitorThread = new LMTD_MONITOR;
-    return LmtdMonitorThread->StartThread();
-}
-
-
-static void TerminateLmtdState()
-{
-    if (LmtdCommandFile != NULL)
-        fclose(LmtdCommandFile);
-    if (LmtdMonitorThread != NULL)
-        LmtdMonitorThread->Terminate();
-}
 
 
 
@@ -206,19 +226,22 @@ static void TerminateLmtdState()
 /*****************************************************************************/
 
 
-/* This class manages system clock synchronisation. */
+/* This class manages system clock synchronisation.  This involves bringing
+ * our internal time (as managed by ntp) in step with an external trigger.
+ * The external trigger should occur on the second, so we need to repeatedly
+ * re-arm the SC trigger with the next anticipated second.  Thus we need to
+ * do this in a separate thread. */
 
 class SYNCHRONISE_CLOCKS : public THREAD, I_EVENT
 {
 public:
-    SYNCHRONISE_CLOCKS() :
-        SyncState(false)
+    SYNCHRONISE_CLOCKS()
     {
         RunningState = WAITING;
+        MachineClockSynchronising = false;
         
-        PUBLISH_ACTION("CK:SYNCSC", SynchroniseSystemClock);
-        PUBLISH_ACTION("CK:SYNCMC", SynchroniseMachineClock);
-        Publish_bi("CK:SYNCSTATE", SyncState);
+        PUBLISH_METHOD_ACTION("CK:SC_SYNC", SynchroniseSystemClock);
+        PUBLISH_METHOD_ACTION("CK:MC_SYNC", SynchroniseMachineClock);
         
         RegisterTriggerSetEvent(*this, 100);
 
@@ -293,7 +316,7 @@ private:
         Lock();
         if (RunningState == WAITING)
             RunningState = SYNCHRONISING;
-        SyncState.Write(true);
+        LmtdMonitorThread->ScWaiting();
         Signal();
         Unlock();
         return true;
@@ -302,10 +325,16 @@ private:
 
     /* This is called in response to processing the CK:SYNCMC record: the
      * next trigger is a machine clock synchronisation trigger.  In response
-     * we need to let LMTD know that a sync is about to happen. */
+     * we need to let LMTD know that a sync is about to happen.
+     *    Because we need to receive the trigger (which is shared with SC
+     * synchronisation) we need to be part of this thread. */
     bool SynchroniseMachineClock()
     {
+        Lock();
+        MachineClockSynchronising = true;
+        SendLmtdCommand("s%d", SYNC_TRACKING);
         SetMachineClockTime();
+        Unlock();
         return true;
     }
 
@@ -316,9 +345,16 @@ private:
     void OnEvent()
     {
         Lock();
+        if (MachineClockSynchronising)
+        {
+            MachineClockSynchronising = false;
+            SendLmtdCommand("s%d", SYNC_SYNCHRONISED);
+        }
         if (RunningState == SYNCHRONISING)
+        {
+            LmtdMonitorThread->ScTriggered();
             RunningState = WAITING;
-        SyncState.Write(false);
+        }
         Signal();
         Unlock();
     }
@@ -331,7 +367,7 @@ private:
     void Wait()   { TEST_(pthread_cond_wait,    &Condition, &Mutex); }
     
     
-    TRIGGER SyncState;
+    bool MachineClockSynchronising;
 
     enum RUNNING_STATE { WAITING, SYNCHRONISING, TERMINATING };
     RUNNING_STATE RunningState;
@@ -344,122 +380,27 @@ private:
 
 static SYNCHRONISE_CLOCKS * SynchroniseThread = NULL;
 
-static bool InitialiseSynchroniseClocks()
-{
-    SynchroniseThread = new SYNCHRONISE_CLOCKS;
-    return SynchroniseThread->StartThread();
-}
-
-static void TerminateSynchroniseClocks()
-{
-    if (SynchroniseThread != NULL)
-        SynchroniseThread->Terminate();
-}
-
-
-
-
-/*****************************************************************************/
-/*                                                                           */
-/*                        Reboot and Restart Support                         */
-/*                                                                           */
-/*****************************************************************************/
-
-/* This code is somewhat out of place here. */
-
-
-/* Fairly generic routine to start a new detached process in a clean
- * environment. */
-
-static void DetachProcess(const char *Process, char *const argv[])
-{
-    /* We fork twice to avoid leaving "zombie" processes behind.  These are
-     * harmless enough, but annoying.  The double-fork is a simple enough
-     * trick. */
-    pid_t MiddlePid = fork();
-    if (MiddlePid == -1)
-        perror("Unable to fork");
-    else if (MiddlePid == 0)
-    {
-        pid_t NewPid = fork();
-        if (NewPid == -1)
-            perror("Unable to fork");
-        else if (NewPid == 0)
-        {
-            /* This is the new doubly forked process.  We still need to make
-             * an effort to clean up the environment before letting the new
-             * image have it. */
-
-            /* Set a sensible home directory. */
-            TEST_(chdir, "/");
-
-//             /* Restore default signal handling.  I'd like to hope this step
-//              * isn't needed. */
-//             for (int i = 0; i < NSIG; i ++)
-//                 signal(i, SIG_DFL);
-
-            /* Enable all signals. */
-            sigset_t sigset;
-            TEST_(sigfillset, &sigset);
-            TEST_(sigprocmask, SIG_UNBLOCK, &sigset, NULL);
-
-            /* Close all the open file handles.  The new lmtd gets into trouble
-             * if we don't do this. */
-            for (int i = 0; i < sysconf(_SC_OPEN_MAX); i ++)
-                close(i);
-
-            /* Finally we can actually exec the new process... */
-            char * envp[] = { NULL };
-            TEST_(execve, Process, argv, envp);
-        }
-        else
-            /* The middle process simply exits without further ceremony.  The
-             * idea here is that this orphans the new process, which means
-             * that the parent process doesn't have to wait() for it, and so
-             * it won't generate a zombie when it exits. */
-            _exit(0);
-    }
-    else
-    {
-        /* Wait for the middle process to finish. */
-        if (waitpid(MiddlePid, NULL, 0) == -1)
-            perror("Error waiting for middle process");
-    }
-}
-
-
-static bool Dummy;
-
-static void DoReboot()
-{
-    char * Args[] = { "/sbin/reboot", NULL };
-    DetachProcess(Args[0], Args);
-}
-
-
-static void DoRestart()
-{
-    char * Args[] = { "/etc/init.d/epics", "restart", NULL };
-    DetachProcess(Args[0], Args);
-}
-
-
-
-/****************************************************************************/
-/*                                                                          */
 
 
 bool InitialiseTimestamps()
 {
-    if (!InitialiseSynchroniseClocks())
+    PUBLISH_CONFIGURATION("CK:DETUNE", longout,
+        SampleClockDetune, UpdateLmtdState);
+    PUBLISH_CONFIGURATION("CK:IFOFF", longout,
+        IfClockDetune, UpdateLmtdState);
+    PUBLISH_CONFIGURATION("CK:PHASE", longout,
+        PhaseOffset, UpdateLmtdState);
+    
+    SynchroniseThread = new SYNCHRONISE_CLOCKS;
+    if (!SynchroniseThread->StartThread())
         return false;
     
-    InitialiseLmtdState();
+    LmtdMonitorThread = new LMTD_MONITOR;
+    if (!LmtdMonitorThread->StartThread())
+        return false;
 
-    /* Also a couple of rather miscellanous PVs that could go anywhere.  They
-     * currently live here so that they can share the DetachProcess() api. */
-    PUBLISH_FUNCTION_OUT(bo, "REBOOT",  Dummy, DoReboot);
-    PUBLISH_FUNCTION_OUT(bo, "RESTART", Dummy, DoRestart);
+    /* Program the LMTD to the required settings. */
+    UpdateLmtdState();
 
     return true;
 }
@@ -467,6 +408,14 @@ bool InitialiseTimestamps()
 
 void TerminateTimestamps()
 {
-    TerminateSynchroniseClocks();
-    TerminateLmtdState();
+    if (SynchroniseThread != NULL)
+        SynchroniseThread->Terminate();
+    if (LmtdMonitorThread != NULL)
+        LmtdMonitorThread->Terminate();
+}
+
+
+bool UseLiberaTimestamps()
+{
+    return LmtdMonitorThread->IsSystemClockSynchronised();
 }

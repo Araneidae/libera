@@ -49,6 +49,8 @@
 #include "hardware.h"
 #include "thread.h"
 #include "events.h"
+#include "timestamps.h"
+
 #include "trigger.h"
 
 
@@ -70,9 +72,10 @@ TRIGGER::TRIGGER(bool InitialValue)
 /* This method signals that the trigger is ready. */
 bool TRIGGER::Ready(const struct timespec *NewTimestamp)
 {
-    /* If we've been given a timestamp then use that, otherwise fetch the
-     * current time as our timestamp. */
-    if (NewTimestamp == NULL)
+    /* If we've been given a timestamp then use that -- but only if the Libera
+     * system clock has been synchronised -- otherwise fetch the current time
+     * as our timestamp. */
+    if (NewTimestamp == NULL  ||  ! UseLiberaTimestamps())
         TEST_(clock_gettime, CLOCK_REALTIME, & Timestamp);
     else
         Timestamp = *NewTimestamp;

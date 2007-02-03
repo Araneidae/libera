@@ -110,6 +110,12 @@ bool InitialiseHardware();
 void TerminateHardware();
 
 
+/* Writes or writes directly to or from a hardware register.  Not designed for
+ * frequent use, as the associated memory mapping is created and deleted each
+ * time this routine is called! */
+bool WriteRawRegister(unsigned int Address, unsigned int Value);
+bool ReadRawRegister(unsigned int Address, unsigned int &Value);
+
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                   Reading waveform data from the FPGA.                    */
@@ -171,6 +177,7 @@ bool ReadAttenuation(int &Attenuation);
 /* Set clock synchronisation. */
 bool SetMachineClockTime();
 bool SetSystemClockTime(struct timespec & NewTime);
+bool GetClockState(bool &LmtdLocked, bool &LstdLocked);
 
 
 /* Health interrogation.  Returns cspi_health_t directly. */
