@@ -258,11 +258,16 @@ INTERLOCK::INTERLOCK() :
 }
 
 
-void INTERLOCK::Publish(const char * Prefix, bool PublishMC)
+void INTERLOCK::Publish(
+    const char * Prefix, bool PublishMC,
+    const char * TrigName, const char * DoneName)
 {
-    Name = Prefix;
-    Publish_bi(Concat(Prefix, ":TRIG"), Trigger);
-    PUBLISH_METHOD_OUT(bo, Concat(Prefix, ":DONE"), ReportDone, Value);
+    if (TrigName == NULL)  TrigName = "TRIG";
+    if (DoneName == NULL)  DoneName = "DONE";
+    Name = Concat(Prefix, ":", DoneName);
+    
+    Publish_bi(Concat(Prefix, ":", TrigName), Trigger);
+    PUBLISH_METHOD_OUT(bo, Name, ReportDone, Value);
 
     if (PublishMC)
     {
@@ -301,7 +306,7 @@ void INTERLOCK::Wait()
      *    Oddly enough, this message does occasionally appear in the ioc log.
      * No idea why, as yet. */
     if (!Interlock.Wait(2))
-        printf("%s:DONE timed out waiting for EPICS handshake\n", Name);
+        printf("%s timed out waiting for EPICS handshake\n", Name);
 }
 
 
@@ -315,7 +320,7 @@ bool INTERLOCK::ReportDone(bool Done)
     /* If the interlock was already ready when we signal it then something
      * has gone wrong. */
     if (Interlock.Signal())
-        printf("%s:DONE unexpected extra signal\n", Name);
+        printf("%s unexpected extra signal\n", Name);
     return true;
 }
 
@@ -327,29 +332,9 @@ bool INTERLOCK::ReportDone(bool Done)
 /*                                                                           */
 /*****************************************************************************/
 
-class TICK_TRIGGER : TRIGGER, I_EVENT
-{
-public:
-    TICK_TRIGGER()
-    {
-        Publish_bi("TICK_TRIG", *this);
-        RegisterTriggerEvent(*this, PRIORITY_TICK);
-    }
-private:
-    void OnEvent()
-    {
-        Ready();
-    }
-};
-
-
 
 bool InitialiseTriggers()
 {
-    /* Publish a ticking record to publish the fact that trigger has been
-     * processed. */
-    new TICK_TRIGGER();
-    
     /* Ensure the trigger interlock mechanism (which needs to interact
      * carefully with EPICS) has been correctly initialise. */
     return EPICS_READY::Initialise();

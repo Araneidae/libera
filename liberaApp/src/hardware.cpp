@@ -554,7 +554,6 @@ bool WriteRawRegister(unsigned int Address, unsigned int Value)
         return false;
     else
     {
-printf("*$%08x <= $%08x\n", Address, Value);
         *Register = Value;
         UnmapRawRegister(Register);
         return true;
@@ -570,7 +569,6 @@ bool ReadRawRegister(unsigned int Address, unsigned int &Value)
     else
     {
         Value = *Register;
-printf("*$%08x => $%08x\n", Address, Value);
         UnmapRawRegister(Register);
         return true;
     }

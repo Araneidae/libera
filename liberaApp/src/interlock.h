@@ -35,6 +35,15 @@ bool InitialiseInterlock();
  * machine. */
 void NotifyInterlockCurrent(int Current);
 
+/* Called during configuration to record the state of the global enable flag.
+ * This is used to control whether interlocks are enabled. */
+void NotifyInterlockBpmEnable(bool Enabled);
+
+/* Called to notify "Golden orbit" offsets so that interlocks can track the
+ * true "nominal" zero even while "golden orbit" offsets are being generated
+ * in the hardware. */
+void NotifyInterlockOffset(int OffsetX, int OffsetY);
+
 /* Updating the attenuators is a slightly tricky business.  We need to
  * synchronise with the interlocks, and indeed do some carefully timed
  * waiting about, to ensure that the interlock isn't dropped as a result of a

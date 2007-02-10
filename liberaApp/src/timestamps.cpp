@@ -157,6 +157,7 @@ public:
         return SystemClockSynchronised == SYNC_SYNCHRONISED;
     }
     
+
 private:
     /* Decodes a single status line read from the LMTD and ensures that
      * updates are reported as appropriate. */
@@ -213,6 +214,73 @@ private:
 
     INTERLOCK Interlock;
 };
+
+
+
+/* Publish a ticking record to publish the fact that trigger has been
+ * processed, together with timing information for this trigger. */
+
+class TICK_TRIGGER : I_EVENT
+{
+public:
+    TICK_TRIGGER()
+    {
+        NtpTimeString[0] = '\0';
+        SystemTimeString[0] = '\0';
+        
+        /* Publishing the interlock will also make MCL and MCH fields
+         * available with machine clock information. */
+        Interlock.Publish("CK", true, "TIME", "TIME_DONE");
+        Publish_stringin("CK:TIME_NTP", NtpTimeString);
+        Publish_stringin("CK:TIME_SC", SystemTimeString);
+        
+        RegisterTriggerEvent(*this, PRIORITY_TICK);
+    }
+private:
+
+    void FormatTimeString(struct timespec &st, EPICS_STRING &String)
+    {
+        /* Start by converting ns into microseconds: the nanosecond detail is
+         * not really meaningful or useful. */
+        int usec = (st.tv_nsec + 500) / 1000;
+        if (usec >= 1000000)
+        {
+            usec -= 1000000;
+            st.tv_sec += 1;
+        }
+        /* Convert the timestamp into a sensible string. */
+        struct tm Tm;
+        gmtime_r(&st.tv_sec, &Tm);
+        snprintf(String, sizeof(EPICS_STRING),
+            "%04d/%02d/%02d %02d:%02d:%02d.%06d",
+            1900 + Tm.tm_year, Tm.tm_mon + 1, Tm.tm_mday,
+            Tm.tm_hour, Tm.tm_min, Tm.tm_sec, usec);
+    }
+    
+    void OnEvent()
+    {
+        Interlock.Wait();
+        
+        /* The only way to get a timestamp from this trigger is to read some
+         * triggered data.  Read the least possible amount right now! */
+        CSPI_TIMESTAMP Timestamp;
+        LIBERA_ROW OneRow;
+        ReadWaveform(1, 1, &OneRow, Timestamp);
+
+        /* Format the two versions of the time into the approriate fields. */
+        FormatTimeString(Timestamp.st, SystemTimeString);
+        struct timespec NtpTime;
+        TEST_(clock_gettime, CLOCK_REALTIME, &NtpTime);
+        FormatTimeString(NtpTime, NtpTimeString);
+
+        Interlock.Ready(Timestamp);
+    }
+
+    INTERLOCK Interlock;
+    EPICS_STRING NtpTimeString;
+    EPICS_STRING SystemTimeString;
+};
+
 
 
 static LMTD_MONITOR * LmtdMonitorThread = NULL;
@@ -390,6 +458,8 @@ bool InitialiseTimestamps()
         IfClockDetune, UpdateLmtdState);
     PUBLISH_CONFIGURATION("CK:PHASE", longout,
         PhaseOffset, UpdateLmtdState);
+    
+    new TICK_TRIGGER();
     
     SynchroniseThread = new SYNCHRONISE_CLOCKS;
     if (!SynchroniseThread->StartThread())

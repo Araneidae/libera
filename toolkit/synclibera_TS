@@ -1,25 +1,35 @@
+#!/bin/sh
+
+
+
+# Turn normal triggers off and wait for this to take effect.
 caput TS-DI-EVR-01:TRIG:MODE Synchronised
-
 sleep 1
 
-# echo -e \\n Stopping EPICS: \\n
-# labliberas /etc/init.d/epics stop |cat|wc -l
-#  
-# echo -e \\n Arming Set-Time: \\n
-# labliberas /opt/bin/libera -x -t $(date +0:%Y%m%d%H%M.%S)|cat
-
-for i in 1 2 3 4 5 6; do
-    caput TS-DI-EBPM-0$i:CF:SYNC_S Synchronise
-done
-
-
+# First synchronise the machine clock.  This we do simply by allowing a
+# normal trigger through.
+echo
+echo Synchronising machine clocks
+echo
+caput TS-DI-EBPM-01:CK:MC_SYNC_S 0
 sleep 1
-echo -e \\n Sending Set-Time event: \\n
-
-caput LI-TI-MTGEN-01:SR-DI 1
-caput LI-TI-MTGEN-01:SR-DI 0
-sleep 3
-
 caput TS-DI-EVR-01:TRIG:MODE Normal
+sleep 1
+caput TS-DI-EVR-01:TRIG:MODE Synchronised
+sleep 1
 
-echo -e \\n Done.\\n
+
+# Now synchronise the system clock.  This is more tricky, as we need to
+# synchronise to the 1Hz heartbeat.
+echo
+echo Synchronising system clocks
+echo
+caput TS-DI-EBPM-01:CK:SC_SYNC_S 0
+sleep 1
+caput TS-DI-EVR-01:TS-RESET.OUT2 1
+sleep 2
+
+
+# Put everything back to normal when we're done.
+caput TS-DI-EVR-01:TRIG:MODE Normal
+echo Done.

@@ -51,6 +51,9 @@
 /*                                                                           */
 /*****************************************************************************/
 
+/* Master enable flag. */
+static bool BpmEnabled = true;
+
 /* The following global parameters are used to control the calculation of
  * electron beam position from button signal level readout. */
 
@@ -316,7 +319,6 @@ static void UpdateAutoSwitch()
 
 static void UpdateSwitchTrigger()
 {
-    printf("Trigger = %d\n", ExternalSwitchTrigger);
     /* Read the current trigger setting (to get the interval count) and
      * update the top bit as required to control the trigger source. */
     unsigned int SwitchControl;
@@ -330,7 +332,6 @@ static void UpdateSwitchTrigger()
 
 static void UpdateSwitchTriggerDelay()
 {
-    printf("Delay = %d\n", SwitchTriggerDelay);
     WriteRawRegister(REGISTER_SWITCH_DELAY, SwitchTriggerDelay);
 }
 
@@ -439,6 +440,15 @@ int ComputeScaledCurrent(const PMFP & IntensityScale, int Intensity)
 /****************************************************************************/
 /*                                                                          */
 
+void SetBpmEnabled()
+{
+    /* At the moment the only things affected by the ENABLED flag are the
+     * overall system health (managed in the EPICS database) and the
+     * interlock. */
+    NotifyInterlockBpmEnable(BpmEnabled);
+}
+
+
 #define PUBLISH_CALIBRATION(Name, Value) \
     PUBLISH_CONFIGURATION(Name, ao, Value, UpdateCalibration)
 
@@ -450,7 +460,12 @@ bool InitialiseConvert()
 {
     if (!ReadAttenuatorOffsets())
         return false;
-    
+
+    /* Master enable flag.  Disabling this has little practical effect on BPM
+     * outputs (apart from disabling interlock), but is available as a global
+     * PV for BPM management. */
+    PUBLISH_CONFIGURATION("CF:ENABLED", bo, BpmEnabled, SetBpmEnabled);
+        
     PUBLISH_CONFIGURATION("CF:DIAG", bo, Diagonal, NULL_ACTION);
 
     PUBLISH_CALIBRATION("CF:KX", K_X);

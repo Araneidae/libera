@@ -112,23 +112,23 @@ def XYQS_(prec, logMax=0, suffix=''):
 def Enable():
     boolOut('ENABLE', 'Disabled', 'Enabled', DESC = 'Enable %s mode')
 
-def Trigger(MC, *positions):
+def Trigger(MC, positions, TRIG='TRIG', DONE='DONE'):
     # If MC is requested then generate MC machine clock records as well.
     # These return the 64 bit revolution clock as a pair of 32 bit values.
     if MC:
-        positions = positions + (
+        positions = positions + [
             longIn('MCL', EGU='turns', DESC = 'Revolution clock (low)'),
-            longIn('MCH', EGU='turns', DESC = 'Revolution clock (high)'))
+            longIn('MCH', EGU='turns', DESC = 'Revolution clock (high)')]
 
     
     # The DONE record must be processed after all other triggered records are
     # processed: this is used as an interlock to synchronise with the Libera
     # driver.
-    done = Libera.bo('DONE', DESC = 'Report trigger done')
-    trigger = Libera.bi('TRIG', DESC = 'Trigger processing',
+    done = Libera.bo(DONE, DESC = 'Report trigger done')
+    trigger = Libera.bi(TRIG, DESC = 'Trigger processing',
         SCAN = 'I/O Intr',
         TSE  = -2,          # Ensures that device timestamp is used
-        FLNK = create_fanout('FAN', *positions + (done,)))
+        FLNK = create_fanout(TRIG + 'FAN', *positions + [done]))
     for record in positions:
         record.TSEL = trigger.TIME
 
@@ -149,13 +149,13 @@ def FirstTurn():
     
     maxadc = longIn('MAXADC', 0, 2048,
         DESC = 'Maximum ADC reading',
-        HSV  = 'MINOR',  HIGH = 1024,                   # -6dB
-        HHSV = 'MAJOR',  HIHI = int(1024*sqrt(2)))      # -3dB
+        HSV  = 'MINOR',  HIGH = 1450,   # -3dB full scale
+        HHSV = 'MAJOR',  HIHI = 1700)   # -1.6dB full scale
 
     charge = aIn('CHARGE', 0, 2000, 1e-6, 'nC', 2,
         DESC = 'Charge of bunch train')
 
-    Trigger(False, *
+    Trigger(False, 
         # Raw waveforms as read from the ADC rate buffer
         RAW_ADC(LONG_LENGTH) + [maxadc, charge] +
         # ADC data reduced by 1/4 by recombination
@@ -183,7 +183,7 @@ def Booster():
     SetChannelName('BN')
     Enable()
     
-    Trigger(True, *
+    Trigger(True, 
         # IQ data
         IQ_wf(LONG_LENGTH) + 
         # Raw decimated /64 button values
@@ -212,7 +212,7 @@ def FreeRunning():
 
     # In this mode we provide all the available data: raw IQ, buttons and
     # computed positions.
-    Trigger(True, *IQ_wf(LENGTH) + ABCD_wf(LENGTH) + XYQS_wf(LENGTH))
+    Trigger(True, IQ_wf(LENGTH) + ABCD_wf(LENGTH) + XYQS_wf(LENGTH))
     
     UnsetChannelName()
         
@@ -224,7 +224,7 @@ def Postmortem():
     SetChannelName('PM')
 
     # All turn-by-turn data is provided.
-    Trigger(True, *IQ_wf(LENGTH) + ABCD_wf(LENGTH) + XYQS_wf(LENGTH))
+    Trigger(True, IQ_wf(LENGTH) + ABCD_wf(LENGTH) + XYQS_wf(LENGTH))
     
     UnsetChannelName()
         
@@ -274,7 +274,7 @@ def TurnByTurn():
     offset = longIn('OFFSET', 0, LONG_LENGTH, PINI = 'YES',
         DESC = 'TT readout offset readback')
 
-    Trigger(True, *
+    Trigger(True, 
         # Raw I and Q values
         IQ_wf(WINDOW_LENGTH) + 
         # Button values
@@ -294,7 +294,7 @@ def SlowAcquisition():
     current = aIn('CURRENT', 0, 500, 1e-5, 'mA', 3,
         DESC = 'SA input current')
     Trigger(False,
-        *ABCD_() + XYQS_(4) + XYQS_(4, suffix='C') + [power, current])
+        ABCD_() + XYQS_(4) + XYQS_(4, suffix='C') + [power, current])
     UnsetChannelName()
 
 
@@ -308,13 +308,38 @@ def SlowAcquisition():
 # geometry and 
 def Config():
     SetChannelName('CF')
-    boolOut('DIAG', 'VERTICAL', 'DIAGONAL', DESC = 'Button orientation')
+
+    # Control enabling of this BPM.
+    global globalBpmEnable
+    globalBpmEnable = boolOut('ENABLED', 'BPM Disabled', 'BPM Enabled',
+        ZSV  = 'MAJOR',     OSV  = 'NO_ALARM',
+        DESC = 'Enable Libera')
+
     # Geometry calibration control
+    boolOut('DIAG', 'Vertical', 'Diagonal', DESC = 'Button orientation')
     aOut('KX', 0, 32,   EGU  = 'mm', DESC = 'X scaling')
     aOut('KY', 0, 32,   EGU  = 'mm', DESC = 'Y scaling')
     aOut('KQ', 0, 32,   EGU  = 'mm', DESC = 'Q scaling')
+
+    # These controls are obsolescent, about to be replaced by the ones below.
     aOut('X0', -16, 16, EGU  = 'mm', DESC = 'X origin offset')
     aOut('Y0', -16, 16, EGU  = 'mm', DESC = 'Y origin offset')
+    # BPM origin control.  We support three separate displacements:
+    #   1.  Beam Based Alignment offset.
+    #   2.  Beam Current Dependency offset
+    #   3.  "Golden Orbit" offset
+    # Only 1 is stored as part of the persistent state.  1+2 define the
+    # nominal origin (used for interlocks).
+    aOut('BBA_X', -16, 16, EGU = 'mm', DESC = 'Beam based X origin')
+    aOut('BBA_Y', -16, 16, EGU = 'mm', DESC = 'Beam based Y origin')
+    aOut('BCD_X', -16, 16, EGU = 'mm', DESC = 'Current dependent X origin')
+    aOut('BCD_Y', -16, 16, EGU = 'mm', DESC = 'Current dependent Y origin')
+    aOut('GOLDEN_X', -16, 16, EGU = 'mm', DESC = 'Golden orbit X origin')
+    aOut('GOLDEN_Y', -16, 16, EGU = 'mm', DESC = 'Golden orbit Y origin')
+    aIn('X0', -16, 16, EGU  = 'mm', DESC = 'X origin offset')
+    aIn('Y0', -16, 16, EGU  = 'mm', DESC = 'Y origin offset')
+
+    
     # Channel gain settings.  Only applies to first turn mode.
     aOut('G0', 0, 1.5,  ESLO = 2**-30, DESC = 'Channel 0 gain adjustment')
     aOut('G1', 0, 1.5,  ESLO = 2**-30, DESC = 'Channel 1 gain adjustment')
@@ -393,6 +418,8 @@ def Interlock():
     # POKE_STATE simply acts to relay the trigger state to STATE, which
     # automatically resets itself after half a second if no triggers are
     # received.
+    mbbIn('REASON')
+
     trigger = boolIn('TRIG', '', 'Trigger',
         DESC = 'Interlock dropped event',
         SCAN = 'I/O Intr') 
@@ -433,21 +460,34 @@ def AggregateSeverity(name, description, *recs):
 def Clock():
     SetChannelName('CK')
 
-    # LMTD detune control
+    # Control LMTD detune, intermediate frequency and phase
     longOut('DETUNE', -1000, 1000, DESC = 'Sample clock detune')
     longOut('IFOFF',  -1000, 1000, DESC = 'IF clock detune')
     longOut('PHASE', DESC = 'Phase offset')
     
-#     # System clock synchronisation
-#     boolIn('SYNCSTATE', 'Normal', 'Waiting for Trigger',
-#         SCAN = 'I/O Intr',      PINI = 'YES',
-#         DESC = 'Synchronisation state')
-
-    # Synchronise commands for clock synchronisation
+    # Commands for clock synchronisation
     boolOut('MC_SYNC', 'Synchronise', None, DESC = 'Synchronise machine clock')
     boolOut('SC_SYNC', 'Synchronise', None, DESC = 'Synchronise system clock')
 
-    alarmsensors = [
+
+    # Create the tick health monitor.  This records the number of seconds
+    # since the last recorded trigger and signals an alarm according to how
+    # long the delay has been.
+    tick = records.calc('TICK',
+        SCAN = '.1 second',
+        CALC = 'A+0.1',
+        EGU  = 's', PREC = 1,
+        HIGH = 1,   HSV  = 'MINOR')
+    tick.INPA = tick
+    tick_reset = records.calcout('TICK_CALC',
+        CALC = '0',
+        OUT  = tick,
+        OOPT = 'Every Time',
+        DOPT = 'Use CALC')
+
+    
+    # Group together all the records that affect the alarm status. */
+    clock_health = [
         # MC monitoring PVS
         mbbIn('MC_LOCK',
             ('No Clock',        0, 'MAJOR'),
@@ -470,13 +510,22 @@ def Clock():
             ('Waiting Trigger', 1, 'MINOR'),
             ('Synchronised',    2, 'NO_ALARM'),
             DESC = 'System clock sync state')]
+    health = AggregateSeverity('HEALTH', 'Clock status',
+        *clock_health + [tick])
+
+    # This trigger receives the normal machine trigger.
+    Trigger(True, [
+        tick_reset,
+        stringIn('TIME_NTP', DESC = 'NTP time'),
+        stringIn('TIME_SC',  DESC = 'System clock time')],
+        TRIG = 'TIME', DONE = 'TIME_DONE')
     
-    health = AggregateSeverity('HEALTH', 'Clock status', *alarmsensors)
-    Trigger(False,
+    Trigger(False, [
         longIn('DAC', 0, 65535, DESC = 'LMTD VCXO DAC setting'),
         longIn('PHASE_E', DESC = 'LMTD phase error'),
-        longIn('FREQ_E', DESC = 'LMTD frequency error'),
-        *alarmsensors + [health,])
+        longIn('FREQ_E', DESC = 'LMTD frequency error')] + 
+        clock_health + [health,])
+    
 
 
     UnsetChannelName()
@@ -507,7 +556,7 @@ def Voltages():
 
     voltages = [
         VoltageSensor(1, 'Virtex core power supply',    1.5),
-        VoltageSensor(2, 'Unused voltage',              1.8, False),
+        VoltageSensor(2, '(Unused voltage)',            1.8, False),
         VoltageSensor(3, 'Virtex ADC interface',        2.5),
         VoltageSensor(4, 'SBC & SDRAM power supply',    3.3),
         VoltageSensor(5, 'PMC +5V power supply',        5.0),
@@ -563,7 +612,8 @@ def Sensors():
     # Aggregate all the alarm generating records into a single "health"
     # record.  Only the alarm status of this record is meaningful.
     alarmsensors = fans + [temp, memfree, ramfs, cpu] #, voltage_health]
-    health = AggregateSeverity('HEALTH', 'Aggregated health', *alarmsensors)
+    health = AggregateSeverity('HEALTH', 'Aggregated health',
+        *alarmsensors + [CP(globalBpmEnable)])
     
     allsensors = alarmsensors + voltages + [uptime, epicsup, health]
     
@@ -585,24 +635,6 @@ def Miscellaneous():
         DESC = 'Libera EPICS driver version')
     Libera.stringin('BUILD',   PINI = 'YES',
         DESC = 'EPICS driver build date')
-
-    # Similarly the tick health monitor is defined here.  This records the
-    # number of seconds since the last recorded trigger and signals an alarm
-    # according to how long the delay has been.
-    tick = records.calc('TICK',
-        SCAN = '.1 second',
-        CALC = 'A+0.1',
-        EGU  = 's', PREC = 1,
-        HIGH = 1,   HSV  = 'MINOR')
-    tick.INPA = tick
-    tick_reset = records.calcout('TICK_CALC',
-        CALC = '0',
-        OUT  = tick,
-        OOPT = 'Every Time',
-        DOPT = 'Use CALC')
-    boolIn('TICK_TRIG', '', '',
-        DESC = 'Trigger event',
-        SCAN = 'I/O Intr', FLNK = tick_reset)
 
     boolOut('REBOOT',  'Reboot',  None, DESC = 'Reboot Libera IOC')
     boolOut('RESTART', 'Restart', None, DESC = 'Restart EPICS driver')

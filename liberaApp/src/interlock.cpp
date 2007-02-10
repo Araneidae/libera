@@ -296,6 +296,19 @@ private:
 
 
 
+
+
+
+void NotifyInterlockBpmEnable(bool Enabled)
+{
+}
+
+
+void NotifyInterlockOffset(int OffsetX, int OffsetY)
+{
+}
+
+
 bool InitialiseInterlock()
 {
     /* Interlock window. */
@@ -318,7 +331,7 @@ bool InitialiseInterlock()
         InterlockHoldoffCount, NULL_ACTION);
     
     new INTERLOCK_EVENT("IL:TRIG");
-    
+
     EpicsUpdateInterlock();
 
     return true;

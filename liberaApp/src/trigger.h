@@ -102,8 +102,11 @@ class INTERLOCK
 public:
     INTERLOCK();
 
-    /* This method actually publishes the trigger and done records. */
-    void Publish(const char * Prefix, bool PublishMC = false);
+    /* This method actually publishes the trigger and done records.  Their
+     * default names can be overridden if required. */
+    void Publish(
+        const char * Prefix, bool PublishMC = false,
+        const char * TrigName = NULL, const char * DoneName = NULL);
 
     /* This signals EPICS that there is data to be read and sets the
      * interlock up ready to be read. */

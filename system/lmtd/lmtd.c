@@ -1,28 +1,34 @@
-/* $Id: lmtd.c,v 1.34 2006/07/13 12:00:46 ales Exp $ */
+/* This file is part of the Libera EPICS Driver,
+ * 
+ * Copyright (C) 2004-2006 Instrumentation Technologies
+ * Copyright (C) 2006-2007  Michael Abbott, Diamond Light Source Ltd.
+ *
+ * The Libera EPICS Driver is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or (at your
+ * option) any later version.
+ *
+ * The Libera EPICS Driver is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+ * Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc., 51
+ * Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+ *
+ * Contact:
+ *      Dr. Michael Abbott,
+ *      Diamond Light Source Ltd,
+ *      Diamond House,
+ *      Chilton,
+ *      Didcot,
+ *      Oxfordshire,
+ *      OX11 0DE
+ *      michael.abbott@diamond.ac.uk
+ */
 
-//! \file lmtd.c 
-//! Implements Libera Machine Time PLL Daemon.
-
-/*
-LIBERA PLL DAEMONS - Libera GNU/Linux PLL daemons
-Copyright (C) 2004-2006 Instrumentation Technologies
-Copyright (C) 2006-2007 Michael Abbott, Diamond Light Source Ltd.
-
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation; either version 2
-of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
-or visit http://www.gnu.org
-*/
+/* LIBERA PLL DAEMONS - Libera GNU/Linux PLL daemons */
 
 #define _GNU_SOURCE
 #include <stdbool.h>
@@ -506,12 +512,6 @@ bool run_find_phase(unsigned long long *mctime, int *dac)
 
 
 
-/* A couple of experimental filters. */
-//#define FILTER_SMOOTH_PI
-#define FILTER_SECOND_ORDER
-
-
-
 /* This runs a narrow bandwidth filter to keep the LMT phase locked as
  * closely as possible.  Long term filtering is performed and a very long
  * time-constant is used on the integrator.
@@ -519,49 +519,85 @@ bool run_find_phase(unsigned long long *mctime, int *dac)
  * the phase error is too large for the narrow bandwidth lock, and the wider
  * bandwidth find_phase process needs to be run instead. */
 
-#ifdef FILTER_SMOOTH_PI
-#define LP_KP   0.5
-#define LP_KI   0.05
-#endif
-#ifdef FILTER_SECOND_ORDER
 /* These filter coefficients define a second order IIR filter which is used to
  * managed the phase error.  The goal is to keep the phase error low (to
  * within +-1 or 2 sample clocks) with neither excessive excursions in
  * frequency or long term oscillations -- it turns out that designing such a
  * filter is quite tricky.  The coefficients below work for a system with an
- * open loop gain of approximately 0.03. */
-#if 0
-#define B_0     0.97
-#define B_1     -1.1
-#define B_2     0.17
-#else
+ * open loop gain of approximately 0.03.
+ *
+ * The filter used here has z-transform
+ *
+ *                 2
+ *             B  z  + B  z + B
+ *              0       1      2   B(z)
+ *      G(z) = ----------------- = ----
+ *               (z-1)(z-beta)     A(z)
+ *
+ * This is part of a feedback loop involving the VCXO and phase measurement
+ * mechanism: this is modelled as
+ *
+ *             alpha
+ *      F(z) = -----
+ *              z-1
+ *
+ * That is to say: the VCXO and its phase error can be modelled simply as an
+ * integrator with unit delay and gain factor alpha.  If we then use the
+ * filter G above to control this system, we get an overall response to noise
+ * (which we can model as simply added to the control input to the VCXO) of
+ *
+ *                F(z)            a A
+ *      PHI = ------------ = ------------  (writing a = alpha)
+ *            1 + F(z)G(z)   (1-z)A + a B
+ *
+ * There are several goals to meet when designing the control filter:
+ * 
+ *  1. the long term DC response (phase drift) must be zero.  This corresponds
+ *     to requiring that A(0) = 0
+ *
+ *  2. the system PHI must be stable.  This corresponds to requiring that all
+ *     of the roots of the polynomial
+ *    
+ *      R(z) = (1-z) A(z) + a B(z)
+ *
+ *     lie within the unit circle |z| < 1.
+ *
+ *  3. the system PHI must have a low overall gain without strong peaks in
+ *     frequency response.  This corresponds to requring that the roots of
+ *     R(z) be small, ie |z| << 1.
+ *
+ *  4. the properties above should be preserved as alpha varies over a
+ *     reasonable range of possible values
+ *
+ *  5. the impulse response of the filter G should have magnitude no greater
+ *     than 1 (this is not affected by alpha, of course).  This is required
+ *     to reduce the magnitude of phase oscillations around zero caused by
+ *     the fact that phase error is reported in integer units only.
+ *
+ * (1) is easy: we just write A with a factor of (z-1).  Achieving the rest is
+ * not so straightforward.  The coefficients below seem to be a good
+ * compromise with almost the simplest possible A (just setting A=(z-1),
+ * corresponding to a simple PI loop, make (5) and (3) mutually incompatible),
+ * and works satisfactorily of a range of 0.01 < alpha < 0.1. */
+
 #define B_0     0.3
 #define B_1     0.14
 #define B_2     -0.41
-#endif
-#define A_1     -1.8
-#define A_2     0.8
-#endif
 
-#define LP_IIR  0.05
+#define BETA    0.8
+#define A_1     (-1-BETA)
+#define A_2     BETA
+
 
 bool run_lock_phase(unsigned long long *mctime, int *dac)
 {
     /* Accumulated target phase. */
     unsigned long long nominal_clock_count = *mctime;
 
-#ifdef FILTER_SMOOTH_PI
-    /* Running average of errors.  We just use a simple IIR for this. */
-    double smoothed_error = 0;
-    /* Integrator. */
-    int integrated_error = 0;
-#endif
-#ifdef FILTER_SECOND_ORDER
     /* Second order IIR.  We have to keep a history of the last two terms and
      * the last two corrections. */
     int   last_error[2] = { 0, 0 };
     float last_out  [2] = { 0.0, 0.0 };
-#endif
 
     int nominal_dac = *dac;
     unsigned long long new_mctime = *mctime;
@@ -571,13 +607,6 @@ bool run_lock_phase(unsigned long long *mctime, int *dac)
         long long mcphi = nominal_clock_count - new_mctime;
         int this_error = (int) (mcphi + phase_offset);
 
-#ifdef FILTER_SMOOTH_PI
-        integrated_error += this_error;
-        smoothed_error = LP_IIR * this_error + (1 - LP_IIR) * smoothed_error;
-        *dac = ClipDAC(nominal_dac + (int) round(
-            LP_KP * smoothed_error + LP_KI * integrated_error));
-#endif
-#ifdef FILTER_SECOND_ORDER
         /* Compute this stage of the filter. */
         float this_output =
             B_0 * this_error + B_1 * last_error[0] + B_2 * last_error[1] -
@@ -587,17 +616,16 @@ bool run_lock_phase(unsigned long long *mctime, int *dac)
         last_error[1] = last_error[0];  last_error[0] = this_error;
         /* Compute the required correction to output for this step. */
         *dac = ClipDAC(nominal_dac + (int) round(this_output));
-#endif
 
         ReportPhase(mcphi);
         ReportLmtdState(LMTD_PHASE_LOCKED, 0, this_error, *dac);
         SetMachineClockDAC(*dac);
 //        ReportFrequency(new_mctime - mctime_1);
 
-        /* Check for drift of phase error.  If it gets more than about +-1
-         * then this filter is too tight and we need to find the base phase
-         * again. */
-        if (abs(this_error) > 3)
+        /* During normal operation this filter holds the phase strictly with
+         * +-1 sample clock.  If the error grows larger than this then hand
+         * over to the outer fast filter. */
+        if (abs(this_error) > 2)
         {
             /* Phase error too big.  Drop back to the faster filter. */
             *mctime = nominal_clock_count;
@@ -666,7 +694,6 @@ void DispatchCommand(char *Command)
     else
     {
         *Newline = '\0';
-printf("Read \"%s\"\n", Command);
         switch (*Command++)
         {
             case 'o':
@@ -1078,7 +1105,7 @@ int main(int argc, char *argv[])
     argv += optind;
     if (argc > 0)
     {
-        printf("Unexpected extra arguments\n");
+        fprintf(stderr, "Unexpected extra arguments\n");
         exit(EXIT_FAILURE);
     }
 

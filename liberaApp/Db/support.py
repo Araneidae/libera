@@ -186,6 +186,10 @@ def mbbIn(name, *option_values, **fields):
     for prefix, value in zip(_mbbPrefixes, option_values):
         process_value(prefix, *value)
     return Libera.mbbi(name, **fields)
+
+
+def stringIn(name, **fields):
+    return Libera.stringin(name, **fields)
     
 
 def Waveform(name, length, FTVL='LONG', **fields):
@@ -203,4 +207,4 @@ __all__ = [
     'Libera', 'ChannelName',
     'aIn',      'aOut',     'boolIn',   'boolOut',
     'longIn',   'longOut',  'mbbOut',   'mbbIn',
-    'Waveform']
+    'stringIn', 'Waveform']

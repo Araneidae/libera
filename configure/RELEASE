@@ -19,7 +19,7 @@ BUILD_FF_SUPPORT=$(shell \
 # the Epics version changes.
 
 #EPICS_BASE=/home/epics/R3.14.8.2/base
-EPICS_BASE=/scratch/local/base-3.14.9-RC1
+EPICS_BASE=/scratch/local/base-3.14.9
 
 CSPI=$(TOP)/cspi
 LIBERA_PLL=$(TOP)/system/lmtd
