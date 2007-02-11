@@ -625,7 +625,7 @@ def Sensors():
             
     UnsetChannelName()
 
-    # Mirror the health record.
+    # Mirror the health record for backwards compatibility.
     records.bi('HEALTH', INP = MS(CP(health)))
 
     
@@ -638,6 +638,9 @@ def Miscellaneous():
 
     boolOut('REBOOT',  'Reboot',  None, DESC = 'Reboot Libera IOC')
     boolOut('RESTART', 'Restart', None, DESC = 'Restart EPICS driver')
+
+    # Dummy TICK field: temporary definition for backwards compatibility.
+    records.bi('TICK', PINI = 'YES')
 
     
 

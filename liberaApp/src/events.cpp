@@ -37,6 +37,8 @@
 #include <pthread.h>
 
 #include "hardware.h"
+#include "thread.h"
+
 #include "events.h"
 
 
@@ -147,62 +149,27 @@ private:
  * thread listens on the event device and dispatches events to interested
  * parties. */
 
-class EVENT_RECEIVER
+class EVENT_RECEIVER : public THREAD
 {
 public:
     EVENT_RECEIVER()
     {
-        ThreadRunning = false;
-        ThreadStop[0] = -1;
-    }
-
-    /* Try to start the event receiver, reporting if anything balks. */
-    bool Start()
-    {
-        /* First make sure we have a connection so we can tell the thread to
-         * stop. */
-        bool Ok = TEST_(pipe, ThreadStop);
-        if (!Ok)
+        /* Set up a mechanism for thread termination.
+         * Actually, we shouldn't have to do it this way... */
+        if (!TEST_(pipe, ThreadStop))
             /* Remember that we couldn't get started. */
             ThreadStop[0] = -1;
-
-        /* Now try to start the thread. */
-        ThreadRunning = Ok  &&
-            TEST_(pthread_create, &ThreadId, NULL, StartThread, this);
-        if (ThreadRunning)
-        {
-#if 0
-            /* Put the thread into a higher priority: we want the reading of
-             * data from Libera to take priority! */
-            sched_param Param;
-            Param.__sched_priority = 20;
-            TEST_(pthread_setschedparam, ThreadId, SCHED_RR, &Param);
-#endif
-        }
-            
-        return ThreadRunning;
     }
 
 
-    /* This triggers thread shutdown in the background.  This may be called
-     * if thread startup failed! */
-    void Shutdown()
+    /* This triggers thread shutdown in the background. */
+    void OnTerminate()
     {
-        if (ThreadRunning)
-        {
-            /* Tell the thread to stop and wait for it to complete. */
-            int written;
-            char stop = 0;
-            TEST_IO(written, "Unable to write to stop pipe",
-                write, ThreadStop[1], &stop, 1);
-            TEST_(pthread_join, ThreadId, NULL);
-        }
-        
-        if (ThreadStop[0] != -1)
-        {
-            close(ThreadStop[0]);
-            close(ThreadStop[1]);
-        }
+        /* Tell the thread to stop. */
+        int written;
+        char stop = 0;
+        TEST_IO(written, "Unable to write to stop pipe",
+            write, ThreadStop[1], &stop, 1);
     }
 
 
@@ -214,17 +181,13 @@ public:
 
     
 private:
-
-    /* This static routine simply dispatches the thread function to a proper
-     * class member function. */
-    static void * StartThread(void * Context)
-    {
-        ((EVENT_RECEIVER *) Context)->Thread();
-        return NULL;
-    }
-
     void Thread()
     {
+        /* If we couldn't create the thread stop pipe then give up right
+         * away, otherwise all is well. */
+        if (ThreadStop[0] == -1)  return;
+        StartupOk();
+        
         int stop_fd = ThreadStop[0];
         int queue_fd = EventSelector();
         int max_fd = stop_fd > queue_fd ? stop_fd : queue_fd;
@@ -290,10 +253,6 @@ private:
     /* These handles are the two ends of a pipe used to ask the thread to stop
      * processing. */
     int ThreadStop[2];
-    /* Id for event worker thread. */
-    pthread_t ThreadId;
-    /* Set iff thread actually got started. */
-    bool ThreadRunning;
 
     /* Register queue.  This is a list of interested parties who will receive
      * notification of events. */
@@ -307,14 +266,14 @@ static EVENT_RECEIVER * EventReceiver = NULL;
 bool InitialiseEventReceiver()
 {
     EventReceiver = new EVENT_RECEIVER();
-    return EventReceiver->Start();
+    return EventReceiver->StartThread();
 }
 
 
 void TerminateEventReceiver()
 {
     if (EventReceiver != NULL)
-        EventReceiver->Shutdown();
+        EventReceiver->Terminate();
 }
 
 

@@ -182,36 +182,6 @@ static void SetNonInteractive()
 
 
 
-/* Prints usage message in response to -h option. */
-
-static void Usage(const char *IocName)
-{
-    printf(
-"Usage: %s [-p <pid-file>] <scripts>\n"
-"Runs Libera EPICS ioc with an interactive IOC shell after loading and\n"
-"running <scripts> as IOC scripts.\n"
-"\n"
-"Options:\n"
-"    -h                 Writes out this usage description.\n"
-"    -p <pid-file>      Writes pid to <pid-file>.\n"
-"    -n                 Run non-interactively without an IOC shell\n"
-"    -v                 Writes version information\n"
-"    -c<key>=<value>    Configure run time parameter.  <key> can be:\n"
-"       LT      Length of long turn-by-turn buffer\n"
-"       TT      Length of short turn-by-turn buffer\n"
-"       TW      Length of turn-by-turn readout window\n"
-"       DD      Length of /1024 decimated data buffer\n"
-"       HA      Harmonic: number of bunches per revolution\n"
-"       DE      Decimation: number of samples per revolution\n"
-"       LP      LMTD prescale factor\n"
-"    -s <state-file>    Read and record persistent state in <state-file>\n"
-"\n"
-"Note: This IOC application should normally be run from within runioc.\n",
-        IocName);
-}
-
-
-
 /* This routine spawns a caRepeater thread, as recommended by Andrew Johnson
  * (private communication, 2006/12/04).  This means that this IOC has no
  * external EPICS dependencies. */
@@ -403,28 +373,56 @@ static bool ParseFloat(const char *optarg, float &Target)
 }
 
 
-/* Process any options supported by the ioc.  At present we support:
- *
- *      -h              Print out usage
- *      -p<filename>    Write ioc PID to <filename>
- *
- * argc and argv are updated to point past the options. */
+/* Prints usage message in response to -h option. */
+
+static void Usage(const char *IocName)
+{
+    printf(
+"Usage: %s [-p <pid-file>] <scripts>\n"
+"Runs Libera EPICS ioc with an interactive IOC shell after loading and\n"
+"running <scripts> as IOC scripts.\n"
+"\n"
+"Options:\n"
+"    -h                 Writes out this usage description.\n"
+"    -v                 Writes version information\n"
+"    -p <pid-file>      Writes pid to <pid-file>.\n"
+"    -n                 Run non-interactively without an IOC shell\n"
+"    -c<key>=<value>    Configure run time parameter.  <key> can be:\n"
+"       LT      Length of long turn-by-turn buffer\n"
+"       TT      Length of short turn-by-turn buffer\n"
+"       TW      Length of turn-by-turn readout window\n"
+"       DD      Length of /1024 decimated data buffer\n"
+"       HA      Harmonic: number of bunches per revolution\n"
+"       DE      Decimation: number of samples per revolution\n"
+"       LP      LMTD prescale factor\n"
+"    -f <f_mc>          Machine revolution frequency\n"
+"    -s <state-file>    Read and record persistent state in <state-file>\n"
+"\n"
+"Note: This IOC application should normally be run from within runioc.\n",
+        IocName);
+}
+
+
+
+/* Process any options supported by the ioc.  See Usage() for the options
+ * supported.  Parameters argc and argv are updated to point past the
+ * options. */
 
 static bool ProcessOptions(int &argc, char ** &argv)
 {
     bool Ok = true;
     while (Ok)
     {
-        switch (getopt(argc, argv, "+p:nc:f:s:hv"))
+        switch (getopt(argc, argv, "+hvp:nc:f:s:"))
         {
+            case 'h':   Usage(argv[0]);                 return false;
+            case 'v':   StartupMessage();               return false;
             case 'p':   Ok = WritePid(optarg);          break;
             case 'n':   SetNonInteractive();            break;
             case 'c':   Ok = ParseConfigInt(optarg);    break;
             case 'f':   Ok = ParseFloat(
                             optarg, RevolutionFrequency);  break;
             case 's':   StateFileName = optarg;         break;
-            case 'h':   Usage(argv[0]);                 return false;
-            case 'v':   StartupMessage();               return false;
             case '?':
             default:
                 printf("Try `%s -h` for usage\n", argv[0]);
