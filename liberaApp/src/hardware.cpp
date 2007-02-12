@@ -32,6 +32,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <unistd.h>
+#include <signal.h>
 #include <string.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
@@ -39,6 +40,7 @@
 #include <sys/mman.h>
 
 #include "thread.h"
+#include "eventd.h"     // for LIBERA_SIGNAL
 #include "hardware.h"
 
 
@@ -422,6 +424,7 @@ public:
 private:
     void Thread()
     {
+        sigset_t EnableSet;
         CSPIHCON EventSource;
         CSPI_CONPARAMS ConParams;
         ConParams.event_mask =
@@ -431,6 +434,12 @@ private:
             CSPI_EVENT_INTERLOCK;
         ConParams.handler = CspiSignal;
         bool Ok =
+            /* Enable delivery of the LIBERA_SIGNAL signal, to this thread
+             * only: this is required for CSPI event dispatching. */
+            TEST_(sigemptyset, &EnableSet)  &&
+            TEST_(sigaddset, &EnableSet, LIBERA_SIGNAL)  &&
+            TEST_(pthread_sigmask, SIG_UNBLOCK, &EnableSet, NULL)  &&
+            /* Request CSPI events. */
             CSPI_(cspi_allochandle, CSPI_HANDLE_CON, CspiEnv, &EventSource)  &&
             CSPI_(cspi_setconparam, EventSource, &ConParams,
                 CSPI_CON_EVENTMASK | CSPI_CON_HANDLER);

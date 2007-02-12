@@ -26,9 +26,7 @@
  *      michael.abbott@diamond.ac.uk
  */
 
-
-/* Simple wrapper for Linux based ioc.  This is the command line wrapper
- * for a standalone daemon ioc. */
+/* IOC startup, command line processing, initialisation and shutdown. */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -41,6 +39,7 @@
 #include <iocsh.h>
 #include <epicsThread.h>
 
+#include "eventd.h"     // for LIBERA_SIGNAL
 #include "hardware.h"
 #include "firstTurn.h"
 #include "booster.h"
@@ -156,18 +155,31 @@ static void AtExit(int signal)
         sem_post(&ShutdownSemaphore);
 }
 
-static bool InitialiseAtExit()
+
+/* Set up basic signal handling environment.  We configure four shutdown
+ * signals (HUP, INT, QUIT and TERM) to call AtExit() and block the
+ * LIBERA_SIGNAL (SIGUSR1) -- we'll unmask it where we want to catch it! */
+
+static bool InitialiseSignals()
 {
     struct sigaction action;
     action.sa_handler = AtExit;
     action.sa_flags = 0;
+    sigset_t BlockSet;
     return
+        /* Block all signals during AtExit() signal processing. */
         TEST_(sigfillset, &action.sa_mask)  &&
         /* Catch all the usual culprits: HUP, INT, QUIT and TERM. */
         TEST_(sigaction, SIGHUP,  &action, NULL)  &&
         TEST_(sigaction, SIGINT,  &action, NULL)  &&
         TEST_(sigaction, SIGQUIT, &action, NULL)  &&
-        TEST_(sigaction, SIGTERM, &action, NULL);
+        TEST_(sigaction, SIGTERM, &action, NULL)  &&
+
+        /* Block the LIBERA_SIGNAL signal globally: we only want this to be
+         * delivered where we're ready for it! */
+        TEST_(sigemptyset, &BlockSet)  &&
+        TEST_(sigaddset, &BlockSet, LIBERA_SIGNAL) &&
+        TEST_(sigprocmask, SIG_BLOCK, &BlockSet, NULL);
 }
 
 
@@ -184,7 +196,8 @@ static void SetNonInteractive()
 
 /* This routine spawns a caRepeater thread, as recommended by Andrew Johnson
  * (private communication, 2006/12/04).  This means that this IOC has no
- * external EPICS dependencies. */
+ * external EPICS dependencies (otherwise the caRepeater application needs to
+ * be run). */
 
 static bool StartCaRepeater()
 {
@@ -204,8 +217,12 @@ static bool StartCaRepeater()
 static bool InitialiseLibera()
 {
     return
-        /* Set up exit hander. */
-        InitialiseAtExit()  &&
+        /* Initialise signal handling.  This should happen as early as
+         * possible, to ensure that all subsequent processing uses this
+         * signal state. */
+        InitialiseSignals()  &&
+        /* First EPICS related activity. */
+        StartCaRepeater()  &&
 
         /* Initialise the persistent state system early on so that other
          * components can make use of it. */
@@ -539,7 +556,6 @@ int main(int argc, char *argv[])
     /* Consume any option arguments and start the driver. */
     bool Ok =
         ProcessOptions(argc, argv)  &&
-        StartCaRepeater()  &&
         InitialiseLibera();
 
     /* Consume any remaining script arguments by running them through the IOC
