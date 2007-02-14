@@ -34,7 +34,7 @@
 class THREAD
 {
 public:
-    THREAD();
+    THREAD(const char * Name);
 
     /* Starts the thread and waits for it to report back on its initial
      * startup status.  If the thread reports back with StartupOk then true
@@ -49,8 +49,13 @@ protected:
     /* This is the thread itself. */
     virtual void Thread() = 0;
 
-    /* This routine will be called to request termination of the thread. */
-    virtual void OnTerminate() { }
+    /* Thread termination handler: called during thread shutdown (if
+     * pthread_cancel was used). */
+    virtual void ThreadShutdown() { }
+
+    /* This routine will be called to request termination of the thread.  By
+     * default we use pthread_cancel(). */
+    virtual void OnTerminate();
 
     /* This routine must be called by the thread when it has finished its
      * initialisation so that the startup status can be reported back to the
@@ -68,11 +73,16 @@ private:
     static void * StaticThread(void * Context);
     void ThreadInit();
     
-    bool ThreadStarted;         // Record of startup ok
     bool ThreadRunning;         // Used to request thread termination
-    bool ThreadOkFlag;          // Thread startup status
-    pthread_t ThreadId;         // 
-    sem_t ThreadStatus;         // Semaphore signalled when thread resolved
+    /* Thread id of this thread. */
+    pthread_t ThreadId;
+    /* These two work together once the thread has started: once the thread
+     * knows its status it signals the semaphore after ensuring that the ok
+     * flag is set appropriate. */
+    bool ThreadOkFlag;
+    sem_t ThreadStatusSemaphore;
+    /* Thread identification for debuggin. */
+    const char * Name;
 };
 
 

@@ -273,6 +273,9 @@ template PERSISTENT<bool>;
 
 class TIMER_THREAD: public THREAD
 {
+public:
+    TIMER_THREAD() : THREAD("TIMER_THREAD") {}
+    
 private:
     void Thread()
     {
@@ -287,7 +290,8 @@ private:
 
     void OnTerminate()
     {
-        /* Poke the terminate thread to kick it out of its sleep.
+        /* Poke the terminate thread to kick it out of its sleep so that we
+         * get one last write of the state file. 
          *    Note: this signal is handled elsewhere, so has side effects.
          * Fortunately, these side effects aren't a problem. */
         TEST_(kill, pid, SIGINT);

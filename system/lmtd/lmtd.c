@@ -467,7 +467,7 @@ bool run_find_phase(unsigned long long *mctime, int *dac)
         *dac = ClipDAC(nominal_dac + FP_KP * phase_error + FP_KI * tI);
 
         /* If the DAC hits the limits we have a problem.  If we let the
-         * integrator continue to run then we end up overcompensating, and and
+         * integrator continue to run then we end up overcompensating, and 
          * then oscillating for ages afterwards. If, on the other hand, we
          * simply reset the integrater then we can oscillate forever if we
          * bounce off the limits.  Thus here we simply don't integrate this
@@ -553,7 +553,7 @@ bool run_find_phase(unsigned long long *mctime, int *dac)
  * There are several goals to meet when designing the control filter:
  * 
  *  1. the long term DC response (phase drift) must be zero.  This corresponds
- *     to requiring that A(0) = 0
+ *     to requiring that A(1) = 0
  *
  *  2. the system PHI must be stable.  This corresponds to requiring that all
  *     of the roots of the polynomial
@@ -696,7 +696,7 @@ void DispatchCommand(char *Command)
         *Newline = '\0';
         switch (*Command++)
         {
-            case 'o':
+            case 'o':   // Set frequency offset
             {
                 int new_frequency_offset = atoi(Command);
                 if (new_frequency_offset != frequency_offset)
@@ -704,14 +704,14 @@ void DispatchCommand(char *Command)
                 frequency_offset = new_frequency_offset;
                 break;
             }
-            case 'p':
+            case 'p':   // Set phase offset
                 phase_offset = atoi(Command);
                 break;
-            case 'n':
+            case 'n':   // Set intermediate frequency offset
                 nco_offset = atoi(Command);
                 SetNcoFrequency();
                 break;
-            case 's':
+            case 's':   // Synchronisation control
                 /* Updates the synchronisation state.  The two important
                  * cases are s1 and s2.
                  *    Note that we really should lock our threads: there are
@@ -736,7 +736,7 @@ void DispatchCommand(char *Command)
                         break;
                 }
                 break;
-            case 'w':
+            case 'w':   // Control phase lock window
                 MaximumPhaseError = atoi(Command);
                 break;
 

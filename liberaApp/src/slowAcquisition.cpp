@@ -57,8 +57,9 @@ class SLOW_ACQUISITION : public THREAD
 {
 public:
     SLOW_ACQUISITION() :
+        THREAD("SLOW_ACQUISITION"),
         P_0(to_dB(S_0) + A_0),                  // 20 log_10(S_0) + A_0
-        S_0_INV(Reciprocal(S_0))                  // 1 / S_0
+        S_0_INV(Reciprocal(S_0))                // 1 / S_0
     {
         Publish_ABCD("SA", ABCD);
         Publish_XYQS("SA", XYQS);
@@ -91,6 +92,9 @@ private:
             }
         }
     }
+
+    /* Suppress use of pthread_cancel in this thread: it can cause trouble! */
+    void OnTerminate() { }
 
 
     /* Computes power and current from the observed S value, the attenuator

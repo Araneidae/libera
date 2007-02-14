@@ -230,12 +230,12 @@ static bool InitialiseLibera()
         /* Initialise the connections to the Libera device.  This also needs
          * to be done early, as this is used by other initialisation code. */
         InitialiseHardware()  &&
-        /* Initialise conversion code.  This needs to be done fairly early as
-         * it is used globally. */
-        InitialiseConvert()  &&
         /* Get the event receiver up and running.  This spawns a background
          * thread for dispatching trigger events. */
         InitialiseEventReceiver()  &&
+        /* Initialise conversion code.  This needs to be done fairly early as
+         * it is used globally. */
+        InitialiseConvert()  &&
         /* Ensure the trigger interlock mechanism is working. */
         InitialiseTriggers()  &&
         /* Timestamp and clock management. */
@@ -489,11 +489,6 @@ static void DetachProcess(const char *Process, char *const argv[])
 
             /* Set a sensible home directory. */
             TEST_(chdir, "/");
-
-//             /* Restore default signal handling.  I'd like to hope this step
-//              * isn't needed. */
-//             for (int i = 0; i < NSIG; i ++)
-//                 signal(i, SIG_DFL);
 
             /* Enable all signals. */
             sigset_t sigset;

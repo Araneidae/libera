@@ -115,7 +115,7 @@ static void UpdateLmtdState()
 class LMTD_MONITOR : public THREAD
 {
 public:
-    LMTD_MONITOR()
+    LMTD_MONITOR() : THREAD("LMTD_MONITOR")
     {
         LmtdState = LMTD_NO_CLOCK;
         DacSetting = 0;
@@ -303,9 +303,9 @@ static LMTD_MONITOR * LmtdMonitorThread = NULL;
 class SYNCHRONISE_CLOCKS : public THREAD, I_EVENT
 {
 public:
-    SYNCHRONISE_CLOCKS()
+    SYNCHRONISE_CLOCKS() : THREAD("SYNCHRONISE_CLOCKS")
     {
-        RunningState = WAITING;
+        SystemClockSynchronising = false;
         MachineClockSynchronising = false;
         
         PUBLISH_METHOD_ACTION("CK:SC_SYNC", SynchroniseSystemClock);
@@ -336,7 +336,7 @@ private:
             /* Wait for synchronisation request. */
             Wait();
             
-            while (RunningState == SYNCHRONISING)
+            while (SystemClockSynchronising)
             {
                 Unlock();
                 
@@ -367,23 +367,13 @@ private:
     }
 
 
-    /* Called during shutdown to request orderly thread termination. */
-    void OnTerminate()
-    {
-        Lock();
-        RunningState = TERMINATING;
-        Signal();
-        Unlock();
-    }
-
     /* This is called in response to processing the CK:SYNCSC record, to tell
      * us that the next trigger will be a system clock synchronisation
      * trigger.  We wake up the main thread to do this work for us. */
     bool SynchroniseSystemClock()
     {
         Lock();
-        if (RunningState == WAITING)
-            RunningState = SYNCHRONISING;
+        SystemClockSynchronising = true;
         LmtdMonitorThread->ScWaiting();
         Signal();
         Unlock();
@@ -418,10 +408,10 @@ private:
             MachineClockSynchronising = false;
             SendLmtdCommand("s%d", SYNC_SYNCHRONISED);
         }
-        if (RunningState == SYNCHRONISING)
+        if (SystemClockSynchronising)
         {
+            SystemClockSynchronising = false;
             LmtdMonitorThread->ScTriggered();
-            RunningState = WAITING;
         }
         Signal();
         Unlock();
@@ -436,9 +426,7 @@ private:
     
     
     bool MachineClockSynchronising;
-
-    enum RUNNING_STATE { WAITING, SYNCHRONISING, TERMINATING };
-    RUNNING_STATE RunningState;
+    bool SystemClockSynchronising;
     
     pthread_cond_t Condition;
     pthread_mutex_t Mutex;

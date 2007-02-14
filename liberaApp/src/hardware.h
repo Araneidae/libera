@@ -184,20 +184,10 @@ bool GetClockState(bool &LmtdLocked, bool &LstdLocked);
 bool ReadHealth(cspi_health_t &Health);
 
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-/*                        Direct Event Connection                            */
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* Links the given CSPI event handler to the CSPI event system.  By default
+ * this will be delivered through the LIBERA_SIGNAL signal. */
+bool ConfigureEventCallback(int EventMask, int (*Handler)(CSPI_EVENT*));
 
-
-/* Reads one event from the event queue and decodes it into an event id and
- * its associated parameter information.  The caller should empty the queue
- * by calling this routine until it returns false before processing any
- * events. */
-bool ReadOneEvent(CSPI_EVENTMASK &Id, int &Param);
-
-/* This value can be used in a select() call to discover when ReadOneEvent()
- * should be called. */
-int EventSelector();
 
 
 

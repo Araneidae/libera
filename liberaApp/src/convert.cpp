@@ -503,6 +503,7 @@ bool InitialiseConvert()
     WriteAgcMode(CSPI_AGC_MANUAL);
     InterlockedUpdateAttenuation(CurrentAttenuation);
     UpdateAutoSwitch();
+    UpdateDsc();
     UpdateSwitchTrigger();
     UpdateSwitchTriggerDelay();
 

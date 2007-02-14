@@ -40,7 +40,6 @@
 #include <sys/mman.h>
 
 #include "thread.h"
-#include "eventd.h"     // for LIBERA_SIGNAL
 #include "hardware.h"
 
 
@@ -50,6 +49,18 @@
         if (error != CSPI_OK) \
             printf("CSPI error in %s: %s\n", #command, cspi_strerror(error)); \
         error == CSPI_OK; } )
+
+#if 0
+/* This version of the CSPI macro logs every CSPI call! */
+#undef CSPI_
+#define CSPI_(command, args...) \
+    ( { printf("%s", "CSPI " #command " (" #args ") => "); \
+        int error = (command)(args); \
+        printf("%d\n", error); \
+        if (error != CSPI_OK) \
+            printf("CSPI error in %s: %s\n", #command, cspi_strerror(error)); \
+        error == CSPI_OK; } )
+#endif
 
 
 /*****************************************************************************/
@@ -72,6 +83,8 @@ static CSPIHCON CspiConDd = NULL;
 static CSPIHCON CspiConSa = NULL;
 /* Connection to 16384 point postmortem buffer. */
 static CSPIHCON CspiConPm = NULL;
+/* Connection handle used to configure CSPI event deliver. */
+static CSPIHCON EventSource = NULL;
 
 
 
@@ -357,162 +370,13 @@ bool ReadSlowAcquisition(ABCD_ROW &ButtonData, XYQS_ROW &PositionData)
 }
 
 
-
-/*****************************************************************************/
-/*                                                                           */
-/*                        Direct Event Connection                            */
-/*                                                                           */
-/*****************************************************************************/
-
-/* Libera low level device, used to received event notification. */
-static int libera_event = -1;
-static int event_source = -1;
-
-/* Reads one event from the event queue and decode it into an event id and
- * its associated parameter information.  The caller should empty the queue
- * by calling this routine until it returns false before processing any
- * events. */
-
-bool ReadOneEvent(CSPI_EVENTMASK &Id, int &Param)
+bool ConfigureEventCallback(int EventMask, int (*Handler)(CSPI_EVENT*))
 {
-    libera_event_t event;
-    ssize_t bytes_read = read(libera_event, &event, sizeof(event));
-    if (bytes_read == 0  ||  (bytes_read == -1  &&  errno == EAGAIN))
-        /* Nothing to read this time: the queue is empty. */
-        return false;
-    else if (bytes_read > 0)
-    {
-        if (bytes_read < (ssize_t) sizeof(event))
-        {
-            /* Oops.  Half an event?  This is going to be trouble!  We have
-             * no good way to recover from this.  We should, in principle,
-             * keep on trying to read until a full event arrives...
-             *     Fortunately this never seems to happen. */
-            printf("Incomplete event read: %d bytes read", bytes_read);
-            return false;
-        }
-        else
-        {
-            /* Good.  Return the event. */
-            Id = (CSPI_EVENTMASK) event.id;
-            Param = event.param;
-            return true;
-        }
-    }
-    else
-    {
-        perror("Error reading event queue");
-        return false;
-    }
-}
-
-
-
-/* This thread exists purely to receive the leventd signals.  I'm not willing
- * to subject my main thread to signals in case they have unlookedfor and
- * disagreeable side effect (mainly, code out of my control which does not
- * properly check for EINTR or unresumable operations). */
-
-class LEVENTD_THREAD : public THREAD
-{
-public:
-    LEVENTD_THREAD()
-    {
-        TEST_(sem_init, &Shutdown, 0, 0);
-    }
-    
-private:
-    void Thread()
-    {
-        sigset_t EnableSet;
-        CSPIHCON EventSource;
-        CSPI_CONPARAMS ConParams;
-        ConParams.event_mask =
-            CSPI_EVENT_TRIGGET |
-            CSPI_EVENT_TRIGSET | 
-            CSPI_EVENT_PM |
-            CSPI_EVENT_INTERLOCK;
-        ConParams.handler = CspiSignal;
-        bool Ok =
-            /* Enable delivery of the LIBERA_SIGNAL signal, to this thread
-             * only: this is required for CSPI event dispatching. */
-            TEST_(sigemptyset, &EnableSet)  &&
-            TEST_(sigaddset, &EnableSet, LIBERA_SIGNAL)  &&
-            TEST_(pthread_sigmask, SIG_UNBLOCK, &EnableSet, NULL)  &&
-            /* Request CSPI events. */
-            CSPI_(cspi_allochandle, CSPI_HANDLE_CON, CspiEnv, &EventSource)  &&
-            CSPI_(cspi_setconparam, EventSource, &ConParams,
-                CSPI_CON_EVENTMASK | CSPI_CON_HANDLER);
-        
-        /* If all is well then report success and then just sit and wait for
-         * shutdown: all the real work now happens in the background. */
-        if (Ok)
-        {
-            StartupOk();
-            TEST_(sem_wait, &Shutdown);
-        }
-
-        CSPI_(cspi_freehandle, CSPI_HANDLE_CON, EventSource);
-    }
-
-    /* Signal handler.  Needs to be static, alas. */
-    static int CspiSignal(CSPI_EVENT *Event)
-    {
-        int written = write(event_source, &Event->hdr, sizeof(Event->hdr));
-        /* Difficult to report problems here, actually.  We're inside a
-         * signal handler! */
-        if (written != sizeof(Event))
-            /* Well? */ ;
-        return 1;
-    }
-
-    void OnTerminate()
-    {
-        TEST_(sem_post, &Shutdown);
-    }
-
-    sem_t Shutdown;
-};
-
-
-static LEVENTD_THREAD * LeventdThread = NULL;
-
-/* To be called on initialisation to enable delivery of events. */
-
-static bool OpenEventStream()
-{
-    int Pipes[2];
-    if (TEST_(pipe, Pipes)  &&
-        TEST_(fcntl, Pipes[0], F_SETFL, O_NONBLOCK))
-    {
-        libera_event = Pipes[0];
-        event_source = Pipes[1];
-        LeventdThread = new LEVENTD_THREAD();
-        return LeventdThread->StartThread();
-    }
-    else
-        return false;
-}
-
-
-/* Because the event consumer needs to use select() to wait for event
- * delivery we need to break encapsulation here and expose the actual handle
- * used to receive events. */
-
-int EventSelector()
-{
-    return libera_event;
-}
-
-
-/* Called on termination to cancel event delivery. */
-
-static void CloseEventStream()
-{
-    if (LeventdThread != NULL)
-        LeventdThread->Terminate();
-    if (event_source != -1)  close(event_source);
-    if (libera_event != -1)  close(libera_event);
+    CSPI_CONPARAMS ConParams;
+    ConParams.event_mask = EventMask;
+    ConParams.handler = Handler;
+    return CSPI_(cspi_setconparam, EventSource, &ConParams,
+        CSPI_CON_EVENTMASK | CSPI_CON_HANDLER);
 }
 
 
@@ -611,22 +475,20 @@ bool InitialiseHardware()
     
     CSPI_LIBPARAMS LibParams;
     LibParams.superuser = 1;    // Allow us to change settings!
-    bool Ok =
+    return
         /* First ensure that the library allows us to change settings! */
         CSPI_(cspi_setlibparam, &LibParams, CSPI_LIB_SUPERUSER)  &&
         /* Open the CSPI environment and then open CSPI handles for each of
          * the data channels we need. */
         CSPI_(cspi_allochandle, CSPI_HANDLE_ENV, 0, &CspiEnv)  &&
+        CSPI_(cspi_allochandle, CSPI_HANDLE_CON, CspiEnv, &EventSource)  &&
         InitialiseConnection(CspiConAdc, CSPI_MODE_ADC)  &&
         InitialiseConnection(CspiConDd, CSPI_MODE_DD)  &&
         InitialiseConnection(CspiConSa, CSPI_MODE_SA)  &&
         InitialiseConnection(CspiConPm, CSPI_MODE_PM)  &&
         /* Open /dev/mem for register access. */
         TEST_IO(DevMem, "Unable to open /dev/mem",
-            open, "/dev/mem", O_RDWR | O_SYNC)  &&
-        /* Finally start receiving events. */
-        OpenEventStream();
-    return Ok;
+            open, "/dev/mem", O_RDWR | O_SYNC);
 }
 
 
@@ -642,11 +504,11 @@ static void TerminateConnection(CSPIHCON Connection)
 /* To be called on shutdown to release all connections to Libera. */
 void TerminateHardware()
 {
-    CloseEventStream();
     TerminateConnection(CspiConPm);
     TerminateConnection(CspiConDd);
     TerminateConnection(CspiConSa);
     TerminateConnection(CspiConAdc);
+    CSPI_(cspi_freehandle, CSPI_HANDLE_CON, EventSource);
     CSPI_(cspi_freehandle, CSPI_HANDLE_ENV, CspiEnv);
     if (DevMem != -1)  close(DevMem);
 }

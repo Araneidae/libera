@@ -109,9 +109,10 @@ void SEMAPHORE::UnLock()
 
 
 
-THREAD::THREAD()
+THREAD::THREAD(const char * Name) :
+    Name(Name)
 {
-    TEST_(sem_init, &ThreadStatus, 0, 0);
+    TEST_(sem_init, &ThreadStatusSemaphore, 0, 0);
 }
 
 
@@ -122,28 +123,35 @@ bool THREAD::StartThread()
 {
     ThreadRunning = true;
     ThreadOkFlag = false;
-    ThreadStarted = TEST_(
-        pthread_create, &ThreadId, NULL, StaticThread, this);
-    if (ThreadStarted)
-        TEST_(sem_wait, &ThreadStatus);
+    /* Start the thread and then wait for it to report back. */
+    if (TEST_(
+            pthread_create, &ThreadId, NULL, StaticThread, this))
+        TEST_(sem_wait, &ThreadStatusSemaphore);
+    /* At this point we know that the thread is only running if StartupOk()
+     * was called, so ThreadOkFlag is a good proxy for the thread's state. */
     return ThreadOkFlag;
 }
 
 void THREAD::Terminate()
 {
-    if (ThreadStarted)
+    if (ThreadOkFlag)
     {
         /* Let the thread know that it should be stopping now. */
         ThreadRunning = false;
         OnTerminate();
-        
-        /* It would be good to signal or otherwise interrupt the thread
-         * at this point ... this is less than satisfactory.  The problem
-         * is that if ReadSlowAcquisition blocks for whatever reason then
-         * we may never get past this point. */
-//            if (ThreadPid != -1)  kill(ThreadPid, SIGQUIT);
+        /* Wait for the thread to finish (hope we don't get stuck here!) */
         TEST_(pthread_join, ThreadId, NULL);
+        /* Call any post shutdown processing: poor man's pthread_cancel
+         * hooks! */
+        ThreadShutdown();
     }
+}
+
+
+void THREAD::OnTerminate()
+{
+    /* The default terminate action is to cancel the thread directly. */
+    TEST_(pthread_cancel, ThreadId);
 }
 
 
@@ -152,7 +160,7 @@ void THREAD::Terminate()
 void THREAD::StartupOk()
 {
     ThreadOkFlag = true;
-    TEST_(sem_post, &ThreadStatus);
+    TEST_(sem_post, &ThreadStatusSemaphore);
 }
 
 
@@ -169,9 +177,10 @@ void * THREAD::StaticThread(void * Context)
 
 void THREAD::ThreadInit()
 {
+    printf("Starting thread %d - %s\n", getpid(), Name);
     Thread();
     /* On thread termination ensure the thread status condition is signalled:
      * if we come here without ThreadOk() being called then the thread failed
      * on startup. */
-    TEST_(sem_post, &ThreadStatus);
+    TEST_(sem_post, &ThreadStatusSemaphore);
 }
