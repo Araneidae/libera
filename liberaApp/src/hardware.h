@@ -186,7 +186,8 @@ bool ReadHealth(cspi_health_t &Health);
 
 /* Links the given CSPI event handler to the CSPI event system.  By default
  * this will be delivered through the LIBERA_SIGNAL signal. */
-bool ConfigureEventCallback(int EventMask, int (*Handler)(CSPI_EVENT*));
+bool ConfigureEventCallback(
+    int EventMask, int (*Handler)(CSPI_EVENT*), void *Context);
 
 
 

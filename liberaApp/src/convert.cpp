@@ -68,9 +68,26 @@ static int K_Y = 10000000;
 static int K_Q = 10000000;
 
 /* Electron beam zero point offsets.  These are used to adjust the nominal
- * zero point returned.  These are stored in nm. */
+ * zero point returned.  These are stored in nm.
+ *
+ * We compute
+ *      X_0 = BBA_X + BCD_X + GOLDEN_X
+ *      Y_0 = BBA_Y + BCD_Y + GOLDEN_Y
+ * and apply the offset X_0, Y_0 globally.
+ *
+ * However, the sum BBA+BCD is intended as a nominal zero for interlock
+ * calculations.  Thus when GOLDEN is subtracted from the beam position in
+ * the FPGA calculation we also need to shift the interlock window
+ * accordingly. */
 static int X_0 = 0;
 static int Y_0 = 0;
+
+static int BBA_X = 0;
+static int BBA_Y = 0;
+static int BCD_X = 0;
+static int BCD_Y = 0;
+static int GOLDEN_X = 0;
+static int GOLDEN_Y = 0;
 
 /* Button gain adjustments.  By default we start with gain of 1.  See
  * SCALE_GAIN macro below. */
@@ -291,7 +308,10 @@ void GainCorrect(int Channel, int *Column, int Count)
 
 static void UpdateCalibration()
 {
+    X_0 = BBA_X + BCD_X + GOLDEN_X;
+    Y_0 = BBA_Y + BCD_Y + GOLDEN_Y;
     WriteCalibrationSettings(K_X, K_Y, K_Q, X_0, Y_0);
+    NotifyInterlockOffset(GOLDEN_X, GOLDEN_Y);
 }
 
 
@@ -339,6 +359,12 @@ static void UpdateSwitchTriggerDelay()
 static void UpdateDsc()
 {
     WriteDscMode((CSPI_DSCMODE) DscState);
+}
+
+
+static void WriteDscStateFile()
+{
+    WriteDscMode(CSPI_DSC_SAVE_LASTGOOD);
 }
 
 
@@ -450,10 +476,10 @@ void SetBpmEnabled()
 
 
 #define PUBLISH_CALIBRATION(Name, Value) \
-    PUBLISH_CONFIGURATION(Name, ao, Value, UpdateCalibration)
+    PUBLISH_CONFIGURATION(ao, Name, Value, UpdateCalibration)
 
 #define PUBLISH_GAIN(Name, Value) \
-    PUBLISH_CONFIGURATION(Name, ao, Value, NULL_ACTION)
+    PUBLISH_CONFIGURATION(ao, Name, Value, NULL_ACTION)
 
 
 bool InitialiseConvert()
@@ -464,37 +490,66 @@ bool InitialiseConvert()
     /* Master enable flag.  Disabling this has little practical effect on BPM
      * outputs (apart from disabling interlock), but is available as a global
      * PV for BPM management. */
-    PUBLISH_CONFIGURATION("CF:ENABLED", bo, BpmEnabled, SetBpmEnabled);
+    PUBLISH_CONFIGURATION(bo, "CF:ENABLED", BpmEnabled, SetBpmEnabled);
         
-    PUBLISH_CONFIGURATION("CF:DIAG", bo, Diagonal, NULL_ACTION);
+    PUBLISH_CONFIGURATION(bo, "CF:DIAG", Diagonal, NULL_ACTION);
 
     PUBLISH_CALIBRATION("CF:KX", K_X);
     PUBLISH_CALIBRATION("CF:KY", K_Y);
     PUBLISH_CALIBRATION("CF:KQ", K_Q);
-    PUBLISH_CALIBRATION("CF:X0", X_0);
-    PUBLISH_CALIBRATION("CF:Y0", Y_0);
+
+    /* Position offset control.  This is decomposed into three parts: BBA,
+     * BCD and GOLDEN as follows:
+     *
+     *  BBA offsets are intended to be computed by beam based alignment at a
+     *  standard reference voltage and attenuation setting.  These offsets
+     *  are permanently stored.
+     *
+     *  BCD offsets are intended to compensate for attenuator and beam
+     *  current dependent displacements.  It is expected that an external
+     *  control system will manage these values.  These offsets are restored
+     *  to zero on restart.
+     *
+     * The combination of BBA and BCD establish the "nominal zero" point for
+     * the BPM.
+     *
+     *  GOLDEN offsets are intended for local offsets to be applied relative
+     *  to the nominal zero, for example local bumps.  This can be regarded
+     *  as an offset to be subtracted from the true position to produce a
+     *  position error reading.
+     *
+     * Note that the interlock window is maintained relative to the nominal
+     * zero, but that the positions returned by all BPM interfaces should be
+     * regarded as relative errors. */
+    PUBLISH_CONFIGURATION(ao, "CF:BBA_X",    BBA_X,    UpdateCalibration);
+    PUBLISH_CONFIGURATION(ao, "CF:BBA_Y",    BBA_Y,    UpdateCalibration);
+    PUBLISH_FUNCTION_OUT (ao, "CF:BCD_X",    BCD_X,    UpdateCalibration);
+    PUBLISH_FUNCTION_OUT (ao, "CF:BCD_Y",    BCD_Y,    UpdateCalibration);
+    PUBLISH_FUNCTION_OUT (ao, "CF:GOLDEN_X", GOLDEN_X, UpdateCalibration);
+    PUBLISH_FUNCTION_OUT (ao, "CF:GOLDEN_Y", GOLDEN_Y, UpdateCalibration);
 
     PUBLISH_GAIN("CF:G0", ChannelGain[0]);
     PUBLISH_GAIN("CF:G1", ChannelGain[1]);
     PUBLISH_GAIN("CF:G2", ChannelGain[2]);
     PUBLISH_GAIN("CF:G3", ChannelGain[3]);
 
-    PUBLISH_CONFIGURATION("CF:AUTOSW", bo,
+    PUBLISH_CONFIGURATION(bo, "CF:AUTOSW", 
         AutoSwitchState, UpdateAutoSwitch);
-    PUBLISH_CONFIGURATION("CF:SETSW", longout,
+    PUBLISH_CONFIGURATION(longout, "CF:SETSW", 
         ManualSwitch, UpdateManualSwitch);
-    PUBLISH_CONFIGURATION("CF:TRIGSW", bo,
+    PUBLISH_CONFIGURATION(bo, "CF:TRIGSW", 
         ExternalSwitchTrigger, UpdateSwitchTrigger);
-    PUBLISH_CONFIGURATION("CF:DELAYSW", longout,
+    PUBLISH_CONFIGURATION(longout, "CF:DELAYSW", 
         SwitchTriggerDelay, UpdateSwitchTriggerDelay);
-    PUBLISH_CONFIGURATION("CF:DSC", mbbo, DscState, UpdateDsc);
-    PUBLISH_CONFIGURATION("CF:ISCALE", ao, CurrentScale, UpdateCurrentScale);
+    PUBLISH_CONFIGURATION(mbbo, "CF:DSC", DscState, UpdateDsc);
+    PUBLISH_CONFIGURATION(ao, "CF:ISCALE", CurrentScale, UpdateCurrentScale);
+    PUBLISH_ACTION("CF:WRITEDSC", WriteDscStateFile);
 
     /* Note that updating the attenuators is done via the
      * InterlockedUpdateAttenuation() routine: this will not actually update
      * the attenuators (by calling UpdateAttenuation() above) until the
      * interlock mechanism is ready. */
-    PUBLISH_CONFIGURATION("CF:ATTEN", longout,
+    PUBLISH_CONFIGURATION(longout, "CF:ATTEN", 
         CurrentAttenuation, InterlockedUpdateAttenuation);
     
     /* Write the initial state to the hardware and initialise everything that

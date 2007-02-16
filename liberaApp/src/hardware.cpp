@@ -39,7 +39,6 @@
 #include <linux/unistd.h>
 #include <sys/mman.h>
 
-#include "thread.h"
 #include "hardware.h"
 
 
@@ -370,13 +369,15 @@ bool ReadSlowAcquisition(ABCD_ROW &ButtonData, XYQS_ROW &PositionData)
 }
 
 
-bool ConfigureEventCallback(int EventMask, int (*Handler)(CSPI_EVENT*))
+bool ConfigureEventCallback(
+    int EventMask, int (*Handler)(CSPI_EVENT*), void *Context)
 {
     CSPI_CONPARAMS ConParams;
     ConParams.event_mask = EventMask;
     ConParams.handler = Handler;
+    ConParams.user_data = Context;
     return CSPI_(cspi_setconparam, EventSource, &ConParams,
-        CSPI_CON_EVENTMASK | CSPI_CON_HANDLER);
+        CSPI_CON_EVENTMASK | CSPI_CON_HANDLER | CSPI_CON_USERDATA);
 }
 
 

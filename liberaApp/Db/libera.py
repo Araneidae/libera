@@ -312,7 +312,7 @@ def Config():
     # Control enabling of this BPM.
     global globalBpmEnable
     globalBpmEnable = boolOut('ENABLED', 'BPM Disabled', 'BPM Enabled',
-        ZSV  = 'MAJOR',     OSV  = 'NO_ALARM',
+        ZSV  = 'MAJOR',     OSV  = 'NO_ALARM',  PINI = 'YES',
         DESC = 'Enable Libera')
 
     # Geometry calibration control
@@ -321,24 +321,18 @@ def Config():
     aOut('KY', 0, 32,   EGU  = 'mm', DESC = 'Y scaling')
     aOut('KQ', 0, 32,   EGU  = 'mm', DESC = 'Q scaling')
 
-    # These controls are obsolescent, about to be replaced by the ones below.
-    aOut('X0', -16, 16, EGU  = 'mm', DESC = 'X origin offset')
-    aOut('Y0', -16, 16, EGU  = 'mm', DESC = 'Y origin offset')
     # BPM origin control.  We support three separate displacements:
     #   1.  Beam Based Alignment offset.
     #   2.  Beam Current Dependency offset
     #   3.  "Golden Orbit" offset
     # Only 1 is stored as part of the persistent state.  1+2 define the
     # nominal origin (used for interlocks).
-    aOut('BBA_X', -16, 16, EGU = 'mm', DESC = 'Beam based X origin')
-    aOut('BBA_Y', -16, 16, EGU = 'mm', DESC = 'Beam based Y origin')
-    aOut('BCD_X', -16, 16, EGU = 'mm', DESC = 'Current dependent X origin')
-    aOut('BCD_Y', -16, 16, EGU = 'mm', DESC = 'Current dependent Y origin')
+    aOut('BBA_X',    -16, 16, EGU = 'mm', DESC = 'Beam based X origin')
+    aOut('BBA_Y',    -16, 16, EGU = 'mm', DESC = 'Beam based Y origin')
+    aOut('BCD_X',    -16, 16, EGU = 'mm', DESC = 'Current dependent X origin')
+    aOut('BCD_Y',    -16, 16, EGU = 'mm', DESC = 'Current dependent Y origin')
     aOut('GOLDEN_X', -16, 16, EGU = 'mm', DESC = 'Golden orbit X origin')
     aOut('GOLDEN_Y', -16, 16, EGU = 'mm', DESC = 'Golden orbit Y origin')
-    aIn('X0', -16, 16, EGU  = 'mm', DESC = 'X origin offset')
-    aIn('Y0', -16, 16, EGU  = 'mm', DESC = 'Y origin offset')
-
     
     # Channel gain settings.  Only applies to first turn mode.
     aOut('G0', 0, 1.5,  ESLO = 2**-30, DESC = 'Channel 0 gain adjustment')
@@ -362,6 +356,7 @@ def Config():
         ('Unity gains', 1),     # Disable DSC, use fixed gains
         ('Automatic', 2),       # Run DSC
         DESC = 'Digitial Signal Conditioning')
+    boolOut('WRITEDSC', 'Save DSC', DESC = 'Write DSC state file')
     
     # Control attenuation
     longOut('ATTEN', 0, 62, EGU = 'dB', DESC = 'Attenuator setting')
@@ -418,7 +413,7 @@ def Interlock():
     # POKE_STATE simply acts to relay the trigger state to STATE, which
     # automatically resets itself after half a second if no triggers are
     # received.
-    mbbIn('REASON')
+#    mbbIn('REASON')
 
     trigger = boolIn('TRIG', '', 'Trigger',
         DESC = 'Interlock dropped event',
@@ -638,9 +633,6 @@ def Miscellaneous():
 
     boolOut('REBOOT',  'Reboot',  None, DESC = 'Reboot Libera IOC')
     boolOut('RESTART', 'Restart', None, DESC = 'Restart EPICS driver')
-
-    # Dummy TICK field: temporary definition for backwards compatibility.
-    records.bi('TICK', PINI = 'YES')
 
     
 

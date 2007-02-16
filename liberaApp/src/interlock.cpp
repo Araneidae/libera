@@ -52,8 +52,8 @@
 /* Every interlock control variable is handled in the same way: the value is
  * updated and then UpdateInterlock() is called to ensure the interlock state
  * is correctly managed. */
-#define PUBLISH_INTERLOCK(Name, recout, Value) \
-    PUBLISH_CONFIGURATION(Name, recout, Value, EpicsUpdateInterlock) 
+#define PUBLISH_INTERLOCK(record, Name, Value) \
+    PUBLISH_CONFIGURATION(record, Name, Value, EpicsUpdateInterlock) 
 
 
 
@@ -64,6 +64,10 @@ static int MinX = -1000000;     // +- 1 mm
 static int MaxX =  1000000;
 static int MinY = -1000000;
 static int MaxY =  1000000;
+/* Interlock position offset: these need to adjust the position of the window
+ * to take account of Golden Orbit offsets. */
+static int OffsetX = 0;
+static int OffsetY = 0;
 
 /* Current threshold for enabling interlock. */
 static int InterlockCurrentLimit = 1000000;     // 10mA
@@ -74,9 +78,14 @@ static bool OverflowEnable = false;
 static int OverflowLimit = 1900;
 static int OverflowTime = 5;
 
+/* Global interlock override: if this BPM is disabled then the interlock is
+ * ignored and never enabled. */
+static bool GlobalBpmEnable = true;
 /* Master interlock enable: can be reset, but only if current is below
  * threshold. */
 static bool MasterInterlockEnable = false;
+
+
 static TRIGGER EnableReadback(false);
 
 
@@ -131,7 +140,10 @@ static void Unlock() { TEST_(pthread_mutex_unlock, &InterlockMutex); }
 static void WriteInterlockState()
 {
     CSPI_ILKMODE InterlockMode;
-    if (InterlockHoldoff > 0)
+    if (!GlobalBpmEnable)
+        /* In BPM disable state the interlock is unconditionally disabled. */
+        InterlockMode = CSPI_ILK_DISABLE;
+    else if (InterlockHoldoff > 0)
         /* In holdoff mode the interlock is unconditionally disabled. */
         InterlockMode = CSPI_ILK_DISABLE;
     else if (MasterInterlockEnable)
@@ -150,7 +162,8 @@ static void WriteInterlockState()
         InterlockMode = CSPI_ILK_DISABLE;
 
     WriteInterlockParameters(
-        InterlockMode, MinX, MaxX, MinY, MaxY,
+        InterlockMode,
+        MinX - OffsetX, MaxX - OffsetX, MinY - OffsetY, MaxY - OffsetY,
         OverflowLimit, OverflowTime, 0);
 }
 
@@ -168,22 +181,30 @@ static void EpicsUpdateInterlock()
 }
 
 
-/* Called when the interlock enable changes.  We don't allow the interlock to
- * be disabled if the current threshold has been exceeded. */
+/* Called in response to a change in the ENABLE user control.  We compute
+ * what the value *should* be, and if it differs the value is written back.
+ * Care needs to be taken to avoid processing loops, as any call to
+ * EnableReadback.Write() will be reflected right back here! */
 
 static void UpdateInterlockEnable(bool SetEnable)
 {
     Lock();
 
-    if (CurrentOverThreshold  &&  !SetEnable)
-        /* If the current is over threshold we refuse to disable, and if a
-         * disable attempt is taking place write back the current value. */
-        EnableReadback.Write(MasterInterlockEnable);
-    else if (SetEnable != MasterInterlockEnable)
-    {
-        MasterInterlockEnable = SetEnable;
-        WriteInterlockState();
-    }
+    /* Compute the proper enable state. */
+    bool NewSetEnable = SetEnable;
+    if (!GlobalBpmEnable)
+        /* During BPM disable mode the enable state cannot be set. */
+        NewSetEnable = false;
+    else if (CurrentOverThreshold)
+        /* If the current is over limit the enable cannot be reset. */
+        NewSetEnable = true;
+
+    /* Do the appropriate updates.  If we disagree with the EPICS control
+     * value then write our proper value right back to correct it. */
+    if (NewSetEnable != SetEnable)
+        EnableReadback.Write(NewSetEnable);
+    MasterInterlockEnable = NewSetEnable;
+    WriteInterlockState();
     
     Unlock();
 }
@@ -208,7 +229,7 @@ void NotifyInterlockCurrent(int Current)
              * state. */
             WriteInterlockState();
     }
-    else
+    else if (GlobalBpmEnable)
     {
         /* Normal operation: check for current over threshold, and enable the
          * interlock if exceeded. */
@@ -267,8 +288,9 @@ public:
         RegisterInterlockEvent(*this, PRIORITY_IL);
     }
 
-    void OnEvent()
+    void OnEvent(int ReasonMask)
     {
+        printf("Interlock reason: %02X\n", ReasonMask);
         InterlockTrigger.Ready();
     }
     
@@ -296,38 +318,45 @@ private:
 
 
 
-
-
+/* Called when the global BPM enable state changes. */
 
 void NotifyInterlockBpmEnable(bool Enabled)
 {
+    GlobalBpmEnable = Enabled;
+    EnableReadback.Write(false);
 }
 
 
-void NotifyInterlockOffset(int OffsetX, int OffsetY)
+
+/* Called when the golden orbit offset may have changed. */
+
+void NotifyInterlockOffset(int NewOffsetX, int NewOffsetY)
 {
+    OffsetX = NewOffsetX;
+    OffsetY = NewOffsetY;
+    EpicsUpdateInterlock();
 }
 
 
 bool InitialiseInterlock()
 {
     /* Interlock window. */
-    PUBLISH_INTERLOCK("IL:MINX",     ao,  MinX);
-    PUBLISH_INTERLOCK("IL:MAXX",     ao,  MaxX);
-    PUBLISH_INTERLOCK("IL:MINY",     ao,  MinY);
-    PUBLISH_INTERLOCK("IL:MAXY",     ao,  MaxY);
+    PUBLISH_INTERLOCK(ao,  "IL:MINX",     MinX);
+    PUBLISH_INTERLOCK(ao,  "IL:MAXX",     MaxX);
+    PUBLISH_INTERLOCK(ao,  "IL:MINY",     MinY);
+    PUBLISH_INTERLOCK(ao,  "IL:MAXY",     MaxY);
     /* Current threshold at which the interlock is automatically triggered. */
-    PUBLISH_INTERLOCK("IL:ILIMIT",   ao,  InterlockCurrentLimit);
+    PUBLISH_INTERLOCK(ao,  "IL:ILIMIT",   InterlockCurrentLimit);
     /* Overflow detection configuration. */
-    PUBLISH_INTERLOCK("IL:OVERFLOW", bo,  OverflowEnable);
-    PUBLISH_INTERLOCK("IL:OVER", longout, OverflowLimit);
-    PUBLISH_INTERLOCK("IL:TIME", longout, OverflowTime);
+    PUBLISH_INTERLOCK(bo,  "IL:OVERFLOW", OverflowEnable);
+    PUBLISH_INTERLOCK(longout, "IL:OVER", OverflowLimit);
+    PUBLISH_INTERLOCK(longout, "IL:TIME", OverflowTime);
 
     /* The interlock enable is dynamic state. */
     Publish_bo("IL:ENABLE",    *new INTERLOCK_ENABLE);
     Publish_bi("IL:ENABLE_RB", EnableReadback);
 
-    PUBLISH_CONFIGURATION("IL:HOLDOFF", longout,
+    PUBLISH_CONFIGURATION(longout, "IL:HOLDOFF", 
         InterlockHoldoffCount, NULL_ACTION);
     
     new INTERLOCK_EVENT("IL:TRIG");

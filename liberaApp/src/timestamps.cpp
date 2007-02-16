@@ -257,7 +257,7 @@ private:
             Tm.tm_hour, Tm.tm_min, Tm.tm_sec, usec);
     }
     
-    void OnEvent()
+    void OnEvent(int)
     {
         Interlock.Wait();
         
@@ -300,10 +300,10 @@ static LMTD_MONITOR * LmtdMonitorThread = NULL;
  * re-arm the SC trigger with the next anticipated second.  Thus we need to
  * do this in a separate thread. */
 
-class SYNCHRONISE_CLOCKS : public THREAD, I_EVENT
+class SYNCHRONISE_CLOCKS : public LOCKED_THREAD, I_EVENT
 {
 public:
-    SYNCHRONISE_CLOCKS() : THREAD("SYNCHRONISE_CLOCKS")
+    SYNCHRONISE_CLOCKS() : LOCKED_THREAD("SYNCHRONISE_CLOCKS")
     {
         SystemClockSynchronising = false;
         MachineClockSynchronising = false;
@@ -311,14 +311,7 @@ public:
         PUBLISH_METHOD_ACTION("CK:SC_SYNC", SynchroniseSystemClock);
         PUBLISH_METHOD_ACTION("CK:MC_SYNC", SynchroniseMachineClock);
         
-        RegisterTriggerSetEvent(*this, 100);
-
-        /* Create the thread synchronisation primitives.  Note that these are
-         * never destroyed because this class (instance) is never destroyed
-         * ... because EPICS doesn't support any kind of restart, there's no
-         * point in doing this anywhere else! */
-        TEST_(pthread_cond_init, &Condition, NULL);
-        TEST_(pthread_mutex_init, &Mutex, NULL);
+        RegisterTriggerSetEvent(*this, PRIORITY_SYNC);
     }
     
     
@@ -400,7 +393,7 @@ private:
     /* This is called when the TRIGSET event is received: this informs us
      * that the clock setting trigger has been received and so clock setting
      * is complete. */
-    void OnEvent()
+    void OnEvent(int)
     {
         Lock();
         if (MachineClockSynchronising)
@@ -418,18 +411,8 @@ private:
     }
     
 
-    /* Wrappers for synchronisation. */
-    void Lock()   { TEST_(pthread_mutex_lock,   &Mutex); }
-    void Unlock() { TEST_(pthread_mutex_unlock, &Mutex); }
-    void Signal() { TEST_(pthread_cond_signal,  &Condition); }
-    void Wait()   { TEST_(pthread_cond_wait,    &Condition, &Mutex); }
-    
-    
     bool MachineClockSynchronising;
     bool SystemClockSynchronising;
-    
-    pthread_cond_t Condition;
-    pthread_mutex_t Mutex;
 };
 
 
@@ -440,11 +423,11 @@ static SYNCHRONISE_CLOCKS * SynchroniseThread = NULL;
 
 bool InitialiseTimestamps()
 {
-    PUBLISH_CONFIGURATION("CK:DETUNE", longout,
+    PUBLISH_CONFIGURATION(longout, "CK:DETUNE", 
         SampleClockDetune, UpdateLmtdState);
-    PUBLISH_CONFIGURATION("CK:IFOFF", longout,
+    PUBLISH_CONFIGURATION(longout, "CK:IFOFF", 
         IfClockDetune, UpdateLmtdState);
-    PUBLISH_CONFIGURATION("CK:PHASE", longout,
+    PUBLISH_CONFIGURATION(longout, "CK:PHASE", 
         PhaseOffset, UpdateLmtdState);
     
     new TICK_TRIGGER();

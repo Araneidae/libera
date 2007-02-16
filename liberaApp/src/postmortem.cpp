@@ -36,8 +36,8 @@
 #include "device.h"
 #include "persistent.h"
 #include "publish.h"
-#include "thread.h"
 #include "hardware.h"
+#include "thread.h"
 #include "trigger.h"
 #include "events.h"
 #include "convert.h"
@@ -66,7 +66,7 @@ public:
         RegisterPostmortemEvent(*this, PRIORITY_PM);
     }
 
-    void OnEvent()
+    void OnEvent(int)
     {
         /* Wait for EPICS to be ready. */
         Interlock.Wait();

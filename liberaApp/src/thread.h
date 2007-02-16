@@ -29,6 +29,7 @@
 #include <semaphore.h>
 #include <pthread.h>
 
+
 /* Class to implement a simple thread. */
 
 class THREAD
@@ -83,6 +84,25 @@ private:
     sem_t ThreadStatusSemaphore;
     /* Thread identification for debuggin. */
     const char * Name;
+};
+
+
+/* A thread class with locking and event notification already built in. */
+
+class LOCKED_THREAD : public THREAD
+{
+public:
+    LOCKED_THREAD(const char * Name);
+
+protected:
+    void Lock()   { TEST_(pthread_mutex_lock,   &Mutex); }
+    void Unlock() { TEST_(pthread_mutex_unlock, &Mutex); }
+    void Signal() { TEST_(pthread_cond_signal,  &Condition); }
+    void Wait()   { TEST_(pthread_cond_wait,    &Condition, &Mutex); }
+    
+private:
+    pthread_cond_t Condition;
+    pthread_mutex_t Mutex;
 };
 
 

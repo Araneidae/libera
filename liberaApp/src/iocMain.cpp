@@ -156,24 +156,39 @@ static void AtExit(int signal)
 }
 
 
+/* A quiet signal for general use.  We'll bind this to SIGUSR2. */
+
+static void DoNothing(int signal)
+{
+}
+
+
 /* Set up basic signal handling environment.  We configure four shutdown
  * signals (HUP, INT, QUIT and TERM) to call AtExit() and block the
  * LIBERA_SIGNAL (SIGUSR1) -- we'll unmask it where we want to catch it! */
 
 static bool InitialiseSignals()
 {
-    struct sigaction action;
-    action.sa_handler = AtExit;
-    action.sa_flags = 0;
+    struct sigaction AtExitHandler;
+    AtExitHandler.sa_handler = AtExit;
+    AtExitHandler.sa_flags = 0;
+    struct sigaction DoNothingHandler;
+    DoNothingHandler.sa_handler = DoNothing;
+    DoNothingHandler.sa_flags = 0;
     sigset_t BlockSet;
     return
         /* Block all signals during AtExit() signal processing. */
-        TEST_(sigfillset, &action.sa_mask)  &&
+        TEST_(sigfillset, &AtExitHandler.sa_mask)  &&
         /* Catch all the usual culprits: HUP, INT, QUIT and TERM. */
-        TEST_(sigaction, SIGHUP,  &action, NULL)  &&
-        TEST_(sigaction, SIGINT,  &action, NULL)  &&
-        TEST_(sigaction, SIGQUIT, &action, NULL)  &&
-        TEST_(sigaction, SIGTERM, &action, NULL)  &&
+        TEST_(sigaction, SIGHUP,  &AtExitHandler, NULL)  &&
+        TEST_(sigaction, SIGINT,  &AtExitHandler, NULL)  &&
+        TEST_(sigaction, SIGQUIT, &AtExitHandler, NULL)  &&
+        TEST_(sigaction, SIGTERM, &AtExitHandler, NULL)  &&
+
+        /* Configure SIGUSR2 to do nothing: we can then use this generally
+         * without side effects. */
+        TEST_(sigfillset, &DoNothingHandler.sa_mask)  &&
+        TEST_(sigaction, SIGUSR2, &DoNothingHandler, NULL)  &&
 
         /* Block the LIBERA_SIGNAL signal globally: we only want this to be
          * delivered where we're ready for it! */
@@ -279,8 +294,8 @@ static bool InitialiseLibera()
 
 static void TerminateLibera()
 {
-    TerminateTimestamps();
     TerminateEventReceiver();
+    TerminateTimestamps();
     TerminateSlowAcquisition();
     TerminateHardware();
     TerminatePersistentState();

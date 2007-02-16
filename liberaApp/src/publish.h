@@ -32,7 +32,10 @@
  *
  * The code here is a scary and extremely horrible mix of macros and
  * templates: the goal is to make the job of publishing values to EPICS as
- * smooth as possible by hiding as much of the nasty stuff as possible here. */
+ * smooth as possible by hiding as much of the nasty stuff as possible here.
+ *
+ * This code is also getting in need of reengineering: there is far to much
+ * duplication of incomplete functionality! */
 
 
 
@@ -249,11 +252,11 @@ private:
  * record.  The Action function is called whenever the recout record is
  * updated and the configuration value is automatically managed as a
  * persistent value. */
-#define PUBLISH_CONFIGURATION(Name, recout, Value, Action) \
+#define PUBLISH_CONFIGURATION(record, Name, Value, Action) \
     ( { \
         CONFIGURATION_VALUE<typeof(Value)> & ConfigValue = \
             * new CONFIGURATION_VALUE<typeof(Value)>(Value, Action); \
-        Publish_##recout(Name, ConfigValue); \
+        Publish_##record(Name, ConfigValue); \
         Persistent(Name, Value); \
     } )
 

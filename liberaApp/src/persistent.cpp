@@ -34,8 +34,8 @@
 #include <string.h>
 #include <signal.h>
 
-#include "thread.h"
 #include "hardware.h"
+#include "thread.h"
 #include "persistent.h"
 
 

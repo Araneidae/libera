@@ -310,7 +310,7 @@ void INTERLOCK::Wait()
 }
 
 
-/* This will be called when process is done.  Release the interlock.
+/* This will be called from EPICS when process is done.  Release the interlock.
  * This is normally called when DONE is processed, which should only be after
  * a chain of processing initiated by processing TRIG has completed.  It will
  * also be called when EPICS has finished initialisation. */

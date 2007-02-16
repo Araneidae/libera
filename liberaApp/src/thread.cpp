@@ -134,6 +134,7 @@ bool THREAD::StartThread()
 
 void THREAD::Terminate()
 {
+    printf("Closing thread %s...\n", Name);
     if (ThreadOkFlag)
     {
         /* Let the thread know that it should be stopping now. */
@@ -145,6 +146,7 @@ void THREAD::Terminate()
          * hooks! */
         ThreadShutdown();
     }
+    printf("...done\n");
 }
 
 
@@ -183,4 +185,17 @@ void THREAD::ThreadInit()
      * if we come here without ThreadOk() being called then the thread failed
      * on startup. */
     TEST_(sem_post, &ThreadStatusSemaphore);
+}
+
+
+
+LOCKED_THREAD::LOCKED_THREAD(const char * Name) :
+    THREAD(Name)
+{
+    /* Create the thread synchronisation primitives.  Note that these are
+     * never destroyed because this class (instance) is never destroyed ...
+     * because EPICS doesn't support any kind of restart, there's no point in
+     * doing this anywhere else! */
+    TEST_(pthread_cond_init, &Condition, NULL);
+    TEST_(pthread_mutex_init, &Mutex, NULL);
 }

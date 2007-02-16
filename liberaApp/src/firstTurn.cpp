@@ -37,8 +37,8 @@
 #include "device.h"
 #include "persistent.h"
 #include "publish.h"
-#include "thread.h"
 #include "hardware.h"
+#include "thread.h"
 #include "trigger.h"
 #include "events.h"
 #include "convert.h"
@@ -218,7 +218,7 @@ public:
     /* This code is called, possibly indirectly, in response to a trigger
      * event to read and process a First Turn waveform.  The waveform is read
      * and all associated values are computed. */
-    void OnEvent()
+    void OnEvent(int)
     {
         /* Ignore events if not enabled. */
         if (!Enable.Enabled())

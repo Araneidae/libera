@@ -36,8 +36,8 @@
 #include "device.h"
 #include "persistent.h"
 #include "publish.h"
-#include "thread.h"
 #include "hardware.h"
+#include "thread.h"
 #include "trigger.h"
 #include "events.h"
 #include "convert.h"
@@ -107,7 +107,7 @@ public:
      * event to read and process a First Turn waveform.  The waveform is read
      * and all associated values are computed.
      *    We only process if armed. */
-    void OnEvent()
+    void OnEvent(int)
     {
         if (Armed)
         {

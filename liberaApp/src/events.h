@@ -35,11 +35,11 @@ void TerminateEventReceiver();
 
 
 /* Libera event registration.  Note that this callback method will be called
- * on a separate event receiver thread. */
+ * on a separate event receiver thread.  The parameter is event specific. */
 class I_EVENT
 {
 public:
-    virtual void OnEvent() = 0;
+    virtual void OnEvent(int Parameter) = 0;
 };
 
 void RegisterTriggerEvent(I_EVENT &Event, int Priority);
@@ -49,13 +49,22 @@ void RegisterInterlockEvent(I_EVENT &Event, int Priority);
 
 
 
-/* Sensible event priorities for Libera event subscribers. */
+/* Events are processed in the order below.  Note that these numbers are
+ * indexes into an array, and so must be unique and in the appropriate
+ * range. */
 
-#define PRIORITY_TICK   1       // Tick event notification 
-#define PRIORITY_FT     2       // First Turn 
-#define PRIORITY_SA     3       // Slow acquisition 
-#define PRIORITY_BN     10      // Decimated booster mode
-#define PRIORITY_FR     100     // Free running mode
-#define PRIORITY_IL     200     // Interlock
-#define PRIORITY_TT     5       // Turn-by-turn takes forever but goes early
+/* PM */
 #define PRIORITY_PM     0       // Postmortem wins, every time.
+
+/* INTERLOCK */
+#define PRIORITY_IL     1       // Interlock
+
+/* TRIGSET */
+#define PRIORITY_SYNC   2       // Set clock
+
+/* TRIGGET */
+#define PRIORITY_TICK   3       // Tick event notification 
+#define PRIORITY_FT     4       // First Turn 
+#define PRIORITY_TT     5       // Turn-by-turn takes forever but goes early
+#define PRIORITY_BN     6       // Decimated booster mode
+#define PRIORITY_FR     7       // Free running mode

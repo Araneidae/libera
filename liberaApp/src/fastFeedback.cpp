@@ -41,8 +41,8 @@
 #include "device.h"
 #include "persistent.h"
 #include "publish.h"
-#include "thread.h"
 #include "hardware.h"
+#include "thread.h"
 #include "trigger.h"
 #include "events.h"
 #include "convert.h"
@@ -233,11 +233,11 @@ bool InitialiseFastFeedback()
     ConfigSpace->TimerFrameCountDown = 9000;
     ConfigSpace->ClearDelay = 8000;
     
-    PUBLISH_CONFIGURATION("FF:BPMID", longout,
+    PUBLISH_CONFIGURATION(longout, "FF:BPMID", 
         ConfigSpace->BpmId, ProcessWrite);
-    PUBLISH_CONFIGURATION("FF:FRAMELEN", longout,
+    PUBLISH_CONFIGURATION(longout, "FF:FRAMELEN", 
         ConfigSpace->TimerFrameCountDown, ProcessWrite);
-    PUBLISH_CONFIGURATION("FF:CLEAR_DELAY", longout,
+    PUBLISH_CONFIGURATION(longout, "FF:CLEAR_DELAY", 
         ConfigSpace->ClearDelay, ProcessWrite);
 
     for (int i = 0; i < 4; i ++)
