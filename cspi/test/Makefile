@@ -2,6 +2,7 @@ TOP=../..
 
 include $(TOP)/configure/CONFIG
 
+STATIC_BUILD = YES
 
 USR_CXXFLAGS += -Werror -Wno-comment
 USR_CXXFLAGS += -DEBPP

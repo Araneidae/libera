@@ -84,8 +84,8 @@ FLOAT_WAVEFORM::FLOAT_WAVEFORM(size_t WaveformSize) :
     SIMPLE_WAVEFORM<float>(DBF_FLOAT, WaveformSize) { }
 
 
-template SIMPLE_WAVEFORM<int>;
-template SIMPLE_WAVEFORM<float>;
+template class SIMPLE_WAVEFORM<int>;
+template class SIMPLE_WAVEFORM<float>;
 
 
 

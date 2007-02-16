@@ -290,7 +290,7 @@ public:
 
     void OnEvent(int ReasonMask)
     {
-        printf("Interlock reason: %02X\n", ReasonMask);
+//        printf("Interlock reason: %02X\n", ReasonMask);
         InterlockTrigger.Ready();
     }
     

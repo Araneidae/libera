@@ -260,8 +260,8 @@ bool PERSISTENT<double>::ReadValue(const char * String)
 #endif
 
 
-template PERSISTENT<int>;
-template PERSISTENT<bool>;
+template class PERSISTENT<int>;
+template class PERSISTENT<bool>;
 //template PERSISTENT<double>;
 
 

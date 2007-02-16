@@ -114,7 +114,7 @@ public:
         t(t), i(NULL), f(f), v(v) {}
     bool init(R& arg)
     {
-        if (v == NULL)
+        if (v == (R T::*) NULL)
             return (t.*i)(arg);
         else
         {

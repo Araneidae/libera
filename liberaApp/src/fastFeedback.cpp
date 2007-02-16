@@ -54,6 +54,9 @@
 
 #define FF_BASE_ADDRESS         0x14028000
 #define FF_CONTROL_ADDRESS      0x1402A000
+/* Offset from FF_BASE_ADDRESS of the status space registers.  This is
+ * currently assumed to be on the same page. */
+#define FF_STATUS_OFFSET        0x0C00
 
 
 struct FF_CONFIG_SPACE
@@ -134,7 +137,8 @@ static bool MapFastFeedbackMemory()
     {
         ConfigSpace = (FF_CONFIG_SPACE *)
             ((char *) FF_AddressSpace + (FF_BASE_ADDRESS & PageMask));
-        StatusSpace = (FF_STATUS_SPACE *) ((char *) ConfigSpace + 0x200);
+        StatusSpace = (FF_STATUS_SPACE *)
+            ((char *) ConfigSpace + FF_STATUS_OFFSET);
         ControlRegister = (volatile int *)
             ((char *) FF_ControlSpace + (FF_CONTROL_ADDRESS & PageMask));
     }
