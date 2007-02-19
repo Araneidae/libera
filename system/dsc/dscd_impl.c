@@ -686,6 +686,30 @@ int get_switch( int *arg )
 }
 
 
+
+/* This routine checks that the amplitude of the given waveform buffer is
+ * adequate for performing DSC type compensation.  If this routine returns 0
+ * then the waveform has inadequate signal level to process. */
+
+int CheckAmplitude(CSPI_DD_RAWATOM *Buffer, int Count)
+{
+    const int SIGNAL_THRESHOLD = 500000;
+    for (int i = 0; i < Count; i ++)
+    {
+        int a = cordic_amp(Buffer[i].cosVa >> 2, Buffer[i].sinVa >> 2);
+        int b = cordic_amp(Buffer[i].cosVb >> 2, Buffer[i].sinVb >> 2);
+        int c = cordic_amp(Buffer[i].cosVc >> 2, Buffer[i].sinVc >> 2);
+        int d = cordic_amp(Buffer[i].cosVd >> 2, Buffer[i].sinVd >> 2);
+        if (a < SIGNAL_THRESHOLD)  return 0;
+        if (b < SIGNAL_THRESHOLD)  return 0;
+        if (c < SIGNAL_THRESHOLD)  return 0;
+        if (d < SIGNAL_THRESHOLD)  return 0;
+    }
+    /* If we get here then all is well. */
+    return 1;
+}
+
+
 //**************************************************************************************************	
 int compensate_amplitude()
 //**************************************************************************************************	
@@ -724,6 +748,9 @@ int amplitude = 0;																// amplitude calculated from Is & Qs
 		if (res == CSPI_OK) {
 //			_LOG_DEBUG("----> %d samples acquired...", n_read);
 			if (n_read == TBT_READ_SIZE) {										// only if required number of atoms was read
+                /* If the signal is too poor, don't try and process it. */
+                if (!CheckAmplitude(DD_buffer, n_read))  return 0;
+                
 				for (sample = 0; sample < TBT_READ_SIZE; sample ++) {
 				
 					// amplitude calculation
@@ -791,15 +818,6 @@ int amplitude = 0;																// amplitude calculated from Is & Qs
 		}
 	}
 
-    long long TotalAmplitude = 0;
-    for (channel = 0; channel < ALL_CH; channel++)
-        for (sw_pos = 0; sw_pos < N_SW_POS; sw_pos ++)
-            TotalAmplitude += avg_sw_amp_pos [sw_pos][channel];
-    /* Check for amplitude threshold. */
-    if (TotalAmplitude < 200000000)
-        /* Too little power: don't do compensation after all. */
-        return 0;
-
 // actual compensation and channel mapping
 	if (n_succ_read) {															// at list one acquisition must be performed
 		
@@ -850,7 +868,7 @@ int amplitude = 0;																// amplitude calculated from Is & Qs
 
 	}
 	
-	return 1;
+	return 0;
 }
 
 //**************************************************************************************************	
@@ -889,6 +907,8 @@ int * input_ptr_04 = NULL;
 		res = cspi_read_ex(hcon_tbt, DD_buffer, TBT_READ_SIZE_PHASE, &n_read, 0 );
 
 		if ((res == CSPI_OK)&& (n_read == TBT_READ_SIZE_PHASE)) {
+            /* If the signal is too poor, don't try and process it. */
+            if (!CheckAmplitude(DD_buffer, n_read))   return 0;
 			 	
 				// search for marker
 				sample = 0; marker = -1; n_mark = 0;

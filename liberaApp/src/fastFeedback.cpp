@@ -56,7 +56,8 @@
 #define FF_CONTROL_ADDRESS      0x1402A000
 /* Offset from FF_BASE_ADDRESS of the status space registers.  This is
  * currently assumed to be on the same page. */
-#define FF_STATUS_OFFSET        0x0C00
+//#define FF_STATUS_OFFSET        0x0C00
+#define FF_STATUS_OFFSET        0x0200
 
 
 struct FF_CONFIG_SPACE

@@ -53,7 +53,7 @@ ldscd: $(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
 
 clean:
-	rm -f *.o ldscd
+	rm -f *.o ldscd .depend
 
 
 $(OBJS): .depend

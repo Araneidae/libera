@@ -481,24 +481,15 @@ int on_timeout()
 	static size_t idx = 0;
 	typedef int (*TASK_FNC)();
 
-    static int DoCompensation = 0;
+	const TASK_FNC const tasklist[] = {
+		compensate_gain,
+		compensate_amplitude,
+		compensate_phase,
+		compensate_crosstalk,
+	};
 
-    switch (idx++ % 4)
-    {
-        case 0:
-            compensate_gain();
-            break;
-        case 1:
-            DoCompensation = compensate_amplitude();
-            break;
-        case 2:
-            if (DoCompensation)
-                compensate_phase();
-        case 3:
-            compensate_crosstalk();
-            break;
-    }
-    return 0;
+	const size_t count = sizeof(tasklist)/sizeof(TASK_FNC);
+	return (tasklist[idx++ % count])();
 }
 
 //--------------------------------------------------------------------------
