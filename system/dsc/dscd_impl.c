@@ -922,8 +922,7 @@ int * input_ptr_04 = NULL;
 						input_ptr_02 = &DD_buffer[array_start_01].sinVa;
 						atan2_array(input_ptr_02, input_ptr_01, 0, array_finish_01-array_start_01, angle_present);
 						correct_phase_to_absolute_value(angle_present, 0, array_finish_01-array_start_01);
-						avg_angle = ((double) angle_present[array_finish_01-array_start_01] - angle_present[0]) / (array_finish_01-array_start_01);
-
+                        avg_angle = 0.0;
 					#if DEVEL
 						syslog(LOG_INFO, "AVG_ANGLE: %5.10f ", avg_angle);
 					#endif // DEVEL

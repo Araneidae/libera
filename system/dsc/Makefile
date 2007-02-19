@@ -1,20 +1,71 @@
-TOP=../..
-include $(TOP)/configure/CONFIG
-
-SHARED_LIBRARIES=NO
-CONFORM_CFLAGS_STRICT = 
-CONFORM_CXXFLAGS_STRICT = 
-
-cspidir = ../../../cspi
+cspidir = ../../cspi
 drvdir = $(cspidir)/driver
 
-USR_CFLAGS += -DEBPP -D_REENTRANT -I$(drvdir) -I$(cspidir)
-USR_CFLAGS += -Werror -Wno-comment -I$(CSPI)/driver -std=gnu99
+DEBUG = 0
 
-PROD_IOC = ldscd
+CROSS_COMPILE = arm-linux-
+CC = gcc 
+CFLAGS = -std=gnu99 -Wall -Werror
 
-ldscd_SRCS += dscd.c dscd_impl.c dsc_fpga.c cordic_dsc.c
+CPPFLAGS = -DEBPP -D_REENTRANT -I$(drvdir) -I$(cspidir)
+LDFLAGS = -L../../lib/linux-arm
+LIBS = -lpthread -lcspi -lm
 
-ldscd_LIBS += cspi
 
-include $(TOP)/configure/RULES
+PATH := $(PATH):/home/targetOS/linux-arm/host/x86-linux/gcc_3.3.3/bin
+
+#
+# -------- configuration section: end --------
+#
+
+vpath %.h $(drvdir) $(cspidir)
+
+CC := $(CROSS_COMPILE)$(CC)
+AR := $(CROSS_COMPILE)$(AR)
+
+# Release version
+RELEASE_VERSION := $(shell /bin/date +%Y%m%d)
+CPPFLAGS += -DRELEASE_VERSION=$(RELEASE_VERSION)
+
+# Debugging and optimization flags
+ifndef DEBUG
+	DEBUG = 0
+endif
+ifeq ($(DEBUG),0)
+	CFLAGS += -O2
+	CPPFLAGS += -DNDEBUG
+else
+	CFLAGS += -O -g		# "-O" is needed to expand inlines
+	CPPFLAGS += -DDEBUG=$(DEBUG)
+endif
+
+SRCS = dscd.c dscd_impl.c dsc_fpga.c cordic_dsc.c
+OBJS = $(SRCS:%.c=%.o)
+
+
+.PHONY : all clean
+
+
+all: ldscd
+
+
+ldscd: $(OBJS)
+	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
+
+clean:
+	rm -f *.o ldscd
+
+
+$(OBJS): .depend
+
+
+dep .depend:
+	@echo Making dep and .depend
+	$(CC) -MM $(CPPFLAGS) *.c >.depend
+
+
+ifeq (.depend, $(wildcard .depend))
+include .depend
+endif
+
+# EOF
