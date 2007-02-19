@@ -183,7 +183,10 @@ private:
     {
         FILE * LmtdStatus = fopen(LMTD_STATUS_FIFO, "r");
         if (LmtdStatus == NULL)
+        {
+            perror("Unable to open lmtd status pipe");
             return;
+        }
         StartupOk();
 
         char * Line = NULL;

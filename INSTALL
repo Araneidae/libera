@@ -106,7 +106,7 @@ of this distribution.
 
 3.  If the EPICS version is earlier than 3.14.9, apply the patch thus:
     $ cd $EPICS_BASE
-    $ patch -p0 <$LIBERA_EPICS/install/patch-epics-$EPICS_VERSION
+    $ patch -p0 <$LIBERA_EPICS/install/patches/patch-epics-$EPICS_VERSION
 Note that the correct patch must be used depending on which version of epics
 is installed.  The linux-arm patches are fully incorporated into 3.14.9 and
 do not need to be applied.

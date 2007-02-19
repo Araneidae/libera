@@ -9,7 +9,6 @@ include $(TOP)/configure/CONFIG
 #USR_CXXFLAGS += -S
 #USR_CXXFLAGS += -E
 USR_CXXFLAGS += -Werror 
-#USR_CXXFLAGS += -Wno-extra
 
 # Make sure that we pick up the version from install/CONFIG.
 USR_CXXFLAGS += -DLIBERA_VERSION='"$(shell \
@@ -22,6 +21,7 @@ USR_CXXFLAGS += -DBUILD_DATE_TIME='"$(shell date '+%Y-%m-%d %H:%M')"'
 CONFORM_CFLAGS_STRICT = 
 CONFORM_CXXFLAGS_STRICT = 
 
+# SHARED_LIBRARIES=NO   <--- appears to do nothing
 STATIC_BUILD = YES
 
 

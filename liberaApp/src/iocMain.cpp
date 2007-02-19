@@ -503,12 +503,12 @@ static void DetachProcess(const char *Process, char *const argv[])
              * image have it. */
 
             /* Set a sensible home directory. */
-            TEST_(chdir, "/");
+            chdir("/");
 
             /* Enable all signals. */
             sigset_t sigset;
-            TEST_(sigfillset, &sigset);
-            TEST_(sigprocmask, SIG_UNBLOCK, &sigset, NULL);
+            sigfillset(&sigset);
+            sigprocmask(SIG_UNBLOCK, &sigset, NULL);
 
             /* Close all the open file handles.  It's rather annoying: there
              * seems to be no good way to do this in general.  Fortunately in
@@ -518,7 +518,7 @@ static void DetachProcess(const char *Process, char *const argv[])
 
             /* Finally we can actually exec the new process... */
             char * envp[] = { NULL };
-            TEST_(execve, Process, argv, envp);
+            execve(Process, argv, envp);
         }
         else
             /* The middle process simply exits without further ceremony.  The

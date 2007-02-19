@@ -18,8 +18,8 @@ BUILD_FF_SUPPORT=$(shell \
 # to an environment other than Diamond, and will need to be updated each time
 # the Epics version changes.
 
-EPICS_BASE=/home/epics/R3.14.8.2/base
-#EPICS_BASE=/scratch/local/base-3.14.9
+#EPICS_BASE=/home/epics/R3.14.8.2/base
+EPICS_BASE=/scratch/local/base-3.14.9
 
 CSPI=$(TOP)/cspi
 LIBERA_PLL=$(TOP)/system/lmtd

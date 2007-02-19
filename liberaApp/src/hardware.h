@@ -207,14 +207,21 @@ bool ConfigureEventCallback(
  * Return true on success, prints an error message and returns false if the
  * I/O command fails. */
 #define TEST_IO(var, error, command, args...) \
-    ( var = command(args), \
-      (int) var == -1 ? perror(error), false : true )
+    ( { \
+        var = (command)(args); \
+        if ((int) var == -1)  perror(error); \
+        (int) var != -1; \
+    } )
 
 /* Much the same as for TEST_IO, but for I/O commands which return 0 on
  * success and an ignorable non-zero code on failure.  No variable needs to be
  * specified. */
 #define TEST_RC(error, command, args...) \
-    ( command(args) != 0 ? perror(error), false : true )
+    ( { \
+        bool __ok__ = (command)(args) == 0; \
+        if (!__ok__)  perror(error); \
+        __ok__; \
+    } )
 
 /* An even more simplified version of TEST_RC, where the error string is
  * simply the function name. */

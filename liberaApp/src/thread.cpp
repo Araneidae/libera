@@ -134,7 +134,6 @@ bool THREAD::StartThread()
 
 void THREAD::Terminate()
 {
-    printf("Closing thread %s...\n", Name);
     if (ThreadOkFlag)
     {
         /* Let the thread know that it should be stopping now. */
@@ -146,7 +145,6 @@ void THREAD::Terminate()
          * hooks! */
         ThreadShutdown();
     }
-    printf("...done\n");
 }
 
 
@@ -179,7 +177,6 @@ void * THREAD::StaticThread(void * Context)
 
 void THREAD::ThreadInit()
 {
-    printf("Starting thread %d - %s\n", getpid(), Name);
     Thread();
     /* On thread termination ensure the thread status condition is signalled:
      * if we come here without ThreadOk() being called then the thread failed

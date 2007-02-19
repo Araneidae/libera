@@ -306,7 +306,7 @@ static bool init_record_(
 
 static void post_process(dbCommon *pr, epicsEnum16 nsta, I_RECORD *iRecord)
 {
-    recGblSetSevr(pr, nsta, iRecord->AlarmStatus());
+    (void) recGblSetSevr(pr, nsta, iRecord->AlarmStatus());
     struct timespec Timestamp;
     if (iRecord->GetTimestamp(Timestamp))
     {
@@ -401,7 +401,7 @@ static void post_process(dbCommon *pr, epicsEnum16 nsta, I_RECORD *iRecord)
     I_##record * var = dynamic_cast<I_##record *> (base->GetRecord())
 
 #define SET_ALARM(pr, ACTION, iRecord) \
-    recGblSetSevr(pr, ACTION##_ALARM, iRecord->AlarmStatus())
+    (void) recGblSetSevr(pr, ACTION##_ALARM, iRecord->AlarmStatus())
 
 
 
