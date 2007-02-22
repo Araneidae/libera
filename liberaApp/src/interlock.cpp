@@ -70,8 +70,10 @@ static int OffsetX = 0;
 static int OffsetY = 0;
 
 /* Current threshold for enabling interlock. */
-static int InterlockCurrentLimit = 1000000;     // 10mA
+static int InterlockAutoOnCurrent = 1000000;    // 10mA
+static int InterlockAutoOffCurrent = 0;         // 0mA
 static bool CurrentOverThreshold = false;
+static bool CurrentUnderThreshold = false;
 
 /* Interlock ADC overflow limits. */
 static bool OverflowEnable = false;
@@ -198,6 +200,8 @@ static void UpdateInterlockEnable(bool SetEnable)
     else if (CurrentOverThreshold)
         /* If the current is over limit the enable cannot be reset. */
         NewSetEnable = true;
+    else if (CurrentUnderThreshold)
+        NewSetEnable = false;
 
     /* Do the appropriate updates.  If we disagree with the EPICS control
      * value then write our proper value right back to correct it. */
@@ -233,10 +237,14 @@ void NotifyInterlockCurrent(int Current)
     {
         /* Normal operation: check for current over threshold, and enable the
          * interlock if exceeded. */
-        CurrentOverThreshold = Current > InterlockCurrentLimit;
-        if (!MasterInterlockEnable  &&  CurrentOverThreshold)
+        CurrentOverThreshold = Current > InterlockAutoOnCurrent;
+        CurrentUnderThreshold = Current < InterlockAutoOffCurrent;
+
+        bool OldMasterInterlockEnable = MasterInterlockEnable;
+        if (CurrentOverThreshold)   MasterInterlockEnable = true;
+        if (CurrentUnderThreshold)  MasterInterlockEnable = false;
+        if (OldMasterInterlockEnable != MasterInterlockEnable)
         {
-            MasterInterlockEnable = true;
             EnableReadback.Write(MasterInterlockEnable);
             WriteInterlockState();
         }
@@ -346,7 +354,8 @@ bool InitialiseInterlock()
     PUBLISH_INTERLOCK(ao,  "IL:MINY",     MinY);
     PUBLISH_INTERLOCK(ao,  "IL:MAXY",     MaxY);
     /* Current threshold at which the interlock is automatically triggered. */
-    PUBLISH_INTERLOCK(ao,  "IL:ILIMIT",   InterlockCurrentLimit);
+    PUBLISH_INTERLOCK(ao,  "IL:ION",      InterlockAutoOnCurrent);
+    PUBLISH_INTERLOCK(ao,  "IL:IOFF",     InterlockAutoOffCurrent);
     /* Overflow detection configuration. */
     PUBLISH_INTERLOCK(bo,  "IL:OVERFLOW", OverflowEnable);
     PUBLISH_INTERLOCK(longout, "IL:OVER", OverflowLimit);

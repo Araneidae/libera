@@ -1,11 +1,5 @@
 Work to do
 
-* Review event handling (again).
-
-* Review configuration handling
-
-* Try to create proper release process
-
 * Create proper documentation
 
 * Investigate migrating to soft floating point: use -msoft-float and recompile

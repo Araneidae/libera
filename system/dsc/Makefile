@@ -43,7 +43,7 @@ SRCS = dscd.c dscd_impl.c dsc_fpga.c cordic_dsc.c
 OBJS = $(SRCS:%.c=%.o)
 
 
-.PHONY : all clean
+.PHONY: all clean
 
 
 all: ldscd
@@ -53,19 +53,4 @@ ldscd: $(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
 
 clean:
-	rm -f *.o ldscd .depend
-
-
-$(OBJS): .depend
-
-
-dep .depend:
-	@echo Making dep and .depend
-	$(CC) -MM $(CPPFLAGS) *.c >.depend
-
-
-ifeq (.depend, $(wildcard .depend))
-include .depend
-endif
-
-# EOF
+	rm -f *.o ldscd

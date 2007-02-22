@@ -4,8 +4,8 @@ VERSION=${1?Version to deploy}
 
 ARGS=-fls
 
-TARGET=/mnt/nfs/Libera/$VERSION/ioc
-COMMAND="$TARGET/install/libera-install-ioc $ARGS"
+TARGET="${2:-/mnt/nfs/Libera/$VERSION}"
+COMMAND="$TARGET/ioc/install/libera-install-ioc $ARGS"
 
-liberas 'LB|BR|BS' $COMMAND BR
+liberas 'LB|BR|BS' $COMMAND BO
 liberas 'SR'       $COMMAND SR

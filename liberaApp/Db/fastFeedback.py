@@ -77,12 +77,12 @@ def FastFeedback():
     
     longOut('CLEAR_DELAY', 0, 65535, DESC = 'Buffer clear offset')
 
-    # CR 3
-    boolOut('ENABLE', 'Disabled', 'Enabled',
-        DESC = 'Comms controller enable')
     # CR 1 - position or time
     boolOut('DATA_SELECT', 'Positions', 'Timestamps',
         DESC = 'Position data select')
+
+    boolOut('STOP',  'Stop',  DESC = 'Stop fast feedback')
+    boolOut('START', 'Start', DESC = 'Start fast feedback')
 
     UnsetChannelName()
     

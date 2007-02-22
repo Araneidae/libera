@@ -83,16 +83,6 @@ struct stringoutDevice {
     long (*write_stringout)(stringoutRecord *);
 };
 
-struct waveformDevice {
-    COMMON_FIELDS(waveform);
-    long (*read_waveform)(waveformRecord *);
-};
-
-struct subArrayDevice {
-    COMMON_FIELDS(subArray);
-    long (*read_subArray)(subArrayRecord *);
-};
-
 struct mbbiDevice {
     COMMON_FIELDS(mbbi);
     long (*read_mbbi)(mbbiRecord *);
@@ -101,6 +91,11 @@ struct mbbiDevice {
 struct mbboDevice {
     COMMON_FIELDS(mbbo);
     long (*write_mbbo)(mbboRecord *);
+};
+
+struct waveformDevice {
+    COMMON_FIELDS(waveform);
+    long (*read_waveform)(waveformRecord *);
 };
 
 #undef COMMON_FIELDS

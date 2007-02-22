@@ -110,8 +110,7 @@ print '#define LOG2_M_MASK   %d' % ((1 << LOG2_M) - 1)
 print '#define LOG2_B_OFFSET %d' % (1 << (LOG2_M-1))
 print
 print 'struct LOG2_LOOKUP { int Log; int Scale; };'
-print 'static const struct LOG2_LOOKUP Log2Lookup[%d] =' % \
-    (2**LOG2_N)
+print 'static const struct LOG2_LOOKUP Log2Lookup[%d] =' % (2**LOG2_N)
 print '{'
 
 for i in range(2**LOG2_N):

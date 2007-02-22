@@ -241,7 +241,7 @@ public:
     }
 private:
 
-    void FormatTimeString(struct timespec &st, EPICS_STRING &String)
+    void FormatTimeString(struct timespec st, EPICS_STRING &String)
     {
         /* Start by converting ns into microseconds: the nanosecond detail is
          * not really meaningful or useful. */

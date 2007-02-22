@@ -14,6 +14,3 @@ On linux, in order, to use real time priorities the option must be set to YES
 and the ioc must be started with root privilages. 
 
 (From http://www.aps.anl.gov/epics/base/R3-14/8-docs/RELEASE_NOTES.html )
-
- - Is it really adequate to rely on reading an event never returning a partial
-event?

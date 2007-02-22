@@ -34,7 +34,8 @@
  * functionality.
  *
  * The following record types are supported:
- *      longin, longout, ai, ao, bi, bo, waveform. */
+ *      longin, longout, ai, ao, bi, bo, stringin, stringout, mbbi, mbbo,
+ *      waveform. */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -58,9 +59,9 @@
 #include <boRecord.h>
 #include <stringinRecord.h>
 #include <stringoutRecord.h>
-#include <waveformRecord.h>
 #include <mbbiRecord.h>
 #include <mbboRecord.h>
+#include <waveformRecord.h>
 
 #include "device.h"
 
@@ -162,9 +163,9 @@ DEFINE_PUBLISH(bi);
 DEFINE_PUBLISH(bo);
 DEFINE_PUBLISH(stringin);
 DEFINE_PUBLISH(stringout);
-DEFINE_PUBLISH(waveform);
 DEFINE_PUBLISH(mbbi);
 DEFINE_PUBLISH(mbbo);
+DEFINE_PUBLISH(waveform);
 
 
 
@@ -512,6 +513,6 @@ DEFINE_DEVICE(bi,        inp, 5, read_bi);
 DEFINE_DEVICE(bo,        out, 5, write_bo);
 DEFINE_DEVICE(stringin,  inp, 5, read_stringin);
 DEFINE_DEVICE(stringout, out, 5, write_stringout);
-DEFINE_DEVICE(waveform,  inp, 5, read_waveform);
 DEFINE_DEVICE(mbbi,      inp, 5, read_mbbi);
 DEFINE_DEVICE(mbbo,      out, 5, write_mbbo);
+DEFINE_DEVICE(waveform,  inp, 5, read_waveform);

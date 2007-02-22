@@ -31,8 +31,6 @@
 
 #include <alarm.h>
 struct dbCommon;
-struct waveformRecord;
-struct subArrayRecord;
 
 
 /* This class is instanced by driver.cpp to provide I/O Intr callback
@@ -46,7 +44,7 @@ public:
      *    True is returned iff the signal has actually been passed through to
      * EPICS.  A return of false indicates that either EPICS is not
      * configured to use interrupts on this record, or that this record has
-     * not yet bee initialised. */
+     * not yet been initialised. */
     virtual bool IoIntr() = 0;
 };
 
@@ -233,6 +231,6 @@ DECLARE_PUBLISH(bi);
 DECLARE_PUBLISH(bo);
 DECLARE_PUBLISH(stringin);
 DECLARE_PUBLISH(stringout);
-DECLARE_PUBLISH(waveform);
 DECLARE_PUBLISH(mbbi);
 DECLARE_PUBLISH(mbbo);
+DECLARE_PUBLISH(waveform);

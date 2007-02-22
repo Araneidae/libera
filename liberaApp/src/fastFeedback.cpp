@@ -60,7 +60,7 @@
 #define FF_STATUS_OFFSET        0x0200
 
 
-struct FF_CONFIG_SPACE
+struct FF_CONFIG_SPACE          // At FF_BASE_ADDRESS
 {
     int BpmId;                          // BPMID
     int TimerFrameCountDown;            // FRAMELEN
@@ -70,7 +70,7 @@ struct FF_CONFIG_SPACE
 };
 
 
-struct FF_STATUS_SPACE
+struct FF_STATUS_SPACE          // At FF_BASE_ADDRESS + FF_STATUS_OFFSET
 {
     int FirmwareVersion;                // VERSION
     int SystemStatus;                   // 
@@ -89,6 +89,14 @@ struct FF_STATUS_SPACE
 };
 
 
+struct FF_CONTROL_SPACE         // At FF_STATUS_OFFSET
+{
+    int FaiConfiguration;
+    int ExternalTriggerStartMask;
+    int SoftwareStopControl;
+};
+
+
 
 /* /dev/mem file handle used for access to FF control space. */
 static int DevMem = -1;
@@ -102,7 +110,7 @@ static void * FF_ControlSpace = (void *) -1;
 /* These three pointers directly overlay the FF memory. */
 static FF_CONFIG_SPACE * ConfigSpace;
 static FF_STATUS_SPACE * StatusSpace;
-static volatile int * ControlRegister;
+static volatile FF_CONTROL_SPACE * ControlSpace;
 
 
 /* Boolean values extracted from LinkUp field.  This array is updated once a
@@ -140,7 +148,7 @@ static bool MapFastFeedbackMemory()
             ((char *) FF_AddressSpace + (FF_BASE_ADDRESS & PageMask));
         StatusSpace = (FF_STATUS_SPACE *)
             ((char *) ConfigSpace + FF_STATUS_OFFSET);
-        ControlRegister = (volatile int *)
+        ControlSpace = (volatile FF_CONTROL_SPACE *)
             ((char *) FF_ControlSpace + (FF_CONTROL_ADDRESS & PageMask));
     }
         
@@ -203,11 +211,26 @@ static void ProcessWrite()
 
     /* Force the configuration values to be read by toggling the handshake
      * bit in the control register. */
-    *ControlRegister = ControlValue(true);
-    *ControlRegister = ControlValue(false);
+    ControlSpace->FaiConfiguration = ControlValue(true);
+    ControlSpace->FaiConfiguration = ControlValue(false);
 }
 
 
+/* Routines called to stop and start fast feedback. */
+
+static void StopFastFeedback()
+{
+    ControlSpace->ExternalTriggerStartMask = 0;
+    ControlSpace->SoftwareStopControl = 0;
+    ControlSpace->FaiConfiguration = 0;
+}
+
+static void StartFastFeedback()
+{
+    ControlSpace->ExternalTriggerStartMask = 0;
+    ControlSpace->FaiConfiguration = ControlValue(false);
+    ControlSpace->ExternalTriggerStartMask = 1;
+}
 
 
 
@@ -255,8 +278,9 @@ bool InitialiseFastFeedback()
             LoopBack[i], ProcessWrite);
     }
     PUBLISH_FUNCTION_OUT(bo, "FF:DATA_SELECT", SendTimeFrames, ProcessWrite);
-    PUBLISH_FUNCTION_OUT(bo, "FF:ENABLE", GlobalEnable, ProcessWrite);
-    
+
+    PUBLISH_ACTION("FF:STOP",  StopFastFeedback);
+    PUBLISH_ACTION("FF:START", StartFastFeedback);
     
     /* Initialise the FPGA by writing the current configuration. */
     ProcessWrite();

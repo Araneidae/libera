@@ -234,8 +234,8 @@ bool GetMachineTime(unsigned long long * MachineTime)
      * infer the machine frequency), but it needs to be read otherwise the
      * device driver will complain.  This data stream is probably a historical
      * relic. */
-    unsigned long long SystemTime;
-    ioctl(event_fd, LIBERA_EVENT_GET_SC_TRIGGER_10, &SystemTime);
+//     unsigned long long SystemTime;
+//     ioctl(event_fd, LIBERA_EVENT_GET_SC_TRIGGER_10, &SystemTime);
     
     /* Read the machine time.  This ioctl will block until the a machine time
      * can be read (100ms), or a timeout occurs, in which case the ioctl will

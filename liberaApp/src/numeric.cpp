@@ -241,7 +241,7 @@ int log2(unsigned int X)
 
 
 
-/* Computes exponential to the power 2 to about 22 bits of precising using
+/* Computes exponential to the power 2 to about 22 bits of precision using
  * algorithms similar to those for Reciprocal and log2 above.
  *
  * Here the input argument has 27 bits of fraction and 5 signed bits of

@@ -392,8 +392,11 @@ def Interlock():
 
     # Interlock current threshold: interlock will automatically switch on
     # when this threshold is exceeded.
-    aOut('ILIMIT', 0, 20000,
-        DESC = 'Interlock current threshold',
+    aOut('ION', 0, 20000,
+        DESC = 'Interlock on threshold',
+        EGU  = 'mA', ESLO = 1e-5, PREC = 1)
+    aOut('IOFF', 0, 20000,
+        DESC = 'Interlock off threshold',
         EGU  = 'mA', ESLO = 1e-5, PREC = 1)
 
     # ADC overflow detection is also supported: this runs independently of
@@ -483,7 +486,7 @@ def Clock():
 
     
     # Group together all the records that affect the alarm status. */
-    clock_health = [
+    mc_health = [
         # MC monitoring PVS
         mbbIn('MC_LOCK',
             ('No Clock',        0, 'MAJOR'),
@@ -495,8 +498,9 @@ def Clock():
             ('Not Synched',     0, 'MINOR'),
             ('Waiting Trigger', 1, 'MINOR'),
             ('Synchronised',    2, 'NO_ALARM'),
-            DESC = 'Machine clock sync state'),
+            DESC = 'Machine clock sync state')]
 
+    sc_health = [
         # LSTD monitoring PVS
         boolIn('SC_LOCK', 'Unlocked', 'Locked',
             DESC = 'System clock lock status',
@@ -506,8 +510,12 @@ def Clock():
             ('Waiting Trigger', 1, 'MINOR'),
             ('Synchronised',    2, 'NO_ALARM'),
             DESC = 'System clock sync state')]
-    health = AggregateSeverity('HEALTH', 'Clock status',
-        *clock_health + [tick])
+    # For the moment we don't aggregate SC health: it just doesn't stay
+    # healthy for long enough!  The problem is (almost certainly) that the
+    # lstd loses lock due to excessive oscillation, thus causing
+    # synchronisation to be dropped.
+    clock_health = AggregateSeverity('HEALTH', 'Clock status',
+        *mc_health + [tick])    # + sc_health
 
     # This trigger receives the normal machine trigger.
     Trigger(True, [
@@ -520,7 +528,7 @@ def Clock():
         longIn('DAC', 0, 65535, DESC = 'LMTD VCXO DAC setting'),
         longIn('PHASE_E', DESC = 'LMTD phase error'),
         longIn('FREQ_E', DESC = 'LMTD frequency error')] + 
-        clock_health + [health,])
+        mc_health + sc_health + [clock_health,])
     
 
 
