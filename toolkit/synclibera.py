@@ -90,52 +90,79 @@ def GetActiveEvrs(evrs):
     return result
 
 
-def GlobalTrigger():
+def GlobalSystemTrigger():
     catools.caput(SR_TRIGGER, 1)
     catools.caput(SR_TRIGGER, 0)
+
+def LabSystemTrigger():
+    catools.caput('TS-DI-EVR-01:TS-RESET.OUT2', 1)
+
+class GlobalMachineTrigger:
+    def __init__(self, triggers):
+        self.triggers = triggers
+    def Disable(self):
+        caput(self.triggers, 'Off', catools.dbr_string)
+    def Enable(self):
+        caput(self.triggers, 'Every shot', catools.dbr_string)
+
+class LabMachineTrigger:
+    def Disable(self):
+        catools.caput(
+            'TS-DI-EVR-01:TRIG:MODE', 'Synchronised',
+            datatype = catools.dbr_string)
+    def Enable(self):
+        catools.caput(
+            'TS-DI-EVR-01:TRIG:MODE', 'Normal',
+            datatype = catools.dbr_string)
     
 
-def SynchroniseSystemClocks(bpms, evrs):
+def SynchroniseSystemClocks(bpms, evrs, trigger):
     # First put all EVRs into Synchronised mode
     print 'Synchronising system clocks'
     print '  Switching to Synchronised mode'
     caput(PVs(evrs, 'TRIG:MODE'), 'Synchronised', catools.dbr_string)
     CheckReadbacks(evrs, 'TRIG:MODE', 'Synchronised', catools.dbr_string)
     time.sleep(5)
+    
     print '  Enabling SC trigger'
     caput(PVs(bpms, 'CK:SC_SYNC_S'), 0)
-    CheckReadbacks(bpms, 'CK:SC_SYNC', 'Waiting Trigger', catools.dbr_string)
     time.sleep(2)
+    CheckReadbacks(bpms, 'CK:SC_SYNC', 'Waiting Trigger', catools.dbr_string)
+    
     print '  Triggering SC synchronisation'
-    GlobalTrigger()
+    trigger()
     time.sleep(5)
+    
     print '  Restoring Normal mode'
     caput(PVs(evrs, 'TRIG:MODE'), 'Normal', catools.dbr_string)
 
     
 
 def SynchroniseMachineClocks(bpms, triggers):
-    # First put all EVRs into Synchronised mode
     print 'Synchronising machine clocks'
+
+    # First disable all the triggers.
     print '  Disabling events'
-    caput(triggers, 'Off', catools.dbr_string)
+    triggers.Disable()
     time.sleep(5)
-    print '  Enabling MC trigger'
+    
+    print '  Arming MC trigger'
     caput(PVs(bpms, 'CK:MC_SYNC_S'), 0)
-    CheckReadbacks(bpms, 'CK:MC_SYNC', 'Waiting Trigger', catools.dbr_string)
     time.sleep(5)
+    CheckReadbacks(bpms, 'CK:MC_SYNC', 'Waiting Trigger', catools.dbr_string)
+    
     print '  Triggering MC synchronisation'
-    caput(triggers, 'Every shot', catools.dbr_string)
+    triggers.Enable()
     time.sleep(2)
 
 
 def FindCommonTime(times):
     d = {}
     for time in times:
-        if time in d:
-            d[time] += 1
-        else:
+        if time not in d:
             d[time] = 0
+        d[time] += 1
+        
     c = 0
     for time, count in d.iteritems():
         if count > c:
@@ -154,13 +181,13 @@ def AnalyseTimes(location, bpms, times):
 
         
 
-def CheckSystemClocks(bpms, evrs):
+def CheckSystemClocks(bpms, evrs, trigger):
     print 'Checking system clocks'
     print '  Switching to Synchronised mode'
     caput(PVs(evrs, 'TRIG:MODE'), 'Synchronised', catools.dbr_string)
     time.sleep(5)
     print '  Triggering'
-    GlobalTrigger()
+    trigger()
     time.sleep(3)
     mcls = caget(PVs(bpms, 'CK:MCL'), datatype = catools.dbr_time_long)
     print '  Restoring Normal mode'
@@ -170,17 +197,18 @@ def CheckSystemClocks(bpms, evrs):
     
 
     
-def CheckMachineClocks(lb_bpms, bs_bpms, sr_bpms, evrs):
-#    all_bpms = list(lb_bpms | bs_bpms | sr_bpms)
+def CheckMachineClocks(lb_bpms, bs_bpms, sr_bpms, ts_bpms, evrs, trigger):
     print 'Checking machine clocks'
     print '  Disabling events'
     caput(PVs(evrs, 'TRIG:MODE'), 'Synchronised', catools.dbr_string)
     time.sleep(5)
     print '  Triggering'
-    GlobalTrigger()
+    trigger()
     time.sleep(5)
 
-    for location, bpms in (('LB', lb_bpms), ('BS', bs_bpms), ('SR', sr_bpms)):
+    for location, bpms in (
+            ('LB', lb_bpms), ('BS', bs_bpms), ('SR', sr_bpms),
+            ('TS', ts_bpms)):
         if bpms:
             mcls = caget(PVs(bpms, 'CK:MCL'))
             mchs = caget(PVs(bpms, 'CK:MCH'))
@@ -196,7 +224,13 @@ def CheckMachineClocks(lb_bpms, bs_bpms, sr_bpms, evrs):
 
 def parseArgs():
     parser = optparse.OptionParser(
-        usage = 'Usage: %prog [flags]\nSynchronise Libera BPM clocks')
+        usage = ''''Usage: %prog [flags]
+Synchronise Libera BPM clocks
+
+To synchronise machine clocks on all BPMs in the storage ring run
+    %prog -Sm
+To test machine clock synchronisation on the storage ring run
+    %prog -Smt''')
 
     parser.add_option(
         '-t', dest = 'test_only', action = 'store_true', default = False,
@@ -211,16 +245,25 @@ def parseArgs():
         '-m', dest = 'machine', action = 'store_true', default = False,
         help = 'Synchronise or test machine clocks')
     parser.add_option(
-        '-S', dest = 'SR_only', action = 'store_true', default = False,
-        help = 'Only act on SR BPMs')
+        '-S', dest = 'SR', action = 'store_true', default = False,
+        help = 'Synchronise or test storage ring')
+    parser.add_option(
+        '-I', dest = 'LBS', action = 'store_true', default = False,
+        help = 'Synchronise or test injector')
+    parser.add_option(
+        '-L', dest = 'TS', action = 'store_true', default = False,
+        help = 'Synchronise or test lab BPMs')
 
     options, arglist = parser.parse_args()
     if arglist:
         parser.error('No arguments supported')
 
+    if not options.SR and not options.LBS and not options.TS:
+        parser.error('Specify a region of the machine to synchronise')
     if not options.system and not options.machine:
-        options.system = True
-        options.machine = True
+        parser.error('Specify a class of clock to synchronise')
+    if options.TS and (options.SR or options.LBS):
+        parser.error('Cannot operate on synchrotron and lab together')
 
     return options
 
@@ -228,33 +271,44 @@ def parseArgs():
 def main():
     options = parseArgs()
 
-    if options.SR_only:
-        AllBpms = SR_BPMS
-        AllEvrs = SR_EVRS
-        AllTriggers = [BS_TRIG]
+    if options.TS:
+        AllBpms = TS_BPMS
+        AllEvrs = TS_EVRS
+        SystemTrigger = LabSystemTrigger
+        MachineTrigger = LabMachineTrigger()
     else:
-        AllBpms = LB_BPMS + BS_BPMS + SR_BPMS
-        AllEvrs = LB_EVRS + BS_EVRS + SR_EVRS
-        AllTriggers = [LB_TRIG, BS_TRIG]
+        AllBpms = []
+        AllEvrs = []
+        Triggers = [BS_TRIG]
+        if options.LBS:
+            AllBpms.extend(LB_BPMS + BS_BPMS)
+            AllEvrs.extend(LB_EVRS + BS_EVRS)
+            Triggers.append(LB_TRIG)
+        if options.SR:
+            AllBpms.extend(SR_BPMS)
+            AllEvrs.extend(SR_EVRS)
+        SystemTrigger = GlobalSystemTrigger
+        MachineTrigger = GlobalMachineTrigger(Triggers)
 
     ActiveBpms = GetActiveBpms(AllBpms)
     ActiveEvrs = GetActiveEvrs(AllEvrs)
-
+    
     if not options.test_only:
         if options.system:
-            SynchroniseSystemClocks(ActiveBpms, ActiveEvrs)
+            SynchroniseSystemClocks(ActiveBpms, ActiveEvrs, SystemTrigger)
         if options.machine:
-            SynchroniseMachineClocks(ActiveBpms, AllTriggers)
+            SynchroniseMachineClocks(ActiveBpms, MachineTrigger)
     if not options.no_test:
         if options.system:
-            CheckSystemClocks(ActiveBpms, ActiveEvrs)
+            CheckSystemClocks(ActiveBpms, ActiveEvrs, SystemTrigger)
         if options.machine:
             SetActiveBpms = set(ActiveBpms)
             CheckMachineClocks(
                 SetActiveBpms & set(LB_BPMS),
                 SetActiveBpms & set(BS_BPMS),
                 SetActiveBpms & set(SR_BPMS),
-                ActiveEvrs)
+                SetActiveBpms & set(TS_BPMS),
+                ActiveEvrs, SystemTrigger)
     
 
 if __name__ == '__main__':

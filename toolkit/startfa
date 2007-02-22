@@ -1,0 +1,15 @@
+#!/bin/sh
+cd "$(dirname "$0")"
+
+echo Stop Trigger
+caput LI-TI-MTGEN-01:BS-DI-MODE 0
+
+sleep 3
+
+echo  Starting FAI
+./caputall.py SR FF:START_S Start
+
+sleep 3
+echo Start Trigger
+caput LI-TI-MTGEN-01:BS-DI-MODE 1
+

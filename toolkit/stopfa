@@ -1,0 +1,6 @@
+#!/bin/sh
+cd "$(dirname "$0")"
+
+echo Stopping FAI 
+./caputall.py SR FF:STOP_S Stop
+

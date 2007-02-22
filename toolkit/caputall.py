@@ -19,7 +19,7 @@ bpms = [line[:-1] for line in file(allbpms) if pattern.search(line)]
 
 sl = catools.caput(
     ['%s:%s' % (bpm, pv) for bpm in bpms], [value for bpm in bpms],
-    datatype = catools.dbr_string)
+    datatype = catools.dbr_string, timeout = 5, throw = False)
 
 errorcode = 0
 for s, bpm in zip(sl, bpms):
