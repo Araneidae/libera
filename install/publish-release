@@ -85,7 +85,7 @@ VERSION="$(sed -n '/^VERSION=/{s///;p;q;}' install/CONFIG)"
 [ "$VERSION" = "${1?Specify release version}" ]  ||
     Error "Release version mismatch: $1 != $VERSION"
 # Check the version doesn't already exist!
-svn info $SVN_RELEASE/$VERSION  >/dev/null 2>&1  &&
+svn ls $SVN_RELEASE/$VERSION  >/dev/null 2>&1  &&
     Error "Release $VERSION already published to subversion"
 
 # Check that we're up to date with subversion.  
