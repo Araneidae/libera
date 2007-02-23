@@ -459,6 +459,9 @@ def AggregateSeverity(name, description, *recs):
 def Clock():
     SetChannelName('CK')
 
+    # Configure whether to use system or NTP time
+    boolOut('TIMESTAMP', 'NTP time', 'System time',
+        DESC = 'Configure timestamp source')
     # Control LMTD detune, intermediate frequency and phase
     longOut('DETUNE', -1000, 1000, DESC = 'Sample clock detune')
     longOut('IFOFF',  -1000, 1000, DESC = 'IF clock detune')
@@ -490,7 +493,7 @@ def Clock():
         # MC monitoring PVS
         mbbIn('MC_LOCK',
             ('No Clock',        0, 'MAJOR'),
-            ('Seek Frequency',  1, 'MINOR'),
+            ('Seek Frequency',  1, 'MAJOR'),
             ('Slewing',         2, 'MINOR'),
             ('Phase Locked',    3, 'NO_ALARM'),
             DESC = 'Machine clock lock status'),
@@ -530,8 +533,6 @@ def Clock():
         longIn('FREQ_E', DESC = 'LMTD frequency error')] + 
         mc_health + sc_health + [clock_health,])
     
-
-
     UnsetChannelName()
 
     

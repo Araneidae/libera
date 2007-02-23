@@ -74,6 +74,8 @@ static int SampleClockDetune = 0;   // CK:DETUNE - frequency offset
 static int IfClockDetune = 0;       // CK:IFOFF - IF offset ("double detune")
 static int PhaseOffset = 0;         // CK:PHASE - phase offset
 
+static bool UseSystemTime = false;
+
 
 
 /* Sends a command to the LMTD daemon.  We close the file handle between
@@ -432,6 +434,7 @@ bool InitialiseTimestamps()
         IfClockDetune, UpdateLmtdState);
     PUBLISH_CONFIGURATION(longout, "CK:PHASE", 
         PhaseOffset, UpdateLmtdState);
+    PUBLISH_CONFIGURATION(bo, "CK:TIMESTAMP", UseSystemTime, NULL_ACTION);
     
     new TICK_TRIGGER();
     
@@ -461,5 +464,5 @@ void TerminateTimestamps()
 
 bool UseLiberaTimestamps()
 {
-    return LmtdMonitorThread->IsSystemClockSynchronised();
+    return UseSystemTime && LmtdMonitorThread->IsSystemClockSynchronised();
 }

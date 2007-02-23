@@ -91,8 +91,21 @@ struct FF_STATUS_SPACE          // At FF_BASE_ADDRESS + FF_STATUS_OFFSET
 
 struct FF_CONTROL_SPACE         // At FF_STATUS_OFFSET
 {
+    /* Fast Application Interface configuration control register.
+     *
+     *  bit 0 => Configuration data handshake.  Configuration data is read on
+     *           the rising edge of this bit.
+     *      1 => Data select.  0 => real position data, 1 => time frame
+     *           counter data is sent instead of positions.
+     *      2 => (Unused)
+     *      3 => Communication controller enable/disable.  Controller is
+     *           enabled when this bit is 1.
+     *   4-31    (Unused)
+     */
     int FaiConfiguration;
+    /* Arm start of fast feedback processing by writing 1 to this register. */
     int ExternalTriggerStartMask;
+    /* Write any value to this register to stop fast feedback clock. */
     int SoftwareStopControl;
 };
 

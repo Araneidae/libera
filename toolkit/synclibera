@@ -220,6 +220,18 @@ def CheckMachineClocks(lb_bpms, bs_bpms, sr_bpms, ts_bpms, evrs, trigger):
     print '  Restoring event processing'
     caput(PVs(evrs, 'TRIG:MODE'), 'Normal', catools.dbr_string)
 
+
+# Temporary workaround: refresh the fast feedback configuration which
+# unfortunately gets reset when doing a machine clock synchronisation!
+def RefreshFastFeedback(ActiveBpms):
+    ActiveBpms = set(ActiveBpms)
+
+    Bpms, Ids = zip(*[(bpm, id+1)
+        for id, bpm in enumerate(SR_BPMS)
+        if bpm in ActiveBpms])
+    catools.caput(PVs(Bpms, 'FF:BPMID_S'), Ids, timeout = 5)
+    caput(PVs(Bpms, 'FF:FRAMELEN_S'), 9000)
+
     
 
 def parseArgs():
@@ -298,6 +310,8 @@ def main():
             SynchroniseSystemClocks(ActiveBpms, ActiveEvrs, SystemTrigger)
         if options.machine:
             SynchroniseMachineClocks(ActiveBpms, MachineTrigger)
+            RefreshFastFeedback(ActiveBpms)
+            
     if not options.no_test:
         if options.system:
             CheckSystemClocks(ActiveBpms, ActiveEvrs, SystemTrigger)

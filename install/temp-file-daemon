@@ -1,0 +1,61 @@
+#!/bin/sh
+
+# Daemon for tidying log files
+
+. /etc/init.d/functions
+
+PID_FILE=/var/run/temp-file-daemon.pid
+EXEC_FILE="$0"
+
+SLEEP_INTERVAL=${2:-3600}   # Hourly by default
+
+function purge_temp_files()
+{
+    /etc/init.d/sysklogd stop
+    sleep 1
+
+    rm /var/log/debug
+    sed '/last message repeated/d' /var/log/messages >/var/log/messages.new
+    mv /var/log/messages.new /var/log/messages
+    echo $(date '+%b %d %X') Log files purged >>/var/log/messages
+    
+    /etc/init.d/sysklogd start
+}
+
+case "$1" in
+    start)
+        echo -n "Starting temporary file daemon"
+        if [ -e $PID_FILE ]; then
+            echo -n " - alread running?"
+            print_status failure
+        else
+            "$0" daemon </dev/null >/dev/null 2>&1 &
+            evaluate_retval
+        fi
+        ;;
+        
+    stop)
+        echo -n "Stopping temporary file daemon"
+        [ -e $PID_FILE ] && kill "$(cat $PID_FILE)"
+        evaluate_retval
+        rm -f $PID_FILE
+        ;;
+        
+    restart)
+        "$0" stop
+        "$0" start
+        ;;
+
+    daemon)
+        # This is the daemon itself
+        echo $$ >$PID_FILE
+        while :; do
+            purge_temp_files
+            sleep $SLEEP_INTERVAL
+        done
+        ;;
+
+    *)  echo "Usage: $0 {start|stop|restart}"
+        exit 1
+        ;;
+esac

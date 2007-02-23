@@ -30,6 +30,15 @@
 # Install a built IOC in the target IOC directory.
 
 
+# Files copied from install directory
+INSTALL_FILES='
+    epics
+    gain.conf
+    offsets.conf
+    libera-install-ioc
+    temp-file-daemon'
+
+
 SOURCE="$(cd "$(dirname "$0")"/..; pwd)"  &&
 . "$SOURCE"/install/CONFIG  &&
 if (($# > 0)); then
@@ -70,7 +79,7 @@ sed '/^#if FF /'$SED_FF_ACTION'; /^#/d; /^ *$/d' \
 # Also create installation support files and place the ioc specific files
 # ready to be deployed on the ioc.
 mkdir -p "$TARGET"/install  &&
-for f in epics gain.conf libera-install-ioc offsets.conf; do
+for f in $INSTALL_FILES; do
     cp "$SOURCE"/install/$f "$TARGET"/install
 done  &&
 

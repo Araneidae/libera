@@ -41,6 +41,22 @@ function Error()
 }
 
 
+# This manages the installation of a variety of extra components that have
+# crept into the installation.  This needs to be called before the install
+# directory is deleted.
+function InstallExtras()
+{
+    # Temporary file management daemon
+    [ -e /etc/init.d/temp-file-daemon ]  &&
+        /etc/init.d/temp-file-daemon stop
+    cp "$SOURCE"/install/temp-file-daemon /etc/init.d
+    ln -fs /etc/init.d/temp-file-daemon /etc/rc3.d/S800temp-file-daemon
+    ln -fs /etc/init.d/temp-file-daemon /etc/rc6.d/K100temp-file-daemon
+    /etc/init.d/temp-file-daemon start
+}
+
+
+
 # Ensure this isn't run by accident on the development machine.
 [ "$(uname -m)" != armv5tel ]  &&
     Error This should be run on Libera
@@ -96,8 +112,8 @@ fi
 
 (($# != 0))  &&
     Error 'Invalid arguments: try -h for help'
-    
-    
+
+
 # Ensure epics driver isn't running at the moment.
 if [ -e /var/run/ioc.pid ]; then
     if [ -x /etc/init.d/epics ]; then
@@ -107,6 +123,8 @@ if [ -e /var/run/ioc.pid ]; then
         rm -f /var/run/ioc.pid
     fi
 fi
+
+InstallExtras
 
 # If final installation selected then copy over all the run-time files and
 # update the configuration file to point to them.
