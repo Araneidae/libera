@@ -1,5 +1,5 @@
 /* This file is part of the Libera EPICS Driver,
- * Copyright (C) 2005-2006  Michael Abbott, Diamond Light Source Ltd.
+ * Copyright (C) 2005-2007  Michael Abbott, Diamond Light Source Ltd.
  *
  * The Libera EPICS Driver is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as published by
@@ -550,6 +550,11 @@ static void DoRestart()
 }
 
 
+static void DoCoreDump()
+{
+    * (char *) 0 = 0;
+}
+
 
 /****************************************************************************/
 /*                                                                          */
@@ -562,6 +567,7 @@ int main(int argc, char *argv[])
     Publish_stringin("BUILD", BuildDate);
     PUBLISH_ACTION("REBOOT",  DoReboot);
     PUBLISH_ACTION("RESTART", DoRestart);
+    PUBLISH_ACTION("CORE", DoCoreDump);
     
     /* Consume any option arguments and start the driver. */
     bool Ok =

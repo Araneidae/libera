@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # This file is part of the Libera EPICS Driver,
-# Copyright (C) 2005  Michael Abbott, Diamond Light Source Ltd.
+# Copyright (C) 2005-2007 Michael Abbott, Diamond Light Source Ltd.
 #
 # The Libera EPICS Driver is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as published by
@@ -112,6 +112,12 @@ if [ -e "$PIDFILE" ]; then
     exit 1
 fi
 
+# If a core dump directory is configured, set this up.
+if [ -n "$IOC_CORE" -a -d "$IOC_CORE" ]; then
+    ulimit -c unlimited
+    echo "$IOC_CORE/core.%h.%t" >/proc/sys/kernel/core_pattern
+fi
+
 # Ensure that we're running our own version of lmtd
 if ((RESTART_LMTD))  ||  ! [ -e /tmp/lmtd.command ]; then
     [ -e /var/run/lmtd.pid ]  &&  kill $(cat /var/run/lmtd.pid)
@@ -158,8 +164,10 @@ DEBRIS="$(ps ho pid -C ioc)"
 if [ -n "$DEBRIS" ]; then
     echo Killing residual ioc processes
     kill -9 $DEBRIS
+    DEBRIS="$(ps ho pid -C ioc)"
+    [ -n "$DEBRIS" ]  &&
+        echo Processes not killed: $DEBRIS
 fi
 
 # Finally make sure we don't leave the pid file behind!
 rm -f "$PIDFILE"
-

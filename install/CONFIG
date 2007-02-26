@@ -3,7 +3,7 @@
 
 # Version number of this software: automatically included in build and used
 # to build distribution files.
-VERSION=1.40.1.1
+VERSION=1.40.1.2
 
 # This is where installed files will be placed ready for deployment to the
 # Libera IOC.  The IOC files will be placed in $INSTALL_HOST/ioc and the
@@ -28,6 +28,9 @@ BUILD_FF_SUPPORT=yes
 
 # The IOC normally runs as a daemon with output redirected to this file.
 IOC_LOG=/var/log/ioc
+
+# Where to put core dumps
+IOC_CORE=/mnt/nfs/testing/cores
 
 # Location where the IOC will look for its persistent state.  
 IOC_STATE_PATH=/opt/state

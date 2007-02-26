@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # This file is part of the Libera EPICS Driver,
-# Copyright (C) 2005  Michael Abbott, Diamond Light Source Ltd.
+# Copyright (C) 2005-2007 Michael Abbott, Diamond Light Source Ltd.
 #
 # The Libera EPICS Driver is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as published by
@@ -35,8 +35,7 @@ INSTALL_FILES='
     epics
     gain.conf
     offsets.conf
-    libera-install-ioc
-    temp-file-daemon'
+    libera-install-ioc'
 
 
 SOURCE="$(cd "$(dirname "$0")"/..; pwd)"  &&

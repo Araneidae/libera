@@ -1,5 +1,5 @@
 /* This file is part of the Libera EPICS Driver,
- * Copyright (C) 2005-2006  Michael Abbott, Diamond Light Source Ltd.
+ * Copyright (C) 2005-2007  Michael Abbott, Diamond Light Source Ltd.
  *
  * The Libera EPICS Driver is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as published by
@@ -40,6 +40,8 @@
 #include "cordic.h"
 #include "numeric.h"
 #include "interlock.h"
+#include "thread.h"
+#include "trigger.h"
 
 #include "convert.h"
 
@@ -102,6 +104,8 @@ static int ChannelGain[4] =
 static bool AutoSwitchState = false;
 /* Selects which switch setting to use in manual mode. */
 static int ManualSwitch = 3;
+
+//static TRIGGER AutoSwitchReadback(false);
 
 /* Selects internal or external triggering for the rotating switches. */
 static bool ExternalSwitchTrigger = false;
@@ -327,6 +331,7 @@ static void UpdateManualSwitch()
 
 static void UpdateAutoSwitch()
 {
+//printf("UpdateAutoSwitch\n");
     if (AutoSwitchState)
         WriteSwitchState(CSPI_SWITCH_AUTO);
     else
@@ -358,7 +363,10 @@ static void UpdateSwitchTriggerDelay()
 
 static void UpdateDsc()
 {
+//printf("UpdateDsc %d\n", DscState);
     WriteDscMode((CSPI_DSCMODE) DscState);
+//     if (DscState == CSPI_DSC_AUTO)
+//         AutoSwitchReadback.Write(true);
 }
 
 
@@ -533,8 +541,8 @@ bool InitialiseConvert()
     PUBLISH_GAIN("CF:G2", ChannelGain[2]);
     PUBLISH_GAIN("CF:G3", ChannelGain[3]);
 
-    PUBLISH_CONFIGURATION(bo, "CF:AUTOSW", 
-        AutoSwitchState, UpdateAutoSwitch);
+    PUBLISH_CONFIGURATION(bo, "CF:AUTOSW", AutoSwitchState, UpdateAutoSwitch);
+//    Publish_bi("CF:AUTOSW_RB", AutoSwitchReadback);
     PUBLISH_CONFIGURATION(longout, "CF:SETSW", 
         ManualSwitch, UpdateManualSwitch);
     PUBLISH_CONFIGURATION(bo, "CF:TRIGSW", 

@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # This file is part of the Libera EPICS Driver,
-# Copyright (C) 2005  Michael Abbott, Diamond Light Source Ltd.
+# Copyright (C) 2005-2007 Michael Abbott, Diamond Light Source Ltd.
 #
 # The Libera EPICS Driver is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as published by
@@ -70,7 +70,7 @@ SVN_TRUNK="$SVN_ROOT/diamond/trunk/ioc/Libera"
 SVN_RELEASE="$SVN_ROOT/diamond/release/ioc/Libera"
 SVN_EDM_FILES="$SVN_ROOT/diamond/trunk/support/Diagnostics/opi/libera"
 
-BUILD_TARGET="/mt/libera/nfs/Libera"
+BUILD_TARGET="/home/libera/nfs/Libera"
 
 
 cd "$(dirname "$0")/.."
@@ -129,7 +129,8 @@ make  ||
     Error "Problem building final release"
 
 # Publish the build files locally
-./install/install-ioc   "$BUILD_TARGET/$VERSION"  &&
+mkdir -f "$BUILD_TARGET/$VERSION"  &&
+./install/install-ioc "$BUILD_TARGET/$VERSION"  &&
 
 # Finally prepare the external release if required.
 if [ -n "$DISTRIBUTION" ]; then

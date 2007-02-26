@@ -1,5 +1,5 @@
 # This file is part of the Libera EPICS Driver,
-# Copyright (C) 2005  Michael Abbott, Diamond Light Source Ltd.
+# Copyright (C) 2005-2007 Michael Abbott, Diamond Light Source Ltd.
 #
 # The Libera EPICS Driver is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as published by
@@ -342,7 +342,7 @@ def Config():
     aOut('G3', 0, 1.5,  ESLO = 2**-30, DESC = 'Channel 3 gain adjustment')
 
     # Configure automatic switch state
-    boolOut('AUTOSW', 'Manual', 'Automatic',
+    autoswitch = boolOut('AUTOSW', 'Manual', 'Automatic',
         DESC = 'Configure rotating switches')
     # Select switch to use when automatic switching off
     longOut('SETSW', 0, 15, DESC = 'Fixed multiplexor switch')
@@ -357,7 +357,14 @@ def Config():
         ('Unity gains', 1),     # Disable DSC, use fixed gains
         ('Automatic', 2),       # Run DSC
         DESC = 'Digitial Signal Conditioning')
-    boolOut('WRITEDSC', 'Save DSC', DESC = 'Write DSC state file')
+    # When the DSC is set into Automatic this will automatically set the
+    # switches into automatic mode.  Catch this.
+    sw_readback = boolIn('AUTOSW_RB', 'Manual', 'Automatic',
+        SCAN = 'I/O Intr',
+        DESC = 'Autoswitch readback')
+#     sw_readback.FLNK = records.bo('AUTOSW_CP',
+#         DOL = sw_readback, OMSL = 'closed_loop', OUT = PP(autoswitch))
+#     boolOut('WRITEDSC', 'Save DSC', DESC = 'Write DSC state file')
     
     # Control attenuation
     longOut('ATTEN', 0, 62, EGU = 'dB', DESC = 'Attenuator setting')
@@ -643,6 +650,8 @@ def Miscellaneous():
 
     boolOut('REBOOT',  'Reboot',  None, DESC = 'Reboot Libera IOC')
     boolOut('RESTART', 'Restart', None, DESC = 'Restart EPICS driver')
+
+    boolOut('CORE', 'Core dump', DESC = 'Force core dump!')
 
     
 

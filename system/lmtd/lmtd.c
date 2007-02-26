@@ -1,7 +1,7 @@
 /* This file is part of the Libera EPICS Driver,
  * 
  * Copyright (C) 2004-2006 Instrumentation Technologies
- * Copyright (C) 2006-2007  Michael Abbott, Diamond Light Source Ltd.
+ * Copyright (C) 2006-2007 Michael Abbott, Diamond Light Source Ltd.
  *
  * The Libera EPICS Driver is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as published by
@@ -229,14 +229,6 @@ void ReportLmtdState(
 
 bool GetMachineTime(unsigned long long * MachineTime)
 {
-    /* This ioctl returns the number of 125MHz system clock ticks at the
-     * current MC tick report.  We don't use this (though it could be used to
-     * infer the machine frequency), but it needs to be read otherwise the
-     * device driver will complain.  This data stream is probably a historical
-     * relic. */
-//     unsigned long long SystemTime;
-//     ioctl(event_fd, LIBERA_EVENT_GET_SC_TRIGGER_10, &SystemTime);
-    
     /* Read the machine time.  This ioctl will block until the a machine time
      * can be read (100ms), or a timeout occurs, in which case the ioctl will
      * fail and errno is set to EAGAIN. */
@@ -956,10 +948,6 @@ int init()
     if( -1 == event_fd ) EXIT( "open" );
     
     // Enable triggers
-    if ( 0 > ioctl( event_fd,
-            LIBERA_EVENT_ENABLE_SC_TRIG,
-            TRIGGER_BIT(6) ) ) // M3 prescaler = 6
-        EXIT("ioctl");
     if ( 0 > ioctl( event_fd,
             LIBERA_EVENT_ENABLE_MC_TRIG,
             TRIGGER_BIT(6) ) ) // M3 prescaler = 6

@@ -8,6 +8,8 @@ include $(TOP)/configure/CONFIG
 
 #USR_CXXFLAGS += -S
 #USR_CXXFLAGS += -E
+USR_CXXFLAGS += -g
+
 USR_CXXFLAGS += -Werror 
 
 # Make sure that we pick up the version from install/CONFIG.

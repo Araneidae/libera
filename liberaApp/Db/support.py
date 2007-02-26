@@ -1,5 +1,5 @@
 # This file is part of the Libera EPICS Driver,
-# Copyright (C) 2005  Michael Abbott, Diamond Light Source Ltd.
+# Copyright (C) 2005-2007 Michael Abbott, Diamond Light Source Ltd.
 #
 # The Libera EPICS Driver is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as published by
@@ -165,6 +165,8 @@ def longOut(name, LOPR=None, HOPR=None, **fields):
         OMSL = 'supervisory',
         LOPR = LOPR, HOPR = HOPR, **fields)
 
+
+# Field name prefixes for mbbi/mbbo records.
 _mbbPrefixes = [
     'ZR', 'ON', 'TW', 'TH', 'FR', 'FV', 'SX', 'SV',     # 0-7
     'EI', 'NI', 'TE', 'EL', 'TV', 'TT', 'FT', 'FF']     # 8-15
@@ -176,7 +178,6 @@ def mbbOut(name, *option_values, **fields):
     return Libera.mbbo(name + '_S', address=name,
         OMSL = 'supervisory', **fields)
     
-
 def mbbIn(name, *option_values, **fields):
     def process_value(prefix, option, value, severity=None):
         extend(fields, prefix + 'ST', option)
@@ -199,8 +200,6 @@ def Waveform(name, length, FTVL='LONG', **fields):
         NELM = length,
         FTVL = FTVL,
         **fields)
-
-
 
 
 __all__ = [
