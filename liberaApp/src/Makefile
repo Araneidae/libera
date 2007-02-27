@@ -8,7 +8,7 @@ include $(TOP)/configure/CONFIG
 
 #USR_CXXFLAGS += -S
 #USR_CXXFLAGS += -E
-USR_CXXFLAGS += -g
+USR_CXXFLAGS += -g -O0
 
 USR_CXXFLAGS += -Werror 
 

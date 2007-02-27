@@ -303,13 +303,13 @@ bool InitialiseFastFeedback()
 
 
 
-void TerminateFastFeedback()
-{
-    const int PageSize = getpagesize();
-    if (ConfigSpace != NULL)
-        TEST_(munmap, FF_AddressSpace, PageSize);
-    if (StatusSpace != NULL)
-        TEST_(munmap, FF_ControlSpace, PageSize);
-    if (DevMem != -1)
-        close(DevMem);
-}
+// void TerminateFastFeedback()
+// {
+//     const int PageSize = getpagesize();
+//     if (ConfigSpace != NULL)
+//         TEST_(munmap, FF_AddressSpace, PageSize);
+//     if (StatusSpace != NULL)
+//         TEST_(munmap, FF_ControlSpace, PageSize);
+//     if (DevMem != -1)
+//         close(DevMem);
+// }

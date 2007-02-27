@@ -106,8 +106,8 @@ struct ADC_DATA
  * be done and system startup should fail. */
 bool InitialiseHardware();
 
-/* To be called on shutdown to release all connections to Libera. */
-void TerminateHardware();
+// /* To be called on shutdown to release all connections to Libera. */
+// void TerminateHardware();
 
 
 /* Writes or writes directly to or from a hardware register.  Not designed for

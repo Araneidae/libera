@@ -71,6 +71,7 @@ SVN_RELEASE="$SVN_ROOT/diamond/release/ioc/Libera"
 SVN_EDM_FILES="$SVN_ROOT/diamond/trunk/support/Diagnostics/opi/libera"
 
 BUILD_TARGET="/home/libera/nfs/Libera"
+PROD_ROOT="/home/diamond/R3.14.8.2/prod/ioc/Libera"
 
 
 cd "$(dirname "$0")/.."
@@ -117,19 +118,18 @@ svn -m "Libera: Release $VERSION" commit  ||
 
 rm -rf "$TEMP_ROOT"
 
-    
-# Now grab a temporary copy and build it.
-TempRoot release  &&
 
-cd "$TEMP_ROOT"  &&
-svn export "$SVN_RELEASE/$VERSION"  &&
-mv $VERSION Libera  &&
-cd Libera  &&
+# Now build the released version into the production area.
+
+cd "$PROD_ROOT"  &&
+svn co "$SVN_RELEASE/$VERSION"  &&
+ln -fsn $VERSION Libera  &&
+cd $VERSION  &&
 make  ||
     Error "Problem building final release"
 
 # Publish the build files locally
-mkdir -f "$BUILD_TARGET/$VERSION"  &&
+mkdir -p "$BUILD_TARGET/$VERSION"  &&
 ./install/install-ioc "$BUILD_TARGET/$VERSION"  &&
 
 # Finally prepare the external release if required.

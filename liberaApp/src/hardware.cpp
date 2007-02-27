@@ -493,23 +493,23 @@ bool InitialiseHardware()
 }
 
 
-static void TerminateConnection(CSPIHCON Connection)
-{
-    if (Connection != NULL)
-    {
-        CSPI_(cspi_disconnect, Connection);
-        CSPI_(cspi_freehandle, CSPI_HANDLE_CON, Connection);
-    }
-}
-
-/* To be called on shutdown to release all connections to Libera. */
-void TerminateHardware()
-{
-    TerminateConnection(CspiConPm);
-    TerminateConnection(CspiConDd);
-    TerminateConnection(CspiConSa);
-    TerminateConnection(CspiConAdc);
-    CSPI_(cspi_freehandle, CSPI_HANDLE_CON, EventSource);
-    CSPI_(cspi_freehandle, CSPI_HANDLE_ENV, CspiEnv);
-    if (DevMem != -1)  close(DevMem);
-}
+// static void TerminateConnection(CSPIHCON Connection)
+// {
+//     if (Connection != NULL)
+//     {
+//         CSPI_(cspi_disconnect, Connection);
+//         CSPI_(cspi_freehandle, CSPI_HANDLE_CON, Connection);
+//     }
+// }
+// 
+// /* To be called on shutdown to release all connections to Libera. */
+// void TerminateHardware()
+// {
+//     TerminateConnection(CspiConPm);
+//     TerminateConnection(CspiConDd);
+//     TerminateConnection(CspiConSa);
+//     TerminateConnection(CspiConAdc);
+//     CSPI_(cspi_freehandle, CSPI_HANDLE_CON, EventSource);
+//     CSPI_(cspi_freehandle, CSPI_HANDLE_ENV, CspiEnv);
+//     if (DevMem != -1)  close(DevMem);
+// }

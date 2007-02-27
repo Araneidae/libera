@@ -28,4 +28,4 @@
 
 
 bool InitialiseFastFeedback();
-void TerminateFastFeedback();
+// void TerminateFastFeedback();

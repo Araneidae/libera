@@ -297,12 +297,12 @@ static void TerminateLibera()
     TerminateEventReceiver();
     TerminateTimestamps();
     TerminateSlowAcquisition();
-    TerminateHardware();
+//     TerminateHardware();
     TerminatePersistentState();
     
-#ifdef BUILD_FF_SUPPORT
-    TerminateFastFeedback();
-#endif
+// #ifdef BUILD_FF_SUPPORT
+//     TerminateFastFeedback();
+// #endif
         
     /* On orderly shutdown remove the pid file if we created it.  Do this
      * last of all. */

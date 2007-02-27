@@ -294,14 +294,15 @@ private:
          * get one last write of the state file. 
          *    Note: this signal is handled elsewhere, so has side effects.
          * Fortunately, these side effects aren't a problem. */
-        TEST_(kill, pid, SIGINT);
+//        TEST_(kill, pid, SIGINT);
+        TEST_(kill, pid, SIGUSR2);
     }
     
     int pid;
 };
 
 
-static TIMER_THREAD * Timer = NULL;
+static TIMER_THREAD * TimerThread = NULL;
 
 
 bool InitialisePersistentState(const char * FileName)
@@ -311,14 +312,14 @@ bool InitialisePersistentState(const char * FileName)
         return true;
     else
     {
-        Timer = new TIMER_THREAD;
-        return Timer->StartThread();
+        TimerThread = new TIMER_THREAD;
+        return TimerThread->StartThread();
     }
 }
 
 
 void TerminatePersistentState()
 {
-    if (Timer != NULL)
-        Timer->Terminate();
+    if (TimerThread != NULL)
+        TimerThread->Terminate();
 }

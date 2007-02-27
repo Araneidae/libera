@@ -118,8 +118,8 @@ static TRIGGER EnableReadback(false);
  * interlock used to guard the current, and a different delay for use when
  * interlock is enabled.  This second delay is currently programmable. */
 
-static const int CurrentHoldoffCount = 3;       // 300ms seems ample for this
-static int InterlockHoldoffCount = 3;           // Not so clear what's suitable
+static int CurrentHoldoffCount = 3;     // 300ms seems ample for this
+static int InterlockHoldoffCount = 3;   // Not so clear what's suitable
 
 static int InterlockHoldoff = 3;
 
@@ -237,7 +237,7 @@ void NotifyInterlockCurrent(int Current)
     {
         /* Normal operation: check for current over threshold, and enable the
          * interlock if exceeded. */
-        CurrentOverThreshold = Current > InterlockAutoOnCurrent;
+        CurrentOverThreshold  = Current > InterlockAutoOnCurrent;
         CurrentUnderThreshold = Current < InterlockAutoOffCurrent;
 
         bool OldMasterInterlockEnable = MasterInterlockEnable;
@@ -367,6 +367,8 @@ bool InitialiseInterlock()
 
     PUBLISH_CONFIGURATION(longout, "IL:HOLDOFF", 
         InterlockHoldoffCount, NULL_ACTION);
+    PUBLISH_CONFIGURATION(longout, "IL:IHOLDOFF", 
+        CurrentHoldoffCount, NULL_ACTION);
     
     new INTERLOCK_EVENT("IL:TRIG");
 

@@ -357,14 +357,14 @@ def Config():
         ('Unity gains', 1),     # Disable DSC, use fixed gains
         ('Automatic', 2),       # Run DSC
         DESC = 'Digitial Signal Conditioning')
-    # When the DSC is set into Automatic this will automatically set the
-    # switches into automatic mode.  Catch this.
-    sw_readback = boolIn('AUTOSW_RB', 'Manual', 'Automatic',
-        SCAN = 'I/O Intr',
-        DESC = 'Autoswitch readback')
+#     # When the DSC is set into Automatic this will automatically set the
+#     # switches into automatic mode.  Catch this.
+#     sw_readback = boolIn('AUTOSW_RB', 'Manual', 'Automatic',
+#         SCAN = 'I/O Intr',
+#         DESC = 'Autoswitch readback')
 #     sw_readback.FLNK = records.bo('AUTOSW_CP',
 #         DOL = sw_readback, OMSL = 'closed_loop', OUT = PP(autoswitch))
-#     boolOut('WRITEDSC', 'Save DSC', DESC = 'Write DSC state file')
+    boolOut('WRITEDSC', 'Save DSC', DESC = 'Write DSC state file')
     
     # Control attenuation
     longOut('ATTEN', 0, 62, EGU = 'dB', DESC = 'Attenuator setting')
@@ -417,7 +417,8 @@ def Interlock():
         DESC = 'ADC overflow duration')
 
     # Interlock holdoff delay
-    longOut('HOLDOFF', 0, 1000, DESC = 'Interlock holdoff delay')
+    longOut('HOLDOFF',  0, 1000, DESC = 'Interlock holdoff delay')
+    longOut('IHOLDOFF', 0, 1000, DESC = 'Current holdoff delay')
     
     # Interlock state.  This is a bit nasty: we get repeated triggers on TRIG
     # while the interlock is active (ie, reporting signal bad).  The records

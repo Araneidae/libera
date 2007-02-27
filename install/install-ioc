@@ -45,7 +45,7 @@ if (($# > 0)); then
 else
     : ${INSTALL_HOST:?Local installation path not defined}
 fi  &&
-[ -d "$INSTALL_HOST" ]  &&
+
 
 # Erase everything in the target directory: start from scratch on each
 # install.
