@@ -31,8 +31,6 @@
 
 #include <stdio.h>
 
-#include <dbFldTypes.h>
-
 #include "device.h"
 #include "persistent.h"
 #include "publish.h"
@@ -40,8 +38,6 @@
 #include "cordic.h"
 #include "numeric.h"
 #include "interlock.h"
-#include "thread.h"
-#include "trigger.h"
 
 #include "convert.h"
 
@@ -52,9 +48,6 @@
 /*                              Static State                                 */
 /*                                                                           */
 /*****************************************************************************/
-
-/* Master enable flag. */
-static bool BpmEnabled = true;
 
 /* The following global parameters are used to control the calculation of
  * electron beam position from button signal level readout. */
@@ -96,36 +89,6 @@ static int GOLDEN_Y = 0;
 #define DEFAULT_GAIN    (1 << 30)
 static int ChannelGain[4] =
     { DEFAULT_GAIN, DEFAULT_GAIN, DEFAULT_GAIN, DEFAULT_GAIN };
-
-
-/* Control configuration. */
-
-/* Controls the rotating switches: manual or automatic mode. */
-static bool AutoSwitchState = false;
-/* Selects which switch setting to use in manual mode. */
-static int ManualSwitch = 3;
-
-//static TRIGGER AutoSwitchReadback(false);
-
-/* Selects internal or external triggering for the rotating switches. */
-static bool ExternalSwitchTrigger = false;
-/* Selects the delay from external trigger for the switches. */
-static int SwitchTriggerDelay = 0;
-
-/* Controls the Digital Signal Conditioning daemon state. */
-static int DscState = 0;
-
-/* Selected attenuation.  The default is quite high for safety. */
-static int CurrentAttenuation = 60;
-
-
-/* Current scaling factor.  This is used to program the nominal beam current
- * for an input power of 0dBm, or equivalently, the beam current
- * corresponding to a button current of 4.5mA.
- *    This is recorded in units of 10nA, giving a maximum 0dBm current of
- * 20A. */
-static int CurrentScale = 100000000;
-
 
 /* Rescales value by gain factor making use of the GAIN_OFFSET defined above.
  * The gain factors are scaled by a factor of 2^31, and are intended to
@@ -299,11 +262,9 @@ void GainCorrect(int Channel, int *Column, int Count)
 
 
 
+
 /****************************************************************************/
 /*                                                                          */
-/*                         Switches and Calibration                         */
-/*                                                                          */
-/****************************************************************************/
 
 
 /* Called whenever any of the scaling calibration settings has changed.
@@ -319,170 +280,6 @@ static void UpdateCalibration()
 }
 
 
-/* Called whenever the autoswitch mode has changed. */
-
-static void UpdateManualSwitch()
-{
-    /* Only update the switches if they're in manual mode. */
-    if (!AutoSwitchState)
-        WriteSwitchState((CSPI_SWITCHMODE) ManualSwitch);
-}
-
-
-static void UpdateAutoSwitch()
-{
-//printf("UpdateAutoSwitch\n");
-    if (AutoSwitchState)
-        WriteSwitchState(CSPI_SWITCH_AUTO);
-    else
-        UpdateManualSwitch();
-}
-
-
-#define REGISTER_SWITCH_TRIGGER         0x1400C038
-#define REGISTER_SWITCH_DELAY           0x1400C03C
-
-static void UpdateSwitchTrigger()
-{
-    /* Read the current trigger setting (to get the interval count) and
-     * update the top bit as required to control the trigger source. */
-    unsigned int SwitchControl;
-    if (ReadRawRegister(REGISTER_SWITCH_TRIGGER, SwitchControl))
-    {
-        SwitchControl =
-            (SwitchControl & 0x7FFFFFFF) | (ExternalSwitchTrigger << 31);
-        WriteRawRegister(REGISTER_SWITCH_TRIGGER, SwitchControl);
-    }
-}
-
-static void UpdateSwitchTriggerDelay()
-{
-    WriteRawRegister(REGISTER_SWITCH_DELAY, SwitchTriggerDelay);
-}
-
-
-static void UpdateDsc()
-{
-//printf("UpdateDsc %d\n", DscState);
-    WriteDscMode((CSPI_DSCMODE) DscState);
-//     if (DscState == CSPI_DSC_AUTO)
-//         AutoSwitchReadback.Write(true);
-}
-
-
-static void WriteDscStateFile()
-{
-    WriteDscMode(CSPI_DSC_SAVE_LASTGOOD);
-}
-
-
-
-/****************************************************************************/
-/*                                                                          */
-/*                          Attenuation Management                          */
-/*                                                                          */
-/****************************************************************************/
-
-
-
-/* Attenuator configuration management. */
-
-
-#define MAX_ATTENUATION  62
-#define OFFSET_CONF_FILE "/opt/dsc/offsets.conf"
-
-
-/* The attenuator value reported by ReadCachedAttenuation() is not strictly
- * accurate, due to minor offsets on attenuator values.  Here we attempt to
- * compensate for these offsets by reading an offset configuration file. */
-static int AttenuatorOffset[MAX_ATTENUATION + 1];
-
-
-/* This contains a precalculation of K_S * 10^((A-A_0)/20) to ensure that the
- * calculation of ComputeScaledCurrent is efficient. */
-static PMFP ScaledCurrentFactor;
-/* This contains a precalculation of 10^((A-A_0)/20): this only needs to
- * change when the attenuator settings are changed. */
-static PMFP AttenuatorScalingFactor;
-
-
-static bool ReadAttenuatorOffsets()
-{
-    FILE * OffsetFile = fopen(OFFSET_CONF_FILE, "r");
-    if (OffsetFile == NULL)
-    {
-        printf("Unable to open file " OFFSET_CONF_FILE "\n");
-        return false;
-    }
-    else
-    {
-        bool Ok = true;
-        for (int i = 0; Ok  &&  i <= MAX_ATTENUATION; i ++)
-        {
-            double Offset;
-            Ok = fscanf(OffsetFile, "%lf", &Offset) == 1;
-            if (Ok)
-                AttenuatorOffset[i] = (int) (DB_SCALE * Offset);
-            else
-                printf("Error reading file " OFFSET_CONF_FILE "\n");
-        }
-        fclose(OffsetFile);
-        return Ok;
-    }
-}
-
-
-/* Returns the current cached attenuator setting, after correcting for
- * attenuator offset. */
-
-int ReadCorrectedAttenuation()
-{
-    return CurrentAttenuation * DB_SCALE +
-        AttenuatorOffset[CurrentAttenuation];
-}
-
-
-static void UpdateCurrentScale()
-{
-    ScaledCurrentFactor = AttenuatorScalingFactor * CurrentScale;
-}
-
-
-/* Updates the attenuators and the associated current scaling factors. */
-
-void UpdateAttenuation(int NewAttenuation)
-{
-    CurrentAttenuation = NewAttenuation;
-    WriteAttenuation(CurrentAttenuation);
-    /* Update the scaling factors. */
-    AttenuatorScalingFactor = PMFP(from_dB, ReadCorrectedAttenuation() - A_0);
-    UpdateCurrentScale();
-}
-
-
-
-/* Converts a raw current (or charge) intensity value into a scaled current
- * value. */
-
-int ComputeScaledCurrent(const PMFP & IntensityScale, int Intensity)
-{
-    return Denormalise(IntensityScale * ScaledCurrentFactor * Intensity);
-}
-
-
-
-/****************************************************************************/
-/*                                                                          */
-
-void SetBpmEnabled()
-{
-    /* At the moment the only things affected by the ENABLED flag are the
-     * overall system health (managed in the EPICS database) and the
-     * interlock. */
-    NotifyInterlockBpmEnable(BpmEnabled);
-}
-
-
 #define PUBLISH_CALIBRATION(Name, Value) \
     PUBLISH_CONFIGURATION(ao, Name, Value, UpdateCalibration)
 
@@ -492,14 +289,6 @@ void SetBpmEnabled()
 
 bool InitialiseConvert()
 {
-    if (!ReadAttenuatorOffsets())
-        return false;
-
-    /* Master enable flag.  Disabling this has little practical effect on BPM
-     * outputs (apart from disabling interlock), but is available as a global
-     * PV for BPM management. */
-    PUBLISH_CONFIGURATION(bo, "CF:ENABLED", BpmEnabled, SetBpmEnabled);
-        
     PUBLISH_CONFIGURATION(bo, "CF:DIAG", Diagonal, NULL_ACTION);
 
     PUBLISH_CALIBRATION("CF:KX", K_X);
@@ -541,34 +330,7 @@ bool InitialiseConvert()
     PUBLISH_GAIN("CF:G2", ChannelGain[2]);
     PUBLISH_GAIN("CF:G3", ChannelGain[3]);
 
-    PUBLISH_CONFIGURATION(bo, "CF:AUTOSW", AutoSwitchState, UpdateAutoSwitch);
-//    Publish_bi("CF:AUTOSW_RB", AutoSwitchReadback);
-    PUBLISH_CONFIGURATION(longout, "CF:SETSW", 
-        ManualSwitch, UpdateManualSwitch);
-    PUBLISH_CONFIGURATION(bo, "CF:TRIGSW", 
-        ExternalSwitchTrigger, UpdateSwitchTrigger);
-    PUBLISH_CONFIGURATION(longout, "CF:DELAYSW", 
-        SwitchTriggerDelay, UpdateSwitchTriggerDelay);
-    PUBLISH_CONFIGURATION(mbbo, "CF:DSC", DscState, UpdateDsc);
-    PUBLISH_CONFIGURATION(ao, "CF:ISCALE", CurrentScale, UpdateCurrentScale);
-    PUBLISH_ACTION("CF:WRITEDSC", WriteDscStateFile);
-
-    /* Note that updating the attenuators is done via the
-     * InterlockedUpdateAttenuation() routine: this will not actually update
-     * the attenuators (by calling UpdateAttenuation() above) until the
-     * interlock mechanism is ready. */
-    PUBLISH_CONFIGURATION(longout, "CF:ATTEN", 
-        CurrentAttenuation, InterlockedUpdateAttenuation);
-    
-    /* Write the initial state to the hardware and initialise everything that
-     * needs initialising. */
+    /* Take account of the current offsets. */
     UpdateCalibration();
-    WriteAgcMode(CSPI_AGC_MANUAL);
-    InterlockedUpdateAttenuation(CurrentAttenuation);
-    UpdateAutoSwitch();
-    UpdateDsc();
-    UpdateSwitchTrigger();
-    UpdateSwitchTriggerDelay();
-
     return true;
 }

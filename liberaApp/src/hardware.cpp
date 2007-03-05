@@ -94,19 +94,6 @@ static CSPIHCON EventSource = NULL;
 /*****************************************************************************/
 
 
-/* This array translates switch positions into button permutations.  This is
- * needed when reading raw ADC buffers to undo the permutation performed by
- * the input switch. */
-
-static const PERMUTATION PermutationLookup[16] =
-{
-    { 0, 1, 2, 3 },  { 0, 2, 1, 3 },  { 3, 1, 2, 0 },  { 3, 2, 1, 0 },
-    { 0, 1, 3, 2 },  { 0, 2, 3, 1 },  { 3, 1, 0, 2 },  { 3, 2, 0, 1 },
-    { 1, 0, 2, 3 },  { 2, 0, 1, 3 },  { 1, 3, 2, 0 },  { 2, 3, 1, 0 },
-    { 1, 0, 3, 2 },  { 2, 0, 3, 1 },  { 1, 3, 0, 2 },  { 2, 3, 0, 1 }
-};
-
-
 
 bool WriteInterlockParameters(
     CSPI_ILKMODE mode,
@@ -330,22 +317,10 @@ size_t ReadPostmortem(
 
 bool ReadAdcWaveform(ADC_DATA &Data)
 {
-    int Switches;
     size_t Read;
-    bool Ok =
-        ReadSwitches(Switches)  &&
-        CSPI_(cspi_read_ex, CspiConAdc, &Data.Rows, 1024, &Read, NULL)  &&
+    return
+        CSPI_(cspi_read_ex, CspiConAdc, &Data, 1024, &Read, NULL)  &&
         Read == 1024;
-    if (Ok)
-    {
-        /* If automatic switching is selected then the returned switch value
-         * is pretty meaningless (and the returned waveform will be less than
-         * helpful).  Anyhow, choose an arbitrary switch assignment. */
-        if (Switches < 0 || 15 < Switches)  Switches = 3;
-        memcpy(Data.Permutation, PermutationLookup[Switches],
-            sizeof(Data.Permutation));
-    }
-    return Ok;
 }
 
 
@@ -491,25 +466,3 @@ bool InitialiseHardware()
         TEST_IO(DevMem, "Unable to open /dev/mem",
             open, "/dev/mem", O_RDWR | O_SYNC);
 }
-
-
-// static void TerminateConnection(CSPIHCON Connection)
-// {
-//     if (Connection != NULL)
-//     {
-//         CSPI_(cspi_disconnect, Connection);
-//         CSPI_(cspi_freehandle, CSPI_HANDLE_CON, Connection);
-//     }
-// }
-// 
-// /* To be called on shutdown to release all connections to Libera. */
-// void TerminateHardware()
-// {
-//     TerminateConnection(CspiConPm);
-//     TerminateConnection(CspiConDd);
-//     TerminateConnection(CspiConSa);
-//     TerminateConnection(CspiConAdc);
-//     CSPI_(cspi_freehandle, CSPI_HANDLE_CON, EventSource);
-//     CSPI_(cspi_freehandle, CSPI_HANDLE_ENV, CspiEnv);
-//     if (DevMem != -1)  close(DevMem);
-// }

@@ -59,6 +59,7 @@
 
 #include "events.h"
 #include "convert.h"
+#include "configure.h"
 #include "timestamps.h"
 
 
@@ -251,6 +252,8 @@ static bool InitialiseLibera()
         /* Initialise conversion code.  This needs to be done fairly early as
          * it is used globally. */
         InitialiseConvert()  &&
+        /* Initialise Libera configuration: switches, attenuators, etc. */
+        InitialiseConfigure()  &&
         /* Ensure the trigger interlock mechanism is working. */
         InitialiseTriggers()  &&
         /* Timestamp and clock management. */
@@ -287,22 +290,19 @@ static bool InitialiseLibera()
 }
 
 
-/* Shutting down is really just a matter of closing down the event receiver
- * (because it runs a separate thread: this needs to be done in an orderly
- * way, otherwise we'll crash) and closing our connections to the Libera
- * driver (to be tidy). */
+
+/* Shutdown is a little delicate.  We terminate all our threads in an orderly
+ * way, but unfortunately we there's not way to synchronise with the EPICS
+ * layer: in particular, this means that EPICS threads will continue calling
+ * in until _exit() is called.  This means that we don't want to close most
+ * resources, so all we really do below is terminate threads. */
 
 static void TerminateLibera()
 {
     TerminateEventReceiver();
     TerminateTimestamps();
     TerminateSlowAcquisition();
-//     TerminateHardware();
     TerminatePersistentState();
-    
-// #ifdef BUILD_FF_SUPPORT
-//     TerminateFastFeedback();
-// #endif
         
     /* On orderly shutdown remove the pid file if we created it.  Do this
      * last of all. */

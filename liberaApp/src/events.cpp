@@ -142,12 +142,12 @@ public:
         /* Find the associated table entry. */
         for (int i = 0; i < EVENT_TABLE_SIZE; i ++)
         {
-            if (EventTable[i].Valid  &&  EventTable[i].EventId == EventId)
+            EVENT_TABLE &Event = EventTable[i];
+            if (Event.Valid  &&  Event.EventId == EventId)
             {
                 /* Process the event.  Preliminary processing here (in
                  * EVENT_RECEIVER context), and the rest of the processing
                  * will occur when the event is now dispatched. */
-                EVENT_TABLE &Event = EventTable[i];
                 Lock();
                 Event.Parameter = MergeParameters(
                     EventId, Event.Occurred, Event.Parameter, EventParameter);
@@ -161,7 +161,7 @@ public:
         /* If we fall through to here the event was never handled.  This
          * really shouldn't happen: we shouldn't receive the event if we
          * didn't register an interest in it! */
-        printf("Unhandled event %d ignored\n", EventId);
+        printf("Unhandled event %d (%d) ignored\n", EventId, EventParameter);
     }
 
     

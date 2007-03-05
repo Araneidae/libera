@@ -160,10 +160,10 @@ def longIn(name, LOPR=None, HOPR=None, EGU=None, MDEL=-1, **fields):
         MDEL = MDEL,  EGU  = EGU,
         LOPR = LOPR,  HOPR = HOPR, **fields)
 
-def longOut(name, LOPR=None, HOPR=None, **fields):
+def longOut(name, DRVL=None, DRVH=None, **fields):
     return Libera.longout(name + '_S', address=name,
         OMSL = 'supervisory',
-        LOPR = LOPR, HOPR = HOPR, **fields)
+        DRVL = DRVL, DRVH = DRVH, **fields)
 
 
 # Field name prefixes for mbbi/mbbo records.

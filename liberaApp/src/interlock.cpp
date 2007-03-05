@@ -45,6 +45,7 @@
 #include "trigger.h"
 #include "events.h"
 #include "convert.h"
+#include "configure.h"
 
 #include "interlock.h"
 

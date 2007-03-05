@@ -291,10 +291,8 @@ private:
     void OnTerminate()
     {
         /* Poke the terminate thread to kick it out of its sleep so that we
-         * get one last write of the state file. 
-         *    Note: this signal is handled elsewhere, so has side effects.
-         * Fortunately, these side effects aren't a problem. */
-//        TEST_(kill, pid, SIGINT);
+         * get one last write of the state file.   We reserve SIGUSR2 for
+         * side effect free signals! */
         TEST_(kill, pid, SIGUSR2);
     }
     

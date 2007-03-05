@@ -42,6 +42,7 @@
 #include "trigger.h"
 #include "events.h"
 #include "convert.h"
+#include "configure.h"
 #include "waveform.h"
 #include "numeric.h"
 #include "cordic.h"
@@ -56,6 +57,11 @@
 #define S_0             321260
 
 
+/* Dual of offsetof macro, used to reference a selected field. */
+#define use_offset(Type, Struct, Field) \
+    (*(Type *)((char *)&(Struct) + (Field)))
+
+
 
 /* Processing the raw ADC data is a suprisingly complicated process.  The
  * following routines capture the stages. */
@@ -64,12 +70,24 @@
  * form. */
 typedef int EXTRACTED_ADC[4][ADC_LENGTH];
 
+/* A permutation is a mapping from channel to button. */
+typedef unsigned int PERMUTATION[4];
+
+
 /* Array of offsets into ABCD_ROW structure. */
 static const size_t AbcdFields[] = { FIELD_A, FIELD_B, FIELD_C, FIELD_D };
 
-/* Dual of offsetof macro, used to reference a selected field. */
-#define use_offset(Type, Struct, Field) \
-    (*(Type *)((char *)&(Struct) + (Field)))
+/* This array translates switch positions into button permutations.  This is
+ * needed when reading raw ADC buffers to undo the permutation performed by
+ * the input switch. */
+static const PERMUTATION PermutationLookup[16] =
+{
+    { 0, 1, 2, 3 },  { 0, 2, 1, 3 },  { 3, 1, 2, 0 },  { 3, 2, 1, 0 },
+    { 0, 1, 3, 2 },  { 0, 2, 3, 1 },  { 3, 1, 0, 2 },  { 3, 2, 0, 1 },
+    { 1, 0, 2, 3 },  { 2, 0, 1, 3 },  { 1, 3, 2, 0 },  { 2, 3, 1, 0 },
+    { 1, 0, 3, 2 },  { 2, 0, 3, 1 },  { 1, 3, 0, 2 },  { 2, 3, 0, 1 }
+};
+
 
 
 /* Returns the maximum ADC value. */
@@ -100,7 +118,7 @@ static void ExtractRawData(
     /* Extract, sign extend from 12 bits to 32 bits, and transpose. */
     for (int i = 0; i < ADC_LENGTH; i ++)
         for (int j = 0; j < 4; j ++)
-            Extracted[j][i] = ((int) RawData.Rows[i][j] << 20) >> 20;
+            Extracted[j][i] = ((int) RawData[i][j] << 20) >> 20;
     /* Publish each column to RawAdc. */
     for (int j = 0; j < 4; j ++)
         RawAdc.Write(AbcdFields[j], Extracted[j], ADC_LENGTH);
@@ -259,6 +277,8 @@ private:
      *  7. Finally compute XYQS. */
     int ProcessAdcWaveform()
     {
+        const PERMUTATION & Permutation =
+            PermutationLookup[ReadSwitchSetting()];
         ADC_DATA RawData;
         ReadAdcWaveform(RawData);
         
@@ -277,7 +297,7 @@ private:
              * processing channel, bug after condensing and gain correction
              * we want to undo the switch permutation so that the button
              * readings appear in the correct sequence. */
-            int Channel = RawData.Permutation[i];
+            int Channel = Permutation[i];
             size_t Field = AbcdFields[i];
             int Condensed[ADC_LENGTH/4];
             CondenseAdcData(Extracted[Channel], Condensed);

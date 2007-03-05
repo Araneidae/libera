@@ -226,8 +226,16 @@ def CheckMachineClocks(lb_bpms, bs_bpms, sr_bpms, ts_bpms, evrs, trigger):
 def RefreshFastFeedback(ActiveBpms):
     ActiveBpms = set(ActiveBpms)
 
+    # Assign ids to all BPMs as follows:
+    #   In SR assign SR1-1 to SR24-7 ids 1 to 168 in sequence
+    #   SR21-8 is assigned 169
+    #   Arbitrarily assign numbers to LB+BS
+    #   In TS assign ids 1 to 6 in sequence
     Bpms, Ids = zip(*[(bpm, id+1)
-        for id, bpm in enumerate(SR_BPMS)
+        for id, bpm in
+            list(enumerate(SR_BPMS)) +
+            list(enumerate(LB_BPMS + BS_BPMS)) +
+            list(enumerate(TS_BPMS))
         if bpm in ActiveBpms])
     catools.caput(PVs(Bpms, 'FF:BPMID_S'), Ids, timeout = 5)
     caput(PVs(Bpms, 'FF:FRAMELEN_S'), 9000)

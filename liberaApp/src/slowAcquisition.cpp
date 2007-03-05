@@ -39,6 +39,7 @@
 #include "thread.h"
 #include "trigger.h"
 #include "convert.h"
+#include "configure.h"
 #include "waveform.h"
 #include "numeric.h"
 #include "interlock.h"

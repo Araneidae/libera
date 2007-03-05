@@ -82,15 +82,8 @@ struct XYQS_ROW
  * in the current release of the driver), one for each button.  ADC data is
  * always read in 1024 row segments. */
 #define ADC_LENGTH      1024
-typedef unsigned int PERMUTATION[4];
 typedef short ADC_ROW[4];
-struct ADC_DATA
-{
-    /* Button permutation corrresponding to current switch position. */
-    PERMUTATION Permutation;
-    /* Raw ADC data as read. */
-    ADC_ROW Rows[ADC_LENGTH];
-};
+typedef ADC_ROW ADC_DATA[ADC_LENGTH];
 
 
 
@@ -105,9 +98,6 @@ struct ADC_DATA
  * If this routine fails (and returns false) then no further operations can
  * be done and system startup should fail. */
 bool InitialiseHardware();
-
-// /* To be called on shutdown to release all connections to Libera. */
-// void TerminateHardware();
 
 
 /* Writes or writes directly to or from a hardware register.  Not designed for
