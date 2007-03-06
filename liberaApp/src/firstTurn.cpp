@@ -34,6 +34,9 @@
 #include <stddef.h>
 #include <math.h>       // Note: only used during initialisation
 
+// Testing only, remove
+#include <string.h>
+
 #include "device.h"
 #include "persistent.h"
 #include "publish.h"
@@ -259,6 +262,14 @@ public:
     
 private:
     FIRST_TURN();
+
+// Delete me!
+void TimeWaster()     
+{
+    const int ZERO_COUNT = 65536*4;
+    char Zeros[ZERO_COUNT];
+    memset(Zeros, 0, ZERO_COUNT);
+}
     
     /* Performs the fairly complex processing required to convert a raw ADC
      * waveform into published waveform and button values.  We perform the
@@ -281,6 +292,8 @@ private:
             PermutationLookup[ReadSwitchSetting()];
         ADC_DATA RawData;
         ReadAdcWaveform(RawData);
+
+TimeWaster();
         
         /* Extract into arrays, sign extend, transpose and publish. */
         EXTRACTED_ADC Extracted;

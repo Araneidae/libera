@@ -630,7 +630,7 @@ def Sensors():
     
     allsensors = alarmsensors + voltages + [uptime, epicsup, health]
     
-    boolIn('PROCESS', '', '',
+    boolOut('PROCESS', '', '',
         DESC = 'Sensors scan',
         SCAN = '10 second',
         PINI = 'YES',

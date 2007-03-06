@@ -182,14 +182,11 @@ static void ProcessFreeMemory()
 }
 
 
-static bool ProcessSensors(bool &Value)
+static void ProcessSensors()
 {
     ProcessUptimeAndIdle();
     ProcessFreeMemory();
     ReadHealth(Health);
-    
-    Value = true;
-    return true;
 }
 
 
@@ -217,7 +214,7 @@ bool InitialiseSensors()
     Publish_ai("SE:EPICSUP", EpicsUp);
     Publish_ai("SE:CPU",     CpuUsage);
 
-    PUBLISH_FUNCTION_IN(bi, "SE:PROCESS", ProcessSensors);
+    PUBLISH_ACTION("SE:PROCESS", ProcessSensors);
 
     InitialiseUptime();
     
