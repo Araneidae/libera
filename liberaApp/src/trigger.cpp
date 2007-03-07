@@ -62,15 +62,14 @@
 /*****************************************************************************/
 
 
-TRIGGER::TRIGGER(bool InitialValue)
+TRIGGER::TRIGGER(bool InitialValue) :
+    UPDATER_bool(InitialValue)
 {
-    Value = InitialValue;
     memset(&Timestamp, 0, sizeof(Timestamp));
-    iIntr = NULL;
 }
 
 /* This method signals that the trigger is ready. */
-bool TRIGGER::Ready(const struct timespec *NewTimestamp)
+void TRIGGER::Ready(const struct timespec *NewTimestamp)
 {
     /* If we've been given a timestamp then use that -- but only if the Libera
      * system clock has been synchronised -- otherwise fetch the current time
@@ -80,27 +79,10 @@ bool TRIGGER::Ready(const struct timespec *NewTimestamp)
     else
         Timestamp = *NewTimestamp;
 
-    /* If epics is listening, let it know. */
-    if (iIntr == NULL)
-        return false;
-    else
-        return iIntr->IoIntr();
+    /* Notify EPICS that we've changed. */
+    Write(true);
 }
 
-
-/* Epics support routine: just return our value. */
-bool TRIGGER::read(bool &ValueRead)
-{
-    ValueRead = Value;
-    return true;
-}
-
-/* Support I/O Intr functionality. */
-bool TRIGGER::EnableIoIntr(I_INTR & Intr)
-{
-    iIntr = &Intr;
-    return true;
-}
 
 bool TRIGGER::GetTimestamp(struct timespec & Result)
 {
@@ -108,11 +90,6 @@ bool TRIGGER::GetTimestamp(struct timespec & Result)
     return true;
 }
 
-void TRIGGER::Write(bool NewValue)
-{
-    Value = NewValue;
-    Ready();
-}
 
 
 

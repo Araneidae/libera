@@ -70,8 +70,8 @@ def GetActiveBpms(bpms):
     for bpm, enabled in zip(bpms, enabled_list):
         if enabled.status != catools.ECA_NORMAL:
             print ' ', bpm, 'not responding'
-        elif not enabled.value:
-            print ' ', bpm, 'disabled'
+#         elif not enabled.value:
+#             print ' ', bpm, 'disabled'
         else:
             result.append(bpm)
     return result

@@ -342,7 +342,7 @@ def Config():
     aOut('G3', 0, 1.5,  ESLO = 2**-30, DESC = 'Channel 3 gain adjustment')
 
     # Configure automatic switch state
-    autoswitch = boolOut('AUTOSW', 'Manual', 'Automatic',
+    autoswitch = boolInOut('AUTOSW', 'Manual', 'Automatic',
         DESC = 'Configure rotating switches')
     # Select switch to use when automatic switching off
     longOut('SETSW', 0, 15, DESC = 'Fixed multiplexor switch')
@@ -352,18 +352,11 @@ def Config():
     longOut('DELAYSW', 0, DESC = 'Switches trigger delay')
     
     # DSC control
-    mbbOut('DSC',
+    mbbInOut('DSC',
         ('Fixed gains', 0),     # Use last good DSC settings
         ('Unity gains', 1),     # Disable DSC, use fixed gains
         ('Automatic', 2),       # Run DSC
         DESC = 'Digitial Signal Conditioning')
-#     # When the DSC is set into Automatic this will automatically set the
-#     # switches into automatic mode.  Catch this.
-#     sw_readback = boolIn('AUTOSW_RB', 'Manual', 'Automatic',
-#         SCAN = 'I/O Intr',
-#         DESC = 'Autoswitch readback')
-#     sw_readback.FLNK = records.bo('AUTOSW_CP',
-#         DOL = sw_readback, OMSL = 'closed_loop', OUT = PP(autoswitch))
     boolOut('WRITEDSC', 'Save DSC', DESC = 'Write DSC state file')
     
     # Control attenuation
@@ -389,13 +382,8 @@ def Interlock():
 
     # Interlock control state.  This tracks the internal state, but can also
     # be reset externally.
-    enable = boolOut('ENABLE', 'Disabled', 'Enabled',
+    boolInOut('ENABLE', 'Disabled', 'Enabled',
         DESC = 'Interlock master enable')
-    readback = boolIn('ENABLE_RB', 'Disabled', 'Enabled',
-        DESC = 'Interlock enable readback',
-        SCAN = 'I/O Intr')
-    readback.FLNK = records.bo('ENABLE_CP',
-        DOL  = readback, OMSL = 'closed_loop', OUT = PP(enable))
 
     # Interlock current threshold: interlock will automatically switch on
     # when this threshold is exceeded.

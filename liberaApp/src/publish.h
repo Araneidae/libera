@@ -39,6 +39,12 @@
 
 
 
+/* Helper routine for concatenating or just copying strings. */
+const char * Concat(
+    const char * Prefix, const char * Body="", const char * Suffix="");
+
+
+
 /*****************************************************************************/
 /*                                                                           */
 /*                        Publish Simple Variables                           */
@@ -287,6 +293,67 @@ private:
 
 
 
-/* Helper routine for concatenating or just copying strings. */
-const char * Concat(
-    const char * Prefix, const char * Body="", const char * Suffix="");
+/*****************************************************************************/
+/*                                                                           */
+/*                        Publish Readback Variable                          */
+/*                                                                           */
+/*****************************************************************************/
+
+
+/* A simple class for publishing self-updating values. */
+
+template<class T>
+    class UPDATER : public I_READER<T>
+{
+public:
+    UPDATER(T InitialValue);
+    void Write(T NewValue);
+    T Read() { return Value; }
+private:
+    bool read(T &Value);
+    bool EnableIoIntr(I_INTR & Intr);
+    T Value;
+    I_INTR * iIntr;
+};
+
+typedef UPDATER<bool> UPDATER_bool;
+typedef UPDATER<int>  UPDATER_int;
+
+
+
+template<class T> class READBACK
+{
+public:
+    READBACK(T InitialValue, void (*OnUpdate)(T));
+    void Write(T NewValue);
+    
+private:
+    bool UserUpdate(T NewValue);
+    T Value;
+    void (*const OnUpdate)(T);
+public:
+    UPDATER<T> Writer;
+    CLOSURE_OUT<READBACK<T>, T> Reader;
+};
+
+typedef READBACK<bool> READBACK_bool;
+typedef READBACK<int>  READBACK_mbb;
+typedef READBACK<int>  READBACK_int;
+
+
+#define PUBLISH_READBACK(recin, recout, Name, InitialValue, Action) \
+    ( { \
+        READBACK<typeof(InitialValue)> * Readback = \
+            new READBACK<typeof(InitialValue)>(InitialValue, Action); \
+        Publish_##recin(Name "_R", Readback->Writer); \
+        Publish_##recout(Name, Readback->Reader); \
+        Readback; \
+    } )
+
+#define PUBLISH_READBACK_CONFIGURATION(recin, recout, Name, Value, Action) \
+    ( { \
+        Persistent(Name, Value); \
+        READBACK<typeof(Value)> * Readback = \
+            PUBLISH_READBACK(recin, recout, Name, Value, Action); \
+        Readback; \
+    } )

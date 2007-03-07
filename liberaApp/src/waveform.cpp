@@ -35,7 +35,7 @@
 #include <stdlib.h>
 #include <stddef.h>
 
-#include <dbFldTypes.h>
+#include <dbFldTypes.h>         // DBF_LONG, DBF_FLOAT
 
 #include "device.h"
 #include "persistent.h"

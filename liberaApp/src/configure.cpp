@@ -57,10 +57,10 @@ static bool BpmEnabled = true;
 
 /* Controls the rotating switches: manual or automatic mode. */
 static bool AutoSwitchState = false;
+READBACK<bool> * SwitchReadback = NULL;
 /* Selects which switch setting to use in manual mode. */
 static int ManualSwitch = 3;
 
-//static TRIGGER AutoSwitchReadback(false);
 
 /* Selects internal or external triggering for the rotating switches. */
 static bool ExternalSwitchTrigger = false;
@@ -69,6 +69,7 @@ static int SwitchTriggerDelay = 0;
 
 /* Controls the Digital Signal Conditioning daemon state. */
 static int DscState = 0;
+READBACK<int> * DscReadback = NULL;
 
 /* Selected attenuation.  The default is quite high for safety. */
 static int CurrentAttenuation = 60;
@@ -92,6 +93,9 @@ static int CurrentScale = 100000000;
 /****************************************************************************/
 
 
+static void UpdateDsc(int NewDscState);
+
+
 /* Called whenever the autoswitch mode has changed. */
 
 static void UpdateManualSwitch()
@@ -102,13 +106,19 @@ static void UpdateManualSwitch()
 }
 
 
-static void UpdateAutoSwitch()
+static void UpdateAutoSwitch(bool NewSwitchState)
 {
-//printf("UpdateAutoSwitch\n");
+    AutoSwitchState = NewSwitchState;
+    SwitchReadback->Write(AutoSwitchState);
+    
     if (AutoSwitchState)
         WriteSwitchState(CSPI_SWITCH_AUTO);
     else
+    {
+        if (DscState == CSPI_DSC_AUTO)
+            UpdateDsc(CSPI_DSC_OFF);
         UpdateManualSwitch();
+    }
 }
 
 
@@ -140,12 +150,14 @@ static void UpdateSwitchTriggerDelay()
 }
 
 
-static void UpdateDsc()
+static void UpdateDsc(int NewDscState)
 {
-//printf("UpdateDsc %d\n", DscState);
+    DscState = NewDscState;
+    DscReadback->Write(DscState);
+    
+    if (DscState == CSPI_DSC_AUTO)
+        UpdateAutoSwitch(true);
     WriteDscMode((CSPI_DSCMODE) DscState);
-//     if (DscState == CSPI_DSC_AUTO)
-//         AutoSwitchReadback.Write(true);
 }
 
 
@@ -273,15 +285,16 @@ bool InitialiseConfigure()
     PUBLISH_CONFIGURATION(bo, "CF:ENABLED", BpmEnabled, SetBpmEnabled);
         
 
-    PUBLISH_CONFIGURATION(bo, "CF:AUTOSW", AutoSwitchState, UpdateAutoSwitch);
-//    Publish_bi("CF:AUTOSW_RB", AutoSwitchReadback);
+    SwitchReadback = PUBLISH_READBACK_CONFIGURATION(bi, bo, "CF:AUTOSW",
+        AutoSwitchState, UpdateAutoSwitch);
     PUBLISH_CONFIGURATION(longout, "CF:SETSW", 
         ManualSwitch, UpdateManualSwitch);
     PUBLISH_CONFIGURATION(bo, "CF:TRIGSW", 
         ExternalSwitchTrigger, UpdateSwitchTrigger);
     PUBLISH_CONFIGURATION(longout, "CF:DELAYSW", 
         SwitchTriggerDelay, UpdateSwitchTriggerDelay);
-    PUBLISH_CONFIGURATION(mbbo, "CF:DSC", DscState, UpdateDsc);
+    DscReadback = PUBLISH_READBACK_CONFIGURATION(mbbi, mbbo, "CF:DSC",
+        DscState, UpdateDsc);
     PUBLISH_CONFIGURATION(ao, "CF:ISCALE", CurrentScale, UpdateCurrentScale);
     PUBLISH_ACTION("CF:WRITEDSC", WriteDscStateFile);
 
@@ -296,8 +309,8 @@ bool InitialiseConfigure()
      * needs initialising. */
     WriteAgcMode(CSPI_AGC_MANUAL);
     InterlockedUpdateAttenuation(CurrentAttenuation);
-    UpdateAutoSwitch();
-    UpdateDsc();
+    UpdateAutoSwitch(AutoSwitchState);
+    UpdateDsc(DscState);
     UpdateSwitchTrigger();
     UpdateSwitchTriggerDelay();
 

@@ -119,13 +119,8 @@ Libera()
 #           Record Generation Support
 # ----------------------------------------------------------------------------
 
-
-def extend(dictionary, key, value):
-    assert key not in dictionary, 'key %s already in dictionary' % key
-    dictionary[key] = value
-
-
 # Functions for creating libera records
+
 
 def aIn(name, LOPR, HOPR,
         ESLO=1e-6, EGU='', PREC=0, EOFF=0, MDEL=-1, **fields):
@@ -173,17 +168,17 @@ _mbbPrefixes = [
 
 def mbbOut(name, *option_values, **fields):
     for prefix, (option, value) in zip(_mbbPrefixes, option_values):
-        extend(fields, prefix + 'ST', option)
-        extend(fields, prefix + 'VL', value)
+        fields[prefix + 'ST'] = option
+        fields[prefix + 'VL'] = value
     return Libera.mbbo(name + '_S', address=name,
         OMSL = 'supervisory', **fields)
     
 def mbbIn(name, *option_values, **fields):
     def process_value(prefix, option, value, severity=None):
-        extend(fields, prefix + 'ST', option)
-        extend(fields, prefix + 'VL', value)
+        fields[prefix + 'ST'] = option
+        fields[prefix + 'VL'] = value
         if severity:
-            extend(fields, prefix + 'SV', severity)
+            fields[prefix + 'SV'] = severity
     for prefix, value in zip(_mbbPrefixes, option_values):
         process_value(prefix, *value)
     return Libera.mbbi(name, **fields)
@@ -202,8 +197,32 @@ def Waveform(name, length, FTVL='LONG', **fields):
         **fields)
 
 
+# An InOut record is a fairly complex construction: an output record controls
+# a PV, but the controlled value may spontaneously change underfoot.  We
+# handle this with three records:
+#
+#   output - this is the main controlling record
+#   readback - this uses 'I/O Intr' scan to monitor the controlled value
+#   copy - a third record monitors the readback and copies any changes back
+#       into the output record
+def __makeInOut(record, mkIn, mkOut):
+    def Builder(name, *vargs, **fields):
+        output = mkOut(name, *vargs, **fields)
+        readback = mkIn(name + '_R',
+            SCAN = 'I/O Intr',
+            *vargs, **fields)
+        readback.FLNK = record(name + '_C',
+            DOL = readback, OMSL = 'closed_loop', OUT = PP(output))
+    return Builder
+
+boolInOut = __makeInOut(records.bo, boolIn, boolOut)
+mbbInOut  = __makeInOut(records.mbbo, mbbIn, mbbOut)
+
+
 __all__ = [
     'Libera', 'ChannelName',
-    'aIn',      'aOut',     'boolIn',   'boolOut',
-    'longIn',   'longOut',  'mbbOut',   'mbbIn',
+    'aIn',      'aOut',
+    'boolIn',   'boolOut',  'boolInOut',
+    'longIn',   'longOut',
+    'mbbIn',    'mbbOut',   'mbbInOut',
     'stringIn', 'Waveform']

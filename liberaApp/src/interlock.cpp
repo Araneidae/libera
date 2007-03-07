@@ -35,8 +35,6 @@
 #include <stddef.h>
 #include <pthread.h>
  
-#include <dbFldTypes.h>
- 
 #include "device.h"
 #include "persistent.h"
 #include "publish.h"
@@ -87,9 +85,8 @@ static bool GlobalBpmEnable = true;
 /* Master interlock enable: can be reset, but only if current is below
  * threshold. */
 static bool MasterInterlockEnable = false;
+static READBACK_bool * EnableReadback = NULL;
 
-
-static TRIGGER EnableReadback(false);
 
 
 /* The interlock holdoff mechanism is required to ensure that when we change
@@ -193,22 +190,22 @@ static void UpdateInterlockEnable(bool SetEnable)
 {
     Lock();
 
-    /* Compute the proper enable state. */
-    bool NewSetEnable = SetEnable;
+    /* Compute the proper enable from the requested new state together with
+     * other settings that affect the state. */
+    MasterInterlockEnable = SetEnable;
     if (!GlobalBpmEnable)
         /* During BPM disable mode the enable state cannot be set. */
-        NewSetEnable = false;
+        MasterInterlockEnable = false;
     else if (CurrentOverThreshold)
         /* If the current is over limit the enable cannot be reset. */
-        NewSetEnable = true;
+        MasterInterlockEnable = true;
     else if (CurrentUnderThreshold)
-        NewSetEnable = false;
+        /* If the current is under limit enable cannot be set. */
+        MasterInterlockEnable = false;
 
-    /* Do the appropriate updates.  If we disagree with the EPICS control
-     * value then write our proper value right back to correct it. */
-    if (NewSetEnable != SetEnable)
-        EnableReadback.Write(NewSetEnable);
-    MasterInterlockEnable = NewSetEnable;
+    /* Ensure that the control is in agreement with our calculated setting
+     * and update the true interlock setting. */
+    EnableReadback->Write(MasterInterlockEnable);
     WriteInterlockState();
     
     Unlock();
@@ -246,7 +243,7 @@ void NotifyInterlockCurrent(int Current)
         if (CurrentUnderThreshold)  MasterInterlockEnable = false;
         if (OldMasterInterlockEnable != MasterInterlockEnable)
         {
-            EnableReadback.Write(MasterInterlockEnable);
+            EnableReadback->Write(MasterInterlockEnable);
             WriteInterlockState();
         }
     }
@@ -308,23 +305,6 @@ private:
 };
 
 
-/* This class receives the interlock enable control and passes it on
- * transparently to the UpdateInterlockEnable routine. */
-class INTERLOCK_ENABLE : public I_bo
-{
-private:
-    bool init(bool &Result)
-    {
-        Result = MasterInterlockEnable;
-        return true;
-    }
-    bool write(bool Enable)
-    {
-        UpdateInterlockEnable(Enable);
-        return true;
-    }
-};
-
 
 
 /* Called when the global BPM enable state changes. */
@@ -332,7 +312,7 @@ private:
 void NotifyInterlockBpmEnable(bool Enabled)
 {
     GlobalBpmEnable = Enabled;
-    EnableReadback.Write(false);
+    EnableReadback->Write(false);
 }
 
 
@@ -363,8 +343,8 @@ bool InitialiseInterlock()
     PUBLISH_INTERLOCK(longout, "IL:TIME", OverflowTime);
 
     /* The interlock enable is dynamic state. */
-    Publish_bo("IL:ENABLE",    *new INTERLOCK_ENABLE);
-    Publish_bi("IL:ENABLE_RB", EnableReadback);
+    EnableReadback = PUBLISH_READBACK(bi, bo, "IL:ENABLE",
+        false, UpdateInterlockEnable);
 
     PUBLISH_CONFIGURATION(longout, "IL:HOLDOFF", 
         InterlockHoldoffCount, NULL_ACTION);

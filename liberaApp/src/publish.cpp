@@ -176,3 +176,92 @@ DEFINE_PUBLISH_VAR_IN(stringin);
 DEFINE_PUBLISH_VAR_OUT(stringout);
 DEFINE_PUBLISH_VAR_IN(mbbi);
 DEFINE_PUBLISH_VAR_OUT(mbbo);
+
+
+
+/****************************************************************************/
+/*                                                                          */
+/*                     UPDATER and READBACK classes                         */
+/*                                                                          */
+/****************************************************************************/
+
+
+template<class T>
+    UPDATER<T>::UPDATER(T InitialValue)
+{
+    Value = InitialValue;
+    iIntr = NULL;
+}
+
+
+template<class T>
+    void UPDATER<T>::Write(T NewValue)
+{
+    Value = NewValue;
+    if (iIntr != NULL)
+        iIntr->IoIntr();
+}
+
+
+template<class T>
+    bool UPDATER<T>::read(T &ValueRead)
+{
+    ValueRead = Value;
+    return true;
+}
+
+template<class T>
+    bool UPDATER<T>::EnableIoIntr(I_INTR & Intr)
+{
+    iIntr = &Intr;
+    return true;
+}
+
+
+template class UPDATER<bool>;
+template class UPDATER<int>;
+
+
+template<class T>
+    READBACK<T>::READBACK(T InitialValue, void (*OnUpdate)(T)) :
+    
+    Value(Value),
+    OnUpdate(OnUpdate),
+    Writer(Value),
+    Reader(*this, &READBACK<T>::UserUpdate, &READBACK<T>::Value)
+{
+    Value = InitialValue;
+}
+
+
+
+/* This is called when the system wants to change the value. */
+
+template<class T>
+    void READBACK<T>::Write(T NewValue)
+{
+    if (NewValue != Value)
+    {
+        Value = NewValue;
+        Writer.Write(Value);
+    }
+}
+
+
+/* This is called when the controlling PV is changed: we can regard this as
+ * an operator change. */
+
+template<class T>
+    bool READBACK<T>::UserUpdate(T NewValue)
+{
+    if (NewValue != Value)
+    {
+        Value = NewValue;
+        OnUpdate(NewValue);
+    }
+    return true;
+}
+
+
+template class READBACK<bool>;
+template class READBACK<int>;

@@ -33,31 +33,17 @@
 /* A simple trigger class designed to publish I/O Intr events to EPICS
  * together with timestamps. */
 
-class TRIGGER : public I_bi
+class TRIGGER : public UPDATER_bool
 {
 public:
     TRIGGER(bool InitialValue = true);
 
     /* This method is used to signal EPICS that this trigger is ready.  If no
      * timestamp is given then we use the current time. */
-    bool Ready(const struct timespec *Timestamp = NULL);
-
-    /* This changes the trigger value and also signals EPICS. */
-    void Write(bool NewValue);
-
-    /* Reads the currently set trigger value. */
-    bool Read() { return Value; }
+    void Ready(const struct timespec *Timestamp = NULL);
 
 private:
-    bool read(bool &Value);
-    bool EnableIoIntr(I_INTR & Intr);
     bool GetTimestamp(struct timespec & Result);
-
-    /* Callback used to notify trigger event to EPICS. */
-    I_INTR * iIntr;
-    /* Internal value. */
-    bool Value;
-    /* Timestamp for this trigger. */
     struct timespec Timestamp;
 };
 

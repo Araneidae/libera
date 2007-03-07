@@ -45,8 +45,6 @@
 #include <limits.h>
 #include <time.h>
 
-#include <dbFldTypes.h>
-
 #include "libera_pll.h"
 
 #include "device.h"

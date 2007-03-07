@@ -37,8 +37,6 @@
 #include <unistd.h>
 #include <fts.h>
 
-#include <dbFldTypes.h>
-
 #include "device.h"
 #include "persistent.h"
 #include "publish.h"
