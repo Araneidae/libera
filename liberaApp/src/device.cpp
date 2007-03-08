@@ -302,6 +302,34 @@ static bool init_record_(
 
 
 
+static void SetTimestamp(dbCommon *pr, struct timespec &Timestamp)
+{
+    /* Convert the standard Unix timespec value into the EPICS epoch
+     * timestamp (subtract 20 years). */
+    pr->time.secPastEpoch = Timestamp.tv_sec - EPICS_EPOCH_OFFSET;
+    pr->time.nsec = Timestamp.tv_nsec;
+}
+
+
+/* Record initialisation post processed: ensures that the EPICS data
+ * structures are appropriately initialised.  The data has already been read,
+ * but we still need to set up the alarm state and give the data a sensible
+ * initial timestamp. */
+
+static void post_init_record_out(dbCommon *pr, I_RECORD *iRecord)
+{
+    (void) recGblSetSevr(pr, READ_ALARM, iRecord->AlarmStatus());
+    recGblResetAlarms(pr); 
+    struct timespec Timestamp;
+    if (!iRecord->GetTimestamp(Timestamp))
+        /* If the record doesn't have its own timestamp then synthesise one
+         * instead from the real time clock. */
+        clock_gettime(CLOCK_REALTIME, & Timestamp);
+    SetTimestamp(pr, Timestamp);
+}
+
+
+
 /* Common record post-processing.  Updates the alarm state as appropriate,
  * and checks if the timestamp should be written here. */
 
@@ -310,14 +338,8 @@ static void post_process(dbCommon *pr, epicsEnum16 nsta, I_RECORD *iRecord)
     (void) recGblSetSevr(pr, nsta, iRecord->AlarmStatus());
     struct timespec Timestamp;
     if (iRecord->GetTimestamp(Timestamp))
-    {
-        /* Convert the standard Unix timespec value into the EPICS epoch
-         * timestamp (subtract 20 years). */
-        pr->time.secPastEpoch = Timestamp.tv_sec - EPICS_EPOCH_OFFSET;
-        pr->time.nsec = Timestamp.tv_nsec;
-    }
+        SetTimestamp(pr, Timestamp);
 }
-
 
 
 
@@ -342,6 +364,8 @@ static void post_process(dbCommon *pr, epicsEnum16 nsta, I_RECORD *iRecord)
 #define READ_DIRECT(record, action, field) \
     action(field)
 
+/* This macro expands to either READ_DIRECT or READ_ADAPTER, depending on how
+ * the data from this record needs to be processed. */
 #define READ_VALUE(record, action, field) \
     READ_##record(record, action, field)
 
@@ -356,7 +380,7 @@ static void post_process(dbCommon *pr, epicsEnum16 nsta, I_RECORD *iRecord)
     { \
         const char * Name = pr->inOrOut.value.constantStr; \
         if (init_record_( \
-            #record, Name, (dbCommon *) pr, Search_##record(Name))) \
+                #record, Name, (dbCommon *) pr, Search_##record(Name))) \
             POST_INIT_##inOrOut(record, pr) \
         else \
             return ERROR; \
@@ -373,8 +397,7 @@ static void post_process(dbCommon *pr, epicsEnum16 nsta, I_RECORD *iRecord)
     { \
         GET_RECORD(record, pr, iRecord); \
         pr->udf = ! READ_VALUE(record, iRecord->init, pr->VAL(record)); \
-        SET_ALARM(pr, READ, iRecord); \
-        recGblResetAlarms(pr); \
+        post_init_record_out((dbCommon*)pr, iRecord); \
         return OK; \
     }
 

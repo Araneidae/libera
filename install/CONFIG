@@ -40,7 +40,7 @@ IOC_STATE_PATH=/opt/state
 # the booster: need to ensure that this length is less than the interval
 # between triggers.
 BO_IOC_BN_LENGTH=190
-SR_IOC_BN_LENGTH=80
+SR_IOC_BN_LENGTH=60
 
 # Maximum number of points to be captured in a single long turn-by-turn
 # waveform.  This will consume 32 bytes per point, so don't set it too long!

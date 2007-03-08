@@ -230,12 +230,14 @@ public:
     {
         NtpTimeString[0] = '\0';
         SystemTimeString[0] = '\0';
+        MissedEventCount = 0;
         
         /* Publishing the interlock will also make MCL and MCH fields
          * available with machine clock information. */
         Interlock.Publish("CK", true, "TIME", "TIME_DONE");
         Publish_stringin("CK:TIME_NTP", NtpTimeString);
         Publish_stringin("CK:TIME_SC", SystemTimeString);
+        Publish_longin("CK:MISSED", MissedEventCount);
         
         RegisterTriggerEvent(*this, PRIORITY_TICK);
     }
@@ -255,12 +257,12 @@ private:
         struct tm Tm;
         gmtime_r(&st.tv_sec, &Tm);
         snprintf(String, sizeof(EPICS_STRING),
-            "%04d/%02d/%02d %02d:%02d:%02d.%06d",
+            "%04d-%02d-%02d %02d:%02d:%02d.%06d",
             1900 + Tm.tm_year, Tm.tm_mon + 1, Tm.tm_mday,
             Tm.tm_hour, Tm.tm_min, Tm.tm_sec, usec);
     }
     
-    void OnEvent(int)
+    void OnEvent(int MissedEvents)
     {
         Interlock.Wait();
         
@@ -276,12 +278,15 @@ private:
         TEST_(clock_gettime, CLOCK_REALTIME, &NtpTime);
         FormatTimeString(NtpTime, NtpTimeString);
 
+        MissedEventCount = MissedEvents;
+
         Interlock.Ready(Timestamp);
     }
 
     INTERLOCK Interlock;
     EPICS_STRING NtpTimeString;
     EPICS_STRING SystemTimeString;
+    int MissedEventCount;
 };
 
 

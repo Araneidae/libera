@@ -483,6 +483,25 @@ def Clock():
         OOPT = 'Every Time',
         DOPT = 'Use CALC')
 
+    # Records for calculating number of missed triggers and associated
+    # percentage.
+    missed = longIn('MISSED', DESC = 'Triggers missed since last')
+    tick_count = records.calc('TICK_COUNT',
+        CALC = 'A+1',   DESC = 'Total triggers seen')
+    tick_count.INPA = tick_count
+    total_missed = records.calc('MISSED_ALL',
+        CALC = 'A+B',   INPA = missed,
+        DESC = 'Accumulated triggers missed')
+    total_missed.INPB = total_missed
+    percent_missed = records.calc('MISSED_PC',
+        CALC = 'A>0?100*A/(A+B):0',
+        INPA = total_missed,    INPB = tick_count,
+        EGU  = '%',     PREC = 2,
+        DESC = 'Percentage triggers missed')
+    # A reset record to simultaneously reset both counters
+    create_dfanout('RESET_CNTRS',
+        tick_count, total_missed,
+        VAL = 0,    PINI = 'YES',   DESC = 'Reset tick loss counters')
     
     # Group together all the records that affect the alarm status. */
     mc_health = [
@@ -518,9 +537,10 @@ def Clock():
 
     # This trigger receives the normal machine trigger.
     Trigger(True, [
-        tick_reset,
-        stringIn('TIME_NTP', DESC = 'NTP time'),
-        stringIn('TIME_SC',  DESC = 'System clock time')],
+            tick_reset, tick_count,
+            missed, total_missed, percent_missed,
+            stringIn('TIME_NTP', DESC = 'NTP time'),
+            stringIn('TIME_SC',  DESC = 'System clock time')],
         TRIG = 'TIME', DONE = 'TIME_DONE')
     
     Trigger(False, [

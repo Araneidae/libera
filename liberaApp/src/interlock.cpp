@@ -117,7 +117,7 @@ static READBACK_bool * EnableReadback = NULL;
  * interlock is enabled.  This second delay is currently programmable. */
 
 static int CurrentHoldoffCount = 3;     // 300ms seems ample for this
-static int InterlockHoldoffCount = 3;   // Not so clear what's suitable
+static int InterlockHoldoffCount = 5;   // Not so clear what's suitable
 
 static int InterlockHoldoff = 3;
 
