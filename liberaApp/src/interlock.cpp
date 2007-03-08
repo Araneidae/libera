@@ -287,21 +287,24 @@ void InterlockedUpdateAttenuation(int NewAttenuation)
 class INTERLOCK_EVENT : public I_EVENT
 {
 public:
-    INTERLOCK_EVENT(const char * Name) :
-        InterlockTrigger(true)
+    INTERLOCK_EVENT() 
     {
-        Publish_bi(Name, InterlockTrigger);
+        Publish_longin("IL:RAW_REASON", InterlockReason);
+        Interlock.Publish("IL");
+        
         RegisterInterlockEvent(*this, PRIORITY_IL);
     }
 
     void OnEvent(int ReasonMask)
     {
-//        printf("Interlock reason: %02X\n", ReasonMask);
-        InterlockTrigger.Ready();
+        Interlock.Wait();
+        InterlockReason = ReasonMask;
+        Interlock.Ready();
     }
     
 private:
-    TRIGGER InterlockTrigger;
+    int InterlockReason;
+    INTERLOCK Interlock;
 };
 
 
@@ -351,7 +354,7 @@ bool InitialiseInterlock()
     PUBLISH_CONFIGURATION(longout, "IL:IHOLDOFF", 
         CurrentHoldoffCount, NULL_ACTION);
     
-    new INTERLOCK_EVENT("IL:TRIG");
+    new INTERLOCK_EVENT();
 
     EpicsUpdateInterlock();
 

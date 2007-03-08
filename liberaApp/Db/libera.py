@@ -311,8 +311,7 @@ def Config():
     SetChannelName('CF')
 
     # Control enabling of this BPM.
-    global globalBpmEnable
-    globalBpmEnable = boolOut('ENABLED', 'BPM Disabled', 'BPM Enabled',
+    boolOut('ENABLED', 'BPM Disabled', 'BPM Enabled',
         ZSV  = 'MAJOR',     OSV  = 'NO_ALARM',  PINI = 'YES',
         DESC = 'Enable Libera')
 
@@ -409,23 +408,29 @@ def Interlock():
     longOut('IHOLDOFF', 0, 1000, DESC = 'Current holdoff delay')
     
     # Interlock state.  This is a bit nasty: we get repeated triggers on TRIG
-    # while the interlock is active (ie, reporting signal bad).  The records
-    # POKE_STATE simply acts to relay the trigger state to STATE, which
+    # while the interlock is active (ie, reporting signal bad).  The record
+    # POKE simply acts to relay the trigger state to STATE, which
     # automatically resets itself after half a second if no triggers are
     # received.
-#    mbbIn('REASON')
-
-    trigger = boolIn('TRIG', '', 'Trigger',
-        DESC = 'Interlock dropped event',
-        SCAN = 'I/O Intr') 
     state = records.bo('STATE',
         HIGH = 0.5,             # Reset to low after 0.5 seconds
         VAL  = 0,  PINI = 'YES',
         OMSL = 'supervisory',
         ZNAM = 'Ready',         ZSV  = 'NO_ALARM',
         ONAM = 'Interlocked',   OSV  = 'MAJOR')
-    trigger.FLNK = create_dfanout('POKE', PP(state), 
-        DOL  = trigger, OMSL = 'closed_loop')
+    poke = create_dfanout('POKE', PP(state), VAL = 1)
+
+    # Figure out whether this is a fresh interlock event.  This needs to be
+    # processed before the poke record above.
+    raw_reason = longIn('RAW_REASON', DESC = 'Interlock reason')
+    reason = records.mbbiDirect('REASON')
+    reason_check = records.calcout('CHK_REASON',
+        INPA = state,       CALC = 'A',     OOPT = 'When Zero',
+        DOPT = 'Use OCAL',  OCAL = 'B',     INPB = raw_reason,
+        OUT  = PP(reason))
+    
+    Trigger(False, [raw_reason, reason_check, poke])
+        
     
     UnsetChannelName()
 
@@ -634,7 +639,7 @@ def Sensors():
     # record.  Only the alarm status of this record is meaningful.
     alarmsensors = fans + [temp, memfree, ramfs, cpu] #, voltage_health]
     health = AggregateSeverity('HEALTH', 'Aggregated health',
-        *alarmsensors + [CP(globalBpmEnable)])
+        *alarmsensors)
     
     allsensors = alarmsensors + voltages + [uptime, epicsup, health]
     
