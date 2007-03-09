@@ -1,12 +1,30 @@
-#!/bin/sh
-# Retrieve PV from all liberas matching pattern.
+#!/usr/bin/env python2.4
 
-NAME_LIST="$(dirname "$(readlink -fn "$0")")/allbpms"
+from pkg_resources import require
+require("dls.ca2")
+from dls.ca2 import catools
 
-MATCH="$1"
-PV="$2"
+import re
+import sys, os
 
-caget -a -w5 $(
-    for BPM in $(grep -E "$MATCH" "$NAME_LIST"); do
-        echo "$BPM:$PV"
-    done)
+
+allbpms = os.path.join(os.path.dirname(__file__), 'allbpms')
+
+pattern = re.compile(sys.argv[1])
+pv = sys.argv[2]
+
+
+        
+
+bpms = [line[:-1] for line in file(allbpms) if pattern.search(line)]
+pvs = ['%s:%s' % (bpm, pv) for bpm in bpms]
+
+errorcode = 0
+for v in catools.caget(pvs, timeout = 5, throw = False):
+    if v.status == catools.ECA_NORMAL:
+        print v.name, v.value
+    else:
+        print >>sys.stderr, v.name, catools.ca_message(v.status)
+        errorcode = 1
+
+sys.exit(errorcode)

@@ -1,12 +1,30 @@
-#!/bin/sh
-# Write value to PV on all liberas matching pattern.
+#!/usr/bin/env python2.4
 
-NAME_LIST="$(dirname "$(readlink -fn "$0")")/allbpms"
+from pkg_resources import require
+require("dls.ca2")
+from dls.ca2 import catools
 
-MATCH="$1"
-PV="$2"
-NEW_VALUE="$3"
 
-for BPM in $(grep -E "$MATCH" "$NAME_LIST"); do
-    caput "$BPM:$PV" "$NEW_VALUE" &
-done
+import re
+import sys
+import os
+
+
+pattern = re.compile(sys.argv[1])
+pv = sys.argv[2]
+value = sys.argv[3]
+
+allbpms = os.path.join(os.path.dirname(__file__), 'allbpms')
+bpms = [line[:-1] for line in file(allbpms) if pattern.search(line)]
+
+sl = catools.caput(
+    ['%s:%s' % (bpm, pv) for bpm in bpms], [value for bpm in bpms],
+    datatype = catools.dbr_string, timeout = 5, throw = False)
+
+errorcode = 0
+for s, bpm in zip(sl, bpms):
+    if s != catools.ECA_NORMAL:
+        print >>sys.stderr, bpm, catools.ca_message(s)
+        errorcode = 1
+
+sys.exit(errorcode)
