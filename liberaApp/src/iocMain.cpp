@@ -303,6 +303,7 @@ static void TerminateLibera()
     TerminateTimestamps();
     TerminateSlowAcquisition();
     TerminatePersistentState();
+    TerminateSensors();
         
     /* On orderly shutdown remove the pid file if we created it.  Do this
      * last of all. */

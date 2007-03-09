@@ -29,3 +29,4 @@
 /* Interface to sensor implementions. */
 
 bool InitialiseSensors();
+void TerminateSensors();

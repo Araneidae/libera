@@ -31,7 +31,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
-
+#include <pthread.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -63,6 +63,10 @@ static double LastUptime;
 static double LastIdle;
 static double EpicsStarted;
 
+/* Shutdown synchronisation state: we have an enabling variable and a
+ * synchronising mutex. */
+static bool Shutdown = false;
+static pthread_mutex_t ShutdownMutex = PTHREAD_MUTEX_INITIALIZER;
 
 
 /* Helper routine for using scanf to parse a file. */
@@ -182,9 +186,14 @@ static void ProcessFreeMemory()
 
 static void ProcessSensors()
 {
-    ProcessUptimeAndIdle();
-    ProcessFreeMemory();
-    ReadHealth(Health);
+    TEST_(pthread_mutex_lock, &ShutdownMutex);
+    if (!Shutdown)
+    {
+        ProcessUptimeAndIdle();
+        ProcessFreeMemory();
+        ReadHealth(Health);
+    }
+    TEST_(pthread_mutex_unlock, &ShutdownMutex);
 }
 
 
@@ -217,4 +226,18 @@ bool InitialiseSensors()
     InitialiseUptime();
     
     return true;
+}
+
+
+
+/* It turns out that we need to synchronise sensor processing with shutdown.
+ * This call ensures that any sensor processing is complete before returning,
+ * and ensures it doesn't happen again.  If we don't do this, there can be a
+ * crash in cspi during exit() processing! */
+
+void TerminateSensors()
+{
+    TEST_(pthread_mutex_lock, &ShutdownMutex);
+    Shutdown = true;
+    TEST_(pthread_mutex_unlock, &ShutdownMutex);
 }
