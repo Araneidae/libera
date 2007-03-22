@@ -581,14 +581,14 @@ def Voltages():
             ESLO = 1e-3, EGU  = 'V', PREC = 3, **LimitFields)
 
     voltages = [
-        VoltageSensor(1, 'Virtex core power supply',    1.5),
-        VoltageSensor(2, '(Unused voltage)',            1.8, False),
-        VoltageSensor(3, 'Virtex ADC interface',        2.5),
-        VoltageSensor(4, 'SBC & SDRAM power supply',    3.3),
-        VoltageSensor(5, 'PMC +5V power supply',        5.0),
-        VoltageSensor(6, 'Fans power supply',           12.0),
-        VoltageSensor(7, 'PMC -12V power supply',       -12.0),
-        VoltageSensor(8, 'Attenuators & switches ctrl', -5.0)]
+        VoltageSensor(1, 'Virtex core power supply',    1.46),
+        VoltageSensor(2, '(Unused voltage)',            2.47, False),
+        VoltageSensor(3, 'Virtex ADC interface',        2.44),
+        VoltageSensor(4, 'SBC & SDRAM power supply',    3.20),
+        VoltageSensor(5, 'PMC +5V power supply',        4.94),
+        VoltageSensor(6, 'Fans power supply',           11.9),
+        VoltageSensor(7, 'PMC -12V power supply',       -12.2),
+        VoltageSensor(8, 'Attenuators & switches ctrl', -5.09)]
 
     
     health = AggregateSeverity('VOLTSOK', 'Voltage health', *voltages)

@@ -3,7 +3,7 @@
 
 # Version number of this software: automatically included in build and used
 # to build distribution files.
-VERSION=1.40.1.7
+VERSION=1.40.1.8
 #VERSION=Test_Only
 
 # This is where installed files will be placed ready for deployment to the

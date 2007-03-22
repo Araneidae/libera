@@ -130,4 +130,4 @@ make  ||
 
 # Publish the build files locally
 mkdir -p "$BUILD_TARGET/$VERSION"  &&
-./install/install-ioc "$BUILD_TARGET/$VERSION" "$FPGA_SOURCE"  &&
+./install/install-ioc "$BUILD_TARGET/$VERSION" "$FPGA_SOURCE"  

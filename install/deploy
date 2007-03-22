@@ -91,7 +91,7 @@ function lab_liberas()
 
 function mc_liberas()
 {
-    echo liberas -w "$@"
+    liberas -w "$@"
 }
 
 function do_deploy()
