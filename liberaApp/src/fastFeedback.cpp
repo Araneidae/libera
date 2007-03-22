@@ -55,9 +55,9 @@
 #define FF_BASE_ADDRESS         0x14028000
 #define FF_CONTROL_ADDRESS      0x1402A000
 /* Offset from FF_BASE_ADDRESS of the status space registers.  This is
- * currently assumed to be on the same page. */
-//#define FF_STATUS_OFFSET        0x0C00
-#define FF_STATUS_OFFSET        0x0200
+ * assumed to be on the same page. */
+#define FF_STATUS_OFFSET        0x0C00
+//#define FF_STATUS_OFFSET        0x0200
 
 
 struct FF_CONFIG_SPACE          // At FF_BASE_ADDRESS
@@ -82,14 +82,12 @@ struct FF_STATUS_SPACE          // At FF_BASE_ADDRESS + FF_STATUS_OFFSET
     int FrameErrorCount[4];             // :FRAME_ERR
     int ReceivedPacketCount[4];         // :RX_CNT
     int TransmittedPacketCount[4];      // :TX_CNT
-    int ProcessTimeMin_Max;             //
-    int ProcessTime;                    //
-    int BpmCount;                       //
-    int TestErrorStatus;                //
+    int ProcessTime;                    // PROCESS_TIME
+    int BpmCount;                       // BPM_COUNT
 };
 
 
-struct FF_CONTROL_SPACE         // At FF_STATUS_OFFSET
+struct FF_CONTROL_SPACE         // At FF_CONTROL_ADDRESS
 {
     /* Fast Application Interface configuration control register.
      *
@@ -255,6 +253,8 @@ bool InitialiseFastFeedback()
     /* Read only parameters. */
     Publish_longin("FF:VERSION", StatusSpace->FirmwareVersion);
     Publish_longin("FF:TIMEFRAME", StatusSpace->TimeFrameCounter);
+    Publish_longin("FF:PROCESS_TIME", StatusSpace->ProcessTime);
+    Publish_longin("FF:BPM_COUNT", StatusSpace->BpmCount);
     /* Channel specific read only parameters. */
     PUBLISH_BLOCK(longin, "PARTNER", StatusSpace->LinkPartner);
     PUBLISH_BLOCK(longin, "SOFT_ERR", StatusSpace->SoftErrorCount);

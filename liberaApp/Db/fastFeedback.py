@@ -45,8 +45,12 @@ def FastFeedback():
     longIn('VERSION', PINI = 'YES', DESC = 'FPGA firmware version')
     
     inputs = [
-        longIn('TIMEFRAME', DESC = 'Timeframe counter'),] + [
-        field for i in (1, 2, 3, 4)
+        longIn('TIMEFRAME',    DESC = 'Timeframe counter'),
+        longIn('PROCESS_TIME', DESC = 'Total communication time'),
+        longIn('BPM_COUNT',    DESC = 'Number of transmitters seen'),
+    ] + [
+        field
+        for i in (1, 2, 3, 4)
         for field in [
             longIn('LINK%d:PARTNER' % i, 0, MAX_ID,
                 DESC = 'Rocket IO channel partner'),

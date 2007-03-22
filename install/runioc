@@ -77,21 +77,18 @@ PIDFILE=/var/run/ioc.pid
 
 # Check for arguments
 RESTART_LMTD=0
-DEBUGGING=0
-while getopts 'd:nflDh' option; do
+while getopts 'd:nflh' option; do
     case "$option" in
     d)  DEVICE="$OPTARG" ;;
     n)  IocParameter -n  ;;
     f)  rm -f "$PIDFILE" ;;
     l)  RESTART_LMTD=1 ;;
-    D)  DEBUGGING=1 ;;
     h)  cat <<'EOF' 
 Usage: runioc [options]
     -d <device>:  use supplied device name instead of hostname
     -n            run non-interactive without an IOC shell
     -f            run even if pid file already present
     -l            restart lmtd even if it's already running properly
-    -D            enable debugging options
 EOF
         exit 0 ;;
     *)  echo >&2 'Invalid option: try -h for help'
@@ -121,9 +118,7 @@ fi
 # Ensure that we're running our own version of lmtd
 if ((RESTART_LMTD))  ||  ! [ -e /tmp/lmtd.command ]; then
     [ -e /var/run/lmtd.pid ]  &&  kill $(cat /var/run/lmtd.pid)
-    LMTD='./bin/lmtd -p$MCPRESC -d$DECIMATION -o$OFFSET_TUNE -r$HARMONIC'
-    ((DEBUGGING))  &&  LMTD="$LMTD -n &"
-    eval $LMTD 
+    ./bin/lmtd -p$MCPRESC -d$DECIMATION -o$OFFSET_TUNE -r$HARMONIC
 fi
 
 

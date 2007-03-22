@@ -3,7 +3,8 @@
 
 # Version number of this software: automatically included in build and used
 # to build distribution files.
-VERSION=1.40.1.6+
+VERSION=1.40.1.7
+#VERSION=Test_Only
 
 # This is where installed files will be placed ready for deployment to the
 # Libera IOC.  The IOC files will be placed in $INSTALL_HOST/ioc and the
@@ -39,7 +40,7 @@ IOC_STATE_PATH=/opt/state
 # samples.  Different ramp lengths are appropriate in the storage ring and
 # the booster: need to ensure that this length is less than the interval
 # between triggers.
-BO_IOC_BN_LENGTH=190
+BR_IOC_BN_LENGTH=190
 SR_IOC_BN_LENGTH=60
 
 # Maximum number of points to be captured in a single long turn-by-turn

@@ -76,15 +76,15 @@ PROD_ROOT="/home/diamond/R3.14.8.2/prod/ioc/Libera"
 
 cd "$(dirname "$0")/.."
 
-# If an external distribution is to be made, this should be the second
-# argument.
-DISTRIBUTION="$2"
-
 
 # First check that we're publishing the version we expect.
 VERSION="$(sed -n '/^VERSION=/{s///;p;q;}' install/CONFIG)"
 [ "$VERSION" = "${1?Specify release version}" ]  ||
     Error "Release version mismatch: $1 != $VERSION"
+
+FPGA_SOURCE="${2?Specify source of FPGA to use}"
+[ -d "$FPGA_SOURCE" ]  ||  Error "Invalid FPGA source directory"
+    
 # Check the version doesn't already exist!
 svn ls $SVN_RELEASE/$VERSION  >/dev/null 2>&1  &&
     Error "Release $VERSION already published to subversion"
@@ -130,9 +130,4 @@ make  ||
 
 # Publish the build files locally
 mkdir -p "$BUILD_TARGET/$VERSION"  &&
-./install/install-ioc "$BUILD_TARGET/$VERSION"  &&
-
-# Finally prepare the external release if required.
-if [ -n "$DISTRIBUTION" ]; then
-    ./install/distribute "$DISTRIBUTION"
-fi 
+./install/install-ioc "$BUILD_TARGET/$VERSION" "$FPGA_SOURCE"  &&

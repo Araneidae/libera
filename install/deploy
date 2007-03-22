@@ -1,11 +1,119 @@
-#!/bin/sh
+#!/bin/bash
 
-VERSION=${1?Version to deploy}
+# This file is part of the Libera EPICS Driver,
+# Copyright (C) 2007 Michael Abbott, Diamond Light Source Ltd.
+#
+# The Libera EPICS Driver is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# The Libera EPICS Driver is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc., 51
+# Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# Contact:
+#      Dr. Michael Abbott,
+#      Diamond Light Source Ltd,
+#      Diamond House,
+#      Chilton,
+#      Didcot,
+#      Oxfordshire,
+#      OX11 0DE
+#      michael.abbott@diamond.ac.uk
 
-ARGS=-fls
+# Script for deploying liberas to machine
 
-TARGET="${2:-/mnt/nfs/Libera/$VERSION}"
-COMMAND="$TARGET/ioc/install/libera-install-ioc $ARGS"
+LAB_BASE_IP=172.23.252
+LAB_N=6
 
-liberas 'LB|BR|BS' $COMMAND BO
-liberas 'SR'       $COMMAND SR
+
+# By default we deploy a specified version from the release repository, but
+# both the source and the destination can be overwritten.
+
+INJECTOR=0
+STORAGE=0
+LAB=
+TEST_INSTALL=0
+VERSION_DIR=/mnt/nfs/Libera
+while getopts 'ISL:td:h' option; do
+    case $option in
+        I)  INJECTOR=1 ;;
+        S)  STORAGE=1 ;;
+        L)  LAB="$OPTARG" ;;
+        t)  TEST_INSTALL=1 ;;
+        d)  VERSION_DIR="$OPTARG" ;;
+        h)  cat <<EOF
+Usage:
+    deploy [options] [version]
+
+Options:
+    -I          Deploy to injector
+    -S          Deploy to storage ring
+    -L<target>  Deploy to lab: specify SR or BR for target
+    If no target flag is specified then -IS is assumed.
+    
+    -t      Install from configured test directory instead of release directory
+    -d      Specify release directory (default is /mnt/nfs/Libera)
+EOF
+            exit 0 ;;
+        *)  echo >&2 "Use \`$0 -h\` for help" ;;
+    esac
+done
+shift $((OPTIND-1))
+
+# If no other target is specified, deploy to the entire machine
+if ((INJECTOR==0 && STORAGE==0)) && [ -z "$LAB" ]; then
+    INJECTOR=1
+    STORAGE=1
+fi
+
+if ((TEST_INSTALL)); then
+    TARGET=/mnt/nfs/testing    
+else
+    VERSION="${1?Version to deploy}"
+    TARGET="$VERSION_DIR/$VERSION"
+    shift
+fi
+(($#==0)) || { echo >&2 'Unexpected extra arguments'; exit 1; }
+
+
+function lab_liberas()
+{
+    LAB_LIST="$(seq -f$LAB_BASE_IP.%g $LAB_N)"
+    liberas -l<(cat <<<"$LAB_LIST") -w "$@"
+}
+
+function mc_liberas()
+{
+    echo liberas -w "$@"
+}
+
+function do_deploy()
+{
+    LIBERAS="$1"
+    PATTERN="$2"
+    LOCATION="$3"
+
+    INSTALL_="$TARGET"/ioc/install/libera-install-
+    ((TEST_INSTALL)) && TF=t || TF=f
+
+    "$LIBERAS" "$PATTERN" /etc/init.d/libera stop
+    "$LIBERAS" "$PATTERN" "$INSTALL_"ioc  -l$TF "$LOCATION"
+    "$LIBERAS" "$PATTERN" "$INSTALL_"fpga -$TF 
+    "$LIBERAS" "$PATTERN" /etc/init.d/libera start
+
+    # Also need to check for over-full machines: liberas 'df / | tail -n1'
+}
+
+
+((INJECTOR)) && do_deploy mc_liberas 'LB|BR|BS' BR
+((STORAGE))  && do_deploy mc_liberas SR SR
+if [ -n "$LAB" ]; then
+    do_deploy lab_liberas '' $LAB
+fi

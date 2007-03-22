@@ -1,0 +1,91 @@
+#!/bin/sh
+
+# This file is part of the Libera EPICS Driver,
+# Copyright (C) 2005-2007 Michael Abbott, Diamond Light Source Ltd.
+#
+# The Libera EPICS Driver is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# The Libera EPICS Driver is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc., 51
+# Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# Contact:
+#      Dr. Michael Abbott,
+#      Diamond Light Source Ltd,
+#      Diamond House,
+#      Chilton,
+#      Didcot,
+#      Oxfordshire,
+#      OX11 0DE
+#      michael.abbott@diamond.ac.uk
+
+# This script is copied into $INSTALL_HOST and should be run in place on the
+# IOC to ensure that the appropriate files are copied into place.
+#
+# This installation script supports two modes of operation of the installed
+# IOC: testing (installed on the remote file system) or final (copied to the
+# local file system).
+
+function Error()
+{
+    echo >&2 "$@"
+    exit 1
+}
+
+
+# Ensure this isn't run by accident on the development machine.
+[ "$(uname -m)" != armv5tel ]  &&
+    Error This should be run on Libera
+
+
+INSTALL=none
+while getopts 'fth' option; do
+    case $option in
+        f)  INSTALL=final ;;
+        t)  INSTALL=test ;;
+        h)  cat <<'EOF'
+Usage: libera-install-fpga <options>
+where <options> includes
+    -f  Final install: copy files to /opt directory
+    -t  Testing install: don't copy files, use from configured location
+EOF
+            exit 0 ;;
+        *)  Error 'Invalid option: try -h for help' ;;
+    esac
+done
+shift $((OPTIND-1))
+[ $INSTALL = none ]  &&
+    Error 'Specify an installation target.  Try -h for help.'
+
+SOURCE="$(cd "$(dirname "$0")"/../../fpga; pwd)"
+TARGET=/opt/lib
+
+
+# Copy the files we want over.
+cd "$SOURCE"
+for loc in bo sr; do
+    for f in main_diamond_$loc.bin*; do
+        if [ -f "$f" ]; then
+            case $INSTALL in
+                final)
+                    if ! [ -e "$TARGET/$f" ]; then
+                        echo Installing "$f" in /opt/lib
+                        cp "$f" "$TARGET"  
+                    fi
+                    ln -fs "$f" "$TARGET"/main_diamond_$loc.bin
+                    ;;
+                test)
+                    ln -fs "$SOURCE/$f" "$TARGET"/main_diamond_$loc.bin
+                    ;;
+            esac
+        fi
+    done
+done

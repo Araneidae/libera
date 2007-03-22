@@ -637,7 +637,7 @@ def Sensors():
 
     # Aggregate all the alarm generating records into a single "health"
     # record.  Only the alarm status of this record is meaningful.
-    alarmsensors = fans + [temp, memfree, ramfs, cpu] #, voltage_health]
+    alarmsensors = fans + [temp, memfree, ramfs, cpu, voltage_health]
     health = AggregateSeverity('HEALTH', 'Aggregated health',
         *alarmsensors)
     
