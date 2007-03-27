@@ -7,7 +7,7 @@ caput LI-TI-MTGEN-01:BS-DI-MODE 0
 sleep 3
 
 echo  Starting FAI
-./caputall.py SR FF:START_S Start
+./caputall SR FF:START_S Start
 
 sleep 3
 echo Start Trigger

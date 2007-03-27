@@ -60,7 +60,7 @@ def caget(pvs, datatype=None):
 def CheckReadbacks(bpms, pv, expected, datatype=None):
     for bpm, s in zip(bpms, caget(PVs(bpms, pv), datatype = datatype)):
         if s.value != expected:
-            print bpm, s.value
+            print bpm, s.value, '-- should be:', expected
 
 def GetActiveBpms(bpms):
     print 'Checking active BPMs'

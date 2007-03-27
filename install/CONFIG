@@ -3,7 +3,7 @@
 
 # Version number of this software: automatically included in build and used
 # to build distribution files.
-VERSION=1.40.1.8
+VERSION=1.40.1.9
 #VERSION=Test_Only
 
 # This is where installed files will be placed ready for deployment to the
@@ -31,7 +31,7 @@ BUILD_FF_SUPPORT=yes
 IOC_LOG=/var/log/ioc
 
 # Where to put core dumps
-IOC_CORE=/mnt/nfs/testing/cores
+#IOC_CORE=/mnt/nfs/testing/cores
 
 # Location where the IOC will look for its persistent state.  
 IOC_STATE_PATH=/opt/state

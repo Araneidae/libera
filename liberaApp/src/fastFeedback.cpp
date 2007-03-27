@@ -131,7 +131,7 @@ static bool RxLinkUp[4];
 
 /* Mirrors of configuration values.  These values cannot be read and written
  * directly, and so are instead read and written here. */
-static bool SendTimeFrames = false;
+static bool DataSourceSelect = false;
 static bool GlobalEnable = true;
 static bool LinkEnable[4] = { true, true, true, true };
 static int LoopBack[4] = { 0, 0, 0, 0 };
@@ -200,7 +200,7 @@ inline static int ControlValue(bool Handshake)
 {
     return
         (Handshake << 0) | 
-        (SendTimeFrames << 1) | 
+        (DataSourceSelect << 1) | 
         (GlobalEnable << 3);
 }
 
@@ -223,6 +223,15 @@ static void ProcessWrite()
     /* Force the configuration values to be read by toggling the handshake
      * bit in the control register. */
     ControlSpace->FaiConfiguration = ControlValue(true);
+    ControlSpace->FaiConfiguration = ControlValue(false);
+}
+
+
+/* When DataSourceSelect is changed, update control register *without*
+ * performing configuration change handshake. */
+
+static void WriteDataSourceSelect()
+{
     ControlSpace->FaiConfiguration = ControlValue(false);
 }
 
@@ -290,7 +299,8 @@ bool InitialiseFastFeedback()
         PUBLISH_FUNCTION_OUT(mbbo, Concat(Link, "LOOPBACK"),
             LoopBack[i], ProcessWrite);
     }
-    PUBLISH_FUNCTION_OUT(bo, "FF:DATA_SELECT", SendTimeFrames, ProcessWrite);
+    PUBLISH_FUNCTION_OUT(bo, "FF:DATA_SELECT",
+        DataSourceSelect, WriteDataSourceSelect);
 
     PUBLISH_ACTION("FF:STOP",  StopFastFeedback);
     PUBLISH_ACTION("FF:START", StartFastFeedback);
