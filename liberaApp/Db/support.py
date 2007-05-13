@@ -30,18 +30,18 @@
 import sys
 import os
 
-import epics
+from epics import ModuleVersion, TemplateRecordNames, Configure
 
 
 # Ensure that we can find the Libera dbd files.  The home directory is where
 # the top level Libera directory has been placed.
 HomeDir = os.path.realpath(
-    os.path.join(os.path.dirname(sys.argv[0]), '../../..'))
-epics.LibVersion('Libera', home=HomeDir)
+    os.path.join(os.path.dirname(sys.argv[0]), '../..'))
+ModuleVersion('Libera', home=HomeDir, use_name=False)
 
 
-class LiberaRecordNames(epics.TemplateRecordNames):
-    super = epics.TemplateRecordNames
+class LiberaRecordNames(TemplateRecordNames):
+    super = TemplateRecordNames
     __all__ = super.__all__ + ['SetChannelName', 'UnsetChannelName']
 
     def __init__(self):
@@ -66,8 +66,9 @@ class LiberaRecordNames(epics.TemplateRecordNames):
 
 
 RecordNames = LiberaRecordNames()
-epics.Configure(recordnames = RecordNames)
+Configure(recordnames = RecordNames)
 from epics import *
+from epics.hardware import Device
 
 
 def ChannelName():
@@ -76,10 +77,8 @@ def ChannelName():
 
 # This class wraps the creation of records which talk directly to the
 # Libera device driver.
-class Libera(hardware.Device):
-    @classmethod
-    def LoadLibrary(cls):
-        cls.LoadDbdFile('libera.dbd')
+class Libera(Device):
+    DbdFileList = ['libera.dbd']
 
     class makeRecord:
         def __init__(self, builder, addr_name):

@@ -277,6 +277,10 @@ Interlock Control (<group> = IL):
 Configuration (<group> = CF):
 =============================
 
+    ENABLED_S
+        Configures whether BPM is "enabled."  If disabled then position
+        interlock checking is disabled.
+
     DIAG_S
         Configures button or stripline orientation.
 
@@ -286,10 +290,12 @@ Configuration (<group> = CF):
         17mm for the transfer path striplines and 10.6mm and 11mm (horizontal
         and vertical) for the booster buttons.
 
-    X0_S, Y0_S
-        Zero point offsets.  It is intended that these can be used to define a
-        logical "centre" point once the centre of the focusing system has been
-        located precisely.
+    BBA_X_S, BBA_Y_S
+        "Beam Based Alignment" offsets.  These should ...
+
+    BCD_X_S, BCD_Y_S
+
+    GOLDEN_X_S, GOLDEN_Y_S
 
     G0_S, G1_S, G2_S, G3_S
         Gain offsets can be set for individual RF channels to compensate for
@@ -300,8 +306,15 @@ Configuration (<group> = CF):
         Conditioning), for sub-kHz position measurements, or fixed switch
         positions for high frequency measurements.
 
+    TRIGSW_S
+    DELAYSW_S
+        
+
     SETSW_S
         Switch position to use when AUTOSW_S is set to Fixed.
+
+    DSC_S
+    WRITEDSC_S
 
     ATTEN_S
         Attenuator settings in dB: a value between 0 and 62dB can be set.
@@ -318,6 +331,24 @@ Configuration (<group> = CF):
         sideband of the third harmonic, "Double Detune" should be selected.
             In this case DETUNE_S determines the sample clock frequency
         offset in multiples of approximately 10Hz.
+
+
+Clock (<group> = CK):
+=====================
+
+    TIMESTAMP_S
+    DETUNE_S
+    IOFF_S
+    PHASE_S
+    MC_SYNC_S
+    SC_SYNC_S
+    MC_LOCK
+    MC_SYNC
+    SC_LOCK
+    SC_SYNC
+    DAC
+    PHASE_E
+    FREQ_E
 
 
 Sensors (<group> = SE):

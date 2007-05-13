@@ -306,7 +306,7 @@ def SlowAcquisition():
         
 
 # Configuration control records.  Used for setting button or stripline
-# geometry and 
+# geometry and a variety of other configuration settings.
 def Config():
     SetChannelName('CF')
 

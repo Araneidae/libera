@@ -1,5 +1,41 @@
 Change history of Libera EPICS Driver development
 
+2007/05/?? Version 1.40.2
+=========================
+More complete support for iTech Libera 1.40 and 1.42 driver.
+
+Major changes:
+ - Master BPM enable PV added.  This allows a BPM to be marked as "disable" if
+   it is returning unreliable positions.  The only direct effect on the BPM is
+   to disable operation of the interlock.
+ - Significant changes to "geometry" configuration.  The simple beam offset
+   PVs X0 and Y0 have been replaced by three separate displacements:
+    BBA_X,_Y    "Beam Based Alignment" offsets, persistent over reboots
+    BCD_X,_Y    "Beam Current Dependent" offset, initialised to 0 on reboot
+    GOLDEN_X,_Y Special purpose local offsets (for bumps, etc), 0 on reboot
+ - Control over DSC ("Digital Signal Conditioning") is now available through a
+   new configuration PV.
+ - Control over switch triggering, both selection of trigger source (internal
+   or external) and trigger delay (when using external trigger).
+ - Control over the clock is more refined and the machine clock tracking
+   algorithm is now *much* more stable.  The clock control PVs have moved to a
+   separate PV group.  
+ - Machine clock synchronisation is now separated from system clock
+   synchronisation, and in this release system clock synchronisation is not
+   actually required.
+ - The position interlocking now automatically switches off when the current
+   is below a preset threshold, as well as switching on above a threshold.
+ - Interlock reasons are now recorded.
+ - Voltage monitoring now included in overall system health.
+ - caRepeater now integrated into IOC, so now no need for separate EPICS
+   installation: IOC is just a single application.
+
+Minor changes:
+ - MAXADC alarm limits changed to 1450 (-3dB) and 1700 (-1.6dB).
+ - Core file writing can be supported by setting the IOC_CORE symbol in
+   /etc/sysconfig/epics_ioc.  Set it to an NFS mounted directory.
+
+
 2007/01/15 Version 1.40.0
 =========================
 Preliminary release to support iTech Libera 1.40 driver.

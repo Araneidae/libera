@@ -1,4 +1,5 @@
-Libera EPICS driver version 1.40.1, for use with Libera drivers version 1.40.
+Libera EPICS driver version 1.40.1, for use with Libera drivers version 1.40
+or 1.42.
 
 
 INSTALLATION INSTRUCTIONS
@@ -17,14 +18,18 @@ This software depends on the following components:
 
    EPICS version 3.14.9 can be used without applying any patches.
 
- * Libera 1.40.  To run the driver a complete Libera system must be used
-   together with the full Libera distribution.  Libera can be obtained from
-   Instrumentation Technologies at: http://www.i-tech.si. 
+ * Libera 1.40 or 1.42.  To run the driver a complete Libera system must be
+   used together with the full Libera distribution.  Libera can be obtained 
+   from Instrumentation Technologies at: http://www.i-tech.si. 
        The CSPI library and its associated header files are included with this
    distribution.  Its makefile has been modified to integrate with the EPICS
    build.
 
- * System updates.  The Libera system must be upgraded to version 1.40.
+ * System updates.  The Libera system must be upgraded to version 1.40 or
+   1.42.
+       Note that if Libera 1.40 is used then it will be necessary to either
+   remove voltage monitoring from the overall system health PV, or else ignore
+   it!  A bug in voltage monitoring is fixed in 1.42.
 
 
 The instructions below are divided into the following stages:
@@ -181,7 +186,8 @@ driver version to use.
 
     EPICS Driver (date)         Compatible Libera Drivers
     -------------------         -------------------------
-    1.40.0 (2007-01-15)         1.40
+    1.40.2 (2007-05-??)         1.40, 1.42
+    1.40.0 (2007-01-15)         1.40, 1.42
     0.6.3  (2006-10-03)         1.20, 1.21
     0.6.1  (2006-08-17)         1.20, 1.21
     0.5    (2006-07-07)         1.00

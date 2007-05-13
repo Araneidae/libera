@@ -72,13 +72,6 @@
 #define NO_CONVERT      2       // Special code for ai/ao conversion
 
 
-/* Epics EPOCH offset.  EPICS time has its origin exactly 20 years after Unix
- * time!  Unix time starts in 1970, while EPICS time starts in 1990.
- *    Here 7305 = 20 * 365.25. */
-#define EPICS_EPOCH_OFFSET      (7305 * 24 * 3600)      // 20 years in seconds
-
-
-
 //#define PRINTF(args...) printf(args)
 #define PRINTF(args...)
 
@@ -306,8 +299,7 @@ static void SetTimestamp(dbCommon *pr, struct timespec &Timestamp)
 {
     /* Convert the standard Unix timespec value into the EPICS epoch
      * timestamp (subtract 20 years). */
-    pr->time.secPastEpoch = Timestamp.tv_sec - EPICS_EPOCH_OFFSET;
-    pr->time.nsec = Timestamp.tv_nsec;
+    epicsTimeFromTimespec(&pr->time, &Timestamp);
 }
 
 

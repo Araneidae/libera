@@ -79,11 +79,13 @@ int MergeParameters(
         case CSPI_EVENT_TRIGSET:
             /* For synchronisation triggers complain if we miss a trigger:
              * this shouldn't happen. */
-            printf("TRIGSET trigger missed\n");
+            if (MergeRequired)
+                printf("TRIGSET trigger missed\n");
             return 0;
         case CSPI_EVENT_PM:
             /* Similarly log missed PM triggers. */
-            printf("PM trigger missed\n");
+            if (MergeRequired)
+                printf("PM trigger missed\n");
             return 0;
         default:
             /* Safe default action is to discard the old value. */
