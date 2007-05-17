@@ -71,7 +71,9 @@ int MergeParameters(
             else
                 return NewParameter;
         case CSPI_EVENT_TRIGGET:
-            /* For normal trigger just count the number of missed triggers. */
+        case CSPI_EVENT_PM:
+            /* For normal and postmortem triggers just count the number of
+             * missed triggers. */
             if (MergeRequired)
                 return OldParameter + 1;
             else
@@ -80,12 +82,7 @@ int MergeParameters(
             /* For synchronisation triggers complain if we miss a trigger:
              * this shouldn't happen. */
             if (MergeRequired)
-                printf("TRIGSET trigger missed\n");
-            return 0;
-        case CSPI_EVENT_PM:
-            /* Similarly log missed PM triggers. */
-            if (MergeRequired)
-                printf("PM trigger missed\n");
+                printf("TRIGSET trigger missed!\n");
             return 0;
         default:
             /* Safe default action is to discard the old value. */

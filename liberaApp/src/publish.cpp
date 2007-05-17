@@ -225,7 +225,6 @@ template class UPDATER<int>;
 template<class T>
     READBACK<T>::READBACK(T InitialValue, void (*OnUpdate)(T)) :
     
-    Value(Value),
     OnUpdate(OnUpdate),
     Writer(Value),
     Reader(*this, &READBACK<T>::UserUpdate, &READBACK<T>::Value)

@@ -71,8 +71,8 @@ static int OffsetY = 0;
 /* Current threshold for enabling interlock. */
 static int InterlockAutoOnCurrent = 1000000;    // 10mA
 static int InterlockAutoOffCurrent = 0;         // 0mA
-static bool CurrentOverThreshold = false;
-static bool CurrentUnderThreshold = false;
+/* Last current reading. */
+static int CurrentCurrent = 0;
 
 /* Interlock ADC overflow limits. */
 static bool OverflowEnable = false;
@@ -82,9 +82,15 @@ static int OverflowTime = 5;
 /* Global interlock override: if this BPM is disabled then the interlock is
  * ignored and never enabled. */
 static bool GlobalBpmEnable = true;
-/* Master interlock enable: can be reset, but only if current is below
- * threshold. */
+
+/* The master interlock enable tracks the overall state of the interlock.
+ * This is forced true when current is >ION, forced false when current <IOFF
+ * (except during the interlock holdoff interval) and when current is between
+ * these two values can be manually controlled. */
 static bool MasterInterlockEnable = false;
+
+/* The enable readback is used to keep the IL:ENABLE control in step with the
+ * MasterInterlockEnable variable above masked with GlobalBpmEnable. */
 static READBACK_bool * EnableReadback = NULL;
 
 
@@ -141,10 +147,12 @@ static void WriteInterlockState()
 {
     CSPI_ILKMODE InterlockMode;
     if (!GlobalBpmEnable)
-        /* In BPM disable state the interlock is unconditionally disabled. */
+        /* In BPM disable state the interlock is unconditionally disabled.
+         * The variable GlobalBpmEnable tracks CF:ENABLED. */
         InterlockMode = CSPI_ILK_DISABLE;
     else if (InterlockHoldoff > 0)
-        /* In holdoff mode the interlock is unconditionally disabled. */
+        /* In holdoff mode the interlock is unconditionally disabled.  This
+         * masks out interlocks after the attenuators have changed. */
         InterlockMode = CSPI_ILK_DISABLE;
     else if (MasterInterlockEnable)
         /* In normal enabled mode the interlock is unconditionally enabled. */
@@ -168,7 +176,6 @@ static void WriteInterlockState()
 }
 
 
-
 /* This is called whenever any part of the persistent configuration of the
  * interlock changes: this is called from EPICS.  All we need to do is ensure
  * that the interlock is configured. */
@@ -181,33 +188,32 @@ static void EpicsUpdateInterlock()
 }
 
 
-/* Called in response to a change in the ENABLE user control.  We compute
- * what the value *should* be, and if it differs the value is written back.
- * Care needs to be taken to avoid processing loops, as any call to
- * EnableReadback.Write() will be reflected right back here! */
+static void UpdateMasterInterlockEnable(bool SetEnable)
+{
+    /* Update the interlock state according to the observed current together
+     * with the requested setting. */
+    MasterInterlockEnable = SetEnable;
+    if (CurrentCurrent > InterlockAutoOnCurrent)
+        MasterInterlockEnable = true;
+    if (CurrentCurrent < InterlockAutoOffCurrent)
+        MasterInterlockEnable = false;
+
+    /* Ensure the interlock enabled control correctly reflects the newly
+     * calculated state. */
+    EnableReadback->Write(MasterInterlockEnable && GlobalBpmEnable);
+    WriteInterlockState();
+}
+
+
+
+/* Called in response to a change in the ENABLE user control.  Note that the
+ * underlying READBACK mechanism will ensure that this routine is only called
+ * if the IL:ENABLE has actually changed. */
 
 static void UpdateInterlockEnable(bool SetEnable)
 {
     Lock();
-
-    /* Compute the proper enable from the requested new state together with
-     * other settings that affect the state. */
-    MasterInterlockEnable = SetEnable;
-    if (!GlobalBpmEnable)
-        /* During BPM disable mode the enable state cannot be set. */
-        MasterInterlockEnable = false;
-    else if (CurrentOverThreshold)
-        /* If the current is over limit the enable cannot be reset. */
-        MasterInterlockEnable = true;
-    else if (CurrentUnderThreshold)
-        /* If the current is under limit enable cannot be set. */
-        MasterInterlockEnable = false;
-
-    /* Ensure that the control is in agreement with our calculated setting
-     * and update the true interlock setting. */
-    EnableReadback->Write(MasterInterlockEnable);
-    WriteInterlockState();
-    
+    UpdateMasterInterlockEnable(SetEnable);
     Unlock();
 }
 
@@ -220,7 +226,8 @@ static void UpdateInterlockEnable(bool SetEnable)
 void NotifyInterlockCurrent(int Current)
 {
     Lock();
-
+    
+    CurrentCurrent = Current;
     if (InterlockHoldoff > 0)
     {
         /* Count off the interlock holdoff.  Ignore the current during this
@@ -231,22 +238,8 @@ void NotifyInterlockCurrent(int Current)
              * state. */
             WriteInterlockState();
     }
-    else if (GlobalBpmEnable)
-    {
-        /* Normal operation: check for current over threshold, and enable the
-         * interlock if exceeded. */
-        CurrentOverThreshold  = Current > InterlockAutoOnCurrent;
-        CurrentUnderThreshold = Current < InterlockAutoOffCurrent;
-
-        bool OldMasterInterlockEnable = MasterInterlockEnable;
-        if (CurrentOverThreshold)   MasterInterlockEnable = true;
-        if (CurrentUnderThreshold)  MasterInterlockEnable = false;
-        if (OldMasterInterlockEnable != MasterInterlockEnable)
-        {
-            EnableReadback->Write(MasterInterlockEnable);
-            WriteInterlockState();
-        }
-    }
+    else
+        UpdateMasterInterlockEnable(MasterInterlockEnable);
 
     Unlock();
 }
@@ -261,7 +254,7 @@ void InterlockedUpdateAttenuation(int NewAttenuation)
     Lock();
 
     /* Figure out which holdoff we need. */
-    if (MasterInterlockEnable  ||  OverflowEnable)
+    if (GlobalBpmEnable  &&  (MasterInterlockEnable  ||  OverflowEnable))
     {
         /* Interlock is currently (potentially) enabled.  Disable it while we
          * perform the update. */
@@ -315,7 +308,7 @@ private:
 void NotifyInterlockBpmEnable(bool Enabled)
 {
     GlobalBpmEnable = Enabled;
-    EnableReadback->Write(false);
+    UpdateInterlockEnable(false);
 }
 
 

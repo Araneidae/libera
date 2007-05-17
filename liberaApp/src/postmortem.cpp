@@ -66,8 +66,11 @@ public:
         RegisterPostmortemEvent(*this, PRIORITY_PM);
     }
 
-    void OnEvent(int)
+    void OnEvent(int Missed)
     {
+        if (Missed > 0)
+            printf("%d PM trigger(s) missed\n", Missed);
+        
         /* Wait for EPICS to be ready. */
         Interlock.Wait();
 

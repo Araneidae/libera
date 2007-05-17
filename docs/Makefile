@@ -7,13 +7,15 @@
 %.pdf: %.tex
 	pdflatex $<
 
+DOCUMENTS = requirements libera
+
 default: ps pdf
 
-dvi: requirements.dvi
+dvi: $(patsubst %, %.dvi, $(DOCUMENTS))
 
-ps: requirements.ps
+ps: $(patsubst %, %.ps, $(DOCUMENTS))
 
-pdf: requirements.pdf
+pdf: $(patsubst %, %.pdf, $(DOCUMENTS))
 
 .PHONY: clean
 clean:

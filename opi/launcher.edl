@@ -3,10 +3,10 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 540
-y 680
-w 300
-h 148
+x 530
+y 532
+w 286
+h 117
 font "arial-medium-r-18.0"
 ctlFont "arial-medium-r-18.0"
 btnFont "arial-medium-r-18.0"
@@ -32,7 +32,7 @@ major 4
 minor 1
 release 0
 x 8
-y 8
+y 16
 w 114
 h 20
 font "arial-medium-r-18.0"
@@ -45,162 +45,6 @@ value {
 autoSize
 endObjectProperties
 
-# (Related Display)
-object relatedDisplayClass
-beginObjectProperties
-major 4
-minor 0
-release 0
-x 8
-y 32
-w 40
-h 32
-fgColor index 14
-bgColor index 3
-topShadowColor index 0
-botShadowColor index 14
-font "arial-medium-r-18.0"
-buttonLabel "01"
-numPvs 4
-numDsps 1
-displayFileName {
-  0 "libera/overview.edl"
-}
-symbols {
-  0 "device=TS-DI-EBPM-01"
-}
-endObjectProperties
-
-# (Related Display)
-object relatedDisplayClass
-beginObjectProperties
-major 4
-minor 0
-release 0
-x 56
-y 32
-w 40
-h 32
-fgColor index 14
-bgColor index 3
-topShadowColor index 0
-botShadowColor index 14
-font "arial-medium-r-18.0"
-buttonLabel "02"
-numPvs 4
-numDsps 1
-displayFileName {
-  0 "libera/overview.edl"
-}
-symbols {
-  0 "device=TS-DI-EBPM-02"
-}
-endObjectProperties
-
-# (Related Display)
-object relatedDisplayClass
-beginObjectProperties
-major 4
-minor 0
-release 0
-x 104
-y 32
-w 40
-h 32
-fgColor index 14
-bgColor index 3
-topShadowColor index 0
-botShadowColor index 14
-font "arial-medium-r-18.0"
-buttonLabel "03"
-numPvs 4
-numDsps 1
-displayFileName {
-  0 "libera/overview.edl"
-}
-symbols {
-  0 "device=TS-DI-EBPM-03"
-}
-endObjectProperties
-
-# (Related Display)
-object relatedDisplayClass
-beginObjectProperties
-major 4
-minor 0
-release 0
-x 152
-y 32
-w 40
-h 32
-fgColor index 14
-bgColor index 3
-topShadowColor index 0
-botShadowColor index 14
-font "arial-medium-r-18.0"
-buttonLabel "04"
-numPvs 4
-numDsps 1
-displayFileName {
-  0 "libera/overview.edl"
-}
-symbols {
-  0 "device=TS-DI-EBPM-04"
-}
-endObjectProperties
-
-# (Related Display)
-object relatedDisplayClass
-beginObjectProperties
-major 4
-minor 0
-release 0
-x 200
-y 32
-w 40
-h 32
-fgColor index 14
-bgColor index 3
-topShadowColor index 0
-botShadowColor index 14
-font "arial-medium-r-18.0"
-buttonLabel "05"
-numPvs 4
-numDsps 1
-displayFileName {
-  0 "libera/overview.edl"
-}
-symbols {
-  0 "device=TS-DI-EBPM-05"
-}
-endObjectProperties
-
-# (Related Display)
-object relatedDisplayClass
-beginObjectProperties
-major 4
-minor 0
-release 0
-x 248
-y 32
-w 40
-h 32
-fgColor index 14
-bgColor index 3
-topShadowColor index 0
-botShadowColor index 14
-font "arial-medium-r-18.0"
-buttonLabel "06"
-numPvs 4
-numDsps 1
-displayFileName {
-  0 "libera/overview.edl"
-}
-symbols {
-  0 "device=TS-DI-EBPM-06"
-}
-endObjectProperties
-
 # (Text Control)
 object activeXTextDspClass
 beginObjectProperties
@@ -208,11 +52,11 @@ major 4
 minor 1
 release 0
 x 8
-y 72
-w 280
+y 48
+w 264
 h 24
 controlPv "LOC\\ioc-name=s:"
-font "arial-medium-r-18.0"
+font "arial-medium-r-16.0"
 fgColor index 14
 bgColor index 0
 useDisplayBg
@@ -230,17 +74,17 @@ endObjectProperties
 object relatedDisplayClass
 beginObjectProperties
 major 4
-minor 0
+minor 2
 release 0
 x 192
-y 104
-w 96
-h 32
+y 80
+w 80
+h 24
 fgColor index 14
 bgColor index 3
 topShadowColor index 0
 botShadowColor index 14
-font "arial-medium-r-18.0"
+font "arial-medium-r-16.0"
 buttonLabel "IOC"
 numPvs 4
 numDsps 1
@@ -259,7 +103,7 @@ major 4
 minor 1
 release 0
 x 8
-y 112
+y 88
 w 151
 h 17
 font "arial-medium-r-16.0"
@@ -272,14 +116,27 @@ value {
 autoSize
 endObjectProperties
 
+# (Group)
+object activeGroupClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 16
+y 32
+w 72
+h 16
+
+beginGroup
+
 # (Menu Mux PV)
 object menuMuxPVClass
 beginObjectProperties
 major 4
 minor 0
 release 0
-x 248
-y 8
+x 48
+y 32
 w 40
 h 16
 fgColour index 14
@@ -305,12 +162,638 @@ beginObjectProperties
 major 4
 minor 0
 release 0
-x 152
-y 8
-w 136
+x 16
+y 32
+w 72
 h 16
 lineColor index 3
 fill
 fillColor index 3
+endObjectProperties
+
+endGroup
+
+endObjectProperties
+
+# (Group)
+object activeGroupClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 136
+y 8
+w 136
+h 32
+
+beginGroup
+
+# (Group)
+object activeGroupClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 136
+y 24
+w 136
+h 16
+
+beginGroup
+
+# (Related Display)
+object relatedDisplayClass
+beginObjectProperties
+major 4
+minor 2
+release 0
+x 136
+y 24
+w 16
+h 16
+fgColor index 14
+bgColor index 3
+topShadowColor index 1
+botShadowColor index 11
+font "arial-medium-r-12.0"
+invisible
+buttonLabel "BPM01"
+numPvs 4
+numDsps 1
+displayFileName {
+  0 "libera/overview.edl"
+}
+symbols {
+  0 "device=TS-DI-EBPM-01"
+}
+endObjectProperties
+
+# (Related Display)
+object relatedDisplayClass
+beginObjectProperties
+major 4
+minor 2
+release 0
+x 256
+y 24
+w 16
+h 16
+fgColor index 14
+bgColor index 3
+topShadowColor index 1
+botShadowColor index 11
+font "arial-medium-r-12.0"
+invisible
+buttonLabel "BPM01"
+numPvs 4
+numDsps 1
+displayFileName {
+  0 "libera/overview.edl"
+}
+symbols {
+  0 "device=TS-DI-EBPM-06"
+}
+endObjectProperties
+
+# (Related Display)
+object relatedDisplayClass
+beginObjectProperties
+major 4
+minor 2
+release 0
+x 232
+y 24
+w 16
+h 16
+fgColor index 14
+bgColor index 3
+topShadowColor index 1
+botShadowColor index 11
+font "arial-medium-r-12.0"
+invisible
+buttonLabel "BPM01"
+numPvs 4
+numDsps 1
+displayFileName {
+  0 "libera/overview.edl"
+}
+symbols {
+  0 "device=TS-DI-EBPM-05"
+}
+endObjectProperties
+
+# (Related Display)
+object relatedDisplayClass
+beginObjectProperties
+major 4
+minor 2
+release 0
+x 208
+y 24
+w 16
+h 16
+fgColor index 14
+bgColor index 3
+topShadowColor index 1
+botShadowColor index 11
+font "arial-medium-r-12.0"
+invisible
+buttonLabel "BPM01"
+numPvs 4
+numDsps 1
+displayFileName {
+  0 "libera/overview.edl"
+}
+symbols {
+  0 "device=TS-DI-EBPM-04"
+}
+endObjectProperties
+
+# (Related Display)
+object relatedDisplayClass
+beginObjectProperties
+major 4
+minor 2
+release 0
+x 184
+y 24
+w 16
+h 16
+fgColor index 14
+bgColor index 3
+topShadowColor index 1
+botShadowColor index 11
+font "arial-medium-r-12.0"
+invisible
+buttonLabel "BPM01"
+numPvs 4
+numDsps 1
+displayFileName {
+  0 "libera/overview.edl"
+}
+symbols {
+  0 "device=TS-DI-EBPM-03"
+}
+endObjectProperties
+
+# (Related Display)
+object relatedDisplayClass
+beginObjectProperties
+major 4
+minor 2
+release 0
+x 160
+y 24
+w 16
+h 16
+fgColor index 14
+bgColor index 3
+topShadowColor index 1
+botShadowColor index 11
+font "arial-medium-r-12.0"
+invisible
+buttonLabel "BPM01"
+numPvs 4
+numDsps 1
+displayFileName {
+  0 "libera/overview.edl"
+}
+symbols {
+  0 "device=TS-DI-EBPM-02"
+}
+endObjectProperties
+
+# (Rectangle)
+object activeRectangleClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 136
+y 27
+w 8
+h 13
+lineColor index 19
+fill
+fillColor index 16
+fillAlarm
+alarmPv "TS-DI-EBPM-01:HEALTH"
+endObjectProperties
+
+# (Rectangle)
+object activeRectangleClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 136
+y 24
+w 16
+h 3
+lineColor index 19
+fill
+fillColor index 16
+fillAlarm
+alarmPv "TS-DI-EBPM-01:CF:ENABLED_S"
+endObjectProperties
+
+# (Rectangle)
+object activeRectangleClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 144
+y 27
+w 8
+h 13
+lineColor index 19
+fill
+fillColor index 16
+fillAlarm
+alarmPv "TS-DI-EBPM-01:CK:HEALTH"
+endObjectProperties
+
+# (Rectangle)
+object activeRectangleClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 256
+y 27
+w 8
+h 13
+lineColor index 19
+fill
+fillColor index 16
+fillAlarm
+alarmPv "TS-DI-EBPM-06:HEALTH"
+endObjectProperties
+
+# (Rectangle)
+object activeRectangleClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 256
+y 24
+w 16
+h 3
+lineColor index 19
+fill
+fillColor index 16
+fillAlarm
+alarmPv "TS-DI-EBPM-06:CF:ENABLED_S"
+endObjectProperties
+
+# (Rectangle)
+object activeRectangleClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 264
+y 27
+w 8
+h 13
+lineColor index 19
+fill
+fillColor index 16
+fillAlarm
+alarmPv "TS-DI-EBPM-06:CK:HEALTH"
+endObjectProperties
+
+# (Rectangle)
+object activeRectangleClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 232
+y 27
+w 8
+h 13
+lineColor index 19
+fill
+fillColor index 16
+fillAlarm
+alarmPv "TS-DI-EBPM-05:HEALTH"
+endObjectProperties
+
+# (Rectangle)
+object activeRectangleClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 232
+y 24
+w 16
+h 3
+lineColor index 19
+fill
+fillColor index 16
+fillAlarm
+alarmPv "TS-DI-EBPM-05:CF:ENABLED_S"
+endObjectProperties
+
+# (Rectangle)
+object activeRectangleClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 240
+y 27
+w 8
+h 13
+lineColor index 19
+fill
+fillColor index 16
+fillAlarm
+alarmPv "TS-DI-EBPM-05:CK:HEALTH"
+endObjectProperties
+
+# (Rectangle)
+object activeRectangleClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 208
+y 27
+w 8
+h 13
+lineColor index 19
+fill
+fillColor index 16
+fillAlarm
+alarmPv "TS-DI-EBPM-04:HEALTH"
+endObjectProperties
+
+# (Rectangle)
+object activeRectangleClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 208
+y 24
+w 16
+h 3
+lineColor index 19
+fill
+fillColor index 16
+fillAlarm
+alarmPv "TS-DI-EBPM-04:CF:ENABLED_S"
+endObjectProperties
+
+# (Rectangle)
+object activeRectangleClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 216
+y 27
+w 8
+h 13
+lineColor index 19
+fill
+fillColor index 16
+fillAlarm
+alarmPv "TS-DI-EBPM-04:CK:HEALTH"
+endObjectProperties
+
+# (Rectangle)
+object activeRectangleClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 184
+y 27
+w 8
+h 13
+lineColor index 19
+fill
+fillColor index 16
+fillAlarm
+alarmPv "TS-DI-EBPM-03:HEALTH"
+endObjectProperties
+
+# (Rectangle)
+object activeRectangleClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 184
+y 24
+w 16
+h 3
+lineColor index 19
+fill
+fillColor index 16
+fillAlarm
+alarmPv "TS-DI-EBPM-03:CF:ENABLED_S"
+endObjectProperties
+
+# (Rectangle)
+object activeRectangleClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 192
+y 27
+w 8
+h 13
+lineColor index 19
+fill
+fillColor index 16
+fillAlarm
+alarmPv "TS-DI-EBPM-03:CK:HEALTH"
+endObjectProperties
+
+# (Rectangle)
+object activeRectangleClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 160
+y 27
+w 8
+h 13
+lineColor index 19
+fill
+fillColor index 16
+fillAlarm
+alarmPv "TS-DI-EBPM-02:HEALTH"
+endObjectProperties
+
+# (Rectangle)
+object activeRectangleClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 160
+y 24
+w 16
+h 3
+lineColor index 19
+fill
+fillColor index 16
+fillAlarm
+alarmPv "TS-DI-EBPM-02:CF:ENABLED_S"
+endObjectProperties
+
+# (Rectangle)
+object activeRectangleClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 168
+y 27
+w 8
+h 13
+lineColor index 19
+fill
+fillColor index 16
+fillAlarm
+alarmPv "TS-DI-EBPM-02:CK:HEALTH"
+endObjectProperties
+
+endGroup
+
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 136
+y 8
+w 16
+h 16
+font "arial-medium-r-14.0"
+fontAlign "center"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "01"
+}
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 160
+y 8
+w 16
+h 16
+font "arial-medium-r-14.0"
+fontAlign "center"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "02"
+}
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 184
+y 8
+w 16
+h 16
+font "arial-medium-r-14.0"
+fontAlign "center"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "03"
+}
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 208
+y 8
+w 16
+h 16
+font "arial-medium-r-14.0"
+fontAlign "center"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "04"
+}
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 232
+y 8
+w 16
+h 16
+font "arial-medium-r-14.0"
+fontAlign "center"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "05"
+}
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 256
+y 8
+w 16
+h 16
+font "arial-medium-r-14.0"
+fontAlign "center"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "06"
+}
+endObjectProperties
+
+endGroup
+
 endObjectProperties
 

@@ -110,6 +110,10 @@ First Turn (<group> = FT):
         approximately 8.5ns sample intervals.  The permutation between channel
         and button depends on the switch position.
 
+    MAXADC
+        Maximum ADC reading in the entire 1024 point capture, across all
+        channels.
+
     WF<buttons>
         256 point arrays at approximately 34ns sampling interval, updated on
         trigger.
@@ -213,6 +217,10 @@ Booster (<group> = BN):
     ENABLE_S
         If set to Disabled then BN processing will not occur.
 
+    AXIS, AXISS
+        Waveforms used to label position graphs.  These are constant ramping
+        waveforms.
+
 Note that if BN processing is enabled then care should be taken to ensure that
 1024*IOC_BN_LENGTH divided by machine revolution frequency is no longer than
 the interval between triggers, otherwise triggers will be lost.
@@ -273,6 +281,8 @@ Interlock Control (<group> = IL):
         STATE records whether the interlock is currently dropped or has been
         dropped within the last 0.5 seconds.  
 
+    CHK_REASON
+
 
 Configuration (<group> = CF):
 =============================
@@ -323,14 +333,6 @@ Configuration (<group> = CF):
         Nominal beam current at 0dBm input power as seen by Libera.  This is
         used to compute SA:CURRENT and FT:CHARGE.
 
-    LMTD_S
-    DETUNE_S
-        This controls the "double detune" feature.  If LMTD_S is set to
-        "Tuned" then the normal sample clock frequency will be used.  To
-        eliminate beating between the RF frequency and a revolution frequency
-        sideband of the third harmonic, "Double Detune" should be selected.
-            In this case DETUNE_S determines the sample clock frequency
-        offset in multiples of approximately 10Hz.
 
 
 Clock (<group> = CK):
@@ -349,6 +351,12 @@ Clock (<group> = CK):
     DAC
     PHASE_E
     FREQ_E
+    HEALTH
+
+    TICK
+        Counts the number of seconds (in 0.1s steps) since the last trigger,
+        and records an alarm state if the delay is more than 1 second.
+
 
 
 Sensors (<group> = SE):
@@ -391,12 +399,10 @@ Other (no group):
     BUILD
         Build time and date of the running IOC.
 
-    TICK
-        Counts the number of seconds (in 0.1s steps) since the last trigger,
-        and records an alarm state if the delay is more than 1 second.
-
-    REBOOT
+    REBOOT_S
         Processing this record will cause the Libera IOC to reboot.
 
-    RESTART
+    RESTART_S
         Processing this record will case the EPICS IOC to restart.
+
+    HEALTH

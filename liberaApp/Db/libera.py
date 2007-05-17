@@ -617,8 +617,8 @@ def Sensors():
         LOLO = 1000,    LLSV = 'MAJOR') for i in (1, 2)]
     memfree = aIn('FREE', 0, 64, 1./MB, 'MB', 2,
         DESC = 'Free memory',
-        LOW  = 24,      LSV  = 'MINOR',
-        LOLO = 16,      LLSV = 'MAJOR')
+        LOW  = 16,      LSV  = 'MINOR',
+        LOLO = 8,       LLSV = 'MAJOR')
     ramfs = aIn('RAMFS', 0, 64, 1./MB, 'MB', 3,
         DESC = 'Temporary file usage',
         HIGH = 1,       HSV  = 'MINOR',
