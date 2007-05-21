@@ -242,7 +242,7 @@ template<class T>
     if (NewValue != Value)
     {
         Value = NewValue;
-        Writer.Write(Value);
+        Writer.Write(NewValue);
     }
 }
 

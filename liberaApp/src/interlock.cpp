@@ -52,7 +52,7 @@
  * updated and then UpdateInterlock() is called to ensure the interlock state
  * is correctly managed. */
 #define PUBLISH_INTERLOCK(record, Name, Value) \
-    PUBLISH_CONFIGURATION(record, Name, Value, EpicsUpdateInterlock) 
+    PUBLISH_CONFIGURATION(record, Name, Value, LockedWriteInterlockState) 
 
 
 
@@ -176,19 +176,12 @@ static void WriteInterlockState()
 }
 
 
-/* This is called whenever any part of the persistent configuration of the
- * interlock changes: this is called from EPICS.  All we need to do is ensure
- * that the interlock is configured. */
 
-static void EpicsUpdateInterlock()
-{
-    Lock();
-    WriteInterlockState();
-    Unlock();
-}
+/* Sets the underlying interlock enable state to the requested value, taking
+ * auto on/off actions into account.  This must be called from within a
+ * lock. */
 
-
-static void UpdateMasterInterlockEnable(bool SetEnable)
+static void UpdateInterlockEnable(bool SetEnable)
 {
     /* Update the interlock state according to the observed current together
      * with the requested setting. */
@@ -197,31 +190,45 @@ static void UpdateMasterInterlockEnable(bool SetEnable)
         MasterInterlockEnable = true;
     if (CurrentCurrent < InterlockAutoOffCurrent)
         MasterInterlockEnable = false;
+    if (!GlobalBpmEnable)
+        MasterInterlockEnable = false;
 
     /* Ensure the interlock enabled control correctly reflects the newly
      * calculated state. */
-    EnableReadback->Write(MasterInterlockEnable && GlobalBpmEnable);
+    EnableReadback->Write(MasterInterlockEnable);
     WriteInterlockState();
 }
 
+
+
+/* This is called whenever any part of the persistent configuration of the
+ * interlock changes: this is called from EPICS.  All we need to do is ensure
+ * that the interlock is configured. */
+
+static void LockedWriteInterlockState()
+{
+    Lock();
+    WriteInterlockState();
+    Unlock();
+}
 
 
 /* Called in response to a change in the ENABLE user control.  Note that the
  * underlying READBACK mechanism will ensure that this routine is only called
  * if the IL:ENABLE has actually changed. */
 
-static void UpdateInterlockEnable(bool SetEnable)
+static void LockedUpdateInterlockEnable(bool SetEnable)
 {
     Lock();
-    UpdateMasterInterlockEnable(SetEnable);
+    UpdateInterlockEnable(SetEnable);
     Unlock();
 }
 
 
-/* This is called each time the current is sampled, at approximately 10Hz.  If
- * the current goes over the interlock enable threshold then we turn
- * interlocking on.  This routine is also used to time out the interlock
- * holdoff state. */
+/* This is called from the SA thread each time the current is sampled, at
+ * approximately 10Hz.  If the current goes over the interlock enable
+ * threshold then we turn interlocking on.  This routine is also used to time
+ * out the interlock holdoff state. */
 
 void NotifyInterlockCurrent(int Current)
 {
@@ -229,17 +236,13 @@ void NotifyInterlockCurrent(int Current)
     
     CurrentCurrent = Current;
     if (InterlockHoldoff > 0)
-    {
         /* Count off the interlock holdoff.  Ignore the current during this
          * holdoff period. */
         InterlockHoldoff -= 1;
-        if (InterlockHoldoff == 0)
-            /* When the interlock has finally expired update the interlock
-             * state. */
-            WriteInterlockState();
-    }
     else
-        UpdateMasterInterlockEnable(MasterInterlockEnable);
+        /* During normal operation just refresh the master interlock enable
+         * state: this will take account of any current on/off effects. */
+        UpdateInterlockEnable(MasterInterlockEnable);
 
     Unlock();
 }
@@ -254,24 +257,46 @@ void InterlockedUpdateAttenuation(int NewAttenuation)
     Lock();
 
     /* Figure out which holdoff we need. */
-    if (GlobalBpmEnable  &&  (MasterInterlockEnable  ||  OverflowEnable))
-    {
+    if (MasterInterlockEnable  ||  OverflowEnable)
         /* Interlock is currently (potentially) enabled.  Disable it while we
          * perform the update. */
         InterlockHoldoff = InterlockHoldoffCount;
-        WriteInterlockState();
-    }
     else
         /* Interlock is not currently enabled, so all we need to watch out
          * for is the current spike. */
         InterlockHoldoff = CurrentHoldoffCount;
     
+    WriteInterlockState();
     Unlock();
 
     /* The interlock is now off, so just update the attenuators now. */
     UpdateAttenuation(NewAttenuation);
 }
 
+
+
+/* Called when the global BPM enable state changes. */
+
+void NotifyInterlockBpmEnable(bool Enabled)
+{
+    Lock();
+    GlobalBpmEnable = Enabled;
+    UpdateInterlockEnable(false);
+    Unlock();
+}
+
+
+
+/* Called when the golden orbit offset may have changed. */
+
+void NotifyInterlockOffset(int NewOffsetX, int NewOffsetY)
+{
+    Lock();
+    OffsetX = NewOffsetX;
+    OffsetY = NewOffsetY;
+    WriteInterlockState();
+    Unlock();
+}
 
 
 /* This class receives the interlock event (used to indicate that the
@@ -302,27 +327,6 @@ private:
 
 
 
-
-/* Called when the global BPM enable state changes. */
-
-void NotifyInterlockBpmEnable(bool Enabled)
-{
-    GlobalBpmEnable = Enabled;
-    UpdateInterlockEnable(false);
-}
-
-
-
-/* Called when the golden orbit offset may have changed. */
-
-void NotifyInterlockOffset(int NewOffsetX, int NewOffsetY)
-{
-    OffsetX = NewOffsetX;
-    OffsetY = NewOffsetY;
-    EpicsUpdateInterlock();
-}
-
-
 bool InitialiseInterlock()
 {
     /* Interlock window. */
@@ -340,7 +344,7 @@ bool InitialiseInterlock()
 
     /* The interlock enable is dynamic state. */
     EnableReadback = PUBLISH_READBACK(bi, bo, "IL:ENABLE",
-        false, UpdateInterlockEnable);
+        false, LockedUpdateInterlockEnable);
 
     PUBLISH_CONFIGURATION(longout, "IL:HOLDOFF", 
         InterlockHoldoffCount, NULL_ACTION);
@@ -349,7 +353,7 @@ bool InitialiseInterlock()
     
     new INTERLOCK_EVENT();
 
-    EpicsUpdateInterlock();
+    LockedWriteInterlockState();
 
     return true;
 }

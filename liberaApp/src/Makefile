@@ -8,9 +8,10 @@ include $(TOP)/configure/CONFIG
 
 #USR_CXXFLAGS += -S
 #USR_CXXFLAGS += -E
-USR_CXXFLAGS += -g -O0
+#USR_CXXFLAGS += -g -O0
 
 USR_CXXFLAGS += -Werror 
+USR_CXXFLAGS += -Wextra -Wno-unused-parameter
 
 # Make sure that we pick up the version from install/CONFIG.
 USR_CXXFLAGS += -DLIBERA_VERSION='"$(shell \
