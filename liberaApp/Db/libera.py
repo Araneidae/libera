@@ -30,10 +30,11 @@
 import sys
 from math import *
 
-# It is important to import support before importing epics, as the support
-# module initialises epics (and determines which symbols it exports!)
+# It is important to import support before importing dls.builder, as the
+# support module initialises dls.builder (and determines which symbols it
+# exports!)
 from support import * 
-from epics import *
+from dls.builder import *
 
 
 
@@ -294,8 +295,7 @@ def SlowAcquisition():
         DESC = 'Absolute input power')
     current = aIn('CURRENT', 0, 500, 1e-5, 'mA', 3,
         DESC = 'SA input current')
-    Trigger(False,
-        ABCD_() + XYQS_(4) + XYQS_(4, suffix='C') + [power, current])
+    Trigger(False, ABCD_() + XYQS_(4) + [power, current])
     UnsetChannelName()
 
 
@@ -607,7 +607,7 @@ def Sensors():
     SetChannelName('SE')
 
     temp = longIn('TEMP', 20, 60, 'deg C',
-        DESC = 'Internal box temperature',
+        DESC = 'Internal Libera temperature',
         HIGH = 45,      HSV  = 'MINOR',
         HIHI = 50,      HHSV = 'MAJOR',
         LOLO = 0,       LLSV = 'MINOR')

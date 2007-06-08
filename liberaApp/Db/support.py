@@ -30,7 +30,9 @@
 import sys
 import os
 
-from epics import ModuleVersion, TemplateRecordNames, Configure
+from pkg_resources import require
+require("dls.builder")
+from dls.builder import ModuleVersion, TemplateRecordNames, Configure
 
 
 # Ensure that we can find the Libera dbd files.  The home directory is where
@@ -67,8 +69,8 @@ class LiberaRecordNames(TemplateRecordNames):
 
 RecordNames = LiberaRecordNames()
 Configure(recordnames = RecordNames)
-from epics import *
-from epics.hardware import Device
+from dls.builder import *
+from dls.builder.hardware import Device
 
 
 def ChannelName():

@@ -1,0 +1,74 @@
+This records significant known problems in release 1.40.2 of the Libera EPICS
+driver.
+
+ * In this release the compiler and glibc library have been changed to
+   gcc-3.4.5 and glibc-2.3.6 respectively.  Although overall stability is
+   improved by this change, it now means that first turn mode needs to be
+   disabled during normal operation.
+
+   On the Diamond storage ring we observe that Libera will operate normally
+   (on 169 BPMs) with first turn enabled -- so long as there is no beam!  As
+   soon as injection starts, the Liberas start dropping like flies.
+   Curiously, this behaviour is very difficult to reproduce in the lab, and
+   not all machines are susceptible to this problem.
+
+   After lengthy investigation and conversations with Instrumentation
+   Technologies, who have seen related problems with their servers, the
+   conclusion seems to be that problems with Linux threading in version 2.4 of
+   the kernel are at the core of this problem.
+
+   I have to say that I am *extremely* reluctant to come to this conclusion
+   without unequivocal evidence, but there is enough evidence in the core
+   dumps I have seen that REGISTERS ARE BEING CORRUPTED!  For example, one
+   frequent style of crash leaves clear evidence in the core dump that a
+   certain register had a known value (loaded from stack, which contains
+   consistent data) at a certain point, and a completely different value at
+   the point of crash ... without being modified in between.
+
+   There are three workarounds possible:
+
+   1. Revert to gcc-3.3-3 and glibc-2.3.2.  This combination has not been
+      used at Diamond for this release, and previously Libera was not very 
+      stable in long term operation.
+
+   2. Disable first turn operation during normal operation of the storage
+      ring.  This is what is done at Diamond: first turn mode is then only
+      used during problematic injections to literally navigate the first few
+      turns, and is then disabled (via the FT:ENABLE_S PV).
+
+   3. Migrate to Linux 2.6.  This has not yet been tried at Diamond, may
+      involve significant work, and until it is tested is not guaranteed to
+      work!
+
+   Sigh.  If anybody else can cast any other light on this problem I'll be
+   delighted.
+
+
+ * The SA:CURRENT and FT:CHARGE values are both scaled to the machine via a
+   single configuration setting, CF:ISCALE_S.  Unfortunately, the scaling
+   between the two outputs is dependent on Libera configuration and filters
+   but is currently hard-wired into the code!  I'm sure I'll fix this in the
+   next release (the scaling belongs in the epics_ioc file).
+
+
+ * The conversion of first turn raw ADC readings into an amplitude profile
+   uses a trick which relies on the intermediate frequency of Libera being
+   rather close to 1/4 sampling frequency.  Most of the work required to fix
+   this has been done, and it's bound to be fixed in the next release, but
+   this just doesn't affect Diamond.
+
+
+ * Changing attenuation settings can still dump the beam.  The problem now
+   seems to be unfriendly behaviour by the digital signal conditioning daemon.
+   Fixing this is my first priority after this release.
+
+
+ * The documentation directory is so ridiculously out of date that it's been
+   dropped from this release.  I promise it will be back.
+
+
+Please let me know of any problems encountered with this release and how you
+get on.
+
+    Michael Abbott
+    Diamond Light Source

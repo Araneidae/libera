@@ -1,21 +1,25 @@
-Libera EPICS driver version 1.40.1, for use with Libera drivers version 1.40
+Libera EPICS driver version 1.40.2, for use with Libera drivers version 1.40
 or 1.42.
+
+Note that this release has been tested with gcc 3.4.5 and glibc 2.3.6.  Using
+this tool chain will involve some extra installation work (see below) and
+makes first turn mode less usable (see the PROBLEMS file), but the overall
+increase in system stability is worthwhile.
 
 
 INSTALLATION INSTRUCTIONS
 
 This software depends on the following components:
 
- * ARM cross compiler.  The software has been developed using gcc 3.3.3
-   configured to cross-compile from linux-x86 to linux-arm.
+ * ARM cross compiler.  The software was previous developed using gcc 3.3.3
+   configured to cross-compile from linux-x86 to linux-arm but this release
+   was developed using gcc 3.4.5 and glibc 2.3.6.
 
  * EPICS 3.14 base.  This version of the software has been developed using 
-   version 3.14.8.2 of EPICS, which can be downloaded from 
-        http://www.aps.anl.gov/epics/base/R3-14/8.php
-   The included patch, patch-epics-3.14.8.2, will need to be applied to ensure
-   that linux-arm support is provided.
-        Paches against 3.14.6 and 3.14.7 are also provided.
-
+   version 3.14.9 of EPICS, which can be downloaded from 
+        http://www.aps.anl.gov/epics/base/R3-14/9.php
+   For earlier versions (3.14.6, 3.14.7 and 3.14.8.2) the included patches
+   will need to be applied to ensure that linux-arm support is provided.
    EPICS version 3.14.9 can be used without applying any patches.
 
  * Libera 1.40 or 1.42.  To run the driver a complete Libera system must be
@@ -35,11 +39,12 @@ This software depends on the following components:
 The instructions below are divided into the following stages:
 
  1. Preparation
- 2. Building EPICS for linux-arm
- 3. Building the Libera EPICS driver
- 4. Preparing Libera for EPICS installation
- 5. Installing the Libera EPICS driver
- 6. Running the Libera EPICS driver
+ 2. Building the Cross Compiler Tool Chain
+ 3. Building EPICS for linux-arm
+ 4. Building the Libera EPICS driver
+ 5. Preparing Libera for EPICS installation
+ 6. Installing the Libera EPICS driver
+ 7. Running the Libera EPICS driver
 
 
 
@@ -93,47 +98,94 @@ describes a command to be run on Libera, when logged in as root.
 
 
 
+Building the Cross Compiler Tool Chain
+======================================
+
+The cross compiler can be obtained from Instrumentation Technologies, or can
+be built with the help of crosstool, available from
+    http://kegel.com/crosstool/
+
+The following process worked well for me:
+
+1.  Download http://kegel.com/crosstool/crosstool-0.43.tar.gz and unzip.
+
+2.  Change into the crosstool directory and run the commands below.  
+
+    $ set -aex
+    $ # These directories need to already exist
+    $ TARBALLS_DIR=/scratch/crosstool/downloads
+    $ RESULT_TOP=/scratch/crosstool/results
+    $ # You may need to specify your web proxy server here
+    $ #http_proxy=http://wwwcache.rl.ac.uk:8080/
+
+    $ GCC_LANGUAGES=c,c++
+    $ . gcc-3.4.5-glibc-2.3.6.dat
+    $ . arm.dat
+    $ TARGET=arm-linux
+    $ ./all.sh --notest
+
+    The last step takes quite a long time, and will automatically download
+    any source files needed.  The resulting compiler toolchain will appear
+    in $RESULT_TOP/gcc-3.4.5-glibc-2.3.6 .
+
+3.  Remember ARM_LINUX_GCC=$RESULT_TOP/gcc-3.4.5-glibc-2.3.6/arm-linux for the
+    next step.
+
+
+
 Building EPICS for linux-arm
 ============================
 
 The instructions below assume that you don't already have a copy of EPICS
-installed, and we assume the use of version 3.14.6, 3.14.7, 3.14.8.2 or 3.14.9.
+installed, and we assume the use of version 3.14.6, 3.14.7, 3.14.8.2 or
+3.14.9.
 
 1.  Install a suitable cross compiler.  This release was built with a version
-of gcc 3.3.3 configured as a cross compiler with prefix arm-linux.  Let
-ARM_LINUX_GCC be the root of the compiler, so that GCC is available as
-$ARM_LINUX_GCC/bin/arm-linux-gcc.
+    of gcc 3.4.5 configured as a cross compiler with prefix arm-linux.  Let
+    ARM_LINUX_GCC be the root of the compiler, so that GCC is available as
+    $ARM_LINUX_GCC/bin/arm-linux-gcc.
 
 2.  Extract EPICS from
-    http://www.aps.anl.gov/epics/download/base/baseR$EPICS_VERSION.tar.gz
-into a suitable directory.  Let EPICS_BASE be the path to the root directory
-of this distribution.
+        http://www.aps.anl.gov/epics/download/base/baseR$EPICS_VERSION.tar.gz
+    into a suitable directory.  Let EPICS_BASE be the path to the root
+    directory of this distribution.
 
-3.  If the EPICS version is earlier than 3.14.9, apply the patch thus:
-    $ cd $EPICS_BASE
-    $ patch -p0 <$LIBERA_EPICS/install/patches/patch-epics-$EPICS_VERSION
-Note that the correct patch must be used depending on which version of epics
-is installed.  The linux-arm patches are fully incorporated into 3.14.9 and
-do not need to be applied.
+3.  If the EPICS version is earlier than 3.14.9, patch it as follows:
+        $ cd $EPICS_BASE
+        $ patch -p0 <$LIBERA_EPICS/install/patches/patch-epics-$EPICS_VERSION
+    Note that the correct patch must be used depending on which version of
+    EPICS is installed.  The linux-arm patches are fully incorporated into
+    3.14.9 and do not need to be applied to this version of EPICS.
 
 4.  Unless $ARM_LINUX_GCC is /usr you will need to tell EPICS where to find
-its cross compiler by editing the site configuration file
-    $EPICS_BASE/configure/os/CONFIG_SITE.linux-x86.linux-arm
-and defining 
-    GNU_DIR=<expansion of ARM_LINUX_GCC>
+    its cross compiler by editing the site configuration file
+        $EPICS_BASE/configure/os/CONFIG_SITE.linux-x86.linux-arm
+    and defining 
+        GNU_DIR=<expansion of ARM_LINUX_GCC>
 
 5.  Make sure that linux-arm is included as a cross compiler target
-architecture, by editing
-    $EPICS_BASE/configure/CONFIG_SITE
-and defining 
-    CROSS_COMPILER_TARGET_ARCHS=linux-arm
-Multiple target architectures can be supported by EPICS and defined on this
-line, but the Libera driver will only use the linux-arm target.
+    architecture, by editing
+        $EPICS_BASE/configure/CONFIG_SITE
+    and defining 
+        CROSS_COMPILER_TARGET_ARCHS=linux-arm
+    Multiple target architectures can be supported by EPICS and defined on
+    this line, but the Libera driver will only use the linux-arm target. 
 
-6.  Run make from $EPICS_BASE.  This will take a while...
-    $ cd $EPICS_BASE
-    $ make
+6.  The linux-arm build must now be configured for static building.  Add the
+    following lines to $EPICS_BASE/configure/os/CONFIG.linux-x86.linux-arm :
 
+        CROSS_CPPFLAGS=
+        STATIC_BUILD=YES
+        SHARED_LIBRARIES=NO
+
+7.  Remove the following line from $EPICS_BASE/configure/CONFIG.CrossCommon :
+        export GCC_EXEC_PREFIX = $(GNU_LIB)/gcc-lib/
+    This line does not seem to be necessary, and it confuses gcc 3.4.5 (as the
+    path gcc-lib has changed) resulting in compilation failure.
+
+8.  Run make from $EPICS_BASE.  This will take a while...
+        $ cd $EPICS_BASE
+        $ make
 
 
 Note that the EPICS build has library and header file dependencies including
@@ -152,23 +204,25 @@ provided on request, but it will require integration work, thus pre-built .db
 files are included with this distribution.
 
 1.  Edit $LIBERA_EPICS/configure/RELEASE so that EPICS_BASE points to
-$EPICS_BASE.
+    $EPICS_BASE.
 
 2.  To remove the dependency on the Python epics library, copy the prebuilt
-files from the install directory to the Db directory thus:
-    $ cd $LIBERA_EPICS
-    $ cp install/prebuilt/*.db liberaApp/Db
+    files from the install directory to the Db directory thus:
+        $ cd $LIBERA_EPICS
+        $ cp install/prebuilt/*.db liberaApp/Db
 
-3.  Run make thus:
-    $ make
+3.  If your build environment lacks Python then a pre-built header file is
+    also provided in the install/prebuilt directory which can be copied into
+    liberaApp/src if required:
+        $ cp install/prebuilt/*.h liberaApp/src
 
-4.  Copy the runtime files to $INSTALL_HOST by running
-    $ ./install/install-ioc
-This builds the directory $INSTALL_HOST/ioc.
+4.  Run make thus:
+        $ make
 
-If your build environment lacks Python then a pre-built header file is also
-provided in the install/prebuilt directory which can be copied into
-liberaApp/src if required.
+5.  Copy the runtime files to $INSTALL_HOST by running
+        $ ./install/install-ioc
+    This builds the directory $INSTALL_HOST/ioc.
+
 
 
 
@@ -176,7 +230,7 @@ Preparing Libera for EPICS installation
 =======================================
 
 You will need to obtain the the appropriate version of the Libera SBC software
-release from Instrumentations Technologies (www.i-tech.si) and follow the
+release from Instrumentation Technologies (www.i-tech.si) and follow the
 installation instructions.  
 
 This EPICS driver may misbehave in obscure ways, or more usually will refuse
@@ -186,7 +240,7 @@ driver version to use.
 
     EPICS Driver (date)         Compatible Libera Drivers
     -------------------         -------------------------
-    1.40.2 (2007-05-??)         1.40, 1.42
+    1.40.2 (2007-06-??)         1.40, 1.42
     1.40.0 (2007-01-15)         1.40, 1.42
     0.6.3  (2006-10-03)         1.20, 1.21
     0.6.1  (2006-08-17)         1.20, 1.21

@@ -29,33 +29,32 @@
 
 # Wrapper for automatically building NTP server.
 
-VERSION=4.2.2p3
-TAR_FILE=ntp-$VERSION.tar.gz
+set -e
 
+VERSION=4.2.2p3
+# Name of tgz file containing NTP distribution
+TAR_FILE=ntp-$VERSION.tar.gz
+# Name of NTP directory extracted from distribution
+NTP_DIR=ntp-$VERSION
+# Location on host system of NTP distribution
 TAR_DIR=/scratch/incoming
 
-HERE="$(dirname "$0")"
-TOP="$HERE/../.."
-
-BUILD_DIR="$HERE/../ntp-$VERSION"
-INSTALL_DIR=/home/libera/nfs/install/ntp
-
+cd "$(dirname "$0")"
+HERE="$(pwd)"
+INSTALL_DIR="$HERE/install"
 
 # Figure out where the cross-compiler is.  We do this by asking the EPICS
 # makefile, which certainly knows!
 GNU_DIR="$(
-    cd "$TOP"
+    cd "$HERE/../.."
     make -pn 2>/dev/null |
     sed -n '/^GNU_DIR = /{s///;p;q;}')"
-
 export PATH="$PATH:$GNU_DIR/bin"
 
-rm -rf "$BUILD_DIR"
-
 # Build everything
-cd "$HERE"  &&
+rm -rf "$BUILD_DIR"  &&
 tar xzf "$TAR_DIR/$TAR_FILE"  &&
-cd "$BUILD_DIR"  &&
+cd "$NTP_DIR"  &&
 ./configure --host=arm-linux --disable-all-clocks --disable-parse-clocks  &&
 make  || {
     echo Error building ntpd >&2
@@ -65,7 +64,8 @@ make  || {
 # Place where required
 rm -rf "$INSTALL_DIR" &&
 mkdir -p "$INSTALL_DIR/etc/init.d" "$INSTALL_DIR/usr/sbin"  &&
-cp "$BUILD_DIR/ntpd/ntpd" "$INSTALL_DIR/usr/sbin"  &&
-cp "$BUILD_DIR/install-ntpd" "$INSTALL_DIR"  &&
-cp "$BUILD_DIR/ntpd" "$INSTALL_DIR/etc/init.d"  &&
-cp "$BUILD_DIR/ntp.conf" "$INSTALL_DIR/etc"  
+cd "$HERE"  &&
+cp "$NTP_DIR/ntpd/ntpd" "$INSTALL_DIR/usr/sbin"  &&
+cp "install-ntpd"       "$INSTALL_DIR"  &&
+cp "ntpd"               "$INSTALL_DIR/etc/init.d"  &&
+cp "ntp.conf"           "$INSTALL_DIR/etc"  

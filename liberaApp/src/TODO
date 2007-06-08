@@ -5,4 +5,9 @@ Work to do
 * Investigate migrating to soft floating point: use -msoft-float and recompile
   libgcc.a.  This will affect EPICS.
 
-* Migrate to newer compiler.
+* Make first turn mode more friendly if the intermediate frequency isn't close
+  to 1/4 f_s.
+
+* Sort out scaling between SA:CURRENT and FT:CHARGE.
+
+* Implement smooth DSC transitions on attenuator change.

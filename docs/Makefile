@@ -1,11 +1,18 @@
+RERUN_GREP='Rerun to get (citations correct|cross-references right)'
+
 %.dvi: %.tex
-	latex $<
+	latex $*
+	if grep -E $(RERUN_GREP) $*.log; then latex $*; fi
 
 %.ps: %.dvi
 	dvips -o $@ $<
 
-%.pdf: %.tex
-	pdflatex $<
+%.pdf: %.dvi
+	echo $($*_OPT)
+	dvips -j0 -G0 -o - -Ppdf $* | ps2pdf - $@
+
+# %.pdf: %.tex
+# 	pdflatex $<
 
 DOCUMENTS = requirements libera
 

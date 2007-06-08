@@ -1,8 +1,13 @@
 Change history of Libera EPICS Driver development
 
-2007/05/?? Version 1.40.2
+2007/06/?? Version 1.40.2
 =========================
 More complete support for iTech Libera 1.40 and 1.42 driver.
+
+This release has been developed and tested using gcc 3.4.5 with glibc 2.3.6.
+Switching to this compiler and library has had two effects: 
+ - overall stability of Libera is improved; but at a cost:
+ - turn by turn operation is much less stable.  See PROBLEMS for details.
 
 Major changes:
  - Master BPM enable PV added.  This allows a BPM to be marked as "disable" if
@@ -47,7 +52,7 @@ soon.
 
 Significant changes:
  - Incorporate CSPI 1.40 support including updated CSPI files.
- - Add support for precision timestamps in EPICS for datatypes where this is
+ - Add support for precision timestamps in EPICS for data types where this is
    available (modes BN, FR, PM, TT).
 
 Minor changes:
@@ -66,7 +71,7 @@ Significant changes:
  - Improve the calculation of FT:CHARGE.  The new algorithm is virtually
    independent of the profile of the bunch train, though it is still not
    particularly accurate for low signal levels.
- - Add support for integrating IOC startup process into libera startup script.
+ - Add support for integrating IOC startup process into Libera startup script.
 
 Minor changes:
  - Changed name of FT:RAW waveforms from <buttons> to <channel> to reflect the

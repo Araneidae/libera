@@ -30,10 +30,8 @@
 import sys
 from math import *
 
-# It is important to import support before importing epics, as the support
-# module initialises epics (and determines which symbols it exports!)
 from support import * 
-from epics import *
+from dls.builder import *
 
 
 # 10 bit BPM identifier, so range is 0..1023

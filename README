@@ -5,12 +5,12 @@ This software provides an EPICS interface to the Libera electron beam position
 monitor, allowing the performance of the electron beam to be monitored through
 epics channels.
 
-This version of the epics driver is designed to work with with version 1.20 or
-1.21 of the Libera device driver, as distributed by Instrumentation
+This version of the epics driver is designed to work with with version 1.40 or
+1.42 of the Libera device driver, as distributed by Instrumentation
 Technologies, http://www.i-tech.si, and has been built to support the
-comissioning of the Diamond light source, http://diamond.ac.uk.
+operation of the Diamond light source, http://www.diamond.ac.uk.
 
-The normal distribution point for this software is Sourceforge, from URL
+The normal distribution point for this software is SourceForge, from URL
     http://sourceforge.net/projects/libera-epics
 The author, Dr. Michael Abbott, can be contacted at Diamond Light Source at
 michael.abbott@diamond.ac.uk.
@@ -18,11 +18,14 @@ michael.abbott@diamond.ac.uk.
 To be notified of updates to this software please either subscribe to the
 EPICS tech-talk mailing list, 
     http://www.aps.anl.gov/epics/tech-talk/index.php
-or to the libera-epics-announce mailing list on sourceforge
+or to the libera-epics-announce mailing list on SourceForge
     http://lists.sourceforge.net/mailman/listinfo/libera-epics-announce
 
+Releases will now also be notified through the iTech forum
+    http://www.i-tech.si/forum/
 
-Do read the following attached files:
+
+Do please read the following attached files:
 
     COPYING
         This contains the standard GNU license, and all files in this release
@@ -34,8 +37,8 @@ Do read the following attached files:
     CHANGES
         Records the change history of this driver.
 
-Please note that the doc directory in this distribution is out of date and
-should be ignored in this release!
+    PROBLEMS
+        Known problems in this release.
 
 
 This release of the Libera EPICS driver provides the following functionality:
@@ -47,9 +50,9 @@ First Turn Data
 
 Turn-by-turn Data
     Very long waveforms (up to 524,288 points) can be captured on a hardware
-    trigger and then read out in 16384 point segments.  This is designed
+    trigger and then read out in 32768 point segments.  This is designed
     specifically for tune measurements at frequencies up to 1/2 the
-    synchrotron revolution frequency.
+    synchrotron revolution frequency, and for detailed noise investigations.
 
 Booster Ramp Data
     Waveforms are provided giving an overview of the booster ramp.  This is
@@ -70,20 +73,26 @@ Interlock Control
     electron beam position is within a configured window: this is designed for
     machine protection.
 
+Clock Control
+    Correct synchronisation and detuning of the Libera sample clock to the
+    machine clock is essential for accurate operation, and for fast feedback
+    operation it is necessary for all clocks to operate synchronously.  The
+    clock control PVs allow control over the clock.
+
 
 All EPICS records follow a uniform naming convention of the form
     <device>:<group>:<record>
 where:
-    <device> is normally derived from the hostname of the epics IOC, but can
+    <device> is normally derived from the host name of the epics IOC, but can
         be configured to any string at startup.  
-    <group> is the major function (FT = "First Turn", etc)
+    <group> is the major function (FT = "First Turn", etc.)
     <record> is the remainder of the record name as specified below.
 
 In the list of records below we use a number of abbreviations:
     <channel>
         Refers to four channel number 1, 2, 3, 4 corresponding to four input
         RF processing channels.  The correspondence between channel and
-        buttons depends on the multiplexor switch setting.
+        buttons depends on the multiplexer switch setting.
     <iq>
         refers to eight names AI, AQ, BI, BQ, CI, CQ, DI, CQ referring to
         button values in quadrature (typically at turn-by-turn rate).
@@ -97,9 +106,11 @@ In the list of records below we use a number of abbreviations:
         0.5822*2^31 full scale; the positions are in either nm or mm. 
     ..._S
         Records of the form <name>_S are used to write values into the driver.
+        Most of these written values are remembered over IOC restart.
         
 
-The following EPICS records provided by this driver will be of interest:
+The following documents all of the Libera EPICS records used in operation of
+Libera.
 
 
 First Turn (<group> = FT):
@@ -158,7 +169,7 @@ Turn by Turn (<group> = TT):
     READY
         This record becomes set to 1 when a waveform has been captured.
 
-    CAPLEN
+    CAPLEN_S
         Programs the number of points to be captured into the internal long
         waveform.  A maximum of 524,288 points can be specified.
 
@@ -168,14 +179,14 @@ Turn by Turn (<group> = TT):
 
     OFFSET_S, OFFSET
         Used to set the offset into the long buffer for reading out waveforms,
-        together with readback used for synchronisation.
+        together with read-back used for synchronisation.
 
     LENGTH_S
         Used to set how many points are read from the long buffer.  The
-        default (and maximum) value is 16384.
+        default (and maximum) value is 32768.
 
-    WF<buttons>, WF<positions>
-        Waveforms of up to 1024 points read from the internal captured long
+    WF<iq>, WF<buttons>, WF<positions>
+        Waveforms of up to 32768 points read from the internal captured long
         waveform using the specified OFFSET and LENGTH.
 
 The following protocol should be used when using this group of records.
@@ -194,9 +205,13 @@ Reading:
     - Wait until OFFSET == <offset>
     - Read desired waveforms
 
-If CAPLEN > 16384 then the reading process should be repeated with <offset>
-set to 0, 16384, 32768, etc until the entire desired waveform has been
+If CAPLEN > 32768 then the reading process should be repeated with <offset>
+set to 0, 32768, 65536, etc until the entire desired waveform has been
 retrieved.
+
+The maximum window readout length of 32768 can be be modified at IOC start
+time by editing the configuration setting IOC_TT_WINDOW in
+/etc/sysconfig/epics_ioc .
 
 
 Booster (<group> = BN):
@@ -260,6 +275,12 @@ Interlock Control (<group> = IL):
         detection).  When set to Enabled the interlock output is only active
         while the beam position lies within the interlock window.
 
+    IOFF_S, ION_S
+        Interlock checking is automatically disabled when the observed current
+        (as reported through SA:CURRENT) is below IOFF_S, and is automatically
+        enabled when the current is above ION_S.  This function overrides
+        ENABLE_S, but is overridden by the global CF:ENABLED_S setting.
+
     MINX_S, MAXX_S, MINY_S, MAXY_S
         Interlock window: when the interlock is enabled the interlock output
         is closed ("active") so long as the beam position lies within this
@@ -281,35 +302,65 @@ Interlock Control (<group> = IL):
         STATE records whether the interlock is currently dropped or has been
         dropped within the last 0.5 seconds.  
 
+    HOLDOFF_S, IHOLDOFF_S 
+        When the attenuator setting is changed there is normally a small
+        glitch in position which can unfortunately cause the interlock to be
+        lost.  These two settings are used to control a window during which
+        the interlock is disabled after the attenuator setting is changed.
+        The units are in 1/10 second.
+
     CHK_REASON
+        When an interlock check is reported this PV records the interlock 
+        reason bits with the following meanings:
+            1 => overflow in X
+            2 => overflow in Y
+            8, 16 => ADC overflow
+        This field should be manually set to zero after the interlock reason
+        has been recorded.
 
 
 Configuration (<group> = CF):
 =============================
 
     ENABLED_S
-        Configures whether BPM is "enabled."  If disabled then position
+        Configures whether the BPM is "enabled."  If disabled then position
         interlock checking is disabled.
 
     DIAG_S
-        Configures button or stripline orientation.
+        Configures button or stripline orientation.  This affects the
+        calculation of X and Y positions from A, B, C, D button readings.
+        Note that the fast feedback data stream is not affected by this and
+        assumes the "Diagonal" orientation: this also applies to interlock
+        checking.
 
     KX_S, KY_S, KQ_S
-        Scaling factor in mm.  These are determined by the physical geometry
+        Scaling factors in mm.  These are determined by the physical geometry
         of the button or stripline pickups.  At Diamond typical values are
         17mm for the transfer path striplines and 10.6mm and 11mm (horizontal
-        and vertical) for the booster buttons.
+        and vertical) for the booster buttons.  The KQ setting can safely be
+        ignored.
 
     BBA_X_S, BBA_Y_S
-        "Beam Based Alignment" offsets.  These should ...
-
     BCD_X_S, BCD_Y_S
-
     GOLDEN_X_S, GOLDEN_Y_S
+        Offsets on the position reported by the BPM are divided into three
+        stages.  First it is assumed that the nominal centre of the BPM will
+        be discovered by a process of "beam based alignment": this produces
+        offsets that should be written into the BBA_... PVs.
+            Note, however, that both changes to beam current and attenuator
+        settings will result in perceived movement of the beam: this is
+        compensated for by "beam current dependent" offsets.  These are
+        designed to be written into the BCD_... PVs.
+            Finally, if it is desired to introduce local bumps or other
+        deviations from the nominal beam orbit, to ensure that the positions
+        reported by the BPMs are purely errors (this helps with feedback
+        correction, for example), the GOLDEN_... PVs are designed to be
+        programmed with the value of such offsets.
 
     G0_S, G1_S, G2_S, G3_S
         Gain offsets can be set for individual RF channels to compensate for
-        channel imbalances within Libera.  This is only used in FT mode.
+        channel imbalances within Libera.  This is only useful in FT mode, and
+        is not recommended.
 
     AUTOSW_S
         Controls automatic cycling of switches with DSC (Digital Signal
@@ -318,13 +369,23 @@ Configuration (<group> = CF):
 
     TRIGSW_S
     DELAYSW_S
-        
+        These control the synchronisation of the multiplexing switch.  If
+        TRIGSW_S is set to "External" then the switch rotation will be
+        synchronised to the external machine clock, in which case DELAYSW_S
+        can be used to configure the delay from machine clock to rotation (in
+        sample clock units).
 
     SETSW_S
         Switch position to use when AUTOSW_S is set to Fixed.
 
     DSC_S
+        Configures the operation of the "digital signal conditioning" (DSC) 
+        daemon: this controls channel gains during automatic rotation of the
+        multiplexing switch.
+
     WRITEDSC_S
+        Processing this PV causes the current DSC settings to be written to
+        persistent storage for reloading the next time the IOC is restarted.
 
     ATTEN_S
         Attenuator settings in dB: a value between 0 and 62dB can be set.
@@ -339,23 +400,106 @@ Clock (<group> = CK):
 =====================
 
     TIMESTAMP_S
+        Libera provides an internal system clock synchronised to an external
+        1MHz reference which can be used to provide precision timestamps.  If
+        this PV is set to "System time" then this will be used, otherwise the
+        Linux system time (which should be synchronised by NTP) is used.
+            In the present release "NTP time" is recommended.
+
     DETUNE_S
-    IOFF_S
+        This controls the detuning of the sample clock away from a precise
+        integer multiple of the machine clock.  A substantial detune (in the
+        order of 100 or more) is recommended to avoid harmonic beating.  A
+        detune of 1 translates to a frequency shift of approximately 10Hz.
+
+    IFOFF_S
+        This should be left set to zero.
+
     PHASE_S
+        This controls the phase of the filter reducing raw sampled waveforms
+        down to turn-by-turn data relative to the machine clock -- but only
+        when DETUNE_S is equal to zero, of course!  
+
     MC_SYNC_S
+        Processing this PV enables global machine clock synchronisation: on
+        the next trigger Libera will reset the machine clock counter to zero
+        and define a reference point for fast feedback generation.  Over the
+        next few seconds the machine clock will be slewed to ensure that all
+        fast feedback (and turn-by-turn) processing is synchronised to the
+        trigger point.
+
     SC_SYNC_S
+        Processing this PV enables system clock synchronisation: on the next
+        trigger Libera will synchronise its internal timestamp counter with
+        the external trigger.
+            For this to work correctly two assumptions need to be satisfied:
+        firstly, the external trigger is assumed to occur on the true start of
+        the second; secondly, the local Linux system timestamp must already be
+        accurate to with a few 100ms (this can be achieved using NTP).  
+            Note: a 1Hz trigger can be used for system clock synchronisation.
+        Note also, however, that the current release of the system time
+        daemon does not hold synchronisation long enough for this 
+        synchronisation to be worth doing, instead TIMESTAMP_S should be set
+        to use NTP time. 
+
     MC_LOCK
-    MC_SYNC
     SC_LOCK
+        Records whether the machine clock (MC_LOCK) or system timestamp clock
+        (SC_LOCK) is currently locked to the external reference.  The machine
+        clock will report "Slewing" if the phase error is larger than 1 sample
+        clock, but lock is not lost in this case.
+
+    MC_SYNC
     SC_SYNC
+        Records whether the machine clock (MC_SYNC) or system timestamp clock
+        (SC_SYNC) is currently synchronised to a global trigger.
+        Synchronisation is lost whenever the corresponding clock becomes
+        unlocked.  Machine clock synchronisation is also lost when the detune
+        (DETUNE_S) changes, and this release does not track system clock
+        synchronisation over restarts of the EPICS IOC.
+
     DAC
+        Readback of the currently machine clock VCXO setting.  This is very
+        sensitive to both temperature and frequency changes, and can provide a
+        useful diagnostic.
+
     PHASE_E
+        Current machine clock phase error.  During normal operation this is
+        0+-1 unless the machine frequency changes very rapidly.
+
     FREQ_E
+        Frequency error.  Normally zero.
+
     HEALTH
+        This PV provides a report of the overall health of the clocks by
+        aggregating LOCK_MC, LOCK_SC and SYNC_MC.  At present SYNC_SC is not
+        included in this aggregation.
 
     TICK
         Counts the number of seconds (in 0.1s steps) since the last trigger,
         and records an alarm state if the delay is more than 1 second.
+
+    MISSED
+    MISSED_ALL
+    MISSED_PC
+    TICK_COUNT
+    RESET_CNTRS
+        These PVs are designed to be used to provide an indication of how many
+        triggers are being missed.  TICK_COUNT counts the total number of
+        triggers reported by the low level driver, and MISSED_ALL accumulates
+        triggers that are not processed by Libera EPICS.  Processing
+        RESET_CNTRS will set these counters to zero synchronously.
+
+    MCH, MCL
+        The machine clock of the last trigger: the number of machine
+        revolutions since machine synchronisation (MC_SYNC).  MCL contains the
+        bottom 31 bits of the counter and MCH the remaining bits (note: 31
+        bits are used as EPICS integers are signed).
+
+    TIME_NTP
+    TIME_SC
+        Both NTP and system clock time for the last trigger formatted as UTC
+        strings in ISO 8601 date and time formats.
 
 
 
@@ -388,6 +532,13 @@ Sensors (<group> = SE):
     EPICSUP
         Time since the EPICS IOC was restarted in hours.
 
+    VOLT<1-8>
+    VHEALTH
+        Eight internal power supply voltages are monitored by Libera and
+        reported through the PVs VOLT1 to VOLT8.  Voltages outside 5 or 10
+        percent are reported with minor and major severity EPICS alarms
+        respectively, and VHEALTH aggregates the state of all voltages (except
+        for VOLT2 which is unused).
 
 
 Other (no group):
@@ -403,6 +554,9 @@ Other (no group):
         Processing this record will cause the Libera IOC to reboot.
 
     RESTART_S
-        Processing this record will case the EPICS IOC to restart.
+        Processing this record will cause the EPICS process to restart.
 
     HEALTH
+        This aggregates the overall health of Libera, except for the clock.
+        Alarm status from the following SE: PVs are aggregated: FAN1, FAN2,
+        VHEALTH, TEMP, FREE, RAMFS, CPU.

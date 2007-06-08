@@ -54,6 +54,8 @@
  * between this value and the corresponding value in slowAcquisition.cpp
  * determines the scaling between SA and FT current measurements.  This ratio
  * should be purely a function of the FPGA signal processing chain. */
+/* Note: this figure is going to have to become configurable, as different
+ * versions of Libera have different scaling factors here! */
 #define S_0             321260
 
 

@@ -64,7 +64,6 @@ public:
     {
         Publish_ABCD("SA", ABCD);
         Publish_XYQS("SA", XYQS);
-        Publish_XYQS("SA", XYQS_CSPI, "C");
         Publish_ai("SA:POWER", Power);
         Publish_ai("SA:CURRENT", Current);
         Interlock.Publish("SA");
@@ -87,7 +86,6 @@ private:
                 Interlock.Wait();
                 ABCD = NewABCD;
                 ABCDtoXYQS(&ABCD, &XYQS, 1);
-                XYQS_CSPI = NewXYQS;
                 UpdatePowerAndCurrent();
                 Interlock.Ready();
             }
@@ -131,7 +129,6 @@ private:
     INTERLOCK Interlock;
     ABCD_ROW ABCD;
     XYQS_ROW XYQS;
-    XYQS_ROW XYQS_CSPI;
     int Power;          // Power in dBm * 1e6
     int Current;        // Current in 10*nA
     
