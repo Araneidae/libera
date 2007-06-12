@@ -59,7 +59,7 @@ IocParameter()
 # ----------------------------------------------------------------------------
 
 # Use the ioc home directory as the startup directory.
-cd "$(dirname "$0")"
+cd "$(dirname "$0")/../.."
 
 # Read the libera configuration.  We're interested in FREV, HARMONIC,
 # DECIMATION and MCPRESC at present.  Do this early to ensure our own
@@ -74,6 +74,7 @@ export EPICS_CA_MAX_ARRAY_BYTES=1000000
 export DEVICE="$(hostname)"
 
 PIDFILE=/var/run/ioc.pid
+BIN_DIR=./bin/linux-arm
 
 # Check for arguments
 RESTART_LMTD=0
@@ -118,7 +119,7 @@ fi
 # Ensure that we're running our own version of lmtd
 if ((RESTART_LMTD))  ||  ! [ -e /tmp/lmtd.command ]; then
     [ -e /var/run/lmtd.pid ]  &&  kill $(cat /var/run/lmtd.pid)
-    ./bin/lmtd -p$MCPRESC -d$DECIMATION -o$OFFSET_TUNE -r$HARMONIC
+    $BIN_DIR/lmtd -p$MCPRESC -d$DECIMATION -o$OFFSET_TUNE -r$HARMONIC
 fi
 
 
@@ -150,7 +151,7 @@ IocParameter -f $FREV
 
 # Now run the IOC.
 echo 'Starting IOC at' $(date)
-./bin/ioc "${IOC_PARAMETERS[@]}" st.cmd
+$BIN_DIR/ioc "${IOC_PARAMETERS[@]}" $BIN_DIR/st.cmd
 echo 'IOC stopped at' $(date)
 
 # When we exit make a good effort to clean up any debris.  If we crashed (and

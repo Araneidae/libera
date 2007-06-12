@@ -48,6 +48,8 @@ function Error()
 
 SOURCE="$(cd "$(dirname "$0")"/..; pwd)"
 
+LOCATIONS="$(cat "$SOURCE"/install/locations)"
+
 
 # Parse local installation options
 TARGET=none
@@ -62,16 +64,19 @@ while getopts 'ftalsh' option; do
     l)  [ $AUTOSTART = none ] || Error "Inconsistent autostart parameters"
         AUTOSTART=libera ;;
     s)  STARTNOW=1 ;;
-    h)  cat <<'EOF'
-Usage: libera-install-ioc <options> [<location>]
+    h)  echo -n 'Usage: libera-install-ioc <options>'
+        if [ -n "$LOCATIONS" ]; then echo ' <location>'; else echo; fi
+        cat <<'EOF'
 where <options> includes
     -f  Final install: copy files to local /opt directory
     -t  Testing install: don't copy files, use from configured location
     -a  Enable autostart of ioc: link /etc/init.d/epics into rc3.d and rc6.d
     -l  Enable autostart via /etc/init.d/libera script.
     -s  Start IOC after installation
+EOF
+        [ -n "$LOCATIONS" ]  &&  cat <<EOF
 and <location> is a two character location code used to configure location
-specific settings.
+specific settings, one of $(echo -n $LOCATIONS).
 EOF
         exit 0 ;;
     *)  Error 'Invalid option: try -h for help' ;;
@@ -85,7 +90,6 @@ shift $((OPTIND - 1))
 # location codes is determined by a simple pattern match: if this set is
 # empty then no location needs to be specified, otherwise the code should be
 # one of these patterns.
-LOCATIONS="$(cat "$SOURCE"/install/locations)"
 if [ -n "$LOCATIONS" ]; then
     (($# > 0))  ||  Error "Must specify a location, one of:" $LOCATIONS
     LOCATION="$1"
@@ -125,8 +129,9 @@ if [ $TARGET == final ]; then
     rm -rf "$IOC_TARGET"  &&
     umask 22  &&
     mkdir -p "$IOC_TARGET"  &&
-    cp -r "$SOURCE"/* "$IOC_TARGET"  &&
-    rm -rf "$IOC_TARGET"/install  
+    for dir in bin dbd db; do
+        cp -r "$SOURCE/$dir" "$IOC_TARGET"
+    done
 else
     # Compute EPICS and IOC paths relative to this directory.  
     PARENT="$(cd "$SOURCE/.."; pwd)"
@@ -139,15 +144,16 @@ fi  &&
 # Now install the epics_ioc file.
 (
     # Add on the paths required for running the IOC
-    echo "LIBERA_IOC='$IOC_TARGET/runioc'"
+    echo "LIBERA_IOC='$IOC_TARGET/bin/linux-arm/runioc'"
     # We want to process three types of lines appropriately:
     #  1. Lines starting $LOCATION_IOC_... are translated to IOC_...
     #  2. Lines starting XX_IOC_... are discarded
-    #  3. All other lines are passed through unchanged
-    sed '
-        /^'"$LOCATION"'_\(IOC_.*\)$/ { s//\1/; b; }
-        /^[[:alpha:]][[:alnum:]]_IOC_/ d
-        ' "$SOURCE"/install/epics_ioc
+    #  3. Lines starting IOC_ are passed through unchanged
+    #  4. All other lines are discarded
+    sed -r '
+        s/^'"$LOCATION"'_(IOC_)/\1/
+        /^IOC_/! d
+        ' "$SOURCE"/install/CONFIG
 ) > /etc/sysconfig/epics_ioc
 
 # Copy the startup script

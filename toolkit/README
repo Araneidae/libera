@@ -4,7 +4,9 @@ This directory contains tools for managing Liberas.
 
 
 liberas
-    Tool for running a command on all liberas or a specified subset.
+allbpms
+    Tool for running a command on all Liberas or a specified subset.  The file
+    allbpms contains a list of all the Liberas by hostname.
 
 cagetall
     Performs caget request on all liberas or a specified subset.

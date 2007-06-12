@@ -1,6 +1,6 @@
 Change history of Libera EPICS Driver development
 
-2007/06/?? Version 1.40.2
+2007/06/12 Version 1.40.2
 =========================
 More complete support for iTech Libera 1.40 and 1.42 driver.
 
@@ -39,6 +39,9 @@ Minor changes:
  - MAXADC alarm limits changed to 1450 (-3dB) and 1700 (-1.6dB).
  - Core file writing can be supported by setting the IOC_CORE symbol in
    /etc/sysconfig/epics_ioc.  Set it to an NFS mounted directory.
+
+There are significant changes to the installation process: read INSTALL for
+detailed installation instructions.
 
 
 2007/01/15 Version 1.40.0

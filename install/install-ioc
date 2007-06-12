@@ -27,79 +27,56 @@
 #      OX11 0DE
 #      michael.abbott@diamond.ac.uk
 
-# Install a built IOC in the target IOC directory.
+# Creates an intermediate installation directory: extracts all the files
+# required for a complete installation from the current build.
 
+set -e
 
 # Files copied from install directory
 INSTALL_FILES='
+    CONFIG
     epics
     gain.conf
+    locations
     offsets.conf
     libera-install-fpga
     libera-install-ioc'
 
 
-SOURCE="$(cd "$(dirname "$0")"/..; pwd)"  &&
-. "$SOURCE"/install/CONFIG  &&
+SOURCE="$(cd "$(dirname "$0")"/..; pwd)"  
+. "$SOURCE"/install/CONFIG  
 if (($# > 0)); then
     INSTALL_HOST="$1"
     FPGA_SOURCE="$2"
 else
     : ${INSTALL_HOST:?Local installation path not defined}
-fi  &&
+fi  
 
 
 # Erase everything in the target directory: start from scratch on each
 # install.
-TARGET="$INSTALL_HOST"/ioc  &&
-rm -rf "$TARGET"  &&
-
-# First ensure the target directory structure exists
-for dir in bin dbd db; do
-    mkdir -p "$TARGET/$dir"
-done  &&
+TARGET="$INSTALL_HOST"/ioc  
+rm -rf "$TARGET"
+mkdir -p "$TARGET"
 
 # Copy over the appropriate components
-cp "$SOURCE/bin/linux-arm"/* "$TARGET/bin"  &&
-cp "$SOURCE/dbd"/* "$TARGET/dbd"  &&
-cp "$SOURCE/db"/* "$TARGET/db"  &&
+for dir in bin dbd db; do
+    cp -r "$SOURCE/$dir" "$TARGET"
+done
 
-cp "$SOURCE/install/runioc" "$TARGET"  &&
-
-# Preprocess the startup script to ensure that only the appropriate databases
-# are included.  This is a very ad-hoc conditional build process: I'm sure we
-# can do better...
-if [ "$BUILD_FF_SUPPORT" = yes ]; then
-    SED_FF_ACTION=s///  # Keep FF support lines
-else
-    SED_FF_ACTION=d     # Delete FF support lines
-fi  &&
-sed '/^#if FF /'$SED_FF_ACTION'; /^#/d; /^ *$/d' \
-    "$SOURCE/install/st.cmd" >"$TARGET/st.cmd"  &&
-
-# Also create installation support files and place the ioc specific files
-# ready to be deployed on the ioc.
-mkdir -p "$TARGET"/install  &&
+# Copy over the installation specific files into the install directory.
+mkdir -p "$TARGET"/install  
 for f in $INSTALL_FILES; do
     cp "$SOURCE"/install/$f "$TARGET"/install
-done  &&
+done
 
-# The epics_ioc file is basically a digest of the stuff in CONFIG that is
-# directly relevant to the target system.  All symbols definitions starting
-# IOC_ or xx_IOC_ will be passed through to the target IOC to configure
-# run-time operation.
-grep -E '^([[:alpha:]][[:alnum:]]_)?IOC_[[:alnum:]_]*=' \
-    "$SOURCE"/install/CONFIG >>"$TARGET"/install/epics_ioc  &&
-
-# Prepare the list of possible location names for use by libera-install-ioc.
-# The set of location codes is determined by a simple pattern match, and we
-# filter out the unique set of locations.
-#    Locations are used in the CONFIG file to specify different configuration
-# for different locations on the ring.
-sed -n '/^\([[:alpha:]][[:alnum:]]\)_IOC_.*$/{s//\1/;p;}' \
-    "$TARGET"/install/epics_ioc |
-sort |
-uniq >"$TARGET"/install/locations  &&
+# To be friendly create a redirector script to invoke the true runioc script.
+# This is only intended for testing use.
+cat <<'EOF' >"$TARGET/runioc"
+#!/bin/sh
+"$(dirname "$0")/bin/linux-arm/runioc" "$@"
+EOF
+chmod +x "$TARGET/runioc"
 
 
 # Finally copy over the FPGA files

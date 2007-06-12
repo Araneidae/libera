@@ -221,7 +221,11 @@ files are included with this distribution.
 
 5.  Copy the runtime files to $INSTALL_HOST by running
         $ ./install/install-ioc
-    This builds the directory $INSTALL_HOST/ioc.
+    This builds the directory $INSTALL_HOST/ioc ready for installation on
+    Libera.
+
+    Note that this step is not required if the directory $LIBERA_EPICS is
+    directly accessible from the Libera over NFS.
 
 
 
@@ -235,18 +239,42 @@ installation instructions.
 
 This EPICS driver may misbehave in obscure ways, or more usually will refuse
 to start, if the wrong version of Libera software is installed.  The following
-table records all versions of the EPICS driver and the appropriate Libera
-driver version to use.
+table records all current versions of the EPICS driver and the appropriate
+Libera driver version to use.
 
     EPICS Driver (date)         Compatible Libera Drivers
     -------------------         -------------------------
-    1.40.2 (2007-06-??)         1.40, 1.42
+    1.40.2 (2007-06-12)         1.40, 1.42
     1.40.0 (2007-01-15)         1.40, 1.42
     0.6.3  (2006-10-03)         1.20, 1.21
     0.6.1  (2006-08-17)         1.20, 1.21
     0.5    (2006-07-07)         1.00
     0.4    (2006-03-13)         1.00
     0.2    (2006-02-06)         0.92
+
+For accurate timestamps it is necessary to run an NTP daemon on Libera.  The
+process of building this is automated by the script system/ntp/build, and the
+process of installing it is automated by system/ntp/install-ntpd.  
+    In slightly more detail: download ntp-4.2.2p3.tar.gz (or a more recent
+version if required) from http://support.ntp.org and edit system/ntp/build so
+that TAR_DIR points to the directory containing the downloaded file.  Also
+edit system/ntp/ntp.conf so that there is a server line pointing to your local
+NTP server (which should if possible also be configured to act as an rdate
+server).
+    Running the build script will created a directory system/ntp/install
+containing all the files required to install ntp on libera.  Make this
+directory visible to Libera and then run the script install/install-ntp.
+
+
+One final stage of preparation is required: if glibc 2.3.6 has been used as
+suggested then it will be necessary to copy libstdc++.so.6* onto Libera.  The
+following commands will do the job.  First on the development host run:
+    $ mkdir -p $INSTALL_HOST/lib
+    $ cp -d $ARM_LINUX_GCC/arm-linux/lib/libstdc++.so.6* $INSTALL_HOST/lib
+    $ $ARM_LINUX_GCC/bin/arm-linux-strip $INSTALL_HOST/lib/libstdc++.so.6.0.3
+Then on each Libera run
+    # cp -d $INSTALL_TARGET/lib/* /lib
+    # ldconfig
 
 
 
@@ -264,14 +292,6 @@ In all of the following it is assumed that the Libera IOC has access to the
 contents of the directory $INSTALL_HOST as $INSTALL_TARGET, either by copying
 the files onto Libera, or via a shared NFS mount point.
 
-There are two stages to both installation modes:
-
-Install EPICS   
-    This only needs to be done once, or when the EPICS version is upgraded.
-
-Install Driver
-    This should be done each time this driver is updated.
-
 
 Test Installation
 -----------------
@@ -279,16 +299,21 @@ Test Installation
     In this mode of installation the run-time files are accessed over NFS and
     nothing is copied onto the Libera file system.  This is useful when
     developing Libera, but is not recommended for normal operation as
-    uninterrupt access to NFS is requred.
+    uninterrupted access to NFS is required.
 
     To install a Test installation run one of following commands on Libera,
     either:
-    # $INSTALL_TARGET/ioc/install/libera-install-ioc -t
+        # $INSTALL_TARGET/ioc/install/libera-install-ioc -t
     or:
-    # $INSTALL_TARGET/ioc/install/libera-install-ioc -ta
+        # $INSTALL_TARGET/ioc/install/libera-install-ioc -tl
 
     Using the -a option ensures that the libera IOC is automatically started
-    on reboot.
+    on reboot or when /etc/init.d/libera is invoked.
+
+    Note that libera-install-ioc only needs to be run once: subsequent updates
+    to the $INSTALL_HOST / $INSTALL_TARGET directory will be automatically
+    picked up, as Libera is configured to run the EPICS driver directly from
+    this directory.
 
 
 Final Installation
@@ -300,23 +325,14 @@ Final Installation
     In this mode the following hard wired targets are used on Libera for
     placing files:
 
-        /opt/epics      Location for EPICS runtime files
         /opt/ioc        Location for Libera EPICS driver runtime files
         /opt/state      Location for storing persistent state
 
-    Installation of a Final installation requires two steps, one to copy the
-    EPICS files over, a second to copy the ioc files.  Of course, the EPICS
-    files only need to be copied once, while the ioc files should be copied
-    each time the IOC changes.
-
-    To install the EPICS files run the following command on Libera:
-    # $INSTALL_TARGET/epics/libera-install-epics
-
     To install the IOC files run one of the following commands on Libera,
     either:
-    # $INSTALL_TARGET/ioc/install/libera-install-ioc -f
+        # $INSTALL_TARGET/ioc/install/libera-install-ioc -f
     or:
-    # $INSTALL_TARGET/ioc/install/libera-install-ioc -fl
+        # $INSTALL_TARGET/ioc/install/libera-install-ioc -fl
 
     Using the -l option ensures that the libera IOC is automatically started
     on reboot.
@@ -326,21 +342,26 @@ Final Installation
 Running the Libera EPICS driver
 ===============================
 
-The ioc can be run in two ways on Libera.  Interactive operation is possible
-by running the ioc file directly (depending on whether a test or final
-installation has been selected):
-    # $INSTALL_TARGET/ioc/runioc
+The Libera EPICS IOC can be run in two ways on Libera.  Interactive operation
+is possible by running the IOC file directly (depending on whether a test or
+final installation has been selected):
+    # $INSTALL_TARGET/ioc/bin/linux-arm/runioc
 or
-    # /opt/ioc/runioc
+    # /opt/ioc/bin/linux-arm/runioc
 This will provide an epics shell prompt.
 
 Alternatively, daemon operation is possible by using the epics script:
     # /etc/init.d/epics start
-This will start the ioc running, and it can be stopped by running
+This will start the IOC running, and it can be stopped by running
     # /etc/init.d/epics stop
 
-If the -a option has been used when running libera-install-ioc then the EPICS
-IOC will start automatically when Libera reboots.
+If the -l option has been used when running libera-install-ioc then the EPICS
+IOC will start automatically when Libera reboots or when the
+/etc/init.d/libera script is used to restart the Libera driver and daemons.
+
+When the IOC is running as a daemon it will log all relevant activity to the
+file /var/log/ioc.
+
 
 Note that the IOC will take the IOC device name from the configured hostname,
 thus for example if 

@@ -27,32 +27,66 @@
 #      OX11 0DE
 #      michael.abbott@diamond.ac.uk
 
-# Script to build the distribution
+set -e
 
-TARGET="${1:?Where to put the files?}"
+# Script to build the distribution, called thus:
+#
+#   distribute <version> <destination>
+#
+# The specified version (or the trunk, if requested) is built for
+# distribution in <destination>.
 
-cd "$(dirname "$0")/.." &&
+VERSION="${1:?Which version to distribute?}"
+TARGET="${2:?Where to put the distribution?}"
 
-# Pick up the version
-. install/CONFIG  &&
+# Figure out the subversion source.  For testing pick up the trunk version.
+if [ "$VERSION" = trunk ]; then
+    SVN_SOURCE="$SVN_ROOT/diamond/trunk/ioc/Libera"
+    # When building from trunk use the last changed revision to label which
+    # version we're actually building.
+    VERSION=trunk."$(
+        svn info "$SVN_SOURCE" |
+        sed -rn '/^Last Changed Rev: (.*)$/{s//\1/;p;}' )"
+else
+    SVN_SOURCE="$SVN_ROOT/diamond/release/ioc/Libera/$VERSION"
+fi
+LIBERA_VERSION=Libera."$VERSION"
 
-# Need to build the .db files in case the recipient doesn't have the epics
-# Python library.  
-make &&
-mkdir install/prebuilt &&
-sed '/^# \*\*\* Please do not edit/d' db/libera.db \
-    >install/prebuilt/libera.db  &&
-cp liberaApp/src/O.linux-arm/*.h install/prebuilt  &&
+# Do all the work in a temporary directory
+TEMP_ROOT="$(mktemp -d /tmp/distribute-libera.XXXXXX)"
+trap 'rm -rf "$TEMP_ROOT"' EXIT
 
-# Make sure we now start with a fresh page
-make clean uninstall &&
+# Grab a pristine version of what we want to release.  
+cd "$TEMP_ROOT"
+svn export -q "$SVN_SOURCE" "$LIBERA_VERSION"
+cd "$LIBERA_VERSION"
 
-# Build the distribution.  
-EPICS="$TARGET"/libera-epics-"$VERSION".tgz  &&
-tar czf "$EPICS"  --exclude=.svn --exclude=system/dsc --exclude=docs \
-    -C.. Libera  &&
+# Patch this release for public distribution.
+# We remove docs because it's work in progress and contains crap right now.
+# We remove dsc because it's not actually part of this distribution.
+rm -rf docs system/dsc
+# Make sure the distributed version doesn't try to build FF
+sed -r -i 's/(^BUILD_FF_SUPPORT=).*$/\1no/' install/CONFIG
 
-# Finally get rid of the prebuilt files again: we don't want them normally.
-rm -rf install/prebuilt  &&
+# Build the core distribution.  Note that we can't compress the tar file as
+# we create it as we're going to need to add the prebuilt files afterwards.
+TAR_FILE="$TARGET/libera-epics-$VERSION.tar"
+tar cf "$TAR_FILE" -C.. "$LIBERA_VERSION"
 
-echo 'Distribution built ok in:'$'\n'"    $EPICS"
+# Now prepare the prebuilt files.  Unfortunately it looks as if we need to
+# build everything, even though we're only interested in two files!
+#make
+# As this is tedious, we fake the build instead.
+mkdir install/prebuilt
+ln -s liberaApp/src dbd
+python liberaApp/Db/libera.py /dev/stdout |
+sed '/^# \*\*\* Please do not edit/d' \
+    >install/prebuilt/libera.db
+python liberaApp/src/numeric-lookup.py \
+    >install/prebuilt/numeric-lookup.h
+
+# Add the prebuilt files and finish off the distribution
+tar rf "$TAR_FILE" -C.. "$LIBERA_VERSION/install/prebuilt"
+gzip -f "$TAR_FILE"
+
+echo "Distribution built ok in: $TAR_FILE.gz"
