@@ -8,8 +8,6 @@
 # each time EPICS_BASE, SNCSEQ, or any other external
 # module defined in the RELEASE file is rebuilt.
 
-TEMPLATE_TOP=$(EPICS_BASE)/templates/makeBaseApp/top
-
 BUILD_FF_SUPPORT=$(shell \
     sed -n '/^BUILD_FF_SUPPORT=/{s///;p;}' $(TOP)/install/CONFIG)
 
@@ -22,3 +20,6 @@ EPICS_BASE=/dls_sw/epics/R3.14.9/base
 
 CSPI=$(TOP)/cspi
 LIBERA_PLL=$(TOP)/system/lmtd
+
+# Identifies which python compiler to use.  Must be at least version 2.4.
+PYTHON=python2.4

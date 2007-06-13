@@ -31,7 +31,7 @@ import sys
 import os
 
 from pkg_resources import require
-require("dls.builder")
+require("dls.builder==1.0")
 from dls.builder import ModuleVersion, TemplateRecordNames, Configure
 
 

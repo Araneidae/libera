@@ -85,7 +85,7 @@ include $(TOP)/configure/RULES
 numeric.o: numeric-lookup.h
 
 %.h: ../%.py
-	python $< >$@
+	$(PYTHON) $< >$@
 
 
 # Force iocMain to be rebuilt every time so that the build date and time is

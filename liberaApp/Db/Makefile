@@ -27,7 +27,7 @@ include $(TOP)/configure/RULES
 
 # We use the python library to construct the .db file
 $(COMMON_DIR)/%.db: ../%.py ../support.py
-	python $< $@
+	$(PYTHON) $< $@
 
 
 clean::
