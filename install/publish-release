@@ -66,8 +66,12 @@ function TempRoot()
 }
 
 
+# We have to separate the release path from the SVN_ROOT because the builder
+# has a different SVN_ROOT configured!
+RELEASE_PATH="diamond/release/ioc/Libera"
+
 SVN_TRUNK="$SVN_ROOT/diamond/trunk/ioc/Libera"
-SVN_RELEASE="$SVN_ROOT/diamond/release/ioc/Libera"
+SVN_RELEASE="$SVN_ROOT/$RELEASE_PATH"
 SVN_EDM_FILES="$SVN_ROOT/diamond/trunk/support/Diagnostics/opi/libera"
 
 BUILD_TARGET="/home/libera/nfs/Libera"
@@ -120,16 +124,12 @@ svn -m "Libera: Release $VERSION" commit  ||
 QUEUE_DIR=/dls_sw/work/etc/build/queue
 RELEASE_JOB=Release-Libera-$VERSION
 
-# Unfortunately the builder uses a different protocol (http:) from the rest
-# of us for SVN access (svn+ssh:), so I have to fix up the $SVN_RELEASE
-# directory!
-
 # Create the release job as a hidden file (so the builder doesn't start it
 # prematurely) and then rename it make it happen.
 cd "$QUEUE_DIR"  &&
 cat <<EOF  >.$RELEASE_JOB  &&
 cd "$PROD_ROOT"  &&
-svn co "${SVN_RELEASE/#*:/http:}/$VERSION"  &&
+svn co "\$SVN_ROOT/$RELEASE_PATH/$VERSION"  &&
 cd $VERSION  &&
 make >build.log 2>build.log.err
 EOF
