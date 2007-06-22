@@ -1,4 +1,4 @@
-// $Id: ebpp.c,v 1.45 2006/11/21 12:22:17 ales Exp $
+// $Id: ebpp.c,v 1.45.2.2 2007/06/11 13:57:29 ales Exp $
 
 //! \file ebpp.c
 //! Electron Beam Position Processor (EBPP) specific module.
@@ -392,15 +392,7 @@ inline int ebpp_is_validilk( const void *p )
  */
 inline int ebpp_set_overflowlimit( const void *p )
 {
-        const unsigned int MAX = 2047;
-	unsigned int *limit = (unsigned int *)p;	// cast away const
-        unsigned int adc_count = *limit;
-
-        if ( MAX < adc_count ) return 0;
-
-        // NOTE: limit = sqr(acd_count)/256
-        adc_count *= adc_count;
-        *limit = ( *limit << 16 ) | ( ( adc_count >> 8) & 0x0000ffff );
+        /* Checks made in Libera driver due to Brilliance dependency. */
 	return 1;
 }
 
@@ -816,13 +808,9 @@ int ebpp_transform_dd( const void *in, void *out )
  */
 inline int ebpp_transform_adc( const void *in, void *out )
 {
-	ASSERT(in == (const void*)out);
-	CSPI_ADC_ATOM *p = out;
-
-	if (p->chA > 2048) p->chA -= 4096;
-	if (p->chB > 2048) p->chB -= 4096;
-	if (p->chC > 2048) p->chC -= 4096;
-	if (p->chD > 2048) p->chD -= 4096;
+        /* ADC transform moved to driver due to 
+         * Libera Brilliance introduction.
+         */
 
 	return 0;
 }

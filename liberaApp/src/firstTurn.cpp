@@ -120,7 +120,7 @@ static void ExtractRawData(
     /* Extract, sign extend from 12 bits to 32 bits, and transpose. */
     for (int i = 0; i < ADC_LENGTH; i ++)
         for (int j = 0; j < 4; j ++)
-            Extracted[j][i] = ((int) RawData[i][j] << 20) >> 20;
+            Extracted[j][i] = RawData[i][j];
     /* Publish each column to RawAdc. */
     for (int j = 0; j < 4; j ++)
         RawAdc.Write(AbcdFields[j], Extracted[j], ADC_LENGTH);
@@ -170,6 +170,7 @@ static void CondenseAdcData(
          * comfortable.  After cordic this becomes 0..sqrt(2)*0.5822*2^30 or
          * 0.823*2^30. */
         *q++ = CordicMagnitude((x1-x3)<<18, (x2-x4)<<18);
+//        *q++ = CordicMagnitude((x1-x3)<<14, (x2-x4)<<14);
     }
 }
 

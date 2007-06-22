@@ -1,4 +1,4 @@
-// $Id: dscd.h,v 1.3 2006/10/17 10:21:53 ales Exp $
+// $Id: dscd.h,v 1.3.2.1 2007/02/26 15:06:10 janko Exp $
 
 //! \file dscd.h
 //! Declares interface for the DSC Daemon.
@@ -20,6 +20,9 @@ extern "C" {
 
 // Request FIFO (named pipe) pathname.
 #define DSCD_FIFO_PATHNAME	"/tmp/ldscd.fifo"
+
+// Libera dsc device filename
+#define LIBERA_DSC_DEVICE_FILE	"/dev/libera.dsc"
 
 //--------------------------------------------------------------------------
 // Interface.
