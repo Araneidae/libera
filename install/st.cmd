@@ -13,4 +13,6 @@ dbLoadRecords("db/libera.db", "${LIBERA_MACROS}")
 
 # Fast feedback support: Diamond specific, only included if implemented.
 #if FF dbLoadRecords("db/fastFeedback.db", "${LIBERA_MACROS}")
+
+epicsEnvSet "IOCSH_PS1" "${DEVICE}> "
 iocInit()

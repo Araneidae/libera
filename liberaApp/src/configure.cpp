@@ -38,6 +38,7 @@
 #include "cordic.h"
 #include "numeric.h"
 #include "interlock.h"
+#include "conditioning.h"
 
 #include "configure.h"
 
@@ -57,7 +58,7 @@ static bool BpmEnabled = true;
 
 /* Controls the rotating switches: manual or automatic mode. */
 static bool AutoSwitchState = false;
-READBACK<bool> * SwitchReadback = NULL;
+static READBACK<bool> * SwitchReadback = NULL;
 /* Selects which switch setting to use in manual mode. */
 static int ManualSwitch = 3;
 
@@ -69,7 +70,7 @@ static int SwitchTriggerDelay = 0;
 
 /* Controls the Digital Signal Conditioning daemon state. */
 static int DscState = 0;
-READBACK<int> * DscReadback = NULL;
+static READBACK<int> * DscReadback = NULL;
 
 /* Selected attenuation.  The default is quite high for safety. */
 static int CurrentAttenuation = 60;
@@ -122,31 +123,15 @@ static void UpdateAutoSwitch(bool NewSwitchState)
 }
 
 
-int ReadSwitchSetting()
-{
-    return ManualSwitch;
-}
-
-
-#define REGISTER_SWITCH_TRIGGER         0x1400C038
-#define REGISTER_SWITCH_DELAY           0x1400C03C
 
 static void UpdateSwitchTrigger()
 {
-    /* Read the current trigger setting (to get the interval count) and
-     * update the top bit as required to control the trigger source. */
-    unsigned int SwitchControl;
-    if (ReadRawRegister(REGISTER_SWITCH_TRIGGER, SwitchControl))
-    {
-        SwitchControl =
-            (SwitchControl & 0x7FFFFFFF) | (ExternalSwitchTrigger << 31);
-        WriteRawRegister(REGISTER_SWITCH_TRIGGER, SwitchControl);
-    }
+    WriteSwitchTriggerSelect(ExternalSwitchTrigger);
 }
 
 static void UpdateSwitchTriggerDelay()
 {
-    WriteRawRegister(REGISTER_SWITCH_DELAY, SwitchTriggerDelay);
+    WriteSwitchTriggerDelay(SwitchTriggerDelay);
 }
 
 
@@ -244,7 +229,7 @@ static void UpdateCurrentScale()
 void UpdateAttenuation(int NewAttenuation)
 {
     CurrentAttenuation = NewAttenuation;
-    WriteAttenuation(CurrentAttenuation);
+    WriteDscAttenuation(CurrentAttenuation);
     /* Update the scaling factors. */
     AttenuatorScalingFactor = PMFP(from_dB, ReadCorrectedAttenuation() - A_0);
     UpdateCurrentScale();
@@ -307,7 +292,6 @@ bool InitialiseConfigure()
     
     /* Write the initial state to the hardware and initialise everything that
      * needs initialising. */
-    WriteAgcMode(CSPI_AGC_MANUAL);
     InterlockedUpdateAttenuation(CurrentAttenuation);
     UpdateAutoSwitch(AutoSwitchState);
     UpdateDsc(DscState);

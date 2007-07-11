@@ -196,3 +196,42 @@ LOCKED_THREAD::LOCKED_THREAD(const char * Name) :
     TEST_(pthread_cond_init, &Condition, NULL);
     TEST_(pthread_mutex_init, &Mutex, NULL);
 }
+
+
+/* Some units of time to avoid confusion when counting zeros! */
+#define S_NS    1000000000      // 1s in ns
+#define MS_NS   1000000         // 1ms in ns
+#define MS_S    1000            // 1s in ms
+
+bool LOCKED_THREAD::WaitFor(int milliseconds)
+{
+    struct timespec target;
+    if (!TEST_(clock_gettime, CLOCK_REALTIME, &target))
+        return false;
+
+    int seconds = milliseconds / MS_S;
+    milliseconds -= seconds * MS_S;
+    target.tv_sec += seconds;
+    target.tv_nsec += milliseconds * MS_NS;
+    if (target.tv_nsec > S_NS)
+    {
+        target.tv_sec += 1;
+        target.tv_nsec -= S_NS;
+    }
+    
+    return WaitUntil(&target);
+}
+
+
+bool LOCKED_THREAD::WaitUntil(const struct timespec *target)
+{
+    int rc = pthread_cond_timedwait(&Condition, &Mutex, target);
+    if (rc == 0)
+        return true;
+    else
+    {
+        if (rc != ETIMEDOUT)
+            perror("pthread_cond_timedwait");
+        return false;
+    }
+}

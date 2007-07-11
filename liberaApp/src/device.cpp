@@ -496,14 +496,16 @@ DEFINE_DEFAULT_WRITE(mbbo)
 /* Reading a waveform doesn't fit into the fairly uniform pattern established
  * for the other record types. */
 
-static long read_waveform(waveformRecord * pr)
+static long process_waveform(waveformRecord * pr)
 {
     GET_RECORD(waveform, pr, i_waveform);
-    pr->nord = i_waveform->read(pr->bptr, pr->nelm);
+    /* Naughty cast: I want to a reference to size_t, pr->nord is actually an
+     * unsigned int.  Force the two to match! */
+    bool Ok = i_waveform->process(pr->bptr, pr->nelm, *(size_t*)&pr->nord);
     post_process((dbCommon *)pr, READ_ALARM, i_waveform);
     /* Note, by the way, that the waveform record support carefully ignores
      * my return code! */
-    return pr->nord > 0 ? OK : ERROR;
+    return Ok ? OK : ERROR;
 }
 
 
@@ -530,4 +532,4 @@ DEFINE_DEVICE(stringin,  inp, 5, read_stringin);
 DEFINE_DEVICE(stringout, out, 5, write_stringout);
 DEFINE_DEVICE(mbbi,      inp, 5, read_mbbi);
 DEFINE_DEVICE(mbbo,      out, 5, write_mbbo);
-DEFINE_DEVICE(waveform,  inp, 5, read_waveform);
+DEFINE_DEVICE(waveform,  inp, 5, process_waveform);

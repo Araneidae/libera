@@ -54,6 +54,7 @@
 #include "trigger.h"
 #include "interlock.h"
 #include "sensors.h"
+#include "conditioning.h"
 
 #include "fastFeedback.h"
 
@@ -246,6 +247,8 @@ static bool InitialiseLibera()
         /* Initialise the connections to the Libera device.  This also needs
          * to be done early, as this is used by other initialisation code. */
         InitialiseHardware()  &&
+        /* Initialise the signal conditioning hardware interface. */
+        InitialiseSignalConditioning(Harmonic, Decimation)  &&
         /* Get the event receiver up and running.  This spawns a background
          * thread for dispatching trigger events. */
         InitialiseEventReceiver()  &&
@@ -302,6 +305,7 @@ static void TerminateLibera()
     TerminateEventReceiver();
     TerminateTimestamps();
     TerminateSlowAcquisition();
+    TerminateSignalConditioning();
     TerminatePersistentState();
     TerminateSensors();
         

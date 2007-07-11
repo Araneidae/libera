@@ -70,10 +70,6 @@ int ComputeScaledCurrent(const PMFP & IntensityScale, int Intensity);
 /* Updates attenuators to new value.  Takes immediate effect. */
 void UpdateAttenuation(int NewAttenuation);
 
-/* Reads the currently configured manual switch setting: the value returned is
- * in the range 0 to 15 inclusive. */
-int ReadSwitchSetting();
-
 
 /* Publishes configuration control PVs to EPICS. */
 bool InitialiseConfigure();

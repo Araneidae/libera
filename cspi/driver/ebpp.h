@@ -1,4 +1,4 @@
-/* $Id: ebpp.h,v 1.21 2006/11/21 10:55:55 ales Exp $ */
+/* $Id: ebpp.h,v 1.21.2.2 2007/02/15 15:40:53 ales Exp $ */
 
 /** \file ebpp.h */
 /** Public include file for Libera Electron Beam Position Processor (EBPP). */
@@ -45,10 +45,15 @@ typedef enum {
     LIBERA_CFG_ILK_OVERFLOW_DUR,  //!< Interlock overflow duration (ADC clock periods)
     LIBERA_CFG_ILK_GAIN_LIMIT, //!< Gain limit (dBm) for gain-dependant interlock
     LIBERA_CFG_CUSTOM_LAST,
+    // TODO: Check with CSPI regarding FIRST/LAST
+    LIBERA_CFG_SW,
+    LIBERA_CFG_LEVEL,
+    LIBERA_CFG_AGC,
+    LIBERA_CFG_DSC,
 } LIBERA_CFG_EBPP_GENERIC;
 
 
-#define LIBERA_DD_CIRCBUF_ATOMS   2097152  // 2M  1048576 // 1M
+#define LIBERA_DD_CIRCBUF_ATOMS   2097152
 /** No. of DD atoms in one DMA block */
 #define LIBERA_DMA_BLOCK_ATOMS  128
 /* DMA buffer size = PAGE_SIZE << LIBERA_DMA_PAGE_ORDER */

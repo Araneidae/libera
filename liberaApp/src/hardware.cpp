@@ -42,6 +42,10 @@
 #include "hardware.h"
 
 
+/* If RAW_REGISTER is defined then raw register access through /dev/mem will
+ * be enabled. */
+//#define RAW_REGISTER
+
 
 #define CSPI_(command, args...) \
     ( { int error = (command)(args); \
@@ -86,6 +90,13 @@ static CSPIHCON CspiConPm = NULL;
 static CSPIHCON EventSource = NULL;
 
 
+/* The ADC nominally returns 16 bits (signed short) through the interface
+ * provided here, but there are (at least) two types of ADC available: one
+ * provides 12 bits, the other 16.  This value records how many bits need to
+ * be corrected. */
+static int AdcExcessBits = 4;
+
+
 
 /*****************************************************************************/
 /*                                                                           */
@@ -101,6 +112,11 @@ bool WriteInterlockParameters(
     int overflow_limit, int overflow_dur,
     int gain_limit)
 {
+    /* Match the overflow limit setting to the actual number of bits provided
+     * by the DSC.  Do this here allows the rest of the system to believe
+     * everything is 16 bits. */
+    overflow_limit >>= AdcExcessBits;
+    
     CSPI_ENVPARAMS EnvParams;
     EnvParams.ilk.mode = mode;
     EnvParams.ilk.Xlow = Xlow;
@@ -125,69 +141,6 @@ bool WriteCalibrationSettings(
     return CSPI_(cspi_setenvparam, CspiEnv, &EnvParams,
         CSPI_ENV_KX | CSPI_ENV_KY | CSPI_ENV_XOFFSET | CSPI_ENV_YOFFSET);
 }
-
-
-bool WriteSwitchState(CSPI_SWITCHMODE Switches)
-{
-    CSPI_ENVPARAMS EnvParams;
-    EnvParams.switches = Switches;
-    return CSPI_(cspi_setenvparam, CspiEnv, &EnvParams, CSPI_ENV_SWITCH);
-}
-
-
-bool WriteAgcMode(CSPI_AGCMODE AgcMode)
-{
-    CSPI_ENVPARAMS EnvParams;
-    EnvParams.agc = AgcMode;
-    return CSPI_(cspi_setenvparam, CspiEnv, &EnvParams, CSPI_ENV_AGC);
-}
-
-
-bool WriteDscMode(CSPI_DSCMODE DscMode)
-{
-    CSPI_ENVPARAMS EnvParams;
-    EnvParams.dsc = DscMode;
-    return CSPI_(cspi_setenvparam, CspiEnv, &EnvParams, CSPI_ENV_DSC);
-}
-
-
-bool ReadSwitches(int &Switches)
-{
-    CSPI_ENVPARAMS EnvParams;
-    bool Ok = CSPI_(cspi_getenvparam, CspiEnv, &EnvParams, CSPI_ENV_SWITCH);
-    if (Ok)
-        Switches = EnvParams.switches;
-    return Ok;
-}
-
-
-/* The interface to the attenuators is somewhat indirect in this version of
- * the CSPI.  The file /opt/dsc/gain.conf defines a mapping from "gain level"
- * to attenuation, with level=17 mapped to attenuation=62, down to level=-45
- * mapped to attenuation=0.
- *    To simplify things we reverse this mapping again, using the formula:
- *      attenuation - level = 45.
- *    To further confuse things, the appropriate EnvParams field (where
- * "level" is configured) is named gain below. */
-
-#define ZEROdBmATT 62
-
-bool WriteAttenuation(int Attenuation)
-{
-    CSPI_ENVPARAMS EnvParams;
-    EnvParams.gain = Attenuation - ZEROdBmATT;
-    return CSPI_(cspi_setenvparam, CspiEnv, &EnvParams, CSPI_ENV_GAIN);
-}
-
-bool ReadAttenuation(int &Attenuation)
-{
-    CSPI_ENVPARAMS EnvParams;
-    bool Ok = CSPI_(cspi_getenvparam, CspiEnv, &EnvParams, CSPI_ENV_GAIN);
-    if (Ok)
-        Attenuation = EnvParams.gain + ZEROdBmATT;
-    return Ok;
-}
-
 
 
 bool SetMachineClockTime()
@@ -318,9 +271,19 @@ size_t ReadPostmortem(
 bool ReadAdcWaveform(ADC_DATA &Data)
 {
     size_t Read;
-    return
-        CSPI_(cspi_read_ex, CspiConAdc, &Data, 1024, &Read, NULL)  &&
+    bool Ok =
+        CSPI_(cspi_read_ex, CspiConAdc, &Data, ADC_LENGTH, &Read, NULL)  &&
         Read == 1024;
+    if (Ok  &&  AdcExcessBits > 0)
+    {
+        /* Normalise all of the ADC data to 16 bits. */
+        for (int i = 0; i < ADC_LENGTH; i ++)
+        {
+            for (int j = 0; j < 4; j ++)
+                Data[i][j] <<= AdcExcessBits;
+        }
+    }
+    return Ok;
 }
 
 
@@ -357,6 +320,401 @@ bool ConfigureEventCallback(
 
 
 
+/*****************************************************************************/
+/*                                                                           */
+/*                            DSC Direct Access                              */
+/*                                                                           */
+/*****************************************************************************/
+
+
+/* Handle to /dev/libera.dsc device, used for DSC interface. */
+static int DevDsc = -1;
+
+/* Whether the Libera Brilliance option is installed.  This enables
+ * completely different handling of attenuators and 16 bit ADC. */
+static bool LiberaBrilliance = false;
+
+
+/* The following DSC offsets are all relative to the base of the Libera EBPP
+ * FPGA address space.  All the DSC device offsets are relative to the ADC
+ * block starting at this address when addressed through /dev/libera.dsc. */
+#define DSC_DEVICE_OFFSET   0x8000
+
+/* General control registers. */
+#define DSC_DOUBLE_BUFFER       0xC024  // Double buffer control register
+                                      
+#define DSC_FILTER_DELAY        0xC028  // Analogue to digitial filter delay
+#define DSC_HISTORY_MARKER      0xC030  // History marker origin and delay
+#define DSC_SWITCH_DIVIDER      0xC038  // Switch division and trigger select
+#define DSC_SWITCH_DELAY        0xC03C  // Switch delay control
+
+/* Double buffered blocks.  For each block the name <name>_DB identifies the
+ * length of the sub-block and the double-buffer division point. */
+#define DSC_ATTENUATORS         0xC008  // Attenuator control registers
+#define DSC_SWITCH_PATTERN      0xC800  // Switch sequencing pattern
+#define DSC_PHASE_COMP          0xE800  // Phase compensation coefficients
+#define DSC_SWITCH_DEMUX        0xF000  // Switch demultiplex coefficients
+
+#define DSC_ATTENUATORS_DB      0x0008
+#define DSC_SWITCH_PATTERN_DB   0x0400
+#define DSC_PHASE_COMP_DB       0x0200
+#define DSC_SWITCH_DEMUX_DB     0x0400
+
+
+/* We somewhat arbitrarily constrain the switch pattern API to a maximum of
+ * 16 switches.  There are many constraints on the sequence of switches,
+ * which makes providing any serious amount of choice a futile exercise.
+ *  1. There are only 16 possible switch positions.  Conceivably there might
+ *     be arguments for repeating the same individual switch, but it seems
+ *     implausiable.
+ *  2. Switching produces strong harmonics which have to be filtered out by
+ *     carefully chosen filters programmed into the FPGA: this reduces the
+ *     usefulness of being able to change the switching sequence.
+ *  3. Switching sequences need to be a power of 2 in length to fit into the
+ *     (gratuitously enormous) switch memory -- this strongly constrains the
+ *     possibilities for strange sequences. */
+
+
+/* The entire double-buffered state is mirrored here and written when commit
+ * is requested. */
+static int Attenuation;
+
+/* Records the currently selected switching pattern. */
+static char SwitchPattern[MAX_SWITCH_SEQUENCE];
+
+/* Records the current array of phase and amplitude and of demultiplexing (and
+ * crosstalk) compensation values as raw processed values ready to be written
+ * to hardware. */
+static int RawSwitchDemux[DSC_SWITCH_DEMUX_DB/sizeof(int)];
+static int RawPhaseComp[DSC_PHASE_COMP_DB/sizeof(int)];
+
+/* Returns the offset appropriate to the selected block depending on the
+ * state of the double buffer select flag.  When DoubleBufferSelect is zero
+ * the bottom block is active and we must write to the top block, and vice
+ * versa. */
+#define DOUBLE_BUFFER(DoubleBufferSelect, block)    \
+    (DoubleBufferSelect ? block : block + block##_DB)
+
+/* For each of the four double buffered blocks we maintain a dirty counter.
+ * This is set to 2 when the data is modified and decremented each time the
+ * double buffer state is written to FPGA until the counter reaches zero:
+ * this ensures that the updated state is written to *both* halves of the
+ * double buffer. */
+static int AttenuationDirty = 0;
+static int SwitchPatternDirty = 0;
+static int SwitchDemuxDirty = 0;
+static int PhaseCompDirty = 0;
+
+/* This macro marks the stage as dirty. */
+#define MARK_DIRTY(action) \
+    action##Dirty = 2
+/* This macro performs the dirty check. */
+#define CHECK_DIRTY(action) \
+    if (action##Dirty > 0) \
+        action##Dirty -= 1; \
+    else \
+        return true
+
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                      Internal DSC support routines.                       */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+
+static bool InitialiseDSC()
+{
+    bool Ok =
+        /* Open /dev/libera.dsc for signal conditioning control. */
+        TEST_IO(DevDsc, "Unable to open /dev/libera.dsc",
+            open, "/dev/libera.dsc", O_RDWR | O_SYNC)  &&
+        /* Interrogate whether Libera Brilliance is installed. */
+        TEST_(ioctl, DevDsc, LIBERA_DSC_GET_ADC, &LiberaBrilliance);
+    /* If the LiberaBrilliance flag is set then the ADC is 16 bits, otherwise
+     * we're operating an older Libera with 12 bits.  We actually record and
+     * use the excess bits which need to be handled specially. */
+    AdcExcessBits = 16 - (LiberaBrilliance ? 16 : 12);
+    return Ok;
+}
+
+
+static bool ReadDscWords(int offset, void *words, int length)
+{
+    /* Correct for DSC device base address. */
+    offset -= DSC_DEVICE_OFFSET;
+    int Read;
+    return 
+        TEST_IO(Read, "Error seeking /dev/libera.dsc",
+            lseek, DevDsc, offset, SEEK_SET)  &&
+        TEST_IO(Read, "Error reading from /dev/libera.dsc",
+            read, DevDsc, words, length)  &&
+        TEST_OK(Read == length,
+            "Read from DSC was incomplete (read %d of %d)\n", Read, length);
+}
+
+
+/* Writes a block of words to the DSC.  Again is assumed to always work (but
+ * is noisy if things go wrong), and offsets are relative to the DSC area. */
+
+static bool WriteDscWords(int offset, void *words, int length)
+{
+    /* Correct for DSC device base address. */
+    offset -= DSC_DEVICE_OFFSET;
+    int Written;
+    return
+        TEST_IO(Written, "Error seeking /dev/libera.dsc",
+            lseek, DevDsc, offset, SEEK_SET)  &&
+        TEST_IO(Written, "Error writing to /dev/libera.dsc",
+            write, DevDsc, words, length) &&
+        TEST_OK(Written == length,
+            "Write to DSC was incomplete (wrote %d of %d)\n",
+            Written, length);
+}
+
+
+
+static bool ReadDscWord(int offset, int &word)
+{
+    return ReadDscWords(offset, &word, sizeof(int));
+}
+
+
+static bool WriteDscWord(int offset, int word)
+{
+    return WriteDscWords(offset, &word, sizeof(word));
+}
+
+
+
+/* Writes the attenuator state to the currently selected buffer. */
+
+static bool WriteAttenuatorState(int Offset)
+{
+    CHECK_DIRTY(Attenuation);
+        
+    int AttenuatorWords[2];
+    if (LiberaBrilliance)
+    {
+        /* For libera brilliance there are only four attenuators to set, each
+         * using six bits.  We don't use the bottom bit (as 0.5dB steps
+         * aren't that useful), and for some reason the bits are
+         * complemented. */
+        memset(AttenuatorWords, ~(Attenuation << 1), 4);
+        AttenuatorWords[1] = 0;
+    }
+    else
+    {
+        /* For normal libera we split the attenuator value evenly across two
+         * attenuators per channel. */
+        char Atten1 = Attenuation / 2;
+        char Atten2 = Attenuation - Atten1;
+        char OneWord[4] = { Atten2, Atten1, Atten2, Atten1 };
+        AttenuatorWords[1] = AttenuatorWords[0] = *(int*)OneWord;
+    }
+    return WriteDscWords(Offset, AttenuatorWords, sizeof(AttenuatorWords));
+}
+
+
+/* The sequence of switches is repeated to fill the complete switch pattern
+ * block. */
+
+static bool WriteSwitchesState(int Offset)
+{
+    CHECK_DIRTY(SwitchPattern);
+    
+    /* Two switches per byte.  Pack the switches. */
+    char Template[MAX_SWITCH_SEQUENCE/2];
+    for (unsigned int i = 0; i < sizeof(Template); i++)
+        Template[i] = SwitchPattern[2*i] | (SwitchPattern[2*i + 1] << 4);
+
+    /* Now prepare the full block before writing it to the DSC device. */
+    char SwitchPatternBlock[DSC_SWITCH_PATTERN_DB];
+    for (int i = 0; i < DSC_SWITCH_PATTERN_DB; i += sizeof(Template))
+        memcpy(SwitchPatternBlock + i, Template, sizeof(Template));
+    return WriteDscWords(Offset, SwitchPatternBlock, DSC_SWITCH_PATTERN_DB);
+}
+
+
+static bool WritePhaseState(int Offset)
+{
+    CHECK_DIRTY(PhaseComp);
+    return WriteDscWords(Offset, RawPhaseComp, DSC_PHASE_COMP_DB);
+}
+
+
+static bool WriteDemuxState(int Offset)
+{
+    CHECK_DIRTY(SwitchDemux);
+    return WriteDscWords(Offset, RawSwitchDemux, DSC_SWITCH_DEMUX_DB);
+}
+
+
+/* The switch history mark is written into bits 19:16 of the history marker
+ * control register. */
+
+static bool WriteHistoryMark()
+{
+    int HistoryMarker;
+    return
+        ReadDscWord(DSC_HISTORY_MARKER, HistoryMarker)  &&
+        WriteDscWord(DSC_HISTORY_MARKER,
+            (HistoryMarker & 0xFFFF) | ((SwitchPattern[0] & 0xF) << 16));
+}
+
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                     Published DSC Interface Routines.                     */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+
+bool Brilliance()
+{
+    return LiberaBrilliance;
+}
+
+
+bool WriteAttenuation(int NewAttenuation)
+{
+    if (0 <= NewAttenuation  &&  NewAttenuation <= 62)
+    {
+        Attenuation = NewAttenuation;
+        MARK_DIRTY(Attenuation);
+        return true;
+    }
+    else
+    {
+        printf("Invalid attenuator value %d\n", NewAttenuation);
+        return false;
+    }
+}
+
+
+bool WriteSwitchSequence(
+    const SWITCH_SEQUENCE NewSwitches, unsigned int NewLength)
+{
+    /* The pattern length must first be a power of 2 and secondly be within
+     * range. */
+    if (NewLength > MAX_SWITCH_SEQUENCE)
+        printf("Switch pattern length %u too long\n", NewLength);
+    else if ((NewLength & -NewLength) != NewLength  ||  NewLength == 0)
+        /* Note: the trick (x&-x) isolates the most sigificant bit of x. */
+        printf("Switch pattern length %u must be power of 2\n", NewLength);
+    else
+    {
+        /* Copy over the new switch pattern, repeating as necessary to fill
+         * up to the standard length.  Only the bottom four bits of each
+         * switch are used. */
+        for (unsigned int i = 0; i < MAX_SWITCH_SEQUENCE; i += NewLength)
+            for (unsigned int j = 0; j < NewLength; j ++)
+                SwitchPattern[i+j] = NewSwitches[j] & 0xF;
+        MARK_DIRTY(SwitchPattern);
+        return true;
+    }
+    return false;
+}
+
+
+/* The mapping from PHASE_ARRAY values to FPGA addresses is reasonably
+ * straightforward: given
+ *      n = switch value
+ *      i = channel index
+ *      k = filter index
+ * then the target address (as an index into an integer array) for
+ * Array[i][k] has the following pattern:
+ *
+ *  bit:    6    5   4      1     0
+ *      --+--------+----------+------+
+ *        | i[1:0] |  n[3:0]  | k[0] |
+ *      --+--------+----------+------+ */
+
+void WritePhaseArray(int Switch, const PHASE_ARRAY Array)
+{
+    for (int i = 0; i < BUTTON_COUNT; i ++)
+    {
+        int Base = ((Switch & 0xF) << 1) | (i << 5);
+        RawPhaseComp[Base]   = Array[i][0];
+        RawPhaseComp[Base+1] = Array[i][1];
+    }
+    MARK_DIRTY(PhaseComp);
+}
+
+
+/* The mapping from DEMUX_ARRAY values to FPGA addresses is slightly
+ * uncomfortable: given
+ *      n = switch value
+ *      i = input channel index
+ *      j = output button index
+ * then the target address (as an index into an integer array) for
+ * Array[j][i] has the following pattern: 
+ *
+ *  bit:    7    6     5    4  ..  1     0
+ *      --+--------+------+----------+------+
+ *        | j[1:0] | i[1] |  n[3:0]  | i[0] |
+ *      --+--------+------+----------+------+ */
+ 
+void WriteDemuxArray(int Switch, const DEMUX_ARRAY Array)
+{
+    for (int j = 0; j < BUTTON_COUNT; j ++)
+    {
+        int Base = ((Switch & 0xF) << 1) | (j << 6);
+        for (int i = 0; i < BUTTON_COUNT; i ++)
+            RawSwitchDemux[Base | (i & 1) | ((i & 2) << 4)] = Array[j][i];
+    }
+    MARK_DIRTY(SwitchDemux);
+}
+
+
+
+/* Commits all written double-buffer state by switching double buffers. */
+
+bool CommitDscState()
+{
+    int Buffer;
+    return
+        /* Pick up which double buffer is currently active. */
+        ReadDscWord(DSC_DOUBLE_BUFFER, Buffer)  &&
+
+        /* Write our current (new) state into the current writeable buffer. */
+        WriteAttenuatorState(DOUBLE_BUFFER(Buffer, DSC_ATTENUATORS))  &&
+        WriteSwitchesState  (DOUBLE_BUFFER(Buffer, DSC_SWITCH_PATTERN))  &&
+        WritePhaseState     (DOUBLE_BUFFER(Buffer, DSC_PHASE_COMP))  &&
+        WriteDemuxState     (DOUBLE_BUFFER(Buffer, DSC_SWITCH_DEMUX))  &&
+
+        /* Swap the new buffer into place: in effect, an atomic write. */
+        WriteDscWord(DSC_DOUBLE_BUFFER, Buffer^1)  &&
+
+        /* Finally ensure that history mark is updated. */
+        WriteHistoryMark();
+}
+
+
+/* The switch trigger source is controlled by the top bit of the
+ * turn-by-turn divider register. */
+
+bool WriteSwitchTriggerSelect(bool ExternalTrigger)
+{
+    int DividerValue;
+    return
+        ReadDscWord(DSC_SWITCH_DIVIDER, DividerValue)  &&
+        WriteDscWord(DSC_SWITCH_DIVIDER,
+            (DividerValue & 0x7FFFFFFF) | (ExternalTrigger << 31));
+}
+
+
+/* The delay on the switch clock source is programmed into the bottom ten
+ * bits of the delay control register. */
+
+bool WriteSwitchTriggerDelay(int Delay)
+{
+    int DelayControl;
+    return
+        ReadDscWord(DSC_SWITCH_DELAY, DelayControl)  &&
+        WriteDscWord(DSC_SWITCH_DELAY,
+            (DelayControl & 0xFFFF0000) | (Delay & 0x3FF));
+}
+
+
+
+#ifdef RAW_REGISTER
 /*****************************************************************************/
 /*                                                                           */
 /*                           Raw Register Access                             */
@@ -424,6 +782,8 @@ bool ReadRawRegister(unsigned int Address, unsigned int &Value)
 }
 
 
+#endif
+
 
 /*****************************************************************************/
 /*                                                                           */
@@ -446,8 +806,10 @@ static bool InitialiseConnection(CSPIHCON &Connection, int Mode)
 
 bool InitialiseHardware()
 {
+#ifdef RAW_REGISTER
     OsPageSize = getpagesize();
     OsPageMask = OsPageSize - 1;
+#endif
     
     CSPI_LIBPARAMS LibParams;
     LibParams.superuser = 1;    // Allow us to change settings!
@@ -462,7 +824,11 @@ bool InitialiseHardware()
         InitialiseConnection(CspiConDd, CSPI_MODE_DD)  &&
         InitialiseConnection(CspiConSa, CSPI_MODE_SA)  &&
         InitialiseConnection(CspiConPm, CSPI_MODE_PM)  &&
+        InitialiseDSC()  &&
+#ifdef RAW_REGISTER
         /* Open /dev/mem for register access. */
         TEST_IO(DevMem, "Unable to open /dev/mem",
-            open, "/dev/mem", O_RDWR | O_SYNC);
+            open, "/dev/mem", O_RDWR | O_SYNC)  &&
+#endif
+        true;
 }

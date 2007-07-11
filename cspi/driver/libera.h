@@ -1,4 +1,4 @@
-/* $Id: libera.h,v 1.78 2006/11/21 10:55:55 ales Exp $ */
+/* $Id: libera.h,v 1.78.2.5 2007/06/01 11:14:21 ales Exp $ */
 
 /** \file libera.h */
 /** Public include file for GNU/Linux Libera driver. */
@@ -42,6 +42,7 @@ extern "C" {
 /** Libera magic number for ioctl() calls */
 #define LIBERA_IOC_MAGIC    'l'
 #define LIBERA_EVENT_MAGIC  'e'
+#define LIBERA_DSC_MAGIC    'd'
 
 /** Libera description */
 typedef struct {
@@ -164,6 +165,7 @@ typedef enum {
 #define LIBERA_IOC_FA      64 /* Fast Application Parameters      */
 #define LIBERA_IOC_DD      96 /* Data on Demand Parameters */
 #define LIBERA_IOC_PM     128 /* Post Mortem Parameters */
+#define LIBERA_IOC_DSC    160 /* DSC Parameters */
 
 
 /* Libera CFG device parameter IOC tags */
@@ -314,6 +316,8 @@ typedef enum
     LIBERA_EVENT_NCO,
     LIBERA_EVENT_MCPLL,
     LIBERA_EVENT_SCPLL,
+    LIBERA_EVENT_FIFOLEN_SC,
+    LIBERA_EVENT_FIFOLEN_MC,
 
     /* All DEBUG IDs have to be declared at the bottom of enum! */
 #ifdef DEBUG
@@ -458,6 +462,14 @@ enum libera_event_ids_t
     LIBERA_EVENT_SET_SCPLL         = _IOW(LIBERA_EVENT_MAGIC,
                                           LIBERA_EVENT_SCPLL,
                                           libera_U32_t),
+
+    LIBERA_EVENT_GET_FIFOLEN_SC    = _IOWR(LIBERA_EVENT_MAGIC,
+                                           LIBERA_EVENT_FIFOLEN_SC,
+                                           libera_U32_t),
+
+    LIBERA_EVENT_GET_FIFOLEN_MC    = _IOWR(LIBERA_EVENT_MAGIC,
+                                           LIBERA_EVENT_FIFOLEN_MC,
+                                           libera_U32_t),
     
     /* All DEBUG IDs have to be declared at the bottom of enum! */
 #ifdef DEBUG
@@ -483,6 +495,27 @@ enum libera_event_ids_t
 					 libera_U32_t),
     
 #endif
+};
+
+
+/**********************/
+/* DSC device IOCTL */
+/**********************/
+typedef enum
+{
+    LIBERA_DSC_SET = LIBERA_IOC_DSC,
+    LIBERA_DSC_ADC, 
+} libera_dsc_tags_t;
+
+enum libera_dsc_ids_t
+{    
+    LIBERA_DSC_SET_DSC       =  _IOW(LIBERA_DSC_MAGIC,
+                                     LIBERA_DSC_SET,
+                                     libera_U32_t),
+
+    LIBERA_DSC_GET_ADC       =  _IOR(LIBERA_DSC_MAGIC,
+                                     LIBERA_DSC_ADC,
+                                     libera_U32_t),
 };
 
 /* Include family member specifics */

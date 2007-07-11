@@ -41,7 +41,6 @@ DBD += libera.dbd
 # ioc_registerRecordDeviceDriver.cpp will be created from ioc.dbd
 ioc_SRCS += ioc_registerRecordDeviceDriver.cpp
 
-ioc_SRCS += iocMain.cpp         # Ioc startup and configuration
 ioc_SRCS += device.cpp          # EPICS record interface
 ioc_SRCS += publish.cpp         # Support for publishing to EPICS
 ioc_SRCS += trigger.cpp         # I/O Intr support and EPICS interlocking
@@ -63,6 +62,9 @@ ioc_SRCS += thread.cpp          # Simple support for pthreads
 ioc_SRCS += persistent.cpp      # Persistent configuration settings
 ioc_SRCS += interlock.cpp       # Machine protection interlock
 ioc_SRCS += sensors.cpp         # Machine state sensors
+ioc_SRCS += conditioning.cpp    # Signal conditioning control
+
+ioc_SRCS += iocMain.cpp         # Ioc startup and configuration
 
 ifeq ($(BUILD_FF_SUPPORT),yes)
 USR_CXXFLAGS += -DBUILD_FF_SUPPORT

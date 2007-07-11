@@ -99,6 +99,12 @@ protected:
     void Unlock() { TEST_(pthread_mutex_unlock, &Mutex); }
     void Signal() { TEST_(pthread_cond_signal,  &Condition); }
     void Wait()   { TEST_(pthread_cond_wait,    &Condition, &Mutex); }
+
+    /* Waits for at least the specified number of milliseconds or until the
+     * specified time before timing out.  Returns true if the wait was
+     * interrupted by a signal, false if a timeout occurred. */
+    bool WaitFor(int milliseconds);
+    bool WaitUntil(const struct timespec *target);
     
 private:
     pthread_cond_t Condition;

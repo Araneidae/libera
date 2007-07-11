@@ -26,6 +26,7 @@
 #      michael.abbott@diamond.ac.uk
 
 # Python script for building Libera database
+from __future__ import division
 
 import sys
 from math import *
@@ -52,6 +53,8 @@ MAX_nm  = MAX_mm * 10**6         # 10^7 nm = 10 mm
 MAX_S   = MAX_INT
 KB      = 1024
 MB      = KB*KB
+
+MAX_ADC = 2**15
 
 def RAW_ADC(length):
     return [
@@ -138,28 +141,38 @@ def Trigger(MC, positions, TRIG='TRIG', DONE='DONE'):
 # ----------------------------------------------------------------------------
 #           Libera Data Capture Mode Definitions
 # ----------------------------------------------------------------------------
-        
+
+def dB(db):
+    return 10.**(db/20.)
+    
 
 # First turn snapshot records.  Access to position data immediately following
 # the trigger for use on transfer paths and during injection.
 def FirstTurn():
     LONG_LENGTH = 1024
-    SHORT_LENGTH = LONG_LENGTH / 4
+    SHORT_LENGTH = LONG_LENGTH // 4
 
     SetChannelName('FT')
     Enable()
-    
-    maxadc = longIn('MAXADC', 0, 2048,
+
+    maxadc = longIn('MAXADC', 0, MAX_ADC,
         DESC = 'Maximum ADC reading',
-        HSV  = 'MINOR',  HIGH = 1450,   # -3dB full scale
-        HHSV = 'MAJOR',  HIHI = 1700)   # -1.6dB full scale
+        HSV  = 'MINOR',  HIGH = int(MAX_ADC / dB(3)),    # 70.8 %
+        HHSV = 'MAJOR',  HIHI = int(MAX_ADC / dB(1.6)))  # 83.2 %
+    maxadc_pc = records.calc('MAXADC_PC',
+        DESC = 'Maximum ADC reading (%)',
+        CALC = 'A/B',
+        INPA = MS(maxadc),
+        INPB = MAX_ADC / 100.,
+        LOPR = 0,   HOPR = 100,
+        PREC = 1,   EGU  = '%')
 
     charge = aIn('CHARGE', 0, 2000, 1e-6, 'nC', 2,
         DESC = 'Charge of bunch train')
 
     Trigger(False, 
         # Raw waveforms as read from the ADC rate buffer
-        RAW_ADC(LONG_LENGTH) + [maxadc, charge] +
+        RAW_ADC(LONG_LENGTH) + [maxadc, maxadc_pc, charge] +
         # ADC data reduced by 1/4 by recombination
         ABCD_wf(SHORT_LENGTH) +
         # Synthesised button positions from windowed averages
@@ -398,10 +411,24 @@ def Interlock():
     # enabled and configured.
     boolOut('OVERFLOW', 'Disabled', 'Enabled',
         DESC = 'Enable ADC overflow detect')
-    longOut('OVER', 0, 2048,
-        DESC = 'ADC overflow threshold')
     longOut('TIME', 1, 1024,
         DESC = 'ADC overflow duration')
+    overflow = longOut('OVER', 0, MAX_ADC,
+        DESC = 'ADC overflow threshold')
+    overflow_pc = records.ao('OVER_PC_S',
+        DESC = 'ADC overflow threshold (%)',
+        OMSL = 'supervisory', DTYP = 'Raw Soft Channel', 
+        OUT  = PP(overflow),
+        EGUL = 0,   EGUF = 100,   EGU  = '%', PREC = 1,
+        DRVL = 0,           DRVH = 100.*(MAX_ADC-1.)/MAX_ADC,
+        LINR = 'LINEAR',    ESLO = 100./MAX_ADC)
+    overflow.FLNK = records.ao('OVER_C',
+        OMSL = 'closed_loop', DTYP = 'Raw Soft Channel', 
+        DOL  = overflow,    OUT  = overflow_pc,
+        DRVL = 0,           DRVH = MAX_ADC - 1,
+        LINR = 'LINEAR',    ESLO = MAX_ADC/100.,
+        PINI = 'YES')
+    
 
     # Interlock holdoff delay
     longOut('HOLDOFF',  0, 1000, DESC = 'Interlock holdoff delay')
@@ -435,6 +462,59 @@ def Interlock():
     UnsetChannelName()
 
 
+def Conditioning():
+    SetChannelName('SC')
+
+    # Configuration values
+    aOut('MAXDEV', 0, 100,
+        PREC = 1, EGU  = '%',
+        DESC = 'Maximum signal deviation (%)')
+    aOut('CIIR', 0, 1,
+        PREC = 2,
+        DESC = 'IIR factor for channels')
+    aOut('INTERVAL', 0, 100,
+        ESLO = 1e-3, PREC = 3, EGU  = 's',
+        DESC = 'Conditioning interval')
+
+    # Readback values
+    Trigger(False, [
+            mbbIn('STATUS',
+                ('Off',             0, 'NO_ALARM'),
+                ('Data read error', 1, 'MAJOR'),
+                ('No Switch',       2, 'MINOR'),
+                ('High variance',   3, 'MINOR'),
+                ('Overflow',        4, 'MAJOR'),
+                ('Good',            5, 'NO_ALARM'),
+                DESC = 'Signal conditioning status'),
+            aIn('DEV', 0, 200,
+                PREC = 1, EGU  = '%',
+                DESC = 'Relative signal deviation'),
+            aIn('CSCALE', 1, 2,
+                PREC = 5,
+                DESC = 'Channel gain scaling factor'),
+        ] + [
+            aIn('PHASE%s' % button, -180, 180,
+                PREC = 2, EGU  = 'deg',
+                DESC = 'Button %s input phase' % button)
+            for button in 'BCD'
+        ] + [
+            pv
+            for channel in range(1,5)
+            for pv in
+                aIn('C%sPHASE' % channel, -180, 180,
+                    PREC = 3, EGU  = 'deg',
+                    DESC = 'Channel %s phase shift' % channel),
+                aIn('C%sMAGL' % channel, 0, 2,
+                    PREC = 4, EGU  = 'dB',
+                    DESC = 'Channel %s gain' % channel),
+                longIn('C%sRAW0' % channel, -2**17, 2**17,
+                    DESC = 'Raw channel %s direct gain' % channel),
+                longIn('C%sRAW1' % channel, -2**17, 2**17,
+                    DESC = 'Raw channel %s delayed gain' % channel),
+        ])
+    
+    UnsetChannelName()
+    
     
 # -----------------------------------------------------------------------------
 
@@ -680,6 +760,7 @@ Postmortem()        # PM - fixed length pre-postmortem trigger waveforms
 
 Config()            # CF - general configuration records
 Interlock()         # IL - interlock configuration records
+Conditioning()      # SC - signal conditioning records
 Clock()             # CK - clock monitoring and control
 Sensors()           # SE - temperatures, fan speeds, memory and CPU usage etc
 Miscellaneous()     # Other records

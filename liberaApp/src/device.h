@@ -183,10 +183,14 @@ DECLARE_INTERFACE(WRITER, mbbo);
 class I_waveform : public I_RECORD
 {
 public:
-    /* Read the waveform.  
-     *     The number of waveform rows actually read is returned: if reading
-     * fails then 0 is returned. */
-    virtual size_t read(void *array, size_t length) = 0;
+    /* Process the waveform, returns false on failure.
+     *     This can be used to either read or write the waveform, depending
+     * on the underlying implementation.  If used for reading then the result
+     * should be copied into array and the new length should be written to
+     * new_length.  If used for writing then new_length points should be read
+     * from array. */
+    virtual bool process(
+        void *array, size_t max_length, size_t &new_length) = 0;
 };
 
 

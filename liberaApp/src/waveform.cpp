@@ -70,11 +70,13 @@ SIMPLE_WAVEFORM<T>::SIMPLE_WAVEFORM(int TypeMark, size_t WaveformLength) :
 
 
 template<class T>
-size_t SIMPLE_WAVEFORM<T>::read(void *array, size_t length)
+bool SIMPLE_WAVEFORM<T>::process(
+    void *array, size_t length, size_t &new_length) 
 {
     if (length > WaveformLength)  length = WaveformLength;
     memcpy(array, Waveform, sizeof(T) * length);
-    return length;
+    new_length = length;
+    return length > 0;
 }
 
 INT_WAVEFORM::INT_WAVEFORM(size_t WaveformSize) :
@@ -112,9 +114,10 @@ public:
     {
     }
 
-    size_t read(void *Array, size_t Length)
+    bool process(void *Array, size_t MaxLength, size_t &NewLength)
     {
-        return Waveforms.Read(Field, (int*) Array, Length);
+        NewLength = Waveforms.Read(Field, (int*) Array, MaxLength);
+        return NewLength > 0;
     }
     
 private:

@@ -40,6 +40,7 @@
 /*                                                                           */
 /*****************************************************************************/
 
+#define BUTTON_COUNT    4
 
 
 /* A row of "data on demand" Libera data consists of eight integers
@@ -53,7 +54,7 @@
  * processing.
  *     This data can be read at machine revolution clock frequency, or
  * decimated to 1/64th. */
-typedef int LIBERA_ROW[8];
+typedef int LIBERA_ROW[2*BUTTON_COUNT];
 
 /* Raw IQ data.  This is identical in layout to the LIBERA_ROW structure. */
 struct IQ_ROW
@@ -82,7 +83,7 @@ struct XYQS_ROW
  * in the current release of the driver), one for each button.  ADC data is
  * always read in 1024 row segments. */
 #define ADC_LENGTH      1024
-typedef short ADC_ROW[4];
+typedef short ADC_ROW[BUTTON_COUNT];
 typedef ADC_ROW ADC_DATA[ADC_LENGTH];
 
 
@@ -100,11 +101,13 @@ typedef ADC_ROW ADC_DATA[ADC_LENGTH];
 bool InitialiseHardware();
 
 
+#ifdef RAW_REGISTER
 /* Writes or writes directly to or from a hardware register.  Not designed for
  * frequent use, as the associated memory mapping is created and deleted each
  * time this routine is called! */
 bool WriteRawRegister(unsigned int Address, unsigned int Value);
 bool ReadRawRegister(unsigned int Address, unsigned int &Value);
+#endif
 
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -154,15 +157,6 @@ bool WriteCalibrationSettings(
     int Kx, int Ky, int Kq, int Xoffset, int Yoffset);
 
 
-/* Routines for setting switch management, AGC mode, DSC mode and gain. */
-bool WriteSwitchState(CSPI_SWITCHMODE Switches);
-bool WriteAgcMode(CSPI_AGCMODE AgcMode);
-bool WriteDscMode(CSPI_DSCMODE DscMode);
-bool WriteAttenuation(int Attenuation);
-
-bool ReadSwitches(int &Switches);
-bool ReadAttenuation(int &Attenuation);
-
 
 /* Set clock synchronisation. */
 bool SetMachineClockTime();
@@ -180,6 +174,92 @@ bool ConfigureEventCallback(
     int EventMask, int (*Handler)(CSPI_EVENT*), void *Context);
 
 
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                      DSC Device Interface Routines.                       */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+/* There are sixteen possible switch positions. */
+#define SWITCH_COUNT        16
+/* Here we arbitrarily (there are only 16 switch positions, dammit) constrain
+ * the length of a switch sequence to 16. */
+#define MAX_SWITCH_SEQUENCE 16
+typedef char SWITCH_SEQUENCE[MAX_SWITCH_SEQUENCE];
+
+
+/* A phase and amplitude compensation array C takes four uncompensated channel
+ * inputs X[i] and produces four compensated channel outputs Y[i] via a two
+ * tap filter computing
+ * 
+ *      Y[i]_t = C[i][0] * X[i]_t  +  C[i][1] * X[i]_{t-1}  .
+ *
+ * Values in the array are signed 18 bit values scaled with 1.0 = 0x10000, so
+ * the dynamic range is [-2..2). */
+typedef int PHASE_ENTRY[2];
+typedef PHASE_ENTRY PHASE_ARRAY[BUTTON_COUNT];
+#define PHASE_UNITY 0x10000
+
+/* A demultiplexing array P takes four raw ADC channel inputs X[i] and
+ * produces four demultiplexed (and possibly crosstalk compensated) button
+ * outputs Z[j] via the matrix multiplication
+ * 
+ *      Z[j] = SUM_i P[j][i] * Y[i]  .
+ *      
+ * Values in the array are signed 18 bit values. */
+typedef int DEMUX_ARRAY[BUTTON_COUNT][BUTTON_COUNT];
+
+
+/* Returns true iff the "brilliance" option is installed.  Mostly this can be
+ * hidden from non-hardware code, but in certain cases different actions need
+ * to be taken.
+ *     The "brilliance" option consists of a 16-bit ADC with much improved RF
+ * handling and a different range of attenuator settings: attenuators in
+ * Libera Brilliance cover a much narrower range of values. */
+bool Brilliance();
+
+/* Writes a new attenuation value.  The attenuation will not be updated until
+ * CommitDscState() is called. */
+bool WriteAttenuation(int NewAttenuation);
+
+/* Writes a sequence of switches.  This is an array of switch numbers (each
+ * switch number in the range 0-15).  The length of the sequence must be a
+ * power of 2 between 1 and 16 (inclusive).
+ *    The active switch sequence will not be updated until CommitDscState()
+ * is called. */
+bool WriteSwitchSequence(
+    const SWITCH_SEQUENCE NewSwitches, unsigned int NewLength);
+
+/* Writes the phase correction matrix for one switch position.  The array is
+ * diagonal and acts on button values.
+ *     The phase array matrices will not be updated until CommitDscState()
+ * is called. */
+void WritePhaseArray(int Switch, const PHASE_ARRAY Array);
+
+/* Writes the demultiplexing and and crosstalk correction matrix for one
+ * switch position.
+ *     The correction matrices will not be updated until CommitDscState() is
+ * called. */
+void WriteDemuxArray(int Switch, const DEMUX_ARRAY Array);
+
+/* This writes the state establised by the following routines into the FPGA
+ * in a single atomic operation:
+ *      WriteAttenuation        Attenuator settings
+ *      WriteSwitchSequence     Switching sequence
+ *      WritePhaseArray         Phase and amplitude correction matrices
+ *      WriteDemuxArray         Demultiplexing and crosstalk correction */
+bool CommitDscState();
+
+
+/* This selects between internal and external triggering of the rotating
+ * switches.  If external triggering is selected the "machine clock" input is
+ * used to generate the switch cycle. */
+bool WriteSwitchTriggerSelect(bool ExternalTrigger);
+
+/* Programmes the delay from the external machine clock to the switch
+ * revolution.  This can be useful for moving the switch position relative to
+ * the fill pattern which can affect noise. */
+bool WriteSwitchTriggerDelay(int Delay);
+
+
 
 
 /*****************************************************************************/
@@ -187,6 +267,13 @@ bool ConfigureEventCallback(
 /*                          Generic Helper Macros                            */
 /*                                                                           */
 /*****************************************************************************/
+
+#define TEST_OK(test, message...) \
+    ( { \
+        bool __ok__ = (test); \
+        if (!__ok__)  printf(message); \
+        __ok__; \
+    } )
 
 /* Helper macro for OS I/O commands which return -1 on error and set errno.
  * Arguments are:

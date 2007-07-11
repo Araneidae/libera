@@ -46,6 +46,7 @@
 #include "waveform.h"
 #include "numeric.h"
 #include "cordic.h"
+#include "conditioning.h"
 
 #include "firstTurn.h"
 
@@ -72,23 +73,9 @@
  * form. */
 typedef int EXTRACTED_ADC[4][ADC_LENGTH];
 
-/* A permutation is a mapping from channel to button. */
-typedef unsigned int PERMUTATION[4];
-
 
 /* Array of offsets into ABCD_ROW structure. */
 static const size_t AbcdFields[] = { FIELD_A, FIELD_B, FIELD_C, FIELD_D };
-
-/* This array translates switch positions into button permutations.  This is
- * needed when reading raw ADC buffers to undo the permutation performed by
- * the input switch. */
-static const PERMUTATION PermutationLookup[16] =
-{
-    { 0, 1, 2, 3 },  { 0, 2, 1, 3 },  { 3, 1, 2, 0 },  { 3, 2, 1, 0 },
-    { 0, 1, 3, 2 },  { 0, 2, 3, 1 },  { 3, 1, 0, 2 },  { 3, 2, 0, 1 },
-    { 1, 0, 2, 3 },  { 2, 0, 1, 3 },  { 1, 3, 2, 0 },  { 2, 3, 1, 0 },
-    { 1, 0, 3, 2 },  { 2, 0, 3, 1 },  { 1, 3, 0, 2 },  { 2, 3, 0, 1 }
-};
 
 
 
@@ -117,10 +104,13 @@ static int Maximum(EXTRACTED_ADC &Data)
 static void ExtractRawData(
     ADC_DATA &RawData, EXTRACTED_ADC &Extracted, ABCD_WAVEFORMS &RawAdc)
 {
-    /* Extract, sign extend from 12 bits to 32 bits, and transpose. */
+    /* Extract and transpose the ADC data.  For slightly cryptic reasons
+     * (presumably historical) the raw channels from the ADC are numbered in
+     * reverse order.  We reverse this ordering here for consistency with the
+     * signal conditioning component. */
     for (int i = 0; i < ADC_LENGTH; i ++)
         for (int j = 0; j < 4; j ++)
-            Extracted[j][i] = RawData[i][j];
+            Extracted[j][i] = RawData[i][3-j];
     /* Publish each column to RawAdc. */
     for (int j = 0; j < 4; j ++)
         RawAdc.Write(AbcdFields[j], Extracted[j], ADC_LENGTH);
@@ -165,12 +155,11 @@ static void CondenseAdcData(
         /* Scale the raw values so that they're compatible in magnitude with
          * turn-by-turn filtered values.  This means that we can use the same
          * scaling rules downstream.
-         *    A raw ADC value is +-2^11, and by combining pairs we get +-2^12.
-         * Scaling by 2^18 gives us values in the range +-2^30, which will be
+         *    A raw ADC value is +-2^15, and by combining pairs we get +-2^16.
+         * Scaling by 2^14 gives us values in the range +-2^30, which will be
          * comfortable.  After cordic this becomes 0..sqrt(2)*0.5822*2^30 or
          * 0.823*2^30. */
-        *q++ = CordicMagnitude((x1-x3)<<18, (x2-x4)<<18);
-//        *q++ = CordicMagnitude((x1-x3)<<14, (x2-x4)<<14);
+        *q++ = CordicMagnitude((x1-x3)<<14, (x2-x4)<<14);
     }
 }
 
@@ -183,8 +172,6 @@ class FIRST_TURN : I_EVENT
 {
 public:
     FIRST_TURN(int Harmonic, int Decimation) :
-        PersistentOffset(Offset),
-        PersistentLength(Length),
         RawAdc(ADC_LENGTH),
         Adc(ADC_LENGTH/4),
         ChargeScale(PMFP(10) / (PMFP(S_0) * 117))
@@ -204,8 +191,8 @@ public:
         
         /* Now initialise the persistence of these and initialise the length
          * state accordingly. */
-        PersistentOffset.Initialise("FT:OFF");
-        PersistentLength.Initialise("FT:LEN");
+        Persistent("FT:OFF", Offset);
+        Persistent("FT:LEN", Length);
         SetLength(Length);
         
         /* Computed button totals and associated button values. */
@@ -280,8 +267,7 @@ private:
      *  7. Finally compute XYQS. */
     int ProcessAdcWaveform()
     {
-        const PERMUTATION & Permutation =
-            PermutationLookup[ReadSwitchSetting()];
+        const PERMUTATION & Permutation = SwitchPermutation();
         ADC_DATA RawData;
         ReadAdcWaveform(RawData);
         
@@ -441,7 +427,6 @@ private:
     /* Control variables for averaging defining the offset into processed ADC
      * buffer and the length of the averaging window. */
     int Offset, Length;
-    PERSISTENT_INT PersistentOffset, PersistentLength;
     
     /* Computed state.  The button values are integrated from the selection of
      * points, and the appropriate elements are published to epics. */

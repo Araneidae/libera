@@ -122,6 +122,10 @@ if ((RESTART_LMTD))  ||  ! [ -e /tmp/lmtd.command ]; then
     $BIN_DIR/lmtd -p$MCPRESC -d$DECIMATION -o$OFFSET_TUNE -r$HARMONIC
 fi
 
+# Ensure the DSC daemon isn't running: we're going to replace its
+# functionality!
+[ -e /var/run/ldscd.pid ]  &&  kill $(cat /var/run/ldscd.pid)
+
 
 # Export the database parameters needed to configure libera.db.  These are
 # record lengths which need to be defined at IOC startup.

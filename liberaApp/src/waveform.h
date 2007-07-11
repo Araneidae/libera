@@ -39,7 +39,7 @@ public:
     inline T * Array() { return Waveform; }
 
 private:
-    size_t read(void *array, size_t length);
+    bool process(void *array, size_t max_length, size_t &new_length);
     const size_t WaveformLength;
     T * Waveform;
 };
@@ -55,6 +55,7 @@ class FLOAT_WAVEFORM : public SIMPLE_WAVEFORM<float>
 public:
     FLOAT_WAVEFORM(size_t WaveformSize);
 };
+
 
 
 

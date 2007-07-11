@@ -121,10 +121,13 @@ First Turn (<group> = FT):
         Unprocessed ADC readings, one per input channel: 1024 points at
         approximately 8.5ns sample intervals.  The permutation between channel
         and button depends on the switch position.
+            Note that the ADC readings are adjusted to 16 bits full scale
+        independently of the actual full scale range of the ADC.
 
-    MAXADC
+    MAXADC, MAXADC_PC
         Maximum ADC reading in the entire 1024 point capture, across all
-        channels.
+        channels, both as a raw 16-bit ADC value and as a percentage of full
+        scale.
 
     WF<buttons>
         256 point arrays at approximately 34ns sampling interval, updated on
@@ -287,9 +290,11 @@ Interlock Control (<group> = IL):
         is closed ("active") so long as the beam position lies within this
         window. 
 
-    OVER_S, TIME_S
+    OVER_S, OVER_PC_S, TIME_S
         ADC overflow detection parameters: the interlock is dropped if the ADC
-        input exceeds value OVER for at least TIME samples.
+        input exceeds value OVER for at least TIME samples.  The overflow
+        threshold can be set as a 16 bit number (using OVER_S) or as a
+        percentage of full scale (using OVER_PC_S).
 
     OVERFLOW_S
         This can be set to Enabled to enable ADC overflow detection even when
