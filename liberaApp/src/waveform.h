@@ -34,12 +34,14 @@ template<class T>
 class SIMPLE_WAVEFORM : public I_WAVEFORM
 {
 public:
-    SIMPLE_WAVEFORM(int TypeMark, size_t WaveformSize);
+    SIMPLE_WAVEFORM(
+        int TypeMark, size_t EpicsPointSize, size_t WaveformSize);
 
     inline T * Array() { return Waveform; }
 
 private:
     bool process(void *array, size_t max_length, size_t &new_length);
+    const size_t EpicsPointSize;
     const size_t WaveformLength;
     T * Waveform;
 };
@@ -56,6 +58,13 @@ public:
     FLOAT_WAVEFORM(size_t WaveformSize);
 };
 
+#ifdef I
+class COMPLEX_WAVEFORM : public SIMPLE_WAVEFORM<complex>
+{
+public:
+    COMPLEX_WAVEFORM(size_t WaveformSize);
+};
+#endif
 
 
 
@@ -71,7 +80,12 @@ template<class T>
 class WAVEFORMS
 {
 public:
-    WAVEFORMS(size_t WaveformLength);
+    /* Defines the maximum number of T rows in the waveform.  If FullSize is
+     * set then the active length of the waveform is set to the full
+     * waveform (the waveform is effectively assumed to start containing
+     * data); if clear then the waveform is initialised with active length of
+     * zero (no data actually in waveform). */
+    WAVEFORMS(size_t WaveformLength, bool FullSize=false);
 
     /* Publishes all of the fields associated with this waveform to EPICS
      * using the given prefix. */
@@ -109,11 +123,23 @@ public:
     /* Reads the timestamp. */
     const CSPI_TIMESTAMP & GetTimestamp() { return Timestamp; }
 
+    /* Direct access to the raw data.  No more than GetLength() rows should
+     * be written to this waveform, and no more than WorkingLength() can
+     * sensibly be read. */
+    T * Waveform() const { return Data; }
+
     
 protected:
     void PublishColumn(
         const char * Prefix, const char * Name, size_t Field) const;
 
+
+    /* The following invariant relates the three sizes below at all times:
+     *
+     *      0 <= ActiveLength <= CurrentLength <= WaveformSize
+     *
+     * CurrentLength records how long a waveform we will try to capture,
+     * while active length records how much has successfully been captured. */
     
     /* The maximum waveform size: space actually allocated. */
     const size_t WaveformSize;
@@ -137,7 +163,8 @@ protected:
 class IQ_WAVEFORMS : public WAVEFORMS<IQ_ROW>
 {
 public:
-    IQ_WAVEFORMS(size_t Length) : WAVEFORMS<IQ_ROW>(Length) { }
+    IQ_WAVEFORMS(size_t Length, bool FullSize=false) :
+        WAVEFORMS<IQ_ROW>(Length, FullSize) { }
     
     /* Capture the currently selected active length of waveform from the data
      * source.  Possible decimations are 1 or 64, as determined by the FPGA. */
@@ -149,7 +176,8 @@ public:
 class ABCD_WAVEFORMS : public WAVEFORMS<ABCD_ROW>
 {
 public:
-    ABCD_WAVEFORMS(size_t Length) : WAVEFORMS<ABCD_ROW>(Length) { }
+    ABCD_WAVEFORMS(size_t Length, bool FullSize=false) :
+        WAVEFORMS<ABCD_ROW>(Length, FullSize) { }
 
     /* Capture button values from given IQ waveform. */
     void CaptureCordic(const IQ_WAVEFORMS & Source);
@@ -160,7 +188,8 @@ public:
 class XYQS_WAVEFORMS : public WAVEFORMS<XYQS_ROW>
 {
 public:
-    XYQS_WAVEFORMS(size_t Length) : WAVEFORMS<XYQS_ROW>(Length) { }
+    XYQS_WAVEFORMS(size_t Length, bool FullSize=false) :
+        WAVEFORMS<XYQS_ROW>(Length, FullSize) { }
 
     /* Capture positions from button values. */
     void CaptureConvert(const ABCD_WAVEFORMS &Source);

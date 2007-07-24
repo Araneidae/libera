@@ -43,6 +43,7 @@
 #include "hardware.h"
 #include "convert.h"
 #include "cordic.h"
+#include "complex.h"
 
 #include "waveform.h"
 
@@ -61,9 +62,16 @@
  * into a single template. */
 
 template<class T>
-SIMPLE_WAVEFORM<T>::SIMPLE_WAVEFORM(int TypeMark, size_t WaveformLength) :
+SIMPLE_WAVEFORM<T>::SIMPLE_WAVEFORM(
+    int TypeMark, size_t EpicsPointSize, size_t WaveformLength) :
+    
     I_WAVEFORM(TypeMark),
-    WaveformLength(WaveformLength),
+    /* An EPICS point may be smaller than T -- in particular, a waveform of
+     * complex numbers is stored as two REALs per value -- and so we need to
+     * do some translation when talking to EPICS. */
+    EpicsPointSize(EpicsPointSize),
+    /* The length of the waveform is recorded in terms of EPICS points. */
+    WaveformLength(WaveformLength * sizeof(T) / EpicsPointSize),
     Waveform(new T[WaveformLength])
 {
 }
@@ -74,20 +82,26 @@ bool SIMPLE_WAVEFORM<T>::process(
     void *array, size_t length, size_t &new_length) 
 {
     if (length > WaveformLength)  length = WaveformLength;
-    memcpy(array, Waveform, sizeof(T) * length);
+    memcpy(array, Waveform, EpicsPointSize * length);
     new_length = length;
     return length > 0;
 }
 
 INT_WAVEFORM::INT_WAVEFORM(size_t WaveformSize) :
-    SIMPLE_WAVEFORM<int>(DBF_LONG, WaveformSize) { }
+    SIMPLE_WAVEFORM<int>(DBF_LONG, sizeof(int), WaveformSize) { }
 
 FLOAT_WAVEFORM::FLOAT_WAVEFORM(size_t WaveformSize) :
-    SIMPLE_WAVEFORM<float>(DBF_FLOAT, WaveformSize) { }
+    SIMPLE_WAVEFORM<float>(DBF_FLOAT, sizeof(float), WaveformSize) { }
+
+/* The complex waveform is implemented as a waveform of floating point values
+ * with 2 EPICS points (floating point numbers) per point. */
+COMPLEX_WAVEFORM::COMPLEX_WAVEFORM(size_t WaveformSize) :
+    SIMPLE_WAVEFORM<complex>(DBF_REAL, sizeof(REAL), WaveformSize) { }
 
 
 template class SIMPLE_WAVEFORM<int>;
 template class SIMPLE_WAVEFORM<float>;
+template class SIMPLE_WAVEFORM<complex>;
 
 
 
@@ -139,12 +153,12 @@ private:
 
 
 template<class T>
-WAVEFORMS<T>::WAVEFORMS(size_t WaveformSize) :
+WAVEFORMS<T>::WAVEFORMS(size_t WaveformSize, bool FullSize) :
     WaveformSize(WaveformSize),
     Data(new T[WaveformSize])
 {
     CurrentLength = WaveformSize;
-    ActiveLength = 0;
+    ActiveLength = FullSize ? CurrentLength : 0;
     memset(&Timestamp, 0, sizeof(Timestamp));
 }
 

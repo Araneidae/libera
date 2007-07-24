@@ -164,6 +164,36 @@ static int FindRamfsUsage()
 }
 
 
+
+/* This helper routine is used to read a specific line from the /proc/meminfo
+ * file: it scans for a line of the form
+ *      <Prefix>   <Result> kB
+ * and returns the integer result. */
+
+static bool ReadMeminfoLine(FILE *MemInfo, const char *Prefix, int &Result)
+{
+    const int PrefixLength = strlen(Prefix);
+    char Line[1024];
+    while (fgets(Line, sizeof(Line), MemInfo))
+    {
+        if (strncmp(Line, Prefix, PrefixLength) == 0)
+        {
+            /* Good: this is our line. */
+            if (sscanf(Line + PrefixLength, " %d ", &Result) == 1)
+                return true;
+            else
+            {
+                printf("Malformed /proc/meminfo line:\n\t\"%s\"\n", Line);
+                return false;
+            }
+        }
+    }
+    /* Oops.  Couldn't find anything. */
+    printf("Unable to find \"%s\" line in /proc/meminfo\n", Prefix);
+    return false;
+}
+
+
 /* Free memory processing is a little tricky.  By reading /proc/meminfo we
  * can discover "free" and "cached" memory, but turning this into a true free
  * memory number is more difficult.
@@ -174,12 +204,19 @@ static int FindRamfsUsage()
 
 static void ProcessFreeMemory()
 {
-    int Free, Cached;
-    if (ParseFile("/proc/meminfo", 2, "%*[^\n]\nMem: %*d %*d %d %*d %*d %d",
-            &Free, &Cached))
+    FILE * MemInfo = fopen("/proc/meminfo", "r");
+    if (MemInfo == NULL)
+        perror("Unable to open /proc/meminfo");
+    else
     {
-        RamfsUsage = FindRamfsUsage();
-        MemoryFree = Free + Cached - RamfsUsage;
+        int Free, Cached;
+        if (ReadMeminfoLine(MemInfo, "MemFree:", Free)  &&
+            ReadMeminfoLine(MemInfo, "Cached:",  Cached))
+        {
+            RamfsUsage = FindRamfsUsage();
+            MemoryFree = 1024 * (Free + Cached) - RamfsUsage;
+        }
+        fclose(MemInfo);
     }
 }
 

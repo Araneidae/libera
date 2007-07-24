@@ -595,16 +595,23 @@ int cspi_sethealthparam(Environment *e, const CSPI_ENVPARAMS *p,
 
 //--------------------------------------------------------------------------
 
-int cspi_health_get_temp( int *temp, const char *proc_filename )
+int cspi_health_get_temp( int *temp, const char *proc_filename, int UseSys )
 {
-    int max, min;
-
     FILE *fp = fopen (proc_filename, "r" );
     if ( !fp ) return CSPI_E_SYSTEM;
 
-    fscanf( fp, "%d\t%d\t%d\n", &max, &min, temp );
-    fclose( fp );
+    if (UseSys)
+    {
+        fscanf( fp, "%d\n", temp );
+        *temp = *temp / 1000;  
+    }
+    else
+    {
+        int max, min;
+        fscanf( fp, "%d\t%d\t%d\n", &max, &min, temp );
+    }
 
+    fclose( fp );
     return CSPI_OK;
 }
 
@@ -643,19 +650,38 @@ int cspi_health_get_voltages( int *voltage )
 
 //--------------------------------------------------------------------------
 
+
 int cspi_gethealthparam(Environment *e, CSPI_ENVPARAMS *p,
                         CSPI_BITMASK flags)
 {
-    const char *proc_temp = "/proc/sys/dev/sensors/max1617a-i2c-0-29/temp1";
-    const char *proc_fan0 = "/proc/sys/dev/sensors/max6650-i2c-0-4b/fan1";
-    const char *proc_fan1 = "/proc/sys/dev/sensors/max6650-i2c-0-48/fan1";
+    const char *proc_temp;
+    const char *proc_fan0;
+    const char *proc_fan1;
+    /* Check for presence of the /sys filesystem.  A couple of our actions
+     * need to be handled differently depending on whether we use /sys or
+     * /proc. */
+    int UseSys = access("/sys", F_OK) == 0;
+    if (UseSys)
+    {
+        /* The /sys file system exists.  All our sensors live here. */
+        proc_temp = "/sys/class/i2c-adapter/i2c-0/device/0-0029/temp1_input";
+        proc_fan0 = "/sys/class/i2c-adapter/i2c-0/device/0-004b/fan1_input";
+        proc_fan1 = "/sys/class/i2c-adapter/i2c-0/device/0-0048/fan1_input";
+    }
+    else
+    {
+        /* No /sys file system: revert to the older /proc filesystem. */
+        proc_temp = "/proc/sys/dev/sensors/max1617a-i2c-0-29/temp1";
+        proc_fan0 = "/proc/sys/dev/sensors/max6650-i2c-0-4b/fan1";
+        proc_fan1 = "/proc/sys/dev/sensors/max6650-i2c-0-48/fan1";
+    }
 
     int rc = CSPI_OK;
 
     if ( flags & CSPI_ENV_HEALTH ) {
 
         // Temperature
-        rc = cspi_health_get_temp( &p->health.temp, proc_temp );
+        rc = cspi_health_get_temp( &p->health.temp, proc_temp, UseSys );
         if ( CSPI_OK != rc ) return rc;
 
         // Front fan

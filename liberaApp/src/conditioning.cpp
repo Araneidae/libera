@@ -31,18 +31,20 @@
 #include <stdio.h>
 #include <string.h>
 #include <fcntl.h>
-#include <complex>
 #include <math.h>
 
 #include <dbFldTypes.h>         // DBF_UCHAR
 #include <iocsh.h>
+#include <epicsExport.h>
 
+#include "complex.h"
 #include "device.h"
 #include "publish.h"
 #include "hardware.h"
 #include "thread.h"
 #include "persistent.h"
 #include "trigger.h"
+#include "waveform.h"
 
 #include "conditioning.h"
 
@@ -109,11 +111,7 @@ static int SwitchSequenceLength;
 // static READBACK<int> * DscReadback = NULL;
 
 
-typedef double REAL;     // Put off float vs double decision!
-typedef std::complex<REAL> complex;
 typedef complex COMPENSATION_MATRIX[CHANNEL_COUNT];
-
-#define I (complex(0, 1.0))
 
 
 
@@ -223,7 +221,9 @@ public:
         
         cotan_if(1.0/tan(f_if)),
         cosec_if(1.0/sin(f_if)),
-        m_cis_if(exp(-I*f_if))
+        m_cis_if(exp(-I*f_if)),
+        IqData(SAMPLE_SIZE, true),
+        IqDigestWaveform(MAX_SWITCH_SEQUENCE * BUTTON_COUNT)
     {
         /* Establish defaults for configuration variables before reading
          * their currently configured values. */
@@ -252,13 +252,16 @@ public:
         Publish_ai("SC:PHASEB", PhaseB);
         Publish_ai("SC:PHASEC", PhaseC);
         Publish_ai("SC:PHASED", PhaseD);
+        
+        IqData.Publish("SC");
+        Publish_waveform("SC:IQDIGEST", IqDigestWaveform);
 
         for (int c = 0; c < CHANNEL_COUNT; c ++)
         {
             char Channel[10];
             sprintf(Channel, "SC:C%d", c + 1);
             Publish_ai(Concat(Channel, "PHASE"), ChannelPhase[c]);
-            Publish_ai(Concat(Channel, "MAGL"),  ChannelLogMag[c]);
+            Publish_ai(Concat(Channel, "MAG"),   ChannelMag[c]);
             Publish_longin(Concat(Channel, "RAW0"), PhaseArray[c][0]);
             Publish_longin(Concat(Channel, "RAW1"), PhaseArray[c][1]);
         }
@@ -448,9 +451,9 @@ private:
             Samples += SWITCH_PERIOD - SWITCH_HOLDOFF;
             /* Work through each of the switch positions, pushing both the
              * switch index and the marker. */
-            for (int ix = 0; ix < SwitchSequenceLength;
-                 ix ++, Marker += SWITCH_PERIOD)
+            for (int ix = 0; ix < SwitchSequenceLength; ix ++)
             {
+                const int Start = Marker + ix * SWITCH_PERIOD;
                 /* Skip the first few points after the switch transition, as
                  * the data in this part is a bit rough. */
                 for (int i = SWITCH_HOLDOFF; i < SWITCH_PERIOD; i ++)
@@ -463,7 +466,7 @@ private:
                           * to 16 bits of precision, and subsequent
                           * turn-by-turn filtering adds perhaps 8 more.  We
                           * can therefore prescale by 8 without penalty. */
-                        int Value = Data[Marker + i][b] >> PRESCALE;
+                        int Value = Data[Start + i][b] >> PRESCALE;
                         Totals[ix][b] += Value;
                         Squares[ix][b] += (long long int) Value * Value;
                     }
@@ -516,7 +519,7 @@ private:
         for (int c = 0; c < CHANNEL_COUNT; c ++)
         {
             ChannelPhase[c]  = aiPhase(Channels[c]);
-            ChannelLogMag[c] = aiValue(20. * log10(abs(Channels[c])));
+            ChannelMag[c] = aiValue(abs(Channels[c]));
         }
     }
 
@@ -660,12 +663,12 @@ private:
      * compensation matrix. */
     SC_STATE ProcessSignalConditioning()
     {
-        LIBERA_ROW Waveform[SAMPLE_SIZE];
+        LIBERA_ROW * Waveform = (LIBERA_ROW *) IqData.Waveform();
         if (!ReadWaveform(Waveform, SAMPLE_SIZE))
             return SC_NO_DATA;
 
         /* Capture one waveform and extract the raw switch/button matrix. */
-        IQ_DIGEST IqDigest;
+        IQ_DIGEST & IqDigest = * (IQ_DIGEST *) IqDigestWaveform.Array();
         if (!DigestWaveform(Waveform, IqDigest))
             return SC_NO_SWITCH;
 
@@ -744,11 +747,16 @@ private:
     int MaximumDeviationThreshold;
     int Deviation;
 
+    /* Raw IQ waveform as read. */
+    IQ_WAVEFORMS IqData;
+    /* Digested IQ data. */
+    COMPLEX_WAVEFORM IqDigestWaveform;
+
     /* Button phases, all relative to button A. */
     int PhaseB, PhaseC, PhaseD;
     /* Channel readings. */
     int ChannelPhase[CHANNEL_COUNT];
-    int ChannelLogMag[CHANNEL_COUNT];
+    int ChannelMag[CHANNEL_COUNT];
     int ChannelScale;
     /* Actual phase compensation array as written. */
     PHASE_ARRAY PhaseArray;
@@ -831,6 +839,8 @@ bool WriteDscAttenuation(int Attenuation)
 {
     return ConditioningThread->SetAttenuation(Attenuation);
 }
+
+
 
 
 

@@ -50,7 +50,8 @@
 #define CSPI_(command, args...) \
     ( { int error = (command)(args); \
         if (error != CSPI_OK) \
-            printf("CSPI error in %s: %s\n", #command, cspi_strerror(error)); \
+            printf("CSPI error in %s (%s, %d): %s\n", \
+                #command, __FILE__, __LINE__, cspi_strerror(error)); \
         error == CSPI_OK; } )
 
 #if 0

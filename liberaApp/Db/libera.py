@@ -504,13 +504,15 @@ def Conditioning():
                 aIn('C%sPHASE' % channel, -180, 180,
                     PREC = 3, EGU  = 'deg',
                     DESC = 'Channel %s phase shift' % channel),
-                aIn('C%sMAGL' % channel, 0, 2,
-                    PREC = 4, EGU  = 'dB',
+                aIn('C%sMAG' % channel, 1, 1.5,
+                    PREC = 5, 
                     DESC = 'Channel %s gain' % channel),
                 longIn('C%sRAW0' % channel, -2**17, 2**17,
                     DESC = 'Raw channel %s direct gain' % channel),
                 longIn('C%sRAW1' % channel, -2**17, 2**17,
                     DESC = 'Raw channel %s delayed gain' % channel),
+        ] + IQ_wf(2048) + [
+            Waveform('IQDIGEST', 8*4*2, FTVL = 'DOUBLE')
         ])
     
     UnsetChannelName()

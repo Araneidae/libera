@@ -540,7 +540,7 @@ bool run_find_phase(unsigned long long *mctime, int *dac)
  *
  *                F(z)            a A
  *      PHI = ------------ = ------------  (writing a = alpha)
- *            1 + F(z)G(z)   (1-z)A + a B
+ *            1 + F(z)G(z)   (z-1)A + a B
  *
  * There are several goals to meet when designing the control filter:
  * 
@@ -550,7 +550,7 @@ bool run_find_phase(unsigned long long *mctime, int *dac)
  *  2. the system PHI must be stable.  This corresponds to requiring that all
  *     of the roots of the polynomial
  *    
- *      R(z) = (1-z) A(z) + a B(z)
+ *      R(z) = (z-1) A(z) + a B(z)
  *
  *     lie within the unit circle |z| < 1.
  *
