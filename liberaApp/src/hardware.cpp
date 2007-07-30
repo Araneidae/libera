@@ -39,12 +39,15 @@
 #include <linux/unistd.h>
 #include <sys/mman.h>
 
+/* If RAW_REGISTER is defined then raw register access through /dev/mem will
+ * be enabled. */
+#define RAW_REGISTER
 #include "hardware.h"
 
 
-/* If RAW_REGISTER is defined then raw register access through /dev/mem will
- * be enabled. */
-//#define RAW_REGISTER
+
+/* This register records the maximum ADC reading since it was last read. */
+#define REGISTER_MAX_ADC    0x14008004
 
 
 #define CSPI_(command, args...) \
@@ -306,6 +309,17 @@ bool ReadSlowAcquisition(ABCD_ROW &ButtonData, XYQS_ROW &PositionData)
     else
         return false;
 }
+
+
+int ReadMaxAdc()
+{
+    unsigned int MaxAdc;
+    if (ReadRawRegister(REGISTER_MAX_ADC, MaxAdc))
+        return MaxAdc << AdcExcessBits;
+    else
+        return 0;
+}
+
 
 
 bool ConfigureEventCallback(

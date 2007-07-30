@@ -144,17 +144,9 @@ def Trigger(MC, positions, TRIG='TRIG', DONE='DONE'):
 
 def dB(db):
     return 10.**(db/20.)
-    
 
-# First turn snapshot records.  Access to position data immediately following
-# the trigger for use on transfer paths and during injection.
-def FirstTurn():
-    LONG_LENGTH = 1024
-    SHORT_LENGTH = LONG_LENGTH // 4
 
-    SetChannelName('FT')
-    Enable()
-
+def MaxAdc():
     maxadc = longIn('MAXADC', 0, MAX_ADC,
         DESC = 'Maximum ADC reading',
         HSV  = 'MINOR',  HIGH = int(MAX_ADC / dB(3)),    # 70.8 %
@@ -166,7 +158,19 @@ def FirstTurn():
         INPB = MAX_ADC / 100.,
         LOPR = 0,   HOPR = 100,
         PREC = 1,   EGU  = '%')
+    return maxadc, maxadc_pc
+    
 
+# First turn snapshot records.  Access to position data immediately following
+# the trigger for use on transfer paths and during injection.
+def FirstTurn():
+    LONG_LENGTH = 1024
+    SHORT_LENGTH = LONG_LENGTH // 4
+
+    SetChannelName('FT')
+    Enable()
+
+    maxadc, maxadc_pc = MaxAdc()
     charge = aIn('CHARGE', 0, 2000, 1e-6, 'nC', 2,
         DESC = 'Charge of bunch train')
 
@@ -308,7 +312,8 @@ def SlowAcquisition():
         DESC = 'Absolute input power')
     current = aIn('CURRENT', 0, 500, 1e-5, 'mA', 3,
         DESC = 'SA input current')
-    Trigger(False, ABCD_() + XYQS_(4) + [power, current])
+    maxadc, maxadc_pc = MaxAdc()
+    Trigger(False, ABCD_() + XYQS_(4) + [power, current, maxadc, maxadc_pc])
     UnsetChannelName()
 
 
@@ -368,8 +373,7 @@ def Config():
         ('Fixed gains', 0),     # Use last good DSC settings
         ('Unity gains', 1),     # Disable DSC, use fixed gains
         ('Automatic', 2),       # Run DSC
-        DESC = 'Digitial Signal Conditioning')
-    boolOut('WRITEDSC', 'Save DSC', DESC = 'Write DSC state file')
+        DESC = 'Digital Signal Conditioning')
     
     # Control attenuation
     longOut('ATTEN', 0, 62, EGU = 'dB', DESC = 'Attenuator setting')
@@ -512,7 +516,10 @@ def Conditioning():
                 longIn('C%sRAW1' % channel, -2**17, 2**17,
                     DESC = 'Raw channel %s delayed gain' % channel),
         ] + IQ_wf(2048) + [
-            Waveform('IQDIGEST', 8*4*2, FTVL = 'DOUBLE')
+            Waveform('IQDIGEST', 8*4*2, FTVL = 'DOUBLE',
+                DESC = 'Raw digest of IQ data'),
+            Waveform('LASTCK', 8, FTVL = 'LONG',
+                DESC = 'Last channel gains')
         ])
     
     UnsetChannelName()

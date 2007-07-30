@@ -27,29 +27,31 @@
  */
 
 
-/* Select either a specific switch or rotating switches. */
-bool WriteSwitchState(CSPI_SWITCHMODE Switches);
+/* Select either a specific switch or rotating switches.  If AutoSwitch is
+ * True then the ManualSwitch argument is ignored. */
+bool WriteSwitchState(bool AutoSwitch, int ManualSwitch);
 
-/* Select signal conditioning mode: one of
- *  SC_MODE_FIXED   use current signal conditioning setting
- *  SC_MODE_UNITY   don't correct signal: pass through unchanged
- *  SC_MODE_AUTO    automatic signal conditioning. */
+/* Select signal conditioning mode. */
 enum SC_MODE {
-    SC_MODE_FIXED,
-    SC_MODE_UNITY,
-    SC_MODE_AUTO
+    SC_MODE_FIXED,  // Use current signal conditioning setting
+    SC_MODE_UNITY,  // Don't correct signal: pass through unchanged
+    SC_MODE_AUTO    // Automatic signal conditioning. 
 };
-bool WriteDscMode(CSPI_DSCMODE DscMode);
+void WriteScMode(SC_MODE ScMode);
 
-/* Selects the attenuation and updates the signal conditioning state
- * accordingly. */
-bool WriteDscAttenuation(int Attenuation);
+/* Writes the attenuation with appropriate interlocking with signal
+ * conditioning.  In particular, if signal conditioning is operational then
+ * the conditioning filter will be reset as the attenuation is written. */
+bool ScWriteAttenuation(int Attenuation);
 
 
-/* A permutation is a mapping from channel to button. */
+/* A permutation is a mapping from channel to button: to be precise, if p is
+ * the current permutation then button b (0..3 corresponding to A..D) was
+ * processed by ADC channel p[b]. */
 typedef unsigned int PERMUTATION[4];
 /* Returns the button permutation sequence associated with the current
- * statically set switch position. */
+ * statically set switch position.  If automatic switches are currently
+ * selected then the value returned is not meaningful. */
 const PERMUTATION & SwitchPermutation();
 
 

@@ -36,9 +36,7 @@ set -e
 INSTALL_FILES='
     CONFIG
     epics
-    gain.conf
     locations
-    offsets.conf
     libera-install-fpga
     libera-install-ioc'
 

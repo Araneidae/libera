@@ -68,9 +68,9 @@ static bool ExternalSwitchTrigger = false;
 /* Selects the delay from external trigger for the switches. */
 static int SwitchTriggerDelay = 0;
 
-/* Controls the Digital Signal Conditioning daemon state. */
-static int DscState = 0;
-static READBACK<int> * DscReadback = NULL;
+/* Controls the Signal Conditioning process state. */
+static int ScState = SC_MODE_FIXED;
+static READBACK<int> * ScReadback = NULL;
 
 /* Selected attenuation.  The default is quite high for safety. */
 static int CurrentAttenuation = 60;
@@ -94,7 +94,33 @@ static int CurrentScale = 100000000;
 /****************************************************************************/
 
 
-static void UpdateDsc(int NewDscState);
+/* Forward declaration: CF:DSC and CF:AUTOSW affect each other directly. */
+static void UpdateSc(int NewScState);
+
+
+static void UpdateAutoSwitch(bool NewSwitchState)
+{
+    AutoSwitchState = NewSwitchState;
+    SwitchReadback->Write(AutoSwitchState);
+    
+    if (!AutoSwitchState  &&  ScState == SC_MODE_AUTO)
+        /* The switches cannot be switched away from automatic mode without
+         * first turning signal conditioning off. */
+        UpdateSc(SC_MODE_FIXED);
+    
+    WriteSwitchState(AutoSwitchState, ManualSwitch);
+}
+
+
+static void UpdateSc(int NewScState)
+{
+    ScState = NewScState;
+    ScReadback->Write(ScState);
+    
+    if (ScState == SC_MODE_AUTO)
+        UpdateAutoSwitch(true);
+    WriteScMode((SC_MODE) ScState);
+}
 
 
 /* Called whenever the autoswitch mode has changed. */
@@ -103,25 +129,8 @@ static void UpdateManualSwitch()
 {
     /* Only update the switches if they're in manual mode. */
     if (!AutoSwitchState)
-        WriteSwitchState((CSPI_SWITCHMODE) ManualSwitch);
+        WriteSwitchState(false, ManualSwitch);
 }
-
-
-static void UpdateAutoSwitch(bool NewSwitchState)
-{
-    AutoSwitchState = NewSwitchState;
-    SwitchReadback->Write(AutoSwitchState);
-    
-    if (AutoSwitchState)
-        WriteSwitchState(CSPI_SWITCH_AUTO);
-    else
-    {
-        if (DscState == CSPI_DSC_AUTO)
-            UpdateDsc(CSPI_DSC_OFF);
-        UpdateManualSwitch();
-    }
-}
-
 
 
 static void UpdateSwitchTrigger()
@@ -135,22 +144,6 @@ static void UpdateSwitchTriggerDelay()
 }
 
 
-static void UpdateDsc(int NewDscState)
-{
-    DscState = NewDscState;
-    DscReadback->Write(DscState);
-    
-    if (DscState == CSPI_DSC_AUTO)
-        UpdateAutoSwitch(true);
-    WriteDscMode((CSPI_DSCMODE) DscState);
-}
-
-
-static void WriteDscStateFile()
-{
-    WriteDscMode(CSPI_DSC_SAVE_LASTGOOD);
-}
-
 
 
 /****************************************************************************/
@@ -159,19 +152,7 @@ static void WriteDscStateFile()
 /*                                                                          */
 /****************************************************************************/
 
-
-
 /* Attenuator configuration management. */
-
-
-#define MAX_ATTENUATION  62
-#define OFFSET_CONF_FILE "/opt/dsc/offsets.conf"
-
-
-/* The attenuator value reported by ReadCachedAttenuation() is not strictly
- * accurate, due to minor offsets on attenuator values.  Here we attempt to
- * compensate for these offsets by reading an offset configuration file. */
-static int AttenuatorOffset[MAX_ATTENUATION + 1];
 
 
 /* This contains a precalculation of K_S * 10^((A-A_0)/20) to ensure that the
@@ -182,39 +163,12 @@ static PMFP ScaledCurrentFactor;
 static PMFP AttenuatorScalingFactor;
 
 
-static bool ReadAttenuatorOffsets()
-{
-    FILE * OffsetFile = fopen(OFFSET_CONF_FILE, "r");
-    if (OffsetFile == NULL)
-    {
-        printf("Unable to open file " OFFSET_CONF_FILE "\n");
-        return false;
-    }
-    else
-    {
-        bool Ok = true;
-        for (int i = 0; Ok  &&  i <= MAX_ATTENUATION; i ++)
-        {
-            double Offset;
-            Ok = fscanf(OffsetFile, "%lf", &Offset) == 1;
-            if (Ok)
-                AttenuatorOffset[i] = (int) (DB_SCALE * Offset);
-            else
-                printf("Error reading file " OFFSET_CONF_FILE "\n");
-        }
-        fclose(OffsetFile);
-        return Ok;
-    }
-}
 
-
-/* Returns the current cached attenuator setting, after correcting for
- * attenuator offset. */
+/* Returns the current cached attenuator setting. */
 
 int ReadCorrectedAttenuation()
 {
-    return CurrentAttenuation * DB_SCALE +
-        AttenuatorOffset[CurrentAttenuation];
+    return CurrentAttenuation * DB_SCALE;
 }
 
 
@@ -229,7 +183,7 @@ static void UpdateCurrentScale()
 void UpdateAttenuation(int NewAttenuation)
 {
     CurrentAttenuation = NewAttenuation;
-    WriteDscAttenuation(CurrentAttenuation);
+    ScWriteAttenuation(CurrentAttenuation);
     /* Update the scaling factors. */
     AttenuatorScalingFactor = PMFP(from_dB, ReadCorrectedAttenuation() - A_0);
     UpdateCurrentScale();
@@ -261,14 +215,10 @@ void SetBpmEnabled()
 
 bool InitialiseConfigure()
 {
-    if (!ReadAttenuatorOffsets())
-        return false;
-
     /* Master enable flag.  Disabling this has little practical effect on BPM
      * outputs (apart from disabling interlock), but is available as a global
      * PV for BPM management. */
     PUBLISH_CONFIGURATION(bo, "CF:ENABLED", BpmEnabled, SetBpmEnabled);
-        
 
     SwitchReadback = PUBLISH_READBACK_CONFIGURATION(bi, bo, "CF:AUTOSW",
         AutoSwitchState, UpdateAutoSwitch);
@@ -278,10 +228,9 @@ bool InitialiseConfigure()
         ExternalSwitchTrigger, UpdateSwitchTrigger);
     PUBLISH_CONFIGURATION(longout, "CF:DELAYSW", 
         SwitchTriggerDelay, UpdateSwitchTriggerDelay);
-    DscReadback = PUBLISH_READBACK_CONFIGURATION(mbbi, mbbo, "CF:DSC",
-        DscState, UpdateDsc);
+    ScReadback = PUBLISH_READBACK_CONFIGURATION(mbbi, mbbo, "CF:DSC",
+        ScState, UpdateSc);
     PUBLISH_CONFIGURATION(ao, "CF:ISCALE", CurrentScale, UpdateCurrentScale);
-    PUBLISH_ACTION("CF:WRITEDSC", WriteDscStateFile);
 
     /* Note that updating the attenuators is done via the
      * InterlockedUpdateAttenuation() routine: this will not actually update
@@ -294,7 +243,7 @@ bool InitialiseConfigure()
      * needs initialising. */
     InterlockedUpdateAttenuation(CurrentAttenuation);
     UpdateAutoSwitch(AutoSwitchState);
-    UpdateDsc(DscState);
+    UpdateSc(ScState);
     UpdateSwitchTrigger();
     UpdateSwitchTriggerDelay();
 

@@ -133,6 +133,9 @@ bool ReadAdcWaveform(ADC_DATA &Data);
 /* Reads a slow acquisition update. */
 bool ReadSlowAcquisition(ABCD_ROW &ButtonData, XYQS_ROW &PositionData);
 
+/* Reads (and resets) the maximum ADC reading.  (If the register cannot be
+ * read then zero is returned.) */
+int ReadMaxAdc();
 
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */

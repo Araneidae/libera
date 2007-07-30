@@ -34,8 +34,7 @@ template<class T>
 class SIMPLE_WAVEFORM : public I_WAVEFORM
 {
 public:
-    SIMPLE_WAVEFORM(
-        int TypeMark, size_t EpicsPointSize, size_t WaveformSize);
+    SIMPLE_WAVEFORM(int TypeMark, size_t EpicsPointSize, size_t WaveformSize);
 
     inline T * Array() { return Waveform; }
 

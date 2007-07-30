@@ -49,6 +49,7 @@
 #include "conditioning.h"
 
 
+
 /* There are two standard switch sequences that we use: an 8 round sequence
  * for Libera Electron, and a 4 round sequence for Libera Brilliance. */
 static const char ElectronSwitchSequence[8]   = { 3, 7, 15, 11, 0, 4, 12, 8 };
@@ -82,12 +83,8 @@ static const PERMUTATION PermutationLookup[] =
 #define CHANNEL_COUNT   4
 
 
-/* Control configuration. */
 
-/* Controls the rotating switches: manual or automatic mode. */
-static bool AutoSwitchState = false;
-// /* Selects which switch setting to use in manual mode. */
-static int ManualSwitch = 3;
+
 /* This is the currently programmed sequence of switches. */
 static const char * SwitchSequence;
 static int SwitchSequenceLength;
@@ -100,15 +97,8 @@ static int SwitchSequenceLength;
 /*                                                                           */
 /*****************************************************************************/
 
-
-// /* Selects internal or external triggering for the rotating switches. */
-// static bool ExternalSwitchTrigger = false;
-// /* Selects the delay from external trigger for the switches. */
-// static int SwitchTriggerDelay = 0;
-// 
-// /* Controls the Digital Signal Conditioning daemon state. */
-// static int DscState = 0;
-// static READBACK<int> * DscReadback = NULL;
+/* The following routines are all part of the COMPENSATION thread below, but
+ * don't need to be declared as methods of the thread class. */
 
 
 typedef complex COMPENSATION_MATRIX[CHANNEL_COUNT];
@@ -162,7 +152,7 @@ static int aiPhase(const complex x, int BaseAngle=0)
  * matrices.  There is an aspiration to do crosstalk correction here, but the
  * obstacles are considerable. */
 
-static void InitialiseDemuxArray()
+static void NormalDemuxArray()
 {
     for (int sw = 0; sw < SWITCH_COUNT; sw ++)
     {
@@ -177,6 +167,20 @@ static void InitialiseDemuxArray()
             Demux[b][p[b]] = 1 << 17;
         WriteDemuxArray(sw, Demux);
     }
+}
+
+
+/* For testing the demultiplexing array can be disabled.  This is done by
+ * writing an identity matrix into all of the switch positions. */
+
+static void TrivialDemuxArray()
+{
+    DEMUX_ARRAY Demux;
+    memset(Demux, 0, sizeof(DEMUX_ARRAY));
+    for (int b = 0; b < BUTTON_COUNT; b ++)
+        Demux[b][b] = 1 << 17;
+    for (int sw = 0; sw < SWITCH_COUNT; sw ++)
+        WriteDemuxArray(sw, Demux);
 }
 
 
@@ -223,13 +227,19 @@ public:
         cosec_if(1.0/sin(f_if)),
         m_cis_if(exp(-I*f_if)),
         IqData(SAMPLE_SIZE, true),
-        IqDigestWaveform(MAX_SWITCH_SEQUENCE * BUTTON_COUNT)
+        IqDigestWaveform(MAX_SWITCH_SEQUENCE * BUTTON_COUNT),
+        OldPhaseArray(8)
     {
         /* Establish defaults for configuration variables before reading
          * their currently configured values. */
         MaximumDeviationThreshold = aiValue(2.);    // Default = 2%
         ChannelIIRFactor = aiValue(0.1);
         ConditioningInterval = 1000;                // 1 s
+
+        /* Initialise state. */
+        ConditioningStatus = SC_OFF;
+        /* Ensure we start with fresh channel values on startup! */
+        ResetChannelIIR = true;
 
         Persistent("SC:MAXDEV",   MaximumDeviationThreshold);
         Persistent("SC:CIIR",     ChannelIIRFactor);
@@ -241,102 +251,145 @@ public:
         Publish_ao("SC:CIIR",     ChannelIIRFactor);
         Publish_ao("SC:INTERVAL", ConditioningInterval);
 
-        /* Initialise state. */
-        ConditioningStatus = SC_OFF;
-        /* Ensure we start with fresh channel values on startup! */
-        ResetChannelIIR = true;
-
-        /* Publish PVs. */
+        /* General conditioning status PV.  The alarm state of this can
+         * usefully be integrated into the overall system health. */
         Publish_mbbi("SC:STATUS", ConditioningStatus);
+        /* More detailed PVs for information about the state of conditioning.
+         *  DEV     Relative standard deviation of last set of readings
+         *  PHASEB,C,D  Relative phases of inputs on the four buttons (all
+         *          relative to the phase of button A. */
         Publish_ai("SC:DEV", Deviation);
         Publish_ai("SC:PHASEB", PhaseB);
         Publish_ai("SC:PHASEC", PhaseC);
         Publish_ai("SC:PHASED", PhaseD);
-        
+
+        /* The raw IQ waveform used for SC processing is made available, as
+         * are some of the intermediate stages of processing. */
         IqData.Publish("SC");
         Publish_waveform("SC:IQDIGEST", IqDigestWaveform);
+        Publish_waveform("SC:LASTCK", OldPhaseArray);
 
         for (int c = 0; c < CHANNEL_COUNT; c ++)
         {
             char Channel[10];
             sprintf(Channel, "SC:C%d", c + 1);
+            /* For each ADC channel we publish the measured phase and
+             * magnitude together with the corresponding raw FIR coefficients
+             * used for channel compensation. */
             Publish_ai(Concat(Channel, "PHASE"), ChannelPhase[c]);
             Publish_ai(Concat(Channel, "MAG"),   ChannelMag[c]);
-            Publish_longin(Concat(Channel, "RAW0"), PhaseArray[c][0]);
-            Publish_longin(Concat(Channel, "RAW1"), PhaseArray[c][1]);
+            Publish_longin(Concat(Channel, "RAW0"), CurrentPhaseArray[c][0]);
+            Publish_longin(Concat(Channel, "RAW1"), CurrentPhaseArray[c][1]);
         }
+        /* The channel scale is a fudge factor used to ensure that observed
+         * positions don't change too much when switching between no signal
+         * compensation and full compensation. */
         Publish_ai("SC:CSCALE", ChannelScale);
 
         Interlock.Publish("SC");
     }
 
-    /* This controls whether signal conditioning is operational. */
-    void EnableConditioning(bool SetEnabled)
-    {
-        Enabled = SetEnabled;
-    }
 
-    /* Changing attenuation is synchronised with condition processing. */
-    bool SetAttenuation(int NewAttenuation)
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+    /*                      Externally Published Methods                     */
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+    /* For laziness we use one large lock for everything.  All SC processing
+     * is done inside the lock, and any related changes to the FPGA
+     * (attenuators, switches or matrices) must also be done inside the lock:
+     * in particular, CommitDscState() must only be called inside the lock.
+     *     Note that holding a lock for a long time is generally very bad
+     * practice, and the best way to handle this would be to convert these
+     * methods into commands to the thread which are processed in a single
+     * place: then locking would only be required to add commands to the
+     * queue.
+     *     However, in this case we really don't care! */
+    
+
+    bool LockedWriteSwitches(const SWITCH_SEQUENCE Switches, size_t Length)
     {
         Lock();
-        bool Ok = WriteAttenuation(NewAttenuation)  &&  CommitDscState();
-        ResetChannelIIR = true;
+        bool Ok =
+            WriteSwitchSequence(Switches, Length)  &&
+            CommitDscState();
+        Unlock();
+        return Ok;
+    }
+
+    void WriteScMode(SC_MODE ScMode)
+    {
+        Lock();
+        switch (ScMode)
+        {
+            case SC_MODE_AUTO:
+                /* If we've just enabled auto mode then trigger a round of
+                 * processing immediately. */
+                if (!Enabled)
+                    Signal();
+                Enabled = true;
+                break;
+                
+            case SC_MODE_UNITY:
+                /* Special processing for switching into UNITY mode: in this
+                 * case we revert the compensation matrices.  Ensure we start
+                 * from scratch when reenabling. */
+                ResetChannelIIR = true;
+                SetUnityCompensation();
+                CommitDscState();
+                
+                Enabled = false;
+                break;
+
+            case SC_MODE_FIXED:
+                /* Use the last good compensation matrix in this mode. */
+                WritePhaseCompensation(LastGoodCompensation);
+                CommitDscState();
+                
+                Enabled = false;
+                break;
+        }
+        Unlock();
+    }
+
+
+    /* Changing attenuation is synchronised with condition processing.  We
+     * trigger an immediate round of processing. */
+    bool ScWriteAttenuation(int NewAttenuation)
+    {
+        Lock();
+        bool Ok =
+            WriteAttenuation(NewAttenuation)  &&
+            CommitDscState();
+        if (Ok)
+        {
+            ResetChannelIIR = true;
+            Signal();
+        }
         Unlock();
         return Ok;
     }
     
     
-    
-    void SetUnityCompensation()
-    {
-        COMPENSATION_MATRIX Compensation;
-        for (int c = 0; c < CHANNEL_COUNT; c ++)
-            Compensation[c] = 1.0;
-        WritePhaseCompensation(Compensation);
-    }
-
-
 private:
-
-    bool WritePhaseCompensation(const COMPENSATION_MATRIX& Compensation)
-    {
-        PHASE_ARRAY NewPhaseArray;
-        COMPENSATION_MATRIX NewActual;
-        bool Ok = true;
-        for (int c = 0; Ok  &&  c < CHANNEL_COUNT; c ++)
-            Ok = ComplexToTwoPole(
-                Compensation[c], NewPhaseArray[c], NewActual[c]);
-
-        /* Only actually write the phase compensation if there was no
-         * overflow in the conversion. */
-        if (Ok)
-        {
-            for (int sw = 0; sw < SWITCH_COUNT; sw ++)
-                WritePhaseArray(sw, NewPhaseArray);
-            memcpy(ActualCompensation, NewActual, sizeof(NewActual));
-            memcpy(PhaseArray, NewPhaseArray, sizeof(PHASE_ARRAY));
-        }
-        return Ok;
-    }
-
-
-    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-    /*                         Signal Processing Core                        */
-    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
 
     typedef complex IQ_DIGEST[MAX_SWITCH_SEQUENCE][BUTTON_COUNT];
 
+    /* Conditioning state as reported through SC:STATUS. */
     enum SC_STATE
     {
-        SC_OFF,
-        SC_NO_DATA,
-        SC_NO_SWITCH,
-        SC_VARIANCE,
-        SC_OVERFLOW,
-        SC_OK
+        SC_OFF,         // SC currently disabled
+        SC_NO_DATA,     // Unable to read IQ data: serious problem
+        SC_NO_SWITCH,   // No switch marker seen: switches not running?
+        SC_VARIANCE,    // Variance in data too large to process
+        SC_OVERFLOW,    // Channel compensations too large to write
+        SC_OK           // SC working normally
     };
+
+    
+
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+    /*                       Phase Compensation Matrices                     */
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
     /* This routine computes the appropriate form of phase and magnitude
      * compensation term to be written to the FPGA.  Internally each
@@ -372,29 +425,80 @@ private:
      *      a  = - ----- = - y csc w
      *       1     sin w
      *
-     * After this calculation we recompute the associated complex value so
-     * that we can take digitisation errors into account. */
-    bool ComplexToTwoPole(const complex xy, PHASE_ENTRY &F, complex &actual)
+     * This calculation is then check for digitisation errors to avoid
+     * writing an invalid value into the FPGA. */
+    bool ComplexToTwoPole(const complex xy, PHASE_ENTRY &F)
     {
         F[0] = (int) round(PHASE_UNITY * (real(xy) + imag(xy) * cotan_if));
         F[1] = (int) round(PHASE_UNITY * (- imag(xy) * cosec_if));
 
-        /* Now compute what's actually been written taking into account the
-         * limited 18 bit precision. */
+        /* Now check that we've actually written what we meant to: has there
+         * been any overflow? */
         int shift = 32 - 18;    // 32 bit word, 18 significant bits (+ sign)
         int F0 = (F[0] << shift) >> shift;
         int F1 = (F[1] << shift) >> shift;
-        actual = ((REAL) F0 + m_cis_if * (REAL) F1) / (REAL) PHASE_UNITY;
-
-        /* Overflow detection. */
         bool Ok = F0 == F[0]  &&  F1 == F[1];
         if (!Ok)
-            printf("Overflow converting %f + %f i to [%d, %d]\n",
+            printf("Integer overflow converting %f + %f i to [%d, %d]\n",
                 real(xy), imag(xy), F[0], F[1]);
         return Ok;
     }
+
+
+    /* Reverses the computation of ComplexToTwoPole above. */
+    complex TwoPoleToComplex(const PHASE_ENTRY &F)
+    {
+        return ((REAL) F[0] + m_cis_if * (REAL) F[1]) / (REAL) PHASE_UNITY;
+    }
+
+
+    /* Writes a new compensation matrix with full error checking.  Also
+     * ensures that the currently active compensation array is recorded so
+     * that we can take this into account when computing new values. */
+    bool WritePhaseCompensation(const COMPENSATION_MATRIX& Compensation)
+    {
+        PHASE_ARRAY NewPhaseArray;
+        bool Ok = true;
+        for (int c = 0; Ok  &&  c < CHANNEL_COUNT; c ++)
+            Ok = ComplexToTwoPole(Compensation[c], NewPhaseArray[c]);
+
+        /* Only actually write the phase compensation if there was no
+         * overflow in the conversion.  If so, keep track of what the current
+         * phase array actually is. */
+        if (Ok)
+        {
+            for (int sw = 0; sw < SWITCH_COUNT; sw ++)
+                WritePhaseArray(sw, NewPhaseArray);
+            memcpy(CurrentPhaseArray, NewPhaseArray, sizeof(PHASE_ARRAY));
+        }
+        return Ok;
+    }
+
+
+    /* Resets compensation to unity. */
+    void SetUnityCompensation()
+    {
+        COMPENSATION_MATRIX Compensation;
+        for (int c = 0; c < CHANNEL_COUNT; c ++)
+            Compensation[c] = 1.0;
+        WritePhaseCompensation(Compensation);
+    }
+
+
+    /* Returns the currently active compensation matrix as complex numbers. */
+    void GetActualCompensation(COMPENSATION_MATRIX &Compensation)
+    {
+        for (int c = 0; c < CHANNEL_COUNT; c ++)
+            Compensation[c] = TwoPoleToComplex(CurrentPhaseArray[c]);
+    }
+    
     
 
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+    /*                         Signal Processing Core                        */
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+    
     /* Signal conditioning reading needs to run concurrently with existing
      * data capture, so to avoid interference we need to open a separate
      * device handle. */
@@ -518,8 +622,8 @@ private:
     {
         for (int c = 0; c < CHANNEL_COUNT; c ++)
         {
-            ChannelPhase[c]  = aiPhase(Channels[c]);
-            ChannelMag[c] = aiValue(abs(Channels[c]));
+            ChannelPhase[c] = aiPhase(Channels[c]);
+            ChannelMag[c]   = aiValue(abs(Channels[c]));
         }
     }
 
@@ -549,7 +653,8 @@ private:
          *            ~~ X[b]
          *
          * This derivation relies on the necessary assumption that p[n,b]
-         * covers all channels c, and we have to assume mean(C) = 1. 
+         * covers all channels c, and we have to assume mean(C) = 1.  This
+         * last assumption is rather strong, in fact.
          *
          * It helps to first compute uncorrected channel outputs, let's write
          * them
@@ -571,6 +676,8 @@ private:
         complex SignalIn[BUTTON_COUNT];
         for (int b = 0; b < BUTTON_COUNT; b ++)
             SignalIn[b] = 0.0;
+        COMPENSATION_MATRIX ActualCompensation;
+        GetActualCompensation(ActualCompensation);
         for (int ix = 0; ix < SwitchSequenceLength; ix ++)
         {
             const PERMUTATION &p = PermutationLookup[(int)SwitchSequence[ix]];
@@ -632,7 +739,7 @@ private:
          *    However, there is a complication: after the data has been
          * reduced to turn-by-turn (as processed here) the phase information
          * is then taken away by taking magnitudes, and effectively the data
-         * is then averages over switches.  This means, in effect, that the
+         * is then averaged over switches.  This means, in effect, that the
          * FF and SA streams see
          * 
          *      X^[b] = mean_n(|C[p[n,b]] X[b]|)
@@ -663,6 +770,11 @@ private:
      * compensation matrix. */
     SC_STATE ProcessSignalConditioning()
     {
+        /* Grab a copy of the current data.  Also grab a copy of the current
+         * phase array for the sake of any outside observers: this means that
+         * the IQ data can be decoded according to the phase compensation in
+         * effect at the time it was captured. */
+        memcpy(OldPhaseArray.Array(), CurrentPhaseArray, sizeof(PHASE_ARRAY));
         LIBERA_ROW * Waveform = (LIBERA_ROW *) IqData.Waveform();
         if (!ReadWaveform(Waveform, SAMPLE_SIZE))
             return SC_NO_DATA;
@@ -680,12 +792,14 @@ private:
         /* Compute the new updated compensation matrix. */
         COMPENSATION_MATRIX NewCompensation;
         ProcessIqDigest(IqDigest, NewCompensation);
-        
         /* If writing into the FPGA overflows then bail out. */
         if (!WritePhaseCompensation(NewCompensation))
             return SC_OVERFLOW;
 
-        /* All done: a complete cycle. */
+        /* All done: a complete cycle.  Commit the FPGA state and remember
+         * the current compensation. */
+        memcpy(LastGoodCompensation, NewCompensation,
+            sizeof(COMPENSATION_MATRIX));
         CommitDscState();
         return SC_OK;
     }
@@ -693,7 +807,16 @@ private:
     
     void Thread()
     {
+        Lock();
+        /* Configure the demultiplexing array so that channels are
+         * demultiplexed to their corresponding buttons for each switch
+         * position. */
+        NormalDemuxArray();
         SetUnityCompensation();
+        for (int c = 0; c < CHANNEL_COUNT; c ++)
+            LastGoodCompensation[c] = 1.0;
+        CommitDscState();
+        Unlock();
         
         if (!TEST_IO(DevDd, "Unable to open /dev/libera.dd for conditioning",
                 open, "/dev/libera.dd", O_RDONLY))
@@ -703,7 +826,6 @@ private:
 
         while(Running())
         {
-//            sleep(1);
             Lock();
             WaitFor(ConditioningInterval);
             Unlock();
@@ -734,6 +856,7 @@ private:
     const REAL cosec_if;    // cosecant of IF
     const complex m_cis_if; // -exp(i * IF)
 
+    /* Device handle used to read raw IQ waveforms. */
     int DevDd;
 
     /* This flag controls whether signal conditioning is operational. */
@@ -742,41 +865,48 @@ private:
      * rounds. */
     int ConditioningInterval;
 
-    /* Variables exposed through epics. */
+    /* Reports status of the conditioning thread to EPICS. */
     int ConditioningStatus;
+    /* Configures the maxium allowable signal deviation for SC processing. */
     int MaximumDeviationThreshold;
+    /* Reports the signal deviation for the last waveform as read. */
     int Deviation;
 
     /* Raw IQ waveform as read. */
     IQ_WAVEFORMS IqData;
-    /* Digested IQ data. */
+    /* Digested IQ data: published to EPICS for diagnostics and research. */
     COMPLEX_WAVEFORM IqDigestWaveform;
 
     /* Button phases, all relative to button A. */
     int PhaseB, PhaseC, PhaseD;
-    /* Channel readings. */
+    /* Channel scalings as computed in phase, magnitude and overall scaling. */
     int ChannelPhase[CHANNEL_COUNT];
     int ChannelMag[CHANNEL_COUNT];
     int ChannelScale;
-    /* Actual phase compensation array as written. */
-    PHASE_ARRAY PhaseArray;
-
+    
+    /* Set to reset the channel IIR: reset on initialisation, when entering
+     * UNITY mode and when changing attenuation. */
     bool ResetChannelIIR;
+    /* Current IIR factor: 1 means no history (IIR ineffected), smaller
+     * values mean longer time constants. */
     int ChannelIIRFactor;
 
     INTERLOCK Interlock;
 
-    /* This is the compensation matrix as actually written to the FPGA: we
-     * need this in order to accurately reverse its effects! */
-    COMPENSATION_MATRIX ActualCompensation;
-
     /* This is the array of channel gains as measured. */
     COMPENSATION_MATRIX CurrentChannels;
+    /* This is the last good computed compensation matrix (or an identity
+     * matrix on startup). */
+    COMPENSATION_MATRIX LastGoodCompensation;
+    /* Currently written phase compensation array as actually written to the
+     * FPGA.  This is then reversed to compute the associated compensation
+     * matrix when processing the signal. */
+    PHASE_ARRAY CurrentPhaseArray;
+    /* Phase compensation array used when reading current waveform: published
+     * to EPICS for diagnostics and research. */
+    INT_WAVEFORM OldPhaseArray;
 };
 
-
-
-static CONDITIONING * ConditioningThread = NULL;
 
 
 
@@ -788,44 +918,37 @@ static CONDITIONING * ConditioningThread = NULL;
 /*****************************************************************************/
 
 
+static CONDITIONING * ConditioningThread = NULL;
 
 
+/* We remember the currently selected manual switch so that we can return the
+ * appropriate permutation array. */
+static int ManualSwitch = 3;
 
-bool WriteDscMode(CSPI_DSCMODE DscMode)
+
+bool WriteSwitchState(bool AutoSwitch, int NewManualSwitch)
 {
-    switch (DscMode)
+    if (AutoSwitch)
+        return ConditioningThread->LockedWriteSwitches(
+            SwitchSequence, SwitchSequenceLength);
+    else
     {
-        case CSPI_DSC_OFF:
-            ConditioningThread->EnableConditioning(false);
-            break;
-        case CSPI_DSC_AUTO:
-            ConditioningThread->EnableConditioning(true);
-            break;
-        case CSPI_DSC_UNITY:
-            ConditioningThread->EnableConditioning(false);
-            ConditioningThread->SetUnityCompensation();
-            CommitDscState();
-            break;
-        default:
-            printf("Unexpected DSC mode %d\n", DscMode);
-            break;
+        ManualSwitch = NewManualSwitch;
+        return ConditioningThread->LockedWriteSwitches(
+            (char *)&ManualSwitch, 1);
     }
-    return true;
 }
 
 
-bool WriteSwitchState(CSPI_SWITCHMODE Switches)
+void WriteScMode(SC_MODE ScMode)
 {
-    AutoSwitchState = Switches == CSPI_SWITCH_AUTO;
-    bool Ok;
-    if (AutoSwitchState)
-        Ok = WriteSwitchSequence(SwitchSequence, SwitchSequenceLength);
-    else
-    {
-        ManualSwitch = Switches;
-        Ok = WriteSwitchSequence((char *)&Switches, 1);
-    }
-    return Ok  &&  CommitDscState();
+    ConditioningThread->WriteScMode(ScMode);
+}
+
+
+bool ScWriteAttenuation(int Attenuation)
+{
+    return ConditioningThread->ScWriteAttenuation(Attenuation);
 }
 
 
@@ -835,18 +958,53 @@ const PERMUTATION & SwitchPermutation()
 }
 
 
-bool WriteDscAttenuation(int Attenuation)
+
+
+/*****************************************************************************/
+/*                                                                           */
+/*                        Initialisation (and debug)                         */
+/*                                                                           */
+/*****************************************************************************/
+
+
+/* Naughty very low level debugging stuff.  Run this at your peril!
+ * (Actually, the peril level is pretty low!) */
+
+static void SCdebug(const iocshArgBuf *args)
 {
-    return ConditioningThread->SetAttenuation(Attenuation);
+    char Line[1024];
+    while(
+        printf("SCdebug> "),
+        fgets(Line, sizeof(Line), stdin))
+    {
+        switch(Line[0])
+        {
+            case 't':
+                TrivialDemuxArray();
+                CommitDscState();
+                break;
+            case 'n':
+                NormalDemuxArray();
+                CommitDscState();
+                break;
+            case '?':
+                printf("Debugging code: read the source!\n"
+                       "<Ctrl-D> to exit\n");
+                break;
+            default:
+                printf("?\n");
+                break;
+        }
+    }
 }
 
-
-
-
+static const iocshFuncDef SCdebugFuncDef = { "SCdebug", 0, NULL };
 
 
 bool InitialiseSignalConditioning(int Harmonic, int Decimation)
 {
+    iocshRegister(&SCdebugFuncDef, SCdebug);
+    
     /* Select the appropriate switches and initialise the demultiplexor
      * array. */
     if (Brilliance())
@@ -859,19 +1017,14 @@ bool InitialiseSignalConditioning(int Harmonic, int Decimation)
         SwitchSequence = ElectronSwitchSequence;
         SwitchSequenceLength = ARRAY_SIZE(ElectronSwitchSequence);
     }
-    InitialiseDemuxArray();
     
     /* Start the conditioning thread.  The intermediate frequency needs to be
      * in radians per sample. */
     REAL f_if = 2 * M_PI * (REAL) (Harmonic % Decimation) / Decimation;
     ConditioningThread = new CONDITIONING(f_if);
-    ConditioningThread->StartThread();
-    
-    CommitDscState();
-
-
-    return true;
+    return ConditioningThread->StartThread();
 }
+
 
 void TerminateSignalConditioning()
 {

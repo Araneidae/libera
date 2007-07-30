@@ -345,24 +345,38 @@ static void post_process(dbCommon *pr, epicsEnum16 nsta, I_RECORD *iRecord)
 /* Reads a value from the appropriate record interface.  An intermediate
  * value is used so that the record interface type doesn't need to precisely
  * match the data type stored in the EPICS record. */
-#define READ_ADAPTER(record, action, field) \
+#define ACTION_ADAPTER(record, action, field) \
     ( { \
-        TYPEOF(record) Value; \
+        TYPEOF(record) Value = field; \
         bool Ok = action(Value); \
         field = Value; \
         Ok; \
     } )
 
-#define READ_DIRECT(record, action, field) \
+#define ACTION_DIRECT(record, action, field) \
     action(field)
 
-/* This macro expands to either READ_DIRECT or READ_ADAPTER, depending on how
- * the data from this record needs to be processed. */
-#define READ_VALUE(record, action, field) \
-    READ_##record(record, action, field)
+/* This macro expands to either ACTION_DIRECT or ACTION_ADAPTER, depending on
+ * whether an intermediate temporary value is needed. */
+#define ACTION_VALUE(record, action, field) \
+    ACTION_##record(record, action, field)
 
-#define WRITE_VALUE(record, action, field) \
-    action(field)
+
+
+/* For inp records there is no special post initialisation processing. */
+#define POST_INIT_inp(record, pr)   return OK;
+
+/* For out records we need to read the current underlying device value as
+ * part of initialisation.  The precise processing performed depends on the
+ * record type: this is hooked in by defining POST_INIT_##record. */
+#define POST_INIT_out(record, pr) \
+    { \
+        GET_RECORD(record, pr, iRecord); \
+        pr->udf = ! ACTION_VALUE(record, iRecord->init, pr->VAL(record)); \
+        post_init_record_out((dbCommon*)pr, iRecord); \
+        return OK; \
+    }
+
 
 
 /* Record initialisation is simply a matter of constructing an instance of
@@ -377,36 +391,6 @@ static void post_process(dbCommon *pr, epicsEnum16 nsta, I_RECORD *iRecord)
         else \
             return ERROR; \
     }
-
-
-/* For inp records there is no special post initialisation processing. */
-#define POST_INIT_inp(record, pr)   return OK;
-
-/* For out records we need to read the current underlying device value as
- * part of initialisation.  The precise processing performed depends on the
- * record type: this is hooked in by defining POST_INIT_##record. */
-#define POST_INIT_out(record, pr) \
-    { \
-        GET_RECORD(record, pr, iRecord); \
-        pr->udf = ! READ_VALUE(record, iRecord->init, pr->VAL(record)); \
-        post_init_record_out((dbCommon*)pr, iRecord); \
-        return OK; \
-    }
-
-
-
-#define DEFINE_DEVICE(record, inOrOut, length, args...) \
-    INIT_RECORD(record, inOrOut) \
-    record##Device record##Libera = \
-    { \
-        length, \
-        NULL, \
-        NULL, \
-        init_record_##record, \
-        get_ioint_, \
-        args \
-    }; \
-    epicsExportAddress(dset, record##Libera)
 
 
 /* Helper code for extracting the appropriate I_record from the record. */
@@ -424,20 +408,33 @@ static void post_process(dbCommon *pr, epicsEnum16 nsta, I_RECORD *iRecord)
 /* Standard boiler-plate default record processing action.  The val field is
  * either read or written and the alarm state is set by interrogating the
  * record interface.  This processing is adequate for most record types. */
-#define DEFINE_DEFAULT_PROCESS(record, action, ACTION, DO_ACTION) \
+#define DEFINE_DEFAULT_PROCESS(record, action, ACTION) \
     static long action##_##record(record##Record * pr) \
     { \
         GET_RECORD(record, pr, iRecord); \
-        bool Ok = DO_ACTION(record, iRecord->action, pr->VAL(record)); \
+        bool Ok = ACTION_VALUE(record, iRecord->action, pr->VAL(record)); \
         post_process((dbCommon *)pr, ACTION##_ALARM, iRecord); \
         return Ok ? OK : ERROR; \
     }
 
-
 #define DEFINE_DEFAULT_READ(record) \
-    DEFINE_DEFAULT_PROCESS(record, read, READ, READ_VALUE) 
+    DEFINE_DEFAULT_PROCESS(record, read,  READ) 
 #define DEFINE_DEFAULT_WRITE(record) \
-    DEFINE_DEFAULT_PROCESS(record, write, WRITE, WRITE_VALUE) 
+    DEFINE_DEFAULT_PROCESS(record, write, WRITE) 
+
+
+#define DEFINE_DEVICE(record, inOrOut, length, args...) \
+    INIT_RECORD(record, inOrOut) \
+    record##Device record##Libera = \
+    { \
+        length, \
+        NULL, \
+        NULL, \
+        init_record_##record, \
+        get_ioint_, \
+        args \
+    }; \
+    epicsExportAddress(dset, record##Libera)
 
 
 
@@ -466,17 +463,16 @@ static void post_process(dbCommon *pr, epicsEnum16 nsta, I_RECORD *iRecord)
 /* Type adapters.  Some types need to be read directly, others need to be
  * read via the read adapter. */
 
-#define READ_longin     READ_DIRECT
-#define READ_longout    READ_DIRECT
-#define READ_ai         READ_DIRECT
-#define READ_ao         READ_DIRECT
-#define READ_bi         READ_ADAPTER
-#define READ_bo         READ_ADAPTER
-#define READ_stringin   READ_DIRECT
-#define READ_stringout  READ_DIRECT
-#define READ_mbbi       READ_ADAPTER
-#define READ_mbbo       READ_ADAPTER
-
+#define ACTION_longin     ACTION_DIRECT
+#define ACTION_longout    ACTION_DIRECT
+#define ACTION_ai         ACTION_DIRECT
+#define ACTION_ao         ACTION_DIRECT
+#define ACTION_bi         ACTION_ADAPTER
+#define ACTION_bo         ACTION_ADAPTER
+#define ACTION_stringin   ACTION_DIRECT
+#define ACTION_stringout  ACTION_DIRECT
+#define ACTION_mbbi       ACTION_ADAPTER
+#define ACTION_mbbo       ACTION_ADAPTER
 
 
 

@@ -66,6 +66,7 @@ public:
         Publish_XYQS("SA", XYQS);
         Publish_ai("SA:POWER", Power);
         Publish_ai("SA:CURRENT", Current);
+        Publish_longin("SA:MAXADC", MaxAdc);
         Interlock.Publish("SA");
     }
 
@@ -87,6 +88,7 @@ private:
                 ABCD = NewABCD;
                 ABCDtoXYQS(&ABCD, &XYQS, 1);
                 UpdatePowerAndCurrent();
+                MaxAdc = ReadMaxAdc();
                 Interlock.Ready();
             }
         }
@@ -131,6 +133,7 @@ private:
     XYQS_ROW XYQS;
     int Power;          // Power in dBm * 1e6
     int Current;        // Current in 10*nA
+    int MaxAdc;         // MaxADC reading
     
     
     /* Precomputed offset for power calculation: P_0 = A_0 + 20 log_10(S_0). */
