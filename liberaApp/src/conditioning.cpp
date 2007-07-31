@@ -55,17 +55,57 @@
 static const char ElectronSwitchSequence[8]   = { 3, 7, 15, 11, 0, 4, 12, 8 };
 static const char BrillianceSwitchSequence[4] = { 15, 0, 9, 6 };
 
-/* This array translates switch positions into button permutations.  This is
- * needed when reading raw ADC buffers to undo the permutation performed by
- * the input switch.
- *    For each permutuation row the entry p[b] determines which ADC channel
- * is processing the signal for button b. */
-static const PERMUTATION PermutationLookup[] =
+
+/* The arrays below translate switch positions into button permutations.  This
+ * is needed when reading raw ADC buffers to undo the permutation performed by
+ * the input switch, and is also needed during signal conditioning processing
+ * to correlate readings with channels.  For each permutuation row the entry
+ * p[b] determines which ADC channel is processing the signal for button b.
+ *
+ * Oddly enough, Libera Brilliance uses a different configuration of switches
+ * from Libera Electron, so we need a completely different permutation lookup
+ * table to handle this!
+ *
+ *
+ * The array of switches can be understood to be implemented as an array of
+ * four binary cross-bar switches where each individual switch
+ *
+ *        +----+
+ *    a --+ s  +-- c   is either connected straight through, a-c and b-d 
+ *    b --+  i +-- d   (when s_i=0) or crossed over (a-d, b-c, s_i=1).
+ *        +----+
+ *
+ *   Button                       Channel     Bit sequence:
+ *    E  B                         E  B
+ *           +----+       +----+              
+ *    A  D --+ s  +-------+ s  +-- 3  1       Electron:
+ *    B  A --+  0 +--   --+  2 +-- 0  0           s  s  s  s
+ *           +----+  \ /  +----+                   0  1  2  3
+ *                    X
+ *           +----+  / \  +----+
+ *    D  C --+ s  +--   --+ s  +-- 2  2       Brilliance:
+ *    C  B --+  1 +-------+  3 +-- 1  3           s  s  s  s
+ *           +----+       +----+                   2  0  3  1
+ *
+ * This figure shows the switch topology, how it is connected for each set of
+ * buttons and channels (where the channel identifiers correspond to indexes
+ * into FPGA structures) and the mapping of switches to bits in the switch
+ * selector.  This results in the permutations tabulated below. */
+
+static const PERMUTATION ElectronPermutationLookup[] =
 {
     { 3, 2, 1, 0 },  { 3, 1, 2, 0 },  { 0, 2, 1, 3 },  { 0, 1, 2, 3 },
     { 3, 2, 0, 1 },  { 3, 1, 0, 2 },  { 0, 2, 3, 1 },  { 0, 1, 3, 2 },
     { 2, 3, 1, 0 },  { 1, 3, 2, 0 },  { 2, 0, 1, 3 },  { 1, 0, 2, 3 },
     { 2, 3, 0, 1 },  { 1, 3, 0, 2 },  { 2, 0, 3, 1 },  { 1, 0, 3, 2 }
+};
+
+static const PERMUTATION BrillancePermutationLookup[] =
+{
+    { 2, 3, 0, 1 },  { 2, 0, 3, 1 },  { 3, 2, 0, 1 },  { 3, 0, 2, 1 },
+    { 2, 3, 1, 0 },  { 2, 1, 3, 0 },  { 3, 2, 1, 0 },  { 3, 1, 2, 0 },
+    { 1, 3, 0, 2 },  { 1, 0, 3, 2 },  { 1, 2, 0, 3 },  { 1, 0, 2, 3 },
+    { 0, 3, 1, 2 },  { 0, 1, 3, 2 },  { 0, 2, 1, 3 },  { 0, 1, 2, 3 }
 };
 
 
@@ -88,6 +128,8 @@ static const PERMUTATION PermutationLookup[] =
 /* This is the currently programmed sequence of switches. */
 static const char * SwitchSequence;
 static int SwitchSequenceLength;
+
+static const PERMUTATION * PermutationLookup;
 
 
 
@@ -1011,11 +1053,13 @@ bool InitialiseSignalConditioning(int Harmonic, int Decimation)
     {
         SwitchSequence = BrillianceSwitchSequence;
         SwitchSequenceLength = ARRAY_SIZE(BrillianceSwitchSequence);
+        PermutationLookup = BrillancePermutationLookup;
     }
     else
     {
         SwitchSequence = ElectronSwitchSequence;
         SwitchSequenceLength = ARRAY_SIZE(ElectronSwitchSequence);
+        PermutationLookup = ElectronPermutationLookup;
     }
     
     /* Start the conditioning thread.  The intermediate frequency needs to be
