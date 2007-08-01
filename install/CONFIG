@@ -54,3 +54,31 @@ IOC_TT_WINDOW=32768
 
 # Turn by turn small waveform length (continuously updating TT data).
 IOC_FR_LENGTH=2048
+
+
+# The following two parameters are used to configure the internal scaling
+# used by Libera to convert measured signal intensities into power, current
+# and charge.  
+#    Both numbers are designed to be measured with 0dBm continuous wave RF
+# inputs into all four buttons with attenuation set to 45dB
+#
+#    Set IOC_S0_SA to the value returned by the PV :SA:S
+#
+#    For first turn first set :FT:OFF_S to 0 and :FT:LEN_S to 256 and
+#    then set IOC_S0_FT to the value of :FT:S/:FT:LEN_S.
+#
+# Of course this measurement can be done with different powers and different
+# attenuations, in which case it should be compensated accordingly.  For a
+# measurement of S(P,A) at power P (in dBm) and attenuation A (in dB) compute
+#
+#            A - 45 - P
+#            ----------
+#                20
+#    S_0 = 10           * S(P,A)  .
+#
+# Note that there is little point in striving for much more than two
+# significant figures in these values, and the same settings should serve for
+# all Liberas with the same filter chain configuration.  Changing the
+# configured DDC filters will change these values.
+IOC_S0_SA=196000000
+IOC_S0_FT=2342000

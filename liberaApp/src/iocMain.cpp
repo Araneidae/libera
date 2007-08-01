@@ -107,6 +107,10 @@ static int Harmonic = 936;              // Bunches per revolution
 static int Decimation = 220;            // Samples per revolution
 static int LmtdPrescale = 53382;        // Prescale for lmtd
 
+/* Power scaling factors for FT and SA modes. */
+static int S0_FT = 0;
+static int S0_SA = 0;
+
 /* Location of the persistent state file. */
 static const char * StateFileName = NULL;
 
@@ -267,7 +271,7 @@ static bool InitialiseLibera()
         /* Initialise interlock settings. */
         InitialiseInterlock()  &&
         /* First turn processing is designed for transfer path operation. */
-        InitialiseFirstTurn(Harmonic, Decimation)  &&
+        InitialiseFirstTurn(Harmonic, Decimation, S0_FT)  &&
         /* Turn by turn is designed for long waveform capture at revolution
          * clock frequencies. */
         InitialiseTurnByTurn(LongTurnByTurnLength, TurnByTurnWindowLength)  &&
@@ -281,7 +285,7 @@ static bool InitialiseLibera()
          * captures the last 16K events before the event. */
         InitialisePostmortem()  &&
         /* Slow acquisition returns highly filtered positions at 10Hz. */
-        InitialiseSlowAcquisition()  &&
+        InitialiseSlowAcquisition(S0_SA)  &&
 
 #ifdef BUILD_FF_SUPPORT
         /* Initialise the fast feedback interface. */
@@ -360,6 +364,8 @@ static bool ParseConfigInt(char *optarg)
         { "HA", Harmonic },
         { "DE", Decimation },
         { "LP", LmtdPrescale },
+        { "S0FT", S0_FT },
+        { "S0SA", S0_SA },
     };
 
     /* Parse the configuration setting into <key>=<integer>. */
@@ -432,6 +438,8 @@ static void Usage(const char *IocName)
 "       HA      Harmonic: number of bunches per revolution\n"
 "       DE      Decimation: number of samples per revolution\n"
 "       LP      LMTD prescale factor\n"
+"       S0FT    S0 power scaling for FT mode\n"
+"       S0SA    S0 power scaling for SA mode\n"
 "    -f <f_mc>          Machine revolution frequency\n"
 "    -s <state-file>    Read and record persistent state in <state-file>\n"
 "\n"

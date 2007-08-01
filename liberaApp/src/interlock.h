@@ -44,10 +44,8 @@ void NotifyInterlockBpmEnable(bool Enabled);
  * in the hardware. */
 void NotifyInterlockOffset(int OffsetX, int OffsetY);
 
-/* Updating the attenuators is a slightly tricky business.  We need to
- * synchronise with the interlocks, and indeed do some carefully timed
- * waiting about, to ensure that the interlock isn't dropped as a result of a
- * measured position or current glitch caused by the attenuator change.
- *    Thus this routine acts as a request to call the true
- * UpdateAttenuation() routine at a later convenient time. */
-void InterlockedUpdateAttenuation(int NewAttenuation);
+/* This routine is called immediately before performing an operation which
+ * can cause a glitch in position: changing attenuators or signal
+ * conditioning parameters.  The interlock is immediately disabled for a
+ * preset period. */
+void HoldoffInterlock();

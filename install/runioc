@@ -151,6 +151,8 @@ IocParameter -cBN= $((IOC_BN_LENGTH))
 IocParameter -cTT= $((IOC_TT_LENGTH))
 IocParameter -cTW= $((IOC_TT_WINDOW))
 IocParameter -cFR= $((IOC_FR_LENGTH))
+IocParameter -cS0FT= $((IOC_S0_FT))
+IocParameter -cS0SA= $((IOC_S0_SA))
 # Pass through fundamental ring parameters
 IocParameter -cHA= $((HARMONIC))
 IocParameter -cDE= $((DECIMATION))
@@ -165,6 +167,7 @@ IocParameter -f $FREV
 
 # Now run the IOC.
 echo 'Starting IOC at' $(date)
+echo "IOC parameters: ${IOC_PARAMETERS[*]}"
 $BIN_DIR/ioc "${IOC_PARAMETERS[@]}" $BIN_DIR/st.cmd
 echo 'IOC stopped at' $(date)
 

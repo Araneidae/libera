@@ -28,5 +28,5 @@
 
 
 /* Slow acquisition support. */
-bool InitialiseSlowAcquisition();
+bool InitialiseSlowAcquisition(int S0_SA);
 void TerminateSlowAcquisition();

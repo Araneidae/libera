@@ -50,7 +50,7 @@
 
 /* Recorded S level at 45dB attenuation and input power 0dBm.  Used to scale
  * absolute power and current computations. */
-#define S_0                     100000000               // 1e8
+static int S_0 = 0;
 
 
 
@@ -146,8 +146,9 @@ private:
 
 static SLOW_ACQUISITION * SlowAcquisition = NULL;
 
-bool InitialiseSlowAcquisition()
+bool InitialiseSlowAcquisition(int S0_SA)
 {
+    S_0 = S0_SA;
     SlowAcquisition = new SLOW_ACQUISITION();
     return SlowAcquisition->StartThread();
 }

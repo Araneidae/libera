@@ -45,6 +45,7 @@
 #include "persistent.h"
 #include "trigger.h"
 #include "waveform.h"
+#include "interlock.h"
 
 #include "conditioning.h"
 
@@ -373,18 +374,23 @@ public:
                 
             case SC_MODE_UNITY:
                 /* Special processing for switching into UNITY mode: in this
-                 * case we revert the compensation matrices.  Ensure we start
-                 * from scratch when reenabling. */
+                 * case we revert the compensation matrices.  As we're
+                 * changing the state, we hold off the interlock.  Ensure we
+                 * start from scratch when reenabling. */
                 ResetChannelIIR = true;
                 SetUnityCompensation();
+                HoldoffInterlock();
                 CommitDscState();
                 
                 Enabled = false;
                 break;
 
             case SC_MODE_FIXED:
-                /* Use the last good compensation matrix in this mode. */
+                /* Use the last good compensation matrix in this mode.
+                 * Again, as we're (potentially) making a glitch, request an
+                 * interlock holdoff. */
                 WritePhaseCompensation(LastGoodCompensation);
+                HoldoffInterlock();
                 CommitDscState();
                 
                 Enabled = false;
@@ -399,6 +405,9 @@ public:
     bool ScWriteAttenuation(int NewAttenuation)
     {
         Lock();
+        /* The interlock must be temporarily disabled before changing the
+         * attenuation. */
+        HoldoffInterlock();
         bool Ok =
             WriteAttenuation(NewAttenuation)  &&
             CommitDscState();
@@ -762,6 +771,9 @@ private:
         {
             ResetChannelIIR = false;
             memcpy(CurrentChannels, NewChannels, sizeof(NewChannels));
+            /* On a fresh set of SC corrections trigger an interlock holdoff,
+             * as this change may cause a glitch if we're unlucky. */
+            HoldoffInterlock();
         }
         else
         {

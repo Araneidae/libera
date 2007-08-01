@@ -51,13 +51,8 @@
 #include "firstTurn.h"
 
 
-/* Recorded S level at 45dB attenuation and input power 0dBm.  The ratio
- * between this value and the corresponding value in slowAcquisition.cpp
- * determines the scaling between SA and FT current measurements.  This ratio
- * should be purely a function of the FPGA signal processing chain. */
-/* Note: this figure is going to have to become configurable, as different
- * versions of Libera have different scaling factors here! */
-#define S_0             321260
+/* Recorded S level at 45dB attenuation and input power 0dBm. */
+static int S_0 = 2340000;
 
 
 /* Dual of offsetof macro, used to reference a selected field. */
@@ -174,7 +169,7 @@ public:
     FIRST_TURN(int Harmonic, int Decimation) :
         RawAdc(ADC_LENGTH),
         Adc(ADC_LENGTH/4),
-        ChargeScale(PMFP(10) / (PMFP(S_0) * 117))
+        ChargeScale(PMFP(10 << 3) / (PMFP(S_0) * 117))
     {
         /* Sensible defaults for offset and length.  Must be bounded to lie
          * within the waveform.
@@ -323,14 +318,14 @@ private:
         int TotalQ = 0;
         for (int i = 4*Offset; i < 4*(Offset + Length); i++)
         {
-            /* Let's do some bit arithmetic.  Each point is sign + 11 bits, we
+            /* Let's do some bit arithmetic.  Each point is sign + 15 bits, we
              * are accmulating 1024 samples on each of four buttons (that's 12
              * bits) and the rotations are 30 bits plus sign (well, there's a
              * boundary condition where the 31st bit gets used, but we don't
-             * need to worry too much about that): that's 53 bits plus sign.
+             * need to worry too much about that): that's 57 bits plus sign.
              * MulSS will discard 32 bits, and as we want the result to fit
-             * into 31 bits plus sign we want an extra 10 bits. */
-            int point = Data[i] << 10;
+             * into 31 bits plus sign we want an extra 6 bits. */
+            int point = Data[i] << 6;
             TotalI += MulSS(point, RotateI[i]);
             TotalQ += MulSS(point, RotateQ[i]);
         }
@@ -474,8 +469,13 @@ private:
      *      
      * and we can compute
      *
-     *      Q = I(K, SUM S)
-     */
+     *      Q = I(K, SUM S)  .
+     *
+     * One final correction is needed: the raw charge, as integrated by
+     * IntegrateCharge(), is ultimately computed with a scaling factor of
+     * 2^4, while the observed intensity S (used to determine S_0) is
+     * computed with a scaling factor of 2^7.  Thus we need to multiply K by
+     * 2^3 to take this into account. */
     const PMFP ChargeScale;
 
     /* Precomputed rotation vector (I & Q components) for frequency shifting
@@ -488,8 +488,9 @@ private:
 
 static FIRST_TURN * FirstTurn = NULL;
 
-bool InitialiseFirstTurn(int Harmonic, int Decimation)
+bool InitialiseFirstTurn(int Harmonic, int Decimation, int S0_FT)
 {
+    S_0 = S0_FT;
     FirstTurn = new FIRST_TURN(Harmonic, Decimation);
     return true;
 }

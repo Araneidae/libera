@@ -123,7 +123,7 @@ static READBACK_bool * EnableReadback = NULL;
  * interlock is enabled.  This second delay is currently programmable. */
 
 static int CurrentHoldoffCount = 3;     // 300ms seems ample for this
-static int InterlockHoldoffCount = 5;   // Not so clear what's suitable
+static int InterlockHoldoffCount = 1;   // Not so clear what's suitable
 
 static int InterlockHoldoff = 3;
 
@@ -248,11 +248,11 @@ void NotifyInterlockCurrent(int Current)
 }
 
 
-/* This is called when the attenuators are about to be changed.  We
- * temporarily disable interlocking to prevent the position glitch (which
- * follows from setting the interlock) from dropping the interlock. */
+/* This is called when a change which can cause a position or current glitch
+ * is about to be made.  We temporarily disable interlocking to prevent the
+ * position glitch from dropping the interlock. */
 
-void InterlockedUpdateAttenuation(int NewAttenuation)
+void HoldoffInterlock()
 {
     Lock();
 
@@ -268,9 +268,6 @@ void InterlockedUpdateAttenuation(int NewAttenuation)
     
     WriteInterlockState();
     Unlock();
-
-    /* The interlock is now off, so just update the attenuators now. */
-    UpdateAttenuation(NewAttenuation);
 }
 
 

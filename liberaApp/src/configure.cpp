@@ -182,8 +182,8 @@ static void UpdateCurrentScale()
 
 void UpdateAttenuation(int NewAttenuation)
 {
+    ScWriteAttenuation(NewAttenuation);
     CurrentAttenuation = NewAttenuation;
-    ScWriteAttenuation(CurrentAttenuation);
     /* Update the scaling factors. */
     AttenuatorScalingFactor = PMFP(from_dB, ReadCorrectedAttenuation() - A_0);
     UpdateCurrentScale();
@@ -236,12 +236,12 @@ bool InitialiseConfigure()
      * InterlockedUpdateAttenuation() routine: this will not actually update
      * the attenuators (by calling UpdateAttenuation() above) until the
      * interlock mechanism is ready. */
-    PUBLISH_CONFIGURATION(longout, "CF:ATTEN", 
-        CurrentAttenuation, InterlockedUpdateAttenuation);
+    PUBLISH_CONFIGURATION(longout, "CF:ATTEN",
+        CurrentAttenuation, UpdateAttenuation);
     
     /* Write the initial state to the hardware and initialise everything that
      * needs initialising. */
-    InterlockedUpdateAttenuation(CurrentAttenuation);
+    UpdateAttenuation(CurrentAttenuation);
     UpdateAutoSwitch(AutoSwitchState);
     UpdateSc(ScState);
     UpdateSwitchTrigger();
