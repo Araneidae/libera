@@ -134,7 +134,11 @@ fi
 
 # Ensure the DSC daemon isn't running: we're going to replace its
 # functionality!
-[ -e /var/run/ldscd.pid ]  &&  kill $(cat /var/run/ldscd.pid)
+if [ -e /var/run/ldscd.pid ]; then
+    kill $(cat /var/run/ldscd.pid)
+    # It seems to be quite important to give the DSC daemon time to quit.
+    sleep 1
+fi
 
 
 # Export the database parameters needed to configure libera.db.  These are

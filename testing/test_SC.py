@@ -22,7 +22,7 @@ require('dls.ca2')
 os.environ['EPICS_CA_MAX_ARRAY_BYTES'] = '1000000'
 from dls.ca2 import catools
 from pylab import *
-from MLab import *
+#from MLab import *
 from numpy import *
 #from matplotlib.mlab import *
 
@@ -295,7 +295,7 @@ def DigestWaveform(iq, markers, truncate=False):
     m = mean(riq, -1)
     rm = reshape(repeat(m, nm*nsw, -1), shape(riq))
     v = sum(sum(sum(abs(riq-rm)**2)))
-    s = sqrt(v / nn) / min(min(abs(m)))
+    s = sqrt(v / nn) / amin(ravel(abs(m)))
 
     if truncate:
         m = 256 * m
@@ -396,6 +396,15 @@ def CaptureChannelErrors(ioc, count, delay):
     return E
 
 
+def ReadErrors(ioc):
+    digest, my_s = GetDigest(ioc)
+    print 'Deviation:', my_s
+    compensation = GetOldCompensation(ioc)
+    X, C, Z = ProcessDigest(DecompensateDigest(digest, compensation))
+    rC = repeat(C[NewAxis,:], 8, axis=0)
+    return (Z - rC) / rC, X
+    
+
 
 def PlotErrors(ioc):
     while True:
@@ -424,7 +433,8 @@ def DoTestSC(ioc):
     print 'Angles:', 180/pi*angle(C)
     print 'Magnitudes:', abs(C)
 
-    plot_complex(Z-repeat(C[NewAxis,:], 8, axis=0))
+    E = Z - repeat(C[NewAxis,:], 8, axis=0)
+    plot_complex(E)
     show()
     return
 
