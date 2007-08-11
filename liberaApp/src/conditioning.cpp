@@ -136,7 +136,7 @@ static const PERMUTATION * PermutationLookup;
 
 /*****************************************************************************/
 /*                                                                           */
-/*                Miscellaneous Helper Routines and Definitions              */
+/*                       Miscellaneous Helper Routines                       */
 /*                                                                           */
 /*****************************************************************************/
 
@@ -144,8 +144,31 @@ static const PERMUTATION * PermutationLookup;
  * don't need to be declared as methods of the thread class. */
 
 
-typedef complex COMPENSATION_MATRIX[CHANNEL_COUNT];
+/* For some stupid reason gcc has decided that it is "wrong" to assign arrays
+ * and that the only way to do this properly is by memcpy.  If you insist...
+ * this little hack ensures types match and the right size is used. */
+template<class T>
+void AssignArray(T &out, const T &in)
+{
+    memcpy(&out, &in, sizeof(T));
+}
 
+template<class T>
+void ZeroArray(T &out)
+{
+    memset(&out, 0, sizeof(T));
+}
+
+template<class T> T sqr(const T x) { return x*x; }
+
+
+void PrintComplexRow(complex Array[4])
+{
+    printf("[");
+    for (int i = 0; i < 4; i ++)
+        printf("(%g, %g), ", real(Array[i]), imag(Array[i]));
+    printf("]\n");
+}
 
 
 /* Helper routine for computing variance from a sum of values and sum of
@@ -156,13 +179,14 @@ typedef complex COMPENSATION_MATRIX[CHANNEL_COUNT];
  *
  * and so (where mean(x) = N * sum(x))
  *
- *  N * variance(x) = sum(x^2) - sum(x)^2 / N
+ *  N^2 * variance(x) = N * sum(x^2) - sum(x)^2
  *
  * which is what is returned by the calculation below. */
 
 static REAL variance(int sum_values, long long int sum_squares, int samples)
 {
-    return (REAL) sum_squares - (REAL) sum_values * sum_values / samples;
+    return (REAL) (
+        samples * sum_squares - sqr((long long int) sum_values));
 }
 
 
@@ -174,19 +198,24 @@ static int aiValue(REAL x)
 }
 
 
-/* Given a base angle (in the range (-180..180]*AI_SCALE) and a complex
- * number x, returns the relative phase of x, also reduced to the same
- * range. */
+/* Given an angle x in radians and an optional base angle in ai scaling units
+ * returns x scaled to EPICS scaling units and reduced to the range
+ *      [-180..180) * AI_SCALE. */
 
-static int aiPhase(const complex x, int BaseAngle=0)
+static int aiPhase(const REAL x, int BaseAngle=0)
 {
     const int HALF_TURN = (int) AI_SCALE * 180;
-    int Angle = (int) round(HALF_TURN / M_PI * arg(x)) - BaseAngle;
-    if (Angle <= - HALF_TURN)
-        Angle += 2 * HALF_TURN;
-    else if (Angle > HALF_TURN)
-        Angle -= 2 * HALF_TURN;
-    return Angle;
+    const int FULL_TURN = 2*HALF_TURN;
+    int Angle = (int) round(HALF_TURN / M_PI * x) - BaseAngle;
+
+    /* The following calculation is intended to reduce Angle to the range
+     * [-HALF_TURN..HALF_TURN).  If the C % operator was defined properly
+     * then this would simply be
+     *      (Angle + HALF_TURN) % FULL_TURN - HALF_TURN .
+     * Unfortunately negative values behave unpredictably, so I have to
+     * handle that specially. */
+    return (Angle + HALF_TURN + FULL_TURN * (1 + Angle / FULL_TURN)) %
+        FULL_TURN - HALF_TURN;
 }
 
 
@@ -201,7 +230,7 @@ static void NormalDemuxArray()
     {
         const PERMUTATION & p = PermutationLookup[sw];
         DEMUX_ARRAY Demux;
-        memset(Demux, 0, sizeof(DEMUX_ARRAY));
+        ZeroArray(Demux);
         for (int b = 0; b < BUTTON_COUNT; b ++)
             /* The size of the units here determine the number of bits
              * downstream available for further signal processing.  To ensure
@@ -219,11 +248,28 @@ static void NormalDemuxArray()
 static void TrivialDemuxArray()
 {
     DEMUX_ARRAY Demux;
-    memset(Demux, 0, sizeof(DEMUX_ARRAY));
+    ZeroArray(Demux);
     for (int b = 0; b < BUTTON_COUNT; b ++)
         Demux[b][b] = 1 << 17;
     for (int sw = 0; sw < SWITCH_COUNT; sw ++)
         WriteDemuxArray(sw, Demux);
+}
+
+
+/* Searches for the start of the next switching marker in the waveform.
+ * This is signalled by the bottom bit of the I data. */
+
+static bool SwitchMarker(const LIBERA_ROW *Data, size_t Length, size_t &Marker)
+{
+    /* First make sure we skip past any marker that happens at the start
+     * of our data block. */
+    while (Marker < Length  &&  (Data[Marker][0] & 1) == 1)
+        Marker ++;
+    /* Now skip to the next marker. */
+    while (Marker < Length  &&  (Data[Marker][0] & 1) == 0)
+        Marker ++;
+    /* Either we're there or we've run out of buffer. */
+    return Marker < Length;
 }
 
 
@@ -271,25 +317,25 @@ public:
         m_cis_if(exp(-I*f_if)),
         IqData(SAMPLE_SIZE, true),
         IqDigestWaveform(MAX_SWITCH_SEQUENCE * BUTTON_COUNT),
-        OldPhaseArray(8)
+        OldPhaseArray(sizeof(PHASE_ARRAY_LIST) / sizeof(int)),
+        EpicsWritePhaseArray(*this)
     {
         /* Establish defaults for configuration variables before reading
          * their currently configured values. */
         MaximumDeviationThreshold = aiValue(2.);    // Default = 2%
         ChannelIIRFactor = aiValue(0.1);
-        ConditioningInterval = 1000;                // 1 s
+        ConditioningInterval = 5000;                // 5 s
 
         /* Initialise state. */
         ConditioningStatus = SC_OFF;
         /* Ensure we start with fresh channel values on startup! */
         ResetChannelIIR = true;
 
+        /* Configuration parameters: maximum acceptable deviation when
+         * processing, IIR factor and how frequently we run. */
         Persistent("SC:MAXDEV",   MaximumDeviationThreshold);
         Persistent("SC:CIIR",     ChannelIIRFactor);
         Persistent("SC:INTERVAL", ConditioningInterval);
-
-
-        /* Initialise the switches and demultiplexing matrices. */
         Publish_ao("SC:MAXDEV",   MaximumDeviationThreshold);
         Publish_ao("SC:CIIR",     ChannelIIRFactor);
         Publish_ao("SC:INTERVAL", ConditioningInterval);
@@ -311,6 +357,7 @@ public:
         IqData.Publish("SC");
         Publish_waveform("SC:IQDIGEST", IqDigestWaveform);
         Publish_waveform("SC:LASTCK", OldPhaseArray);
+        Publish_waveform("SC:SETPHASE", EpicsWritePhaseArray);
 
         for (int c = 0; c < CHANNEL_COUNT; c ++)
         {
@@ -321,13 +368,8 @@ public:
              * used for channel compensation. */
             Publish_ai(Concat(Channel, "PHASE"), ChannelPhase[c]);
             Publish_ai(Concat(Channel, "MAG"),   ChannelMag[c]);
-            Publish_longin(Concat(Channel, "RAW0"), CurrentPhaseArray[c][0]);
-            Publish_longin(Concat(Channel, "RAW1"), CurrentPhaseArray[c][1]);
+            Publish_ai(Concat(Channel, "VAR"),   ChannelVariance[c]);
         }
-        /* The channel scale is a fudge factor used to ensure that observed
-         * positions don't change too much when switching between no signal
-         * compensation and full compensation. */
-        Publish_ai("SC:CSCALE", ChannelScale);
 
         Interlock.Publish("SC");
     }
@@ -347,8 +389,9 @@ public:
      * place: then locking would only be required to add commands to the
      * queue.
      *     However, in this case we really don't care! */
-    
 
+    
+    /* Writes the selected switch sequence. */
     bool LockedWriteSwitches(const SWITCH_SEQUENCE Switches, size_t Length)
     {
         Lock();
@@ -359,6 +402,9 @@ public:
         return Ok;
     }
 
+
+    /* Controls the state of the conditioning thread and the associated
+     * configured compensation matrices. */
     void WriteScMode(SC_MODE ScMode)
     {
         Lock();
@@ -389,7 +435,7 @@ public:
                 /* Use the last good compensation matrix in this mode.
                  * Again, as we're (potentially) making a glitch, request an
                  * interlock holdoff. */
-                WritePhaseCompensation(LastGoodCompensation);
+                WritePhaseCompensation(CurrentCompensation);
                 HoldoffInterlock();
                 CommitDscState();
                 
@@ -422,8 +468,37 @@ public:
     
     
 private:
+    /* The following basic datatypes are used for processing. */
+    typedef complex BUTTONS[BUTTON_COUNT];
+    typedef complex CHANNELS[CHANNEL_COUNT];
+    typedef BUTTONS BUTTON_ARRAY[MAX_SWITCH_SEQUENCE];
+    typedef CHANNELS CHANNEL_ARRAY[MAX_SWITCH_SEQUENCE];
 
-    typedef complex IQ_DIGEST[MAX_SWITCH_SEQUENCE][BUTTON_COUNT];
+    typedef REAL BUTTONS_REAL[BUTTON_COUNT];
+
+    /* Some aliases to replace. */
+    typedef BUTTON_ARRAY IQ_DIGEST;
+    typedef CHANNELS COMPENSATION_MATRIX;
+    typedef CHANNEL_ARRAY COMPENSATION_MATRIX_LIST;
+
+    
+
+//     /* Raw digest of button readings against switch position.  This is the
+//      * raw IQ value averaged over the switch interval. */
+//     typedef complex IQ_DIGEST[MAX_SWITCH_SEQUENCE][BUTTON_COUNT];
+
+//     /* Computed channel compensation matrix.
+//      *    In the current version of the code we don't try to compensate
+//      * crosstalk independently of channel compensation, so to reduce phase
+//      * errors we need to apply different channel compensations for different
+//      * switch positions.  This is hardly satisfactory... */
+//     typedef complex COMPENSATION_MATRIX[CHANNEL_COUNT];
+//     typedef COMPENSATION_MATRIX COMPENSATION_MATRIX_LIST[MAX_SWITCH_SEQUENCE];
+
+    /* This is used to record the actual phase array written in each switch
+     * position. */
+    typedef PHASE_ARRAY PHASE_ARRAY_LIST[MAX_SWITCH_SEQUENCE];
+
 
     /* Conditioning state as reported through SC:STATUS. */
     enum SC_STATE
@@ -506,43 +581,91 @@ private:
     /* Writes a new compensation matrix with full error checking.  Also
      * ensures that the currently active compensation array is recorded so
      * that we can take this into account when computing new values. */
-    bool WritePhaseCompensation(const COMPENSATION_MATRIX& Compensation)
+    bool WritePhaseCompensation(const COMPENSATION_MATRIX_LIST& Compensation)
     {
-        PHASE_ARRAY NewPhaseArray;
+        PHASE_ARRAY_LIST NewPhaseArray;
         bool Ok = true;
-        for (int c = 0; Ok  &&  c < CHANNEL_COUNT; c ++)
-            Ok = ComplexToTwoPole(Compensation[c], NewPhaseArray[c]);
+        for (int ix = 0; ix < SwitchSequenceLength; ix ++)
+            for (int c = 0; Ok  &&  c < CHANNEL_COUNT; c ++)
+                Ok = ComplexToTwoPole(
+                    Compensation[ix][c], NewPhaseArray[ix][c]);
 
         /* Only actually write the phase compensation if there was no
          * overflow in the conversion.  If so, keep track of what the current
          * phase array actually is. */
         if (Ok)
         {
-            for (int sw = 0; sw < SWITCH_COUNT; sw ++)
-                WritePhaseArray(sw, NewPhaseArray);
-            memcpy(CurrentPhaseArray, NewPhaseArray, sizeof(PHASE_ARRAY));
+            for (int ix = 0; ix < SwitchSequenceLength; ix ++)
+                WritePhaseArray(SwitchSequence[ix], NewPhaseArray[ix]);
+            AssignArray(CurrentPhaseArray, NewPhaseArray);
         }
         return Ok;
     }
 
 
-    /* Resets compensation to unity. */
+    /* Resets compensation to unity.  This has to bypass the
+     * WritePhaseCompensation() routine above to ensure that *all* switch
+     * positions are written. */
     void SetUnityCompensation()
     {
-        COMPENSATION_MATRIX Compensation;
+        /* Prepare the unity phase array: filter {1,0} does the job. */
+        PHASE_ARRAY UnityPhaseArray;
         for (int c = 0; c < CHANNEL_COUNT; c ++)
-            Compensation[c] = 1.0;
-        WritePhaseCompensation(Compensation);
+        {
+            UnityPhaseArray[c][0] = PHASE_UNITY;
+            UnityPhaseArray[c][1] = 0;
+        }
+        /* Write this phase array into *all* switches. */
+        for (int sw = 0; sw < SWITCH_COUNT; sw ++)
+            WritePhaseArray(sw, UnityPhaseArray);
+        /* Finally record this as being used for all positions in the switch
+         * sequence. */
+        for (int ix = 0; ix < SwitchSequenceLength; ix ++)
+            AssignArray(CurrentPhaseArray[ix], UnityPhaseArray);
     }
 
 
     /* Returns the currently active compensation matrix as complex numbers. */
-    void GetActualCompensation(COMPENSATION_MATRIX &Compensation)
+    void GetActualCompensation(COMPENSATION_MATRIX_LIST &Compensation)
     {
-        for (int c = 0; c < CHANNEL_COUNT; c ++)
-            Compensation[c] = TwoPoleToComplex(CurrentPhaseArray[c]);
+        for (int ix = 0; ix < SwitchSequenceLength; ix ++)
+            for (int c = 0; c < CHANNEL_COUNT; c ++)
+                Compensation[ix][c] =
+                    TwoPoleToComplex(CurrentPhaseArray[ix][c]);
     }
-    
+
+
+    class WRITE_PHASE_ARRAY : public I_WAVEFORM
+    {
+    public:
+        WRITE_PHASE_ARRAY(CONDITIONING &Parent) :
+            I_WAVEFORM(DBF_LONG),
+            Parent(Parent)
+        {
+        }
+        
+    private:
+        bool process(void *array, size_t max_length, size_t &new_length)
+        {
+            PHASE_ARRAY * NewPhaseArray = (PHASE_ARRAY *) array;
+            if (new_length == 16 * 4 * 2)
+            {
+                Parent.Lock();
+                for (int sw = 0; sw < 16; sw ++)
+                    WritePhaseArray(sw, NewPhaseArray[sw]);
+                for (int ix = 0; ix < SwitchSequenceLength; ix ++)
+                    AssignArray(Parent.CurrentPhaseArray[ix],
+                        NewPhaseArray[SwitchSequence[ix]]);
+                CommitDscState();
+                Parent.Unlock();
+            }
+            else
+                printf("Incorrect size of phase array %d\n", new_length);
+            return true;
+        }
+
+        CONDITIONING &Parent;
+    };
     
 
     /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -564,35 +687,18 @@ private:
             TEST_OK(Read == TargetLength, "Read from DD was incomplete");
     }
 
-    
-    /* Searches for the start of the next switching marker in the waveform.
-     * This is signalled by the bottom bit of the I data. */
-    bool SwitchMarker(const LIBERA_ROW *Data, size_t Length, size_t &Marker)
-    {
-        /* First make sure we skip past any marker that happens at the start
-         * of our data block. */
-        while (Marker < Length  &&  (Data[Marker][0] & 1) == 1)
-            Marker ++;
-        /* Now skip to the next marker. */
-        while (Marker < Length  &&  (Data[Marker][0] & 1) == 0)
-            Marker ++;
-        /* Either we're there or we've run out of buffer. */
-        return Marker < Length;
-    }
-
 
     /* This routine extracts the button readings for each switch position,
      * producing an array IqDigest with
      *      IqDigest[ix][c] = average reading for button c for switch ix.
-     * The button positions are reduced to complex numbers scaled by the
-     * overall average reading.  The variance of the data is also computed
-     * for thresholding further work. */
+     * The button positions are reduced to complex numbers.  The variance of
+     * the data is also computed for thresholding further processing. */
     bool DigestWaveform(const LIBERA_ROW *Data, IQ_DIGEST &IqDigest)
     {
         int Totals[MAX_SWITCH_SEQUENCE][2*BUTTON_COUNT];
         long long int Squares[MAX_SWITCH_SEQUENCE][2*BUTTON_COUNT];
-        memset(Totals, 0, sizeof(Totals));
-        memset(Squares, 0, sizeof(Squares));
+        ZeroArray(Totals);
+        ZeroArray(Squares);
 
         /* Work through all full switch cycles in the captured waveform
          * accumulating total readings by button and switch position.  Also
@@ -632,27 +738,33 @@ private:
         /* If no switch markers seen then can do nothing more. */
         if (Samples == 0)   return false;
 
-        /* Now reduce the raw summed data to averages and overall variance as
-         * complex numbers. */
+        /* Now condense the raw summed data to complex numbers.  Note that no
+         * rescaling is required as all further processing will treat these
+         * readings as relative values.
+         *    However, we do compute a variance which is then reduced to a
+         * relative standard deviation: this does need to be scaled and is
+         * used to filter out data with too much noise (or, generally, too
+         * much phase shift). */
         REAL Variance = 0.0;
         REAL MinimumSignal = LONG_MAX;
-        REAL Prescale = (REAL) (1 << PRESCALE); 
         for (int ix = 0; ix < SwitchSequenceLength; ix ++)
         {
             for (int b = 0; b < BUTTON_COUNT; b ++)
             {
-                IqDigest[ix][b] = (Prescale / Samples) * complex(
+                IqDigest[ix][b] = complex(
                     (REAL) Totals[ix][2*b], (REAL) Totals[ix][2*b+1]);
                 Variance +=
                     variance(Totals[ix][2*b],   Squares[ix][2*b],   Samples) +
                     variance(Totals[ix][2*b+1], Squares[ix][2*b+1], Samples);
+                /* Note that the signal here is scaled by the total number of
+                 * samples just read. */
                 REAL Signal = abs(IqDigest[ix][b]);
                 if (Signal < MinimumSignal)
                     MinimumSignal = Signal;
             }
         }
-        Variance /= SwitchSequenceLength * BUTTON_COUNT * Samples;
-        Deviation = aiValue(100. * Prescale * sqrt(Variance) / MinimumSignal);
+        Variance /= SwitchSequenceLength * BUTTON_COUNT;
+        Deviation = aiValue(100. * sqrt(Variance) / MinimumSignal);
 
         return true;
     }
@@ -660,162 +772,182 @@ private:
     
     /* Given the raw inferred input signals this computes the angles and
      * updates the appropriate fields. */
-    void UpdateSignalIn(const complex SignalIn[BUTTON_COUNT])
+    void UpdateSignalIn(const BUTTONS_REAL &Xarg)
     {
-        int PhaseA = aiPhase(SignalIn[0]);
-        PhaseB = aiPhase(SignalIn[1], PhaseA);
-        PhaseC = aiPhase(SignalIn[2], PhaseA);
-        PhaseD = aiPhase(SignalIn[3], PhaseA);
+        int PhaseA = aiPhase(Xarg[0]);
+        PhaseB = aiPhase(Xarg[1], PhaseA);
+        PhaseC = aiPhase(Xarg[2], PhaseA);
+        PhaseD = aiPhase(Xarg[3], PhaseA);
     }
 
-    /* Given an array of channels updates the appropriate fields. */
-    void UpdateChannels(const COMPENSATION_MATRIX &Channels)
+    /* Updates the published channel information by digesting the given
+     * compensation matrix. */
+    void UpdateChannels(const CHANNEL_ARRAY &K)
     {
+        /* We update each of the phase, magnitude and variance fields with a
+         * digest of the corresponding column of the K matrix. */
         for (int c = 0; c < CHANNEL_COUNT; c ++)
         {
-            ChannelPhase[c] = aiPhase(Channels[c]);
-            ChannelMag[c]   = aiValue(abs(Channels[c]));
-        }
-    }
-
-
-    void ProcessIqDigest(
-        const IQ_DIGEST &IqDigest, COMPENSATION_MATRIX &NewCompensation)
-    {
-        /* Compute an estimate of the incoming signal on each button.  The
-         * underlying model is
-         *
-         *      Y[n,b] = K[p[n,b]] C[p[n,b]] X[b]
-         *      
-         * where
-         *      n = switch position
-         *      b = button number
-         *      p[n,b] = channel processing button b in switch position n
-         *      Y[n,b] = recorded signal for button b in switch position n
-         *      K[c] = currently applied correction factor for channel c
-         *      C[c] = (modelled) gain of channel c
-         *      X[b] = input signal on button b.
-         *
-         * We estimate
-         *
-         *      X^[b] = mean_n(Y[n,b] / K[p[n,b]])
-         *            = mean_n(C[p[n,b]]) X[b]
-         *            = mean_c(C[c]) X[b]
-         *            ~~ X[b]
-         *
-         * This derivation relies on the necessary assumption that p[n,b]
-         * covers all channels c, and we have to assume mean(C) = 1.  This
-         * last assumption is rather strong, in fact.
-         *
-         * It helps to first compute uncorrected channel outputs, let's write
-         * them
-         *
-         *      Z[n,p[n,b]] = Y[n,b] / K[p[n,b]]
-         * or
-         *      Z[n,c] = Y[n,q[n,c]] / K[c]
-         *
-         * where
-         *      c = channel number = p[n,b] 
-         *      p[n,q[n,c]] = c
-         *      q[n,q[n,b]] = b
-         *
-         * and then
-         *      Z[n,c] = C[c] X[q[n,c]]
-         *      X^[b] = mean_n(Z[n,b])
-         */
-        IQ_DIGEST RawChannels;
-        complex SignalIn[BUTTON_COUNT];
-        for (int b = 0; b < BUTTON_COUNT; b ++)
-            SignalIn[b] = 0.0;
-        COMPENSATION_MATRIX ActualCompensation;
-        GetActualCompensation(ActualCompensation);
-        for (int ix = 0; ix < SwitchSequenceLength; ix ++)
-        {
-            const PERMUTATION &p = PermutationLookup[(int)SwitchSequence[ix]];
-            for (int b = 0; b < BUTTON_COUNT; b ++)
-            {
-                complex RawSignal = IqDigest[ix][b] / ActualCompensation[p[b]];
-                RawChannels[ix][p[b]] = RawSignal;
-                SignalIn[b] += RawSignal;
-            }
-        }
-        for (int b = 0; b < BUTTON_COUNT; b ++)
-            SignalIn[b] /= (REAL) SwitchSequenceLength;
-        /* Publish the measured signal angles. */
-        UpdateSignalIn(SignalIn);
+            complex Mean = 0;
+            for (int ix = 0; ix < SwitchSequenceLength; ix ++)
+                Mean += K[ix][c];
+            Mean /= SwitchSequenceLength;
             
-        /* Now we want to compute a new value for the correction factor, let's
-         * call it K', to ensure that K=1/C.  However, we'll first need to
-         * compute (an estimate for ) C directly, so for each n we can compute
-         *
-         *      C^[p[n,b]] = Y[n,b] / X[b] K[p[n,b]]
-         *                 = Z[n,p[n,b]] / X[b] 
-         *
-         * and we'll take C^[c] as the mean of these values. */
-        COMPENSATION_MATRIX NewChannels;
-        for (int c = 0; c < CHANNEL_COUNT; c ++)
-            NewChannels[c] = 0.0;
+            /* The channel value is the reciprocal of the channel
+             * compensation, of course, so we take this into account. */
+            ChannelPhase[c] = aiPhase(- arg(Mean));
+            ChannelMag[c]   = aiValue(1 / abs(Mean));
+
+            /* Now compute the variance.  The variance of compensations will
+             * do, and indeed it's more meaniningful... */
+            REAL Variance = 0;
+            for (int ix = 0; ix < SwitchSequenceLength; ix ++)
+                Variance += sqr(abs(K[ix][c] - Mean));
+            Variance /= SwitchSequenceLength;
+            ChannelVariance[c] = aiValue(sqrt(Variance));
+        }
+    }
+
+
+    /* The estimation of X[b] from Z[n,b] via the model
+     *
+     *      Z[n,b] ~= C[p[n,b]] X[b]
+     *
+     * is a crucial step in the computation of compensation K ~= 1/C.  There
+     * are two obvious candidates for estimating X: the arithmetic and
+     * geometric means along n of Z[n,b].
+     *     It turns out that using the arithmetic mean is too susceptible to
+     * errors not caught in the model above, whereas using the geometric mean
+     * is fine.  However, the geometric mean loses absolute phase -- and it
+     * further turns out that the phase errors in the geometric mean are
+     * *not* a problem.
+     *     Thus we estimate
+     *
+     *     X = geo_mean(abs(Z), 0) * exp(1j * angle(mean(Z, 0)))
+     *
+     * The computed angles for X are also returned separately: this provides
+     * a useful observation on the inputs. */
+    void EstimateX(const BUTTON_ARRAY &Z, BUTTONS &X, BUTTONS_REAL &Xarg)
+    {
+        for (int b = 0; b < BUTTON_COUNT; b ++)
+        {
+            REAL Magnitude = 1.0;
+            complex MeanSum = 0.0;
+            for (int ix = 0; ix < SwitchSequenceLength; ix ++)
+            {
+                Magnitude *= abs(Z[ix][b]);
+                MeanSum += Z[ix][b];
+            }
+            /* Compute geometric and arithmetic means. */
+            Magnitude = pow(Magnitude, 1. / SwitchSequenceLength);
+            MeanSum /= SwitchSequenceLength;
+            Xarg[b] = arg(MeanSum);
+            /* Finally return the computed X. */
+            X[b] = std::polar(Magnitude, Xarg[b]);
+        }
+    }
+
+
+    /* The computation below can be described as follows.
+     *
+     * Inputs:
+     *      p[n,b]  - Channel used to process button b for switch n
+     *      K[n,c]  - Current compensation for channel c and switch n
+     *      Y[n,b]  - Digested reading at switch position n from button b
+     *
+     * Outputs:
+     *      K_[n,c] - New compensation matrix for next round
+     *      Xa[b]   - Input angles
+     *
+     * The following numpy code implements the the code below:
+     *
+     *  Z = Y / K[np]
+     *  X = estimate_X(Z)
+     *  K_ = (X / Z)[nq]
+     *
+     */
+    void ProcessIqDigest(const BUTTON_ARRAY &Y, CHANNEL_ARRAY &NewK)
+    {
+        /* Pick up the compensation in effect when Y was captured. */
+        COMPENSATION_MATRIX_LIST K;
+        GetActualCompensation(K);
+
+        /* Compute decompensated readings: Z = Y / K[np] . */
+        BUTTON_ARRAY Z;
         for (int ix = 0; ix < SwitchSequenceLength; ix ++)
         {
-            const PERMUTATION &p = PermutationLookup[(int)SwitchSequence[ix]];
+            const PERMUTATION &p = PermutationLookup[SwitchSequence[ix]];
             for (int b = 0; b < BUTTON_COUNT; b ++)
-                NewChannels[p[b]] += RawChannels[ix][p[b]] / SignalIn[b];
+                Z[ix][b] = Y[ix][b] / K[ix][p[b]];
         }
-        for (int c = 0; c < CHANNEL_COUNT; c ++)
-            NewChannels[c] /= (REAL) SwitchSequenceLength;
 
-        /* Now either merge the new channel values into the existing channel
-         * value using our current IIR value, or simply assign the new
-         * values. */
+        /* Estimate the input X button values and publish the input angles
+         * as an external observation. */
+        BUTTONS X;
+        BUTTONS_REAL Xarg;
+        EstimateX(Z, X, Xarg);
+        UpdateSignalIn(Xarg);
+
+        /* Compute the final compensation: K_ = (X / Z)[nq] .  This is run
+         * through a simple one pole IIR before being written to the FPGA (by
+         * our caller) and published to EPICS here. */
+        for (int ix = 0; ix < SwitchSequenceLength; ix ++)
+        {
+            const PERMUTATION &p = PermutationLookup[SwitchSequence[ix]];
+            for (int b = 0; b < BUTTON_COUNT; b ++)
+                NewK[ix][p[b]] = X[b] / Z[ix][b];
+        }
+        RunIIR(NewK);
+        UpdateChannels(NewK);
+    }
+
+
+    
+    /* To avoid rapid changes of outputs we normally run all compensation
+     * values through a simple IIR filter.  However this can be reset at any
+     * time by setting the ResetChannelIIR flag: this is done whenever the
+     * attenuators are changed. */
+    void RunIIR(const CHANNEL_ARRAY &NewK)
+    {
         if (ResetChannelIIR)
         {
+            /* On a reset simply copy over the new values. */
             ResetChannelIIR = false;
-            memcpy(CurrentChannels, NewChannels, sizeof(NewChannels));
+            AssignArray(CurrentCompensation, NewK);
             /* On a fresh set of SC corrections trigger an interlock holdoff,
              * as this change may cause a glitch if we're unlucky. */
             HoldoffInterlock();
         }
         else
         {
+            /* During normal IIR operation compute
+             *
+             *  K = (1 - a) * K  +  a * NewK
+             *
+             * where the scaling factor a = ChannelIIRFactor is programmed
+             * through the EPICS interface. */
             REAL IIR = (REAL) ChannelIIRFactor / AI_SCALE;
-            for (int c = 0; c < CHANNEL_COUNT; c ++)
-                CurrentChannels[c] =
-                    (1 - IIR) * CurrentChannels[c] + IIR * NewChannels[c];
+            for (int ix = 0; ix < SwitchSequenceLength; ix ++)
+                for (int c = 0; c < CHANNEL_COUNT; c ++)
+                    CurrentCompensation[ix][c] =
+                        (1 - IIR) * CurrentCompensation[ix][c] +
+                        IIR * NewK[ix][c];
         }
-        /* Published the updated channel values. */
-        UpdateChannels(CurrentChannels);
+    }
 
-        /* Finally there is a slightly odd correction we need to make.  When
-         * operating without signal correction the default state is to set
-         * the channel compensation matrix to unity, and we would like the
-         * overall response of the system to change as little as possible
-         * when compensation is enabled.
-         *    However, there is a complication: after the data has been
-         * reduced to turn-by-turn (as processed here) the phase information
-         * is then taken away by taking magnitudes, and effectively the data
-         * is then averaged over switches.  This means, in effect, that the
-         * FF and SA streams see
-         * 
-         *      X^[b] = mean_n(|C[p[n,b]] X[b]|)
-         *            = mean_c(|C[c]|) X[b]  .
-         *
-         * It's an unavoidable fact that mean_c(|C[c]|) >= |mean_c(C[c])|
-         * with equality only when they're all in phase.  As our correction
-         * process effectively cancels out all the C[c] terms, we end up
-         * reducing the data intensity by
-         *
-         *      S = mean_c(|C[c]|)
-         *
-         * so here we compute this so that we can put it back into the final
-         * compensation matrix with values S/C^[c]. */
-        REAL MagnitudeScaling = 0.0;
-        for (int c = 0; c < CHANNEL_COUNT; c ++)
-            MagnitudeScaling += abs(CurrentChannels[c]);
-        MagnitudeScaling /= CHANNEL_COUNT;
-        ChannelScale = aiValue(MagnitudeScaling);
-        
-        for (int c = 0; c < CHANNEL_COUNT; c ++)
-            NewCompensation[c] = MagnitudeScaling / CurrentChannels[c];
+
+    /* Called on startup and when compensation has dug itself into such a
+     * deep hole that the compensation array has overflowed.  We write unity
+     * gains into the compensation matrix. */
+    void ResetCurrentCompensation()
+    {
+        for (int ix = 0; ix < SwitchSequenceLength; ix ++)
+            for (int c = 0; c < CHANNEL_COUNT; c ++)
+                CurrentCompensation[ix][c] = 1.0;
+        /* The interlock holdoff seems a little gratuitous: if we're this
+         * deep in a hole the chances of holding interlock are nil. */
+        HoldoffInterlock();
+        WritePhaseCompensation(CurrentCompensation);
     }
 
 
@@ -828,7 +960,8 @@ private:
          * phase array for the sake of any outside observers: this means that
          * the IQ data can be decoded according to the phase compensation in
          * effect at the time it was captured. */
-        memcpy(OldPhaseArray.Array(), CurrentPhaseArray, sizeof(PHASE_ARRAY));
+        AssignArray(
+            *(PHASE_ARRAY_LIST*)OldPhaseArray.Array(), CurrentPhaseArray);
         LIBERA_ROW * Waveform = (LIBERA_ROW *) IqData.Waveform();
         if (!ReadWaveform(Waveform, SAMPLE_SIZE))
             return SC_NO_DATA;
@@ -843,19 +976,22 @@ private:
         if (Deviation > MaximumDeviationThreshold)
             return SC_VARIANCE;
 
-        /* Compute the new updated compensation matrix. */
-        COMPENSATION_MATRIX NewCompensation;
+        /* Compute the new updated compensation matrix. */ 
+        COMPENSATION_MATRIX_LIST NewCompensation;
         ProcessIqDigest(IqDigest, NewCompensation);
-        /* If writing into the FPGA overflows then bail out. */
-        if (!WritePhaseCompensation(NewCompensation))
-            return SC_OVERFLOW;
 
-        /* All done: a complete cycle.  Commit the FPGA state and remember
-         * the current compensation. */
-        memcpy(LastGoodCompensation, NewCompensation,
-            sizeof(COMPENSATION_MATRIX));
+        /* At this point we're commited to doing something: if it's really bad
+         * then we'll back off to a known point. */
+        SC_STATE Result = SC_OK;
+        if (!WritePhaseCompensation(CurrentCompensation))
+        {
+            /* If writing into the FPGA overflows then we're in real trouble.
+             * In this case we should reset CurrentCompensation. */
+            ResetCurrentCompensation();
+            Result = SC_OVERFLOW;
+        }
         CommitDscState();
-        return SC_OK;
+        return Result;
     }
 
     
@@ -867,8 +1003,7 @@ private:
          * position. */
         NormalDemuxArray();
         SetUnityCompensation();
-        for (int c = 0; c < CHANNEL_COUNT; c ++)
-            LastGoodCompensation[c] = 1.0;
+        ResetCurrentCompensation();
         CommitDscState();
         Unlock();
         
@@ -936,7 +1071,7 @@ private:
     /* Channel scalings as computed in phase, magnitude and overall scaling. */
     int ChannelPhase[CHANNEL_COUNT];
     int ChannelMag[CHANNEL_COUNT];
-    int ChannelScale;
+    int ChannelVariance[CHANNEL_COUNT];
     
     /* Set to reset the channel IIR: reset on initialisation, when entering
      * UNITY mode and when changing attenuation. */
@@ -947,18 +1082,21 @@ private:
 
     INTERLOCK Interlock;
 
-    /* This is the array of channel gains as measured. */
-    COMPENSATION_MATRIX CurrentChannels;
-    /* This is the last good computed compensation matrix (or an identity
-     * matrix on startup). */
-    COMPENSATION_MATRIX LastGoodCompensation;
+    /* This is the array of channel gains after IIR processing.  This is what
+     * is written into the FPGA, after conversion to phase array form.
+     *    When unity gain mode is selected this matrix is used to record the
+     * last good computed compensation. */
+    COMPENSATION_MATRIX_LIST CurrentCompensation;
     /* Currently written phase compensation array as actually written to the
      * FPGA.  This is then reversed to compute the associated compensation
      * matrix when processing the signal. */
-    PHASE_ARRAY CurrentPhaseArray;
+    PHASE_ARRAY_LIST CurrentPhaseArray;
     /* Phase compensation array used when reading current waveform: published
      * to EPICS for diagnostics and research. */
     INT_WAVEFORM OldPhaseArray;
+    /* Writing to this waveform allows the phase array to be written directly
+     * -- obviously for expermentation only! */
+    WRITE_PHASE_ARRAY EpicsWritePhaseArray;
 };
 
 

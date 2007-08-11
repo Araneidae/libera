@@ -466,6 +466,8 @@ def Interlock():
     UnsetChannelName()
 
 
+MAX_SC_IQ = 2048
+
 def Conditioning():
     SetChannelName('SC')
 
@@ -480,6 +482,9 @@ def Conditioning():
         ESLO = 1e-3, PREC = 3, EGU  = 's',
         DESC = 'Conditioning interval')
 
+    Waveform('SETPHASE', 16*4*2,
+        DESC = 'Low level compensation cntrl')
+
     # Readback values
     Trigger(False, [
             mbbIn('STATUS',
@@ -493,9 +498,6 @@ def Conditioning():
             aIn('DEV', 0, 200,
                 PREC = 1, EGU  = '%',
                 DESC = 'Relative signal deviation'),
-            aIn('CSCALE', 1, 2,
-                PREC = 5,
-                DESC = 'Channel gain scaling factor'),
         ] + [
             aIn('PHASE%s' % button, -180, 180,
                 PREC = 2, EGU  = 'deg',
@@ -508,14 +510,13 @@ def Conditioning():
                 aIn('C%sPHASE' % channel, -180, 180,
                     PREC = 3, EGU  = 'deg',
                     DESC = 'Channel %s phase shift' % channel),
-                aIn('C%sMAG' % channel, 1, 1.5,
+                aIn('C%sMAG' % channel, 0.8, 1.2,
                     PREC = 5, 
                     DESC = 'Channel %s gain' % channel),
-                longIn('C%sRAW0' % channel, -2**17, 2**17,
-                    DESC = 'Raw channel %s direct gain' % channel),
-                longIn('C%sRAW1' % channel, -2**17, 2**17,
-                    DESC = 'Raw channel %s delayed gain' % channel),
-        ] + IQ_wf(2048) + [
+                aIn('C%sVAR' % channel, 0, 0.1,
+                    PREC = 3, 
+                    DESC = 'Channel %s variance' % channel),
+        ] + IQ_wf(MAX_SC_IQ) + [
             Waveform('IQDIGEST', 8*4*2, FTVL = 'DOUBLE',
                 DESC = 'Raw digest of IQ data'),
             Waveform('LASTCK', 8, FTVL = 'LONG',

@@ -529,6 +529,18 @@ static bool WriteAttenuatorState(int Offset)
 }
 
 
+/* The switch history mark is written into bits 19:16 of the history marker
+ * control register and a programmable delay from switch change to the marker
+ * is written into bits 15:0.  For the moment we hard code zero into the
+ * history delay. */
+
+static bool WriteHistoryMark()
+{
+    return
+        WriteDscWord(DSC_HISTORY_MARKER, (SwitchPattern[0] & 0xF) << 16);
+}
+
+
 /* The sequence of switches is repeated to fill the complete switch pattern
  * block. */
 
@@ -545,7 +557,15 @@ static bool WriteSwitchesState(int Offset)
     char SwitchPatternBlock[DSC_SWITCH_PATTERN_DB];
     for (int i = 0; i < DSC_SWITCH_PATTERN_DB; i += sizeof(Template))
         memcpy(SwitchPatternBlock + i, Template, sizeof(Template));
-    return WriteDscWords(Offset, SwitchPatternBlock, DSC_SWITCH_PATTERN_DB);
+
+    return
+        /* Write out the new DSC switch control block ready to be activated
+         * when the double buffer is swapped. */
+        WriteDscWords(Offset, SwitchPatternBlock, DSC_SWITCH_PATTERN_DB)  &&
+        /* Finally ensure that history mark is updated.  This last step is,
+         * alas, out of sync with everything else as it is not double
+         * buffered.  Too bad: it won't have much effect. */
+        WriteHistoryMark();
 }
 
 
@@ -562,18 +582,6 @@ static bool WriteDemuxState(int Offset)
     return WriteDscWords(Offset, RawSwitchDemux, DSC_SWITCH_DEMUX_DB);
 }
 
-
-/* The switch history mark is written into bits 19:16 of the history marker
- * control register. */
-
-static bool WriteHistoryMark()
-{
-    int HistoryMarker;
-    return
-        ReadDscWord(DSC_HISTORY_MARKER, HistoryMarker)  &&
-        WriteDscWord(DSC_HISTORY_MARKER,
-            (HistoryMarker & 0xFFFF) | ((SwitchPattern[0] & 0xF) << 16));
-}
 
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -695,10 +703,7 @@ bool CommitDscState()
         WriteDemuxState     (DOUBLE_BUFFER(Buffer, DSC_SWITCH_DEMUX))  &&
 
         /* Swap the new buffer into place: in effect, an atomic write. */
-        WriteDscWord(DSC_DOUBLE_BUFFER, Buffer^1)  &&
-
-        /* Finally ensure that history mark is updated. */
-        WriteHistoryMark();
+        WriteDscWord(DSC_DOUBLE_BUFFER, Buffer^1);
 }
 
 
