@@ -782,8 +782,9 @@ private:
 
     /* Updates the published channel information by digesting the given
      * compensation matrix. */
-    void UpdateChannels(const CHANNEL_ARRAY &K)
+    void UpdateChannels()
     {
+        const CHANNEL_ARRAY &K = CurrentCompensation;
         /* We update each of the phase, magnitude and variance fields with a
          * digest of the corresponding column of the K matrix. */
         for (int c = 0; c < CHANNEL_COUNT; c ++)
@@ -866,10 +867,10 @@ private:
      *  K_ = (X / Z)[nq]
      *
      */
-    void ProcessIqDigest(const BUTTON_ARRAY &Y, CHANNEL_ARRAY &NewK)
+    void ProcessIqDigest(const BUTTON_ARRAY &Y)
     {
         /* Pick up the compensation in effect when Y was captured. */
-        COMPENSATION_MATRIX_LIST K;
+        CHANNEL_ARRAY K;
         GetActualCompensation(K);
 
         /* Compute decompensated readings: Z = Y / K[np] . */
@@ -895,10 +896,10 @@ private:
         {
             const PERMUTATION &p = PermutationLookup[SwitchSequence[ix]];
             for (int b = 0; b < BUTTON_COUNT; b ++)
-                NewK[ix][p[b]] = X[b] / Z[ix][b];
+                K[ix][p[b]] = X[b] / Z[ix][b];
         }
-        RunIIR(NewK);
-        UpdateChannels(NewK);
+        RunIIR(K);
+        UpdateChannels();
     }
 
 
@@ -976,9 +977,9 @@ private:
         if (Deviation > MaximumDeviationThreshold)
             return SC_VARIANCE;
 
-        /* Compute the new updated compensation matrix. */ 
-        COMPENSATION_MATRIX_LIST NewCompensation;
-        ProcessIqDigest(IqDigest, NewCompensation);
+        /* Compute the new updated compensation matrix.  This updates
+         * CurrentCompensation with the new values.*/
+        ProcessIqDigest(IqDigest);
 
         /* At this point we're commited to doing something: if it's really bad
          * then we'll back off to a known point. */
