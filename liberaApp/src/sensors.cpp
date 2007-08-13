@@ -34,6 +34,7 @@
 #include <pthread.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <fcntl.h>
 #include <unistd.h>
 #include <fts.h>
 
@@ -41,16 +42,22 @@
 #include "persistent.h"
 #include "publish.h"
 #include "hardware.h"
+#include "thread.h"
+#include "trigger.h"
 
 #include "sensors.h"
 
 
 
+/* We poll the sensors every 10 seconds. */
+#define SENSORS_POLL_INTERVAL   10
+
+
 /* Sensor variables. */
 
-/* The internal temperature, fan speeds and motherboard voltages are all read
- * through CSPI. */
-static cspi_health_t Health;
+static int SystemTemperature;
+static int FanSpeeds[2];
+static int SystemVoltages[8];
 
 static int MemoryFree;  // Nominal memory free (free + cached - ramfs)
 static int RamfsUsage;  // Number of bytes allocated in ram filesystems
@@ -63,10 +70,13 @@ static double LastUptime;
 static double LastIdle;
 static double EpicsStarted;
 
-/* Shutdown synchronisation state: we have an enabling variable and a
- * synchronising mutex. */
-static bool Shutdown = false;
-static pthread_mutex_t ShutdownMutex = PTHREAD_MUTEX_INITIALIZER;
+/* The paths to the fan and temperature sensors need to be determined at
+ * startup. */
+static const char *proc_temp;
+static const char *proc_fan0;
+static const char *proc_fan1;
+/* This records whether we're reading from /sys or /proc. */
+static bool UseSys;
 
 
 /* Helper routine for using scanf to parse a file. */
@@ -221,18 +231,76 @@ static void ProcessFreeMemory()
 }
 
 
-static void ProcessSensors()
+
+/* The following reads the key system health parameters directly from the
+ * appropriate devices and proc/sys files. */
+
+static void ReadHealth()
 {
-    TEST_(pthread_mutex_lock, &ShutdownMutex);
-    if (!Shutdown)
+    /* Annoyingly the format of the temperature readout depends on which
+     * system version we're using! */
+    ParseFile(proc_temp, 1,
+        UseSys ? "%d" : "%*d\t%*d\t%d", &SystemTemperature);
+    if (UseSys)
+        SystemTemperature /= 1000;
+
+    ParseFile(proc_fan0, 1, "%d", &FanSpeeds[0]);
+    ParseFile(proc_fan1, 1, "%d", &FanSpeeds[1]);
+
+    /* The system voltages are read directly from the msp device in binary
+     * format.  This particular step takes a surprisingly long time (about
+     * half a second) -- in particular, this one step requires all our
+     * processing to be done in the sensors thread (rather than the
+     * alternative of using an EPICS SCAN thread). */
+    int msp = open("/dev/msp0", O_RDONLY);
+    if (msp == -1)
+        perror("Unable to open MSP device");
+    else
     {
-        ProcessUptimeAndIdle();
-        ProcessFreeMemory();
-        ReadHealth(Health);
+        read(msp, SystemVoltages, sizeof(SystemVoltages));
+        close(msp);
     }
-    TEST_(pthread_mutex_unlock, &ShutdownMutex);
 }
 
+
+
+static void ProcessSensors()
+{
+    ProcessUptimeAndIdle();
+    ProcessFreeMemory();
+    ReadHealth();
+}
+
+
+
+class SENSORS_THREAD : public THREAD
+{
+public:
+    SENSORS_THREAD() : THREAD("Sensors")
+    {
+        Interlock.Publish("SE");
+    }
+    
+private:
+    void Thread()
+    {
+        StartupOk();
+        
+        while (Running())
+        {
+            Interlock.Wait();
+            ProcessSensors();
+            Interlock.Ready();
+            sleep(SENSORS_POLL_INTERVAL);
+        }
+    }
+
+    INTERLOCK Interlock;
+};
+
+
+
+static SENSORS_THREAD * SensorsThread = NULL;
 
 
 #define PUBLISH_BLOCK(Type, BaseName, Array) \
@@ -248,9 +316,28 @@ static void ProcessSensors()
 
 bool InitialiseSensors()
 {
-    Publish_longin("SE:TEMP",   Health.temp);
-    PUBLISH_BLOCK(longin, "SE:FAN",  Health.fan);
-    PUBLISH_BLOCK(ai,     "SE:VOLT", Health.voltage);
+    /* Figure out where to read our fan and temperature sensors: under Linux
+     * 2.6 we read from the /sys file system, but under 2.4 we read from /proc
+     * instead. */
+    UseSys = access("/sys", F_OK) == 0;
+    if (UseSys)
+    {
+        /* The /sys file system exists.  All our sensors live here. */
+        proc_temp = "/sys/class/i2c-adapter/i2c-0/device/0-0029/temp1_input";
+        proc_fan0 = "/sys/class/i2c-adapter/i2c-0/device/0-004b/fan1_input";
+        proc_fan1 = "/sys/class/i2c-adapter/i2c-0/device/0-0048/fan1_input";
+    }
+    else
+    {
+        /* No /sys file system: revert to the older /proc filesystem. */
+        proc_temp = "/proc/sys/dev/sensors/max1617a-i2c-0-29/temp1";
+        proc_fan0 = "/proc/sys/dev/sensors/max6650-i2c-0-4b/fan1";
+        proc_fan1 = "/proc/sys/dev/sensors/max6650-i2c-0-48/fan1";
+    }
+    
+    Publish_longin("SE:TEMP",   SystemTemperature);
+    PUBLISH_BLOCK(longin, "SE:FAN",  FanSpeeds);
+    PUBLISH_BLOCK(ai,     "SE:VOLT", SystemVoltages);
 
     Publish_ai("SE:FREE",    MemoryFree);
     Publish_ai("SE:RAMFS",   RamfsUsage);
@@ -258,23 +345,16 @@ bool InitialiseSensors()
     Publish_ai("SE:EPICSUP", EpicsUp);
     Publish_ai("SE:CPU",     CpuUsage);
 
-    PUBLISH_ACTION("SE:PROCESS", ProcessSensors);
-
     InitialiseUptime();
-    
-    return true;
+
+    SensorsThread = new SENSORS_THREAD();
+    return SensorsThread->StartThread();
 }
 
 
 
-/* It turns out that we need to synchronise sensor processing with shutdown.
- * This call ensures that any sensor processing is complete before returning,
- * and ensures it doesn't happen again.  If we don't do this, there can be a
- * crash in cspi during exit() processing! */
-
 void TerminateSensors()
 {
-    TEST_(pthread_mutex_lock, &ShutdownMutex);
-    Shutdown = true;
-    TEST_(pthread_mutex_unlock, &ShutdownMutex);
+    if (SensorsThread != NULL)
+        SensorsThread->Terminate();
 }

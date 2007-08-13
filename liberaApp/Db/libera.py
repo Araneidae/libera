@@ -466,7 +466,11 @@ def Interlock():
     UnsetChannelName()
 
 
+# Signal conditioning processing uses a fixed length buffer of 2048 points
 MAX_SC_IQ = 2048
+# Compensation matrices are all up to 8x4x2 -- 8 (or 4) switch positions, 4
+# channels, and two values for each channel.
+COMP_MAT_SIZE = 8 * 4 * 2
 
 def Conditioning():
     SetChannelName('SC')
@@ -479,11 +483,11 @@ def Conditioning():
         PREC = 2,
         DESC = 'IIR factor for channels')
     aOut('INTERVAL', 0, 100,
-        ESLO = 1e-3, PREC = 3, EGU  = 's',
+        ESLO = 1e-3, PREC = 1, EGU  = 's',
         DESC = 'Conditioning interval')
 
-    Waveform('SETPHASE', 16*4*2,
-        DESC = 'Low level compensation cntrl')
+    # Available for external direct control of the conditioning matrix.
+    Waveform('SETCOMP_S', 16*4*2, DESC = 'Low level compensation cntrl')
 
     # Readback values
     Trigger(False, [
@@ -498,6 +502,18 @@ def Conditioning():
             aIn('DEV', 0, 200,
                 PREC = 1, EGU  = '%',
                 DESC = 'Relative signal deviation'),
+            
+            # Digest of the IQ_wf() data reduced to one complex value per
+            # button and switch position pair.
+            Waveform('IQDIGEST', 8*4*2, FTVL = 'DOUBLE',
+                DESC = 'Raw digest of IQ data'),
+            # Compensation matrix used to generate the IQ_wf() array
+            Waveform('LASTCOMP', COMP_MAT_SIZE, 
+                DESC = 'Last channel gains'),
+            # Current compensation matrix: will be copied to LASTCOMP the
+            # next time SC processes.
+            Waveform('COMP', COMP_MAT_SIZE, 
+                DESC = 'Last channel gains'),
         ] + [
             aIn('PHASE%s' % button, -180, 180,
                 PREC = 2, EGU  = 'deg',
@@ -516,12 +532,7 @@ def Conditioning():
                 aIn('C%sVAR' % channel, 0, 0.1,
                     PREC = 3, 
                     DESC = 'Channel %s variance' % channel),
-        ] + IQ_wf(MAX_SC_IQ) + [
-            Waveform('IQDIGEST', 8*4*2, FTVL = 'DOUBLE',
-                DESC = 'Raw digest of IQ data'),
-            Waveform('LASTCK', 8, FTVL = 'LONG',
-                DESC = 'Last channel gains')
-        ])
+        ] + IQ_wf(MAX_SC_IQ))
     
     UnsetChannelName()
     
@@ -731,13 +742,7 @@ def Sensors():
     health = AggregateSeverity('HEALTH', 'Aggregated health',
         *alarmsensors)
     
-    allsensors = alarmsensors + voltages + [uptime, epicsup, health]
-    
-    boolOut('PROCESS', '', '',
-        DESC = 'Sensors scan',
-        SCAN = '10 second',
-        PINI = 'YES',
-        FLNK = create_fanout('FANOUT', *allsensors))
+    Trigger(False, alarmsensors + voltages + [uptime, epicsup, health])
             
     UnsetChannelName()
 

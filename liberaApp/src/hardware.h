@@ -40,7 +40,11 @@
 /*                                                                           */
 /*****************************************************************************/
 
+
+/* We'll try to distinguish iterations over channels from iterations over
+ * buttons. */
 #define BUTTON_COUNT    4
+#define CHANNEL_COUNT   4
 
 
 /* A row of "data on demand" Libera data consists of eight integers
@@ -83,7 +87,7 @@ struct XYQS_ROW
  * in the current release of the driver), one for each button.  ADC data is
  * always read in 1024 row segments. */
 #define ADC_LENGTH      1024
-typedef short ADC_ROW[BUTTON_COUNT];
+typedef short ADC_ROW[CHANNEL_COUNT];
 typedef ADC_ROW ADC_DATA[ADC_LENGTH];
 
 
@@ -167,9 +171,6 @@ bool SetSystemClockTime(struct timespec & NewTime);
 bool GetClockState(bool &LmtdLocked, bool &LstdLocked);
 
 
-/* Health interrogation.  Returns cspi_health_t directly. */
-bool ReadHealth(cspi_health_t &Health);
-
 
 /* Links the given CSPI event handler to the CSPI event system.  By default
  * this will be delivered through the LIBERA_SIGNAL signal. */
@@ -198,7 +199,7 @@ typedef char SWITCH_SEQUENCE[MAX_SWITCH_SEQUENCE];
  * Values in the array are signed 18 bit values scaled with 1.0 = 0x10000, so
  * the dynamic range is [-2..2). */
 typedef int PHASE_ENTRY[2];
-typedef PHASE_ENTRY PHASE_ARRAY[BUTTON_COUNT];
+typedef PHASE_ENTRY PHASE_ARRAY[CHANNEL_COUNT];
 #define PHASE_UNITY 0x10000
 
 /* A demultiplexing array P takes four raw ADC channel inputs X[i] and
@@ -208,7 +209,7 @@ typedef PHASE_ENTRY PHASE_ARRAY[BUTTON_COUNT];
  *      Z[j] = SUM_i P[j][i] * Y[i]  .
  *      
  * Values in the array are signed 18 bit values. */
-typedef int DEMUX_ARRAY[BUTTON_COUNT][BUTTON_COUNT];
+typedef int DEMUX_ARRAY[BUTTON_COUNT][CHANNEL_COUNT];
 
 
 /* Returns true iff the "brilliance" option is installed.  Mostly this can be

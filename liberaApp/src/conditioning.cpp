@@ -112,16 +112,11 @@ static const PERMUTATION BrillancePermutationLookup[] =
 
 /* Some magic numbers to be configurable real soon now. */
 #define SWITCH_PERIOD   40
-#define SWITCH_HOLDOFF  10
+#define SWITCH_HOLDOFF  6
 #define SAMPLE_SIZE     2048
 #define PRESCALE        8
 
 #define AI_SCALE        1e6
-
-/* We'll try to distinguish iterations over channels from iterations over
- * buttons.  Button indexes will be named b or i, channel indexes will be c
- * or j. */
-#define CHANNEL_COUNT   4
 
 
 
@@ -162,13 +157,6 @@ void ZeroArray(T &out)
 template<class T> T sqr(const T x) { return x*x; }
 
 
-void PrintComplexRow(complex Array[4])
-{
-    printf("[");
-    for (int i = 0; i < 4; i ++)
-        printf("(%g, %g), ", real(Array[i]), imag(Array[i]));
-    printf("]\n");
-}
 
 
 /* Helper routine for computing variance from a sum of values and sum of
@@ -205,7 +193,7 @@ static int aiValue(REAL x)
 static int aiPhase(const REAL x, int BaseAngle=0)
 {
     const int HALF_TURN = (int) AI_SCALE * 180;
-    const int FULL_TURN = 2*HALF_TURN;
+    const int FULL_TURN = 2 * HALF_TURN;
     int Angle = (int) round(HALF_TURN / M_PI * x) - BaseAngle;
 
     /* The following calculation is intended to reduce Angle to the range
@@ -316,8 +304,6 @@ public:
         cosec_if(1.0/sin(f_if)),
         m_cis_if(exp(-I*f_if)),
         IqData(SAMPLE_SIZE, true),
-        IqDigestWaveform(MAX_SWITCH_SEQUENCE * BUTTON_COUNT),
-        OldPhaseArray(sizeof(PHASE_ARRAY_LIST) / sizeof(int)),
         EpicsWritePhaseArray(*this)
     {
         /* Establish defaults for configuration variables before reading
@@ -355,9 +341,12 @@ public:
         /* The raw IQ waveform used for SC processing is made available, as
          * are some of the intermediate stages of processing. */
         IqData.Publish("SC");
-        Publish_waveform("SC:IQDIGEST", IqDigestWaveform);
-        Publish_waveform("SC:LASTCK", OldPhaseArray);
-        Publish_waveform("SC:SETPHASE", EpicsWritePhaseArray);
+        PublishSimpleWaveform(complex, "SC:IQDIGEST", IqDigest);
+        PublishSimpleWaveform(int,     "SC:LASTCOMP", OldPhaseArray);
+        PublishSimpleWaveform(int,     "SC:COMP", CurrentPhaseArray);
+        /* This waveform allows the compensation matrix to be written
+         * directly: only for research and testing use! */
+        Publish_waveform("SC:SETCOMP_S", EpicsWritePhaseArray);
 
         for (int c = 0; c < CHANNEL_COUNT; c ++)
         {
@@ -468,32 +457,15 @@ public:
     
     
 private:
-    /* The following basic datatypes are used for processing. */
+    /* The following basic datatypes are used for processing.  We distinguish
+     * the two arrays BUTTONS and CHANNELS as an important discipline for
+     * keeping track, though in fact one is just a permutation of the other. */
     typedef complex BUTTONS[BUTTON_COUNT];
     typedef complex CHANNELS[CHANNEL_COUNT];
     typedef BUTTONS BUTTON_ARRAY[MAX_SWITCH_SEQUENCE];
     typedef CHANNELS CHANNEL_ARRAY[MAX_SWITCH_SEQUENCE];
 
     typedef REAL BUTTONS_REAL[BUTTON_COUNT];
-
-    /* Some aliases to replace. */
-    typedef BUTTON_ARRAY IQ_DIGEST;
-    typedef CHANNELS COMPENSATION_MATRIX;
-    typedef CHANNEL_ARRAY COMPENSATION_MATRIX_LIST;
-
-    
-
-//     /* Raw digest of button readings against switch position.  This is the
-//      * raw IQ value averaged over the switch interval. */
-//     typedef complex IQ_DIGEST[MAX_SWITCH_SEQUENCE][BUTTON_COUNT];
-
-//     /* Computed channel compensation matrix.
-//      *    In the current version of the code we don't try to compensate
-//      * crosstalk independently of channel compensation, so to reduce phase
-//      * errors we need to apply different channel compensations for different
-//      * switch positions.  This is hardly satisfactory... */
-//     typedef complex COMPENSATION_MATRIX[CHANNEL_COUNT];
-//     typedef COMPENSATION_MATRIX COMPENSATION_MATRIX_LIST[MAX_SWITCH_SEQUENCE];
 
     /* This is used to record the actual phase array written in each switch
      * position. */
@@ -581,7 +553,7 @@ private:
     /* Writes a new compensation matrix with full error checking.  Also
      * ensures that the currently active compensation array is recorded so
      * that we can take this into account when computing new values. */
-    bool WritePhaseCompensation(const COMPENSATION_MATRIX_LIST& Compensation)
+    bool WritePhaseCompensation(const CHANNEL_ARRAY& Compensation)
     {
         PHASE_ARRAY_LIST NewPhaseArray;
         bool Ok = true;
@@ -626,7 +598,7 @@ private:
 
 
     /* Returns the currently active compensation matrix as complex numbers. */
-    void GetActualCompensation(COMPENSATION_MATRIX_LIST &Compensation)
+    void GetActualCompensation(CHANNEL_ARRAY &Compensation)
     {
         for (int ix = 0; ix < SwitchSequenceLength; ix ++)
             for (int c = 0; c < CHANNEL_COUNT; c ++)
@@ -635,6 +607,8 @@ private:
     }
 
 
+    /* This little class is used to implement external control of the
+     * compensation matrix.  Intended for debug and research only. */
     class WRITE_PHASE_ARRAY : public I_WAVEFORM
     {
     public:
@@ -693,7 +667,7 @@ private:
      *      IqDigest[ix][c] = average reading for button c for switch ix.
      * The button positions are reduced to complex numbers.  The variance of
      * the data is also computed for thresholding further processing. */
-    bool DigestWaveform(const LIBERA_ROW *Data, IQ_DIGEST &IqDigest)
+    bool DigestWaveform(const LIBERA_ROW *Data, BUTTON_ARRAY &IqDigest)
     {
         int Totals[MAX_SWITCH_SEQUENCE][2*BUTTON_COUNT];
         long long int Squares[MAX_SWITCH_SEQUENCE][2*BUTTON_COUNT];
@@ -780,6 +754,7 @@ private:
         PhaseD = aiPhase(Xarg[3], PhaseA);
     }
 
+
     /* Updates the published channel information by digesting the given
      * compensation matrix. */
     void UpdateChannels()
@@ -827,22 +802,23 @@ private:
      *     X = geo_mean(abs(Z), 0) * exp(1j * angle(mean(Z, 0)))
      *
      * The computed angles for X are also returned separately: this provides
-     * a useful observation on the inputs. */
+     * a useful observation on the inputs.  Note, of course, that
+     * angle(mean(X)) == angle(sum(X)) so a redundant division can be avoided
+     * below. */
     void EstimateX(const BUTTON_ARRAY &Z, BUTTONS &X, BUTTONS_REAL &Xarg)
     {
         for (int b = 0; b < BUTTON_COUNT; b ++)
         {
             REAL Magnitude = 1.0;
-            complex MeanSum = 0.0;
+            complex Sum = 0.0;
             for (int ix = 0; ix < SwitchSequenceLength; ix ++)
             {
                 Magnitude *= abs(Z[ix][b]);
-                MeanSum += Z[ix][b];
+                Sum += Z[ix][b];
             }
-            /* Compute geometric and arithmetic means. */
+            /* Compute geometric mean and angle. */
             Magnitude = pow(Magnitude, 1. / SwitchSequenceLength);
-            MeanSum /= SwitchSequenceLength;
-            Xarg[b] = arg(MeanSum);
+            Xarg[b] = arg(Sum);
             /* Finally return the computed X. */
             X[b] = std::polar(Magnitude, Xarg[b]);
         }
@@ -860,13 +836,14 @@ private:
      *      K_[n,c] - New compensation matrix for next round
      *      Xa[b]   - Input angles
      *
-     * The following numpy code implements the the code below:
+     * The calculation here can be described by the following numpy code:
      *
      *  Z = Y / K[np]
-     *  X = estimate_X(Z)
+     *  X = EstimateX(Z)
      *  K_ = (X / Z)[nq]
      *
-     */
+     * where np and nq are indexing tricks used to implement the element by
+     * element treatment below. */
     void ProcessIqDigest(const BUTTON_ARRAY &Y)
     {
         /* Pick up the compensation in effect when Y was captured. */
@@ -948,6 +925,7 @@ private:
         /* The interlock holdoff seems a little gratuitous: if we're this
          * deep in a hole the chances of holding interlock are nil. */
         HoldoffInterlock();
+        ResetChannelIIR = true;
         WritePhaseCompensation(CurrentCompensation);
     }
 
@@ -961,14 +939,12 @@ private:
          * phase array for the sake of any outside observers: this means that
          * the IQ data can be decoded according to the phase compensation in
          * effect at the time it was captured. */
-        AssignArray(
-            *(PHASE_ARRAY_LIST*)OldPhaseArray.Array(), CurrentPhaseArray);
+        AssignArray(OldPhaseArray, CurrentPhaseArray);
         LIBERA_ROW * Waveform = (LIBERA_ROW *) IqData.Waveform();
         if (!ReadWaveform(Waveform, SAMPLE_SIZE))
             return SC_NO_DATA;
 
         /* Capture one waveform and extract the raw switch/button matrix. */
-        IQ_DIGEST & IqDigest = * (IQ_DIGEST *) IqDigestWaveform.Array();
         if (!DigestWaveform(Waveform, IqDigest))
             return SC_NO_SWITCH;
 
@@ -1046,7 +1022,8 @@ private:
     const REAL cosec_if;    // cosecant of IF
     const complex m_cis_if; // -exp(i * IF)
 
-    /* Device handle used to read raw IQ waveforms. */
+    /* Device handle used to read raw IQ waveforms.  Needs to be abstracted
+     * into hardware.h at some point. */
     int DevDd;
 
     /* This flag controls whether signal conditioning is operational. */
@@ -1055,7 +1032,8 @@ private:
      * rounds. */
     int ConditioningInterval;
 
-    /* Reports status of the conditioning thread to EPICS. */
+    /* Reports status of the conditioning thread to EPICS.  The value is
+     * drawn from SC_STATE. */
     int ConditioningStatus;
     /* Configures the maxium allowable signal deviation for SC processing. */
     int MaximumDeviationThreshold;
@@ -1065,7 +1043,7 @@ private:
     /* Raw IQ waveform as read. */
     IQ_WAVEFORMS IqData;
     /* Digested IQ data: published to EPICS for diagnostics and research. */
-    COMPLEX_WAVEFORM IqDigestWaveform;
+    BUTTON_ARRAY IqDigest;
 
     /* Button phases, all relative to button A. */
     int PhaseB, PhaseC, PhaseD;
@@ -1077,7 +1055,7 @@ private:
     /* Set to reset the channel IIR: reset on initialisation, when entering
      * UNITY mode and when changing attenuation. */
     bool ResetChannelIIR;
-    /* Current IIR factor: 1 means no history (IIR ineffected), smaller
+    /* Current IIR factor: 1 means no history (IIR ineffective), smaller
      * values mean longer time constants. */
     int ChannelIIRFactor;
 
@@ -1087,14 +1065,15 @@ private:
      * is written into the FPGA, after conversion to phase array form.
      *    When unity gain mode is selected this matrix is used to record the
      * last good computed compensation. */
-    COMPENSATION_MATRIX_LIST CurrentCompensation;
+    CHANNEL_ARRAY CurrentCompensation;
     /* Currently written phase compensation array as actually written to the
      * FPGA.  This is then reversed to compute the associated compensation
      * matrix when processing the signal. */
     PHASE_ARRAY_LIST CurrentPhaseArray;
     /* Phase compensation array used when reading current waveform: published
      * to EPICS for diagnostics and research. */
-    INT_WAVEFORM OldPhaseArray;
+    PHASE_ARRAY_LIST OldPhaseArray;
+    
     /* Writing to this waveform allows the phase array to be written directly
      * -- obviously for expermentation only! */
     WRITE_PHASE_ARRAY EpicsWritePhaseArray;

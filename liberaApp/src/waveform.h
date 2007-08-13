@@ -34,7 +34,9 @@ template<class T>
 class SIMPLE_WAVEFORM : public I_WAVEFORM
 {
 public:
-    SIMPLE_WAVEFORM(int TypeMark, size_t EpicsPointSize, size_t WaveformSize);
+    SIMPLE_WAVEFORM(
+        int TypeMark, size_t EpicsPointSize, size_t WaveformSize,
+        T * ExternalWaveform = NULL);
 
     inline T * Array() { return Waveform; }
 
@@ -42,28 +44,47 @@ private:
     bool process(void *array, size_t max_length, size_t &new_length);
     const size_t EpicsPointSize;
     const size_t WaveformLength;
-    T * Waveform;
+    T * const Waveform;
 };
 
 class INT_WAVEFORM : public SIMPLE_WAVEFORM<int>
 {
 public:
-    INT_WAVEFORM(size_t WaveformSize);
+    INT_WAVEFORM(size_t WaveformSize, int * ExternalWaveform = NULL);
 };
 
 class FLOAT_WAVEFORM : public SIMPLE_WAVEFORM<float>
 {
 public:
-    FLOAT_WAVEFORM(size_t WaveformSize);
+    FLOAT_WAVEFORM(size_t WaveformSize, float * ExternalWaveform = NULL);
 };
+
+typedef INT_WAVEFORM        int_WAVEFORM;
+typedef FLOAT_WAVEFORM      float_WAVEFORM;
 
 #ifdef I
 class COMPLEX_WAVEFORM : public SIMPLE_WAVEFORM<complex>
 {
 public:
-    COMPLEX_WAVEFORM(size_t WaveformSize);
+    COMPLEX_WAVEFORM(size_t WaveformSize, complex * ExternalWaveform = NULL);
 };
+typedef COMPLEX_WAVEFORM    complex_WAVEFORM;
 #endif
+
+
+
+/* Wrappers for automatically building and publishing simple waveforms on top
+ * of existing waveforms.  Note that Waveform must know its own size: if it's
+ * a mere pointer, an explicit sizing cast is going to be needed! */
+#define PublishSimpleWaveform(type, Name, Waveform) \
+    ( { \
+        type##_WAVEFORM &Wrapper = * new type##_WAVEFORM( \
+            sizeof(Waveform) / sizeof(type), \
+            (type *) Waveform); \
+        Publish_waveform(Name, Wrapper); \
+        Wrapper; \
+    } )
+            
 
 
 

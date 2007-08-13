@@ -63,7 +63,8 @@
 
 template<class T>
 SIMPLE_WAVEFORM<T>::SIMPLE_WAVEFORM(
-    int TypeMark, size_t EpicsPointSize, size_t WaveformLength) :
+    int TypeMark, size_t EpicsPointSize, size_t WaveformLength,
+    T * ExternalWaveform) :
     
     I_WAVEFORM(TypeMark),
     /* An EPICS point may be smaller than T -- in particular, a waveform of
@@ -72,7 +73,9 @@ SIMPLE_WAVEFORM<T>::SIMPLE_WAVEFORM(
     EpicsPointSize(EpicsPointSize),
     /* The length of the waveform is recorded in terms of EPICS points. */
     WaveformLength(WaveformLength * sizeof(T) / EpicsPointSize),
-    Waveform(new T[WaveformLength])
+    /* If we've been given an existing waveform then we use that, otherwise
+     * create our own waveform buffer. */
+    Waveform(ExternalWaveform ? ExternalWaveform : new T[WaveformLength])
 {
 }
 
@@ -87,16 +90,20 @@ bool SIMPLE_WAVEFORM<T>::process(
     return length > 0;
 }
 
-INT_WAVEFORM::INT_WAVEFORM(size_t WaveformSize) :
-    SIMPLE_WAVEFORM<int>(DBF_LONG, sizeof(int), WaveformSize) { }
+INT_WAVEFORM::INT_WAVEFORM(size_t WaveformSize, int * ExternalWaveform) :
+    SIMPLE_WAVEFORM<int>(
+        DBF_LONG, sizeof(int), WaveformSize, ExternalWaveform) { }
 
-FLOAT_WAVEFORM::FLOAT_WAVEFORM(size_t WaveformSize) :
-    SIMPLE_WAVEFORM<float>(DBF_FLOAT, sizeof(float), WaveformSize) { }
+FLOAT_WAVEFORM::FLOAT_WAVEFORM(size_t WaveformSize, float * ExternalWaveform) :
+    SIMPLE_WAVEFORM<float>(
+        DBF_FLOAT, sizeof(float), WaveformSize, ExternalWaveform) { }
 
 /* The complex waveform is implemented as a waveform of floating point values
  * with 2 EPICS points (floating point numbers) per point. */
-COMPLEX_WAVEFORM::COMPLEX_WAVEFORM(size_t WaveformSize) :
-    SIMPLE_WAVEFORM<complex>(DBF_REAL, sizeof(REAL), WaveformSize) { }
+COMPLEX_WAVEFORM::COMPLEX_WAVEFORM(
+        size_t WaveformSize, complex * ExternalWaveform) :
+    SIMPLE_WAVEFORM<complex>(
+        DBF_REAL, sizeof(REAL), 2*WaveformSize, ExternalWaveform) { }
 
 
 template class SIMPLE_WAVEFORM<int>;

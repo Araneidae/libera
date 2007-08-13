@@ -258,8 +258,8 @@ def GetIqSC(ioc):
 def GetDigest(ioc):
     '''Returns the IQ digest computed for the current SC round.'''
     raw_digest = array(
-        catools.caget('%s:SC:IQDIGEST' % ioc).dbr.value, timeout = 5)
-    deviation = catools.caget('%s:SC:DEV' %ioc, timeout = 5).dbr.value
+        catools.caget('%s:SC:IQDIGEST' % ioc).dbr.value)
+    deviation = catools.caget('%s:SC:DEV' %ioc).dbr.value
     n = len(raw_digest)
     digest = reshape(
         [x + 1j*y for x, y in reshape(raw_digest, (n/2, 2))], (8, 4))
@@ -604,7 +604,7 @@ def WriteCompensation(ioc, K):
 
     output = full_iir.transpose((1, 2, 0)).ravel()
 #    caPut(ioc, 'SC:SETPHASE', output)
-    caPutArray('%s:%s' % (ioc, 'SC:SETPHASE'), output)
+    caPutArray('%s:%s' % (ioc, 'SC:SETCOMP_S'), output)
 
     global Last_K
     Last_K = K
@@ -848,8 +848,10 @@ def ManualCondition(ioc, oldK=None, resetIIR=False):
     pylab.title('IQ phases')
     
     pylab.subplot(2,3,3)
-    pylab.plot(180/pi*unwrap(angle(mean(niq, 1))), 'o')
-    pylab.xlim(-0.5, 3.5)
+#     pylab.plot(180/pi*unwrap(angle(mean(niq, 1))), 'o')
+#     pylab.xlim(-0.5, 3.5)
+    plot_complex(mean(niq, 1), plot_circle=True, blob='o')
+    pylab.axis('equal')
     pylab.title('IQ relative phase')
     
     pylab.subplot(2,2,3)
