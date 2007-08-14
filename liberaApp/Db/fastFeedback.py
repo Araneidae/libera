@@ -86,6 +86,10 @@ def FastFeedback():
     boolOut('STOP',  'Stop',  DESC = 'Stop fast feedback')
     boolOut('START', 'Start', DESC = 'Start fast feedback')
 
+    # Control of postmortem on FA stream overflow
+    longOut('PMLIMIT', 0, None, EGU = 'nm', DESC = 'FF PM threshold')
+    boolInOut('ARM', 'Unarmed', 'Armed', DESC = 'Enable FF PM')
+
     UnsetChannelName()
     
 
