@@ -1,0 +1,47 @@
+#!/bin/sh
+
+# This file is part of the Libera EPICS Driver,
+# Copyright (C) 2007 Michael Abbott, Diamond Light Source Ltd.
+#
+# The Libera EPICS Driver is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# The Libera EPICS Driver is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc., 51
+# Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# Contact:
+#      Dr. Michael Abbott,
+#      Diamond Light Source Ltd,
+#      Diamond House,
+#      Chilton,
+#      Didcot,
+#      Oxfordshire,
+#      OX11 0DE
+#      michael.abbott@diamond.ac.uk
+
+# Selects chosen version as current for user interface.
+
+# The released software is here
+PROD_ROOT="/dls_sw/prod/R3.14.9/ioc/Libera"
+# The release builder works from here
+QUEUE_DIR=/dls_sw/work/etc/build/queue
+
+
+VERSION="${1?Specify version to select as current}"
+
+if [ -d "$PROD_ROOT/$VERSION" ]; then
+    echo "cd '$PROD_ROOT'  &&  ln -s '$VERSION' Rx-y" \
+        >"$QUEUE_DIR/Make-Libera-Rx-y"
+else
+    echo >&2 "Libera version '$VERSION' not found"
+    exit 1
+fi
+

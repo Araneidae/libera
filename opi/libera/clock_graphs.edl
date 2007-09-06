@@ -1,0 +1,157 @@
+4 0 1
+beginScreenProperties
+major 4
+minor 0
+release 1
+x 1982
+y 82
+w 505
+h 449
+font "arial-medium-r-16.0"
+ctlFont "arial-medium-r-16.0"
+btnFont "arial-medium-r-16.0"
+fgColor index 14
+bgColor index 3
+textColor index 14
+ctlFgColor1 index 14
+ctlFgColor2 index 0
+ctlBgColor1 index 0
+ctlBgColor2 index 14
+topShadowColor index 0
+botShadowColor index 14
+title "Machine Clock Graphs"
+showGrid
+snapToGrid
+gridSize 8
+disableScroll
+endScreenProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 0
+y 0
+w 504
+h 32
+font "arial-medium-r-18.0"
+fontAlign "center"
+fgColor index 14
+bgColor index 73
+value {
+  "$(device) MC: Phase and DAC"
+}
+endObjectProperties
+
+# (Exit Button)
+object activeExitButtonClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 440
+y 4
+w 56
+h 22
+fgColor index 25
+bgColor index 3
+topShadowColor index 1
+botShadowColor index 11
+label "EXIT"
+font "arial-medium-r-12.0"
+3d
+endObjectProperties
+
+# (X-Y Graph)
+object xyGraphClass
+beginObjectProperties
+major 4
+minor 3
+release 0
+# Geometry
+x 8
+y 40
+w 488
+h 200
+# Appearance
+graphTitle "Phase Error"
+fgColor index 14
+bgColor index 3
+gridColor index 14
+font "arial-medium-r-10.0"
+# Operating Modes
+plotMode "plotLastNPts"
+nPts 250
+# X axis properties
+showXAxis
+xAxisSrc "AutoScale"
+xMax 1
+# Y axis properties
+showYAxis
+yAxisSrc "AutoScale"
+yMax 1
+# Y2 axis properties
+y2AxisSrc "AutoScale"
+y2Max 1
+# Trace Properties
+numTraces 1
+yPv {
+  0 "$(device):CK:PHASE_E"
+}
+ySigned {
+  0 1
+}
+plotColor {
+  0 index 14
+}
+endObjectProperties
+
+# (X-Y Graph)
+object xyGraphClass
+beginObjectProperties
+major 4
+minor 3
+release 0
+# Geometry
+x 8
+y 240
+w 488
+h 200
+# Appearance
+graphTitle "MC VCXO DAC Setting"
+fgColor index 14
+bgColor index 3
+gridColor index 14
+font "arial-medium-r-10.0"
+# Operating Modes
+plotMode "plotLastNPts"
+nPts 250
+# X axis properties
+showXAxis
+xAxisSrc "AutoScale"
+xMax 1
+# Y axis properties
+showYAxis
+yAxisSrc "AutoScale"
+yMax 1
+# Y2 axis properties
+y2AxisSrc "AutoScale"
+y2Max 1
+# Trace Properties
+numTraces 1
+yPv {
+  0 "$(device):CK:DAC"
+}
+xSigned {
+  0 296222721
+}
+ySigned {
+  0 166863800
+}
+plotColor {
+  0 index 14
+}
+endObjectProperties
+

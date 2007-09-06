@@ -1,0 +1,249 @@
+4 0 1
+beginScreenProperties
+major 4
+minor 0
+release 1
+x 646
+y 121
+w 584
+h 840
+font "arial-medium-r-18.0"
+ctlFont "arial-medium-r-18.0"
+btnFont "arial-medium-r-18.0"
+fgColor index 14
+bgColor index 3
+textColor index 14
+ctlFgColor1 index 14
+ctlFgColor2 index 0
+ctlBgColor1 index 0
+ctlBgColor2 index 14
+topShadowColor index 0
+botShadowColor index 14
+title "I&Q waveforms"
+showGrid
+snapToGrid
+gridSize 8
+disableScroll
+endScreenProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 0
+y 0
+w 584
+h 32
+font "arial-medium-r-18.0"
+fontAlign "center"
+fgColor index 14
+bgColor index 73
+value {
+  "$(mode) for $(device)"
+}
+endObjectProperties
+
+# (Exit Button)
+object activeExitButtonClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 520
+y 4
+w 56
+h 22
+fgColor index 25
+bgColor index 3
+topShadowColor index 1
+botShadowColor index 11
+label "EXIT"
+font "arial-medium-r-12.0"
+3d
+endObjectProperties
+
+# (X-Y Graph)
+object xyGraphClass
+beginObjectProperties
+major 4
+minor 3
+release 0
+# Geometry
+x 8
+y 40
+w 568
+h 192
+# Appearance
+graphTitle "Button A I & Q"
+fgColor index 14
+bgColor index 3
+gridColor index 14
+font "arial-medium-r-12.0"
+# Operating Modes
+nPts 2
+# X axis properties
+showXAxis
+xAxisSrc "AutoScale"
+xMax 1
+# Y axis properties
+showYAxis
+yAxisSrc "AutoScale"
+yMax 1
+# Y2 axis properties
+y2AxisSrc "AutoScale"
+y2Max 1
+# Trace Properties
+numTraces 2
+yPv {
+  0 "$(device):$(mode):WFAI"
+  1 "$(device):$(mode):WFAQ"
+}
+xSigned {
+  0 779036
+}
+ySigned {
+  0 1099264
+  1 1
+}
+plotColor {
+  0 index 14
+  1 index 26
+}
+endObjectProperties
+
+# (X-Y Graph)
+object xyGraphClass
+beginObjectProperties
+major 4
+minor 3
+release 0
+# Geometry
+x 8
+y 240
+w 568
+h 192
+# Appearance
+graphTitle "Button B I & Q"
+fgColor index 14
+bgColor index 3
+gridColor index 14
+font "arial-medium-r-12.0"
+# Operating Modes
+nPts 2
+# X axis properties
+showXAxis
+xAxisSrc "AutoScale"
+xMax 1
+# Y axis properties
+showYAxis
+yAxisSrc "AutoScale"
+yMax 1
+# Y2 axis properties
+y2AxisSrc "AutoScale"
+y2Max 1
+# Trace Properties
+numTraces 2
+yPv {
+  0 "$(device):$(mode):WFBI"
+  1 "$(device):$(mode):WFBQ"
+}
+plotColor {
+  0 index 14
+  1 index 26
+}
+endObjectProperties
+
+# (X-Y Graph)
+object xyGraphClass
+beginObjectProperties
+major 4
+minor 3
+release 0
+# Geometry
+x 8
+y 440
+w 568
+h 192
+# Appearance
+graphTitle "Button C I & Q"
+fgColor index 14
+bgColor index 3
+gridColor index 14
+font "arial-medium-r-12.0"
+# Operating Modes
+nPts 2
+# X axis properties
+showXAxis
+xAxisSrc "AutoScale"
+xMax 1
+# Y axis properties
+showYAxis
+yAxisSrc "AutoScale"
+yMax 1
+# Y2 axis properties
+y2AxisSrc "AutoScale"
+y2Max 1
+# Trace Properties
+numTraces 2
+yPv {
+  0 "$(device):$(mode):WFCI"
+  1 "$(device):$(mode):WFCQ"
+}
+ySigned {
+  0 99
+  1 52
+}
+plotColor {
+  0 index 14
+  1 index 26
+}
+endObjectProperties
+
+# (X-Y Graph)
+object xyGraphClass
+beginObjectProperties
+major 4
+minor 3
+release 0
+# Geometry
+x 8
+y 640
+w 568
+h 192
+# Appearance
+graphTitle "Button D I & Q"
+fgColor index 14
+bgColor index 3
+gridColor index 14
+font "arial-medium-r-12.0"
+# Operating Modes
+nPts 2
+# X axis properties
+showXAxis
+xAxisSrc "AutoScale"
+xMax 1
+# Y axis properties
+showYAxis
+yAxisSrc "AutoScale"
+yMax 1
+# Y2 axis properties
+y2AxisSrc "AutoScale"
+y2Max 1
+# Trace Properties
+numTraces 2
+yPv {
+  0 "$(device):$(mode):WFDI"
+  1 "$(device):$(mode):WFDQ"
+}
+xSigned {
+  0 218
+  1 120
+}
+plotColor {
+  0 index 14
+  1 index 26
+}
+endObjectProperties
+
