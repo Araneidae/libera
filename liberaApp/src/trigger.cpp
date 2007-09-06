@@ -229,7 +229,7 @@ INTERLOCK::INTERLOCK() :
     Interlock(true)
 {
     Name = NULL;
-    Value = true;
+    Value = 0;
     MachineClockLow = 0;
     MachineClockHigh = 0;
 }
@@ -244,7 +244,7 @@ void INTERLOCK::Publish(
     Name = Concat(Prefix, ":", DoneName);
     
     Publish_bi(Concat(Prefix, ":", TrigName), Trigger);
-    PUBLISH_METHOD_OUT(bo, Name, ReportDone, Value);
+    PUBLISH_METHOD_OUT(longout, Name, ReportDone, Value);
 
     if (PublishMC)
     {
@@ -289,10 +289,9 @@ void INTERLOCK::Wait()
 
 /* This will be called from EPICS when process is done.  Release the interlock.
  * This is normally called when DONE is processed, which should only be after
- * a chain of processing initiated by processing TRIG has completed.  It will
- * also be called when EPICS has finished initialisation. */
+ * a chain of processing initiated by processing TRIG has completed. */
 
-bool INTERLOCK::ReportDone(bool Done)
+bool INTERLOCK::ReportDone(int)
 {
     /* If the interlock was already ready when we signal it then something
      * has gone wrong. */

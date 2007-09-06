@@ -140,6 +140,9 @@ bool ReadSlowAcquisition(ABCD_ROW &ButtonData, XYQS_ROW &PositionData);
 /* Reads (and resets) the maximum ADC reading.  (If the register cannot be
  * read then zero is returned.) */
 int ReadMaxAdc();
+/* Reads and resets the maximum the IIR filtered ADC reading.  This is the
+ * same value as used for interlock overflow detection. */
+int ReadMaxAdcIIR();
 
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */

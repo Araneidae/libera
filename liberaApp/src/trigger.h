@@ -104,9 +104,9 @@ public:
     void Wait();
 
 private:
-    bool ReportDone(bool);
+    bool ReportDone(int);
 
-    bool Value;
+    int Value;
     int MachineClockLow;
     int MachineClockHigh;
     TRIGGER Trigger;

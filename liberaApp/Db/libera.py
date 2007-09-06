@@ -129,11 +129,12 @@ def Trigger(MC, positions, TRIG='TRIG', DONE='DONE'):
     # The DONE record must be processed after all other triggered records are
     # processed: this is used as an interlock to synchronise with the Libera
     # driver.
-    done = Libera.bo(DONE, DESC = 'Report trigger done')
+    positions.append(
+        Libera.longout(DONE, MDEL = -1, DESC = 'Report trigger done'))
     trigger = Libera.bi(TRIG, DESC = 'Trigger processing',
         SCAN = 'I/O Intr',
         TSE  = -2,          # Ensures that device timestamp is used
-        FLNK = create_fanout(TRIG + 'FAN', *positions + [done]))
+        FLNK = create_fanout(TRIG + 'FAN', *positions))
     for record in positions:
         record.TSEL = trigger.TIME
 
@@ -146,19 +147,19 @@ def dB(db):
     return 10.**(db/20.)
 
 
-def MaxAdc():
-    maxadc = longIn('MAXADC', 0, MAX_ADC,
+def MaxAdc(Name = 'MAXADC'):
+    maxadc = longIn(Name, 0, MAX_ADC,
         DESC = 'Maximum ADC reading',
         HSV  = 'MINOR',  HIGH = int(MAX_ADC / dB(3)),    # 70.8 %
         HHSV = 'MAJOR',  HIHI = int(MAX_ADC / dB(1.6)))  # 83.2 %
-    maxadc_pc = records.calc('MAXADC_PC',
+    maxadc_pc = records.calc('%s_PC' % Name,
         DESC = 'Maximum ADC reading (%)',
         CALC = 'A/B',
         INPA = MS(maxadc),
         INPB = MAX_ADC / 100.,
         LOPR = 0,   HOPR = 100,
         PREC = 1,   EGU  = '%')
-    return maxadc, maxadc_pc
+    return [maxadc, maxadc_pc]
     
 
 # First turn snapshot records.  Access to position data immediately following
@@ -312,8 +313,8 @@ def SlowAcquisition():
         DESC = 'Absolute input power')
     current = aIn('CURRENT', 0, 500, 1e-5, 'mA', 3,
         DESC = 'SA input current')
-    maxadc, maxadc_pc = MaxAdc()
-    Trigger(False, ABCD_() + XYQS_(4) + [power, current, maxadc, maxadc_pc])
+    maxadcs = MaxAdc() + MaxAdc('MAXADC:IIR')
+    Trigger(False, ABCD_() + XYQS_(4) + [power, current] + maxadcs)
     UnsetChannelName()
 
 

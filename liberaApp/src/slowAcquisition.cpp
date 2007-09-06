@@ -67,6 +67,7 @@ public:
         Publish_ai("SA:POWER", Power);
         Publish_ai("SA:CURRENT", Current);
         Publish_longin("SA:MAXADC", MaxAdc);
+        Publish_longin("SA:MAXADC:IIR", MaxAdcIir);
         Interlock.Publish("SA");
     }
 
@@ -89,6 +90,7 @@ private:
                 ABCDtoXYQS(&ABCD, &XYQS, 1);
                 UpdatePowerAndCurrent();
                 MaxAdc = ReadMaxAdc();
+                MaxAdcIir = ReadMaxAdcIIR();
                 Interlock.Ready();
             }
         }
@@ -133,7 +135,8 @@ private:
     XYQS_ROW XYQS;
     int Power;          // Power in dBm * 1e6
     int Current;        // Current in 10*nA
-    int MaxAdc;         // MaxADC reading
+    int MaxAdc;         // Raw MaxADC reading
+    int MaxAdcIir;      // MaxADC reading after FPGA IIR filter
     
     
     /* Precomputed offset for power calculation: P_0 = A_0 + 20 log_10(S_0). */
