@@ -244,13 +244,16 @@ static bool InitialiseLibera()
         InitialiseSignals()  &&
         /* First EPICS related activity. */
         StartCaRepeater()  &&
+        /* Ensure the trigger interlock mechanism is working.  This needs to
+         * happen before any EPICS communication is attempted. */
+        InitialiseTriggers()  &&
+        /* Initialise the connections to the Libera device.  This also needs
+         * to be done early, as this is used by other initialisation code. */
+        InitialiseHardware()  &&
 
         /* Initialise the persistent state system early on so that other
          * components can make use of it. */
         InitialisePersistentState(StateFileName)  &&
-        /* Initialise the connections to the Libera device.  This also needs
-         * to be done early, as this is used by other initialisation code. */
-        InitialiseHardware()  &&
         /* Initialise the signal conditioning hardware interface. */
         InitialiseSignalConditioning(Harmonic, Decimation)  &&
         /* Get the event receiver up and running.  This spawns a background
@@ -261,8 +264,6 @@ static bool InitialiseLibera()
         InitialiseConvert()  &&
         /* Initialise Libera configuration: switches, attenuators, etc. */
         InitialiseConfigure()  &&
-        /* Ensure the trigger interlock mechanism is working. */
-        InitialiseTriggers()  &&
         /* Timestamp and clock management. */
         InitialiseTimestamps()  &&
 

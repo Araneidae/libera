@@ -427,6 +427,11 @@ bool run_find_frequency(unsigned long long *mctime, int *target_dac)
  * handing on to the narrow band locked loop. */
 #define FP_IIR  0.15    // Lock in time constant
 
+/* At the end of phase lock-in we end up oscillating around the target DAC
+ * setting: when dropping out to the next stage of the loop we take the
+ * average of the last 16 points to get a sensible value. */
+#define DAC_HISTORY 16
+
 bool run_find_phase(unsigned long long *mctime, int *dac)
 {
     /* This is the expected nominal clock count which we will maintain.  The
@@ -434,7 +439,7 @@ bool run_find_phase(unsigned long long *mctime, int *dac)
      * clock tick. */
     unsigned long long nominal_clock_count = *mctime;
     
-    /* Integrated error. */
+    /* Integrated error: we run a simple PI controller. */
     int tI = 0;
 
     /* Smoothed squared error for lock detection. */
@@ -443,6 +448,12 @@ bool run_find_phase(unsigned long long *mctime, int *dac)
     /* All DAC computations will be offsets from the nominal DAC set on
      * entry. */
     int nominal_dac = *dac;
+    /* Initialise the DAC history buffer with our initial DAC reading so that
+     * at least we have something sensible.  However, this should all be
+     * swept out by the time we read this. */
+    int dac_history[DAC_HISTORY];
+    for (int i = 0; i < DAC_HISTORY; i ++)
+        dac_history[i] = nominal_dac;
 
     unsigned long long new_mctime = *mctime;
     unsigned long long last_mctime = new_mctime;
@@ -457,6 +468,11 @@ bool run_find_phase(unsigned long long *mctime, int *dac)
         tI += phase_error;
 
         *dac = ClipDAC(nominal_dac + FP_KP * phase_error + FP_KI * tI);
+        /* Add the new point to the history buffer, shifting everything else
+         * up one point. */
+        for (int i = 0; i < DAC_HISTORY - 1; i ++)
+            dac_history[i+1] = dac_history[i];
+        dac_history[0] = *dac;
 
         /* If the DAC hits the limits we have a problem.  If we let the
          * integrator continue to run then we end up overcompensating, and 
@@ -492,6 +508,13 @@ bool run_find_phase(unsigned long long *mctime, int *dac)
         var_err = FP_IIR * phase_error * phase_error + (1 - FP_IIR) * var_err;
         if (var_err < 2)
         {
+            /* Compute the average DAC value that we've been settling around
+             * for the last few cycles and assign this as the "best" DAC
+             * value for the fine control filter. */
+            int NewDac = 0;
+            for (int i = 0; i < DAC_HISTORY; i ++)  NewDac += dac_history[i];
+            *dac = NewDac / DAC_HISTORY;
+            
             *mctime = nominal_clock_count;
             return true;
         }
@@ -588,7 +611,7 @@ bool run_lock_phase(unsigned long long *mctime, int *dac)
 
     /* Second order IIR.  We have to keep a history of the last two terms and
      * the last two corrections. */
-    int   last_error[2] = { 0, 0 };
+    float last_error[2] = { 0.0, 0.0 };
     float last_out  [2] = { 0.0, 0.0 };
 
     int nominal_dac = *dac;
@@ -600,12 +623,13 @@ bool run_lock_phase(unsigned long long *mctime, int *dac)
         int this_error = (int) (mcphi + phase_offset);
 
         /* Compute this stage of the filter. */
+        float adjusted_error = this_error; // + 0.5; 
         float this_output =
-            B_0 * this_error + B_1 * last_error[0] + B_2 * last_error[1] -
+            B_0 * adjusted_error + B_1 * last_error[0] + B_2 * last_error[1] -
             A_1 * last_out[0] - A_2 * last_out[1];
         /* Advance the historical records. */
         last_out[1]   = last_out[0];    last_out[0]   = this_output;
-        last_error[1] = last_error[0];  last_error[0] = this_error;
+        last_error[1] = last_error[0];  last_error[0] = adjusted_error;
         /* Compute the required correction to output for this step. */
         *dac = ClipDAC(nominal_dac + (int) round(this_output));
 

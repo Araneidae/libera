@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 751
-y 314
+x 845
+y 549
 w 368
 h 582
 font "arial-medium-r-18.0"
@@ -236,7 +236,7 @@ major 4
 minor 1
 release 0
 x 88
-y 544
+y 552
 w 48
 h 16
 controlPv "$(device):SA:MAXADC"
@@ -262,7 +262,7 @@ major 4
 minor 1
 release 0
 x 8
-y 544
+y 552
 w 65
 h 16
 font "arial-medium-r-14.0"
@@ -282,7 +282,7 @@ major 4
 minor 1
 release 0
 x 144
-y 544
+y 552
 w 56
 h 16
 controlPv "$(device):SA:MAXADC_PC"
@@ -308,7 +308,7 @@ major 4
 minor 1
 release 0
 x 136
-y 544
+y 552
 w 4
 h 16
 font "arial-medium-r-14.0"
@@ -317,98 +317,6 @@ bgColor index 0
 useDisplayBg
 value {
   "/"
-}
-autoSize
-endObjectProperties
-
-# (Text Monitor)
-object activeXTextDspClass:noedit
-beginObjectProperties
-major 4
-minor 1
-release 0
-x 88
-y 560
-w 48
-h 16
-controlPv "$(device):SA:MAXADC:IIR"
-font "arial-medium-r-14.0"
-fontAlign "right"
-fgColor index 14
-fgAlarm
-bgColor index 3
-autoHeight
-limitsFromDb
-nullColor index 0
-fastUpdate
-useHexPrefix
-showUnits
-newPos
-objType "monitors"
-endObjectProperties
-
-# (Text Monitor)
-object activeXTextDspClass:noedit
-beginObjectProperties
-major 4
-minor 1
-release 0
-x 144
-y 560
-w 56
-h 16
-controlPv "$(device):SA:MAXADC:IIR_PC"
-font "arial-medium-r-14.0"
-fontAlign "right"
-fgColor index 14
-fgAlarm
-bgColor index 3
-autoHeight
-limitsFromDb
-nullColor index 0
-fastUpdate
-useHexPrefix
-showUnits
-newPos
-objType "monitors"
-endObjectProperties
-
-# (Static Text)
-object activeXTextClass
-beginObjectProperties
-major 4
-minor 1
-release 0
-x 136
-y 560
-w 4
-h 16
-font "arial-medium-r-14.0"
-fgColor index 14
-bgColor index 0
-useDisplayBg
-value {
-  "/"
-}
-autoSize
-endObjectProperties
-
-# (Static Text)
-object activeXTextClass
-beginObjectProperties
-major 4
-minor 1
-release 0
-x 8
-y 560
-w 48
-h 16
-font "arial-medium-r-14.0"
-fgColor index 14
-bgColor index 0
-useDisplayBg
-value {
-  "    (IIR):"
 }
 autoSize
 endObjectProperties

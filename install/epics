@@ -31,10 +31,40 @@
 # This file should be placed in /etc/init.d/epics
 
 # Pick up the epics ioc definitions: this tells us where to find the IOC.
-. /etc/sysconfig/epics_ioc
+# There are two possible locations, depending on which version of Libera we're
+# running.
+if [ -d /etc/sysconfig ]; then
+    . /etc/sysconfig/epics_ioc
+else
+    . /etc/default/epics_ioc
+fi
 
-# We use the standard print_status and evaluate_retval functions.
-. /etc/init.d/functions
+
+# The following functions were defined in /etc/init.d/functions on Libera on
+# linux 2.4, but don't seem to have equivalents in the more recent
+# distribution, so we define what we need here.
+evaluate_retval()
+{
+    if [ $? = 0 ]; then
+        print_status success
+    else
+        print_status failure
+    fi
+}
+
+: "${COLUMNS:=80}"      # Ensure COLUMNS is set
+print_status()
+{
+    echo -n $'\033['"$((COLUMNS-10))G"
+    echo -n [
+    case "$1" in
+        success)    echo -n $'\033[1;32m  OK  ' ;;
+        failure)    echo -n $'\033[1;31mFAILED' ;;
+    esac
+    echo -n $'\033[0;39m'
+    echo ]
+}
+
 
 # Sensible defaults
 IOC_LOG="${IOC_LOG:-/var/log/ioc}"
