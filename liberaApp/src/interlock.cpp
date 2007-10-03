@@ -76,7 +76,7 @@ static int CurrentCurrent = 0;
 
 /* Interlock ADC overflow limits. */
 static bool OverflowEnable = false;
-static int OverflowLimit = 1900;
+static int OverflowLimit = 30000;
 static int OverflowTime = 5;
 
 /* Global interlock override: if this BPM is disabled then the interlock is
