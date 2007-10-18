@@ -48,7 +48,6 @@
 
 /* This register records the maximum ADC reading since it was last read. */
 #define REGISTER_MAX_ADC_RAW    0x1400C000
-#define REGISTER_MAX_ADC_IIR    0x1400C004
 
 
 #define CSPI_(command, args...) \
@@ -308,14 +307,6 @@ int ReadMaxAdc()
     unsigned int MaxAdc = 0;
     ReadRawRegister(REGISTER_MAX_ADC_RAW, MaxAdc);
     return MaxAdc << AdcExcessBits;
-}
-
-
-int ReadMaxAdcIIR()
-{
-    unsigned int MaxAdc = 0;
-    ReadRawRegister(REGISTER_MAX_ADC_IIR, MaxAdc);
-    return MaxAdc;
 }
 
 
