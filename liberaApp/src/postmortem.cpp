@@ -71,8 +71,11 @@ public:
 
     void OnEvent(int Missed)
     {
+        /* We could log missed triggers here, but that's not such a good idea,
+         * as the log file tends to fill up!
         if (Missed > 0)
             printf("%d PM trigger(s) missed\n", Missed);
+         */
         
         /* Wait for EPICS to be ready. */
         Interlock.Wait();

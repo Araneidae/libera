@@ -623,6 +623,13 @@ bool run_lock_phase(unsigned long long *mctime, int *dac)
         int this_error = (int) (mcphi + phase_offset);
 
         /* Compute this stage of the filter. */
+        /* An interesting idea at this stage would be to dither the observed
+         * error: adding +- 0.5 at each stage; it would also be interesting
+         * to add an overall error of 0.5 to bring the target across the
+         * clock threshold.  If successful this would ensure that we were
+         * always operating on the metastable transition.
+         *     However, for this to work properly we need a slow filter
+         * response, as otherwise we move the frequency too much. */
         float adjusted_error = this_error; // + 0.5; 
         float this_output =
             B_0 * adjusted_error + B_1 * last_error[0] + B_2 * last_error[1] -

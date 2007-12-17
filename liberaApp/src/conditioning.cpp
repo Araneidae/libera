@@ -194,7 +194,7 @@ static int aiPhase(const REAL x, int BaseAngle=0)
 {
     const int HALF_TURN = (int) AI_SCALE * 180;
     const int FULL_TURN = 2 * HALF_TURN;
-    int Angle = (int) round(HALF_TURN / M_PI * x) - BaseAngle;
+    int Angle = (int) round(x * HALF_TURN / M_PI) - BaseAngle;
 
     /* The following calculation is intended to reduce Angle to the range
      * [-HALF_TURN..HALF_TURN).  If the C % operator was defined properly
@@ -738,6 +738,7 @@ private:
             }
         }
         Variance /= SwitchSequenceLength * BUTTON_COUNT;
+        if (MinimumSignal < 1.0)  MinimumSignal = 1.0;  // Avoid divide by zero
         Deviation = aiValue(100. * sqrt(Variance) / MinimumSignal);
 
         return true;
@@ -772,10 +773,10 @@ private:
             /* The channel value is the reciprocal of the channel
              * compensation, of course, so we take this into account. */
             ChannelPhase[c] = aiPhase(- arg(Mean));
-            ChannelMag[c]   = aiValue(1 / abs(Mean));
+            ChannelMag[c]   = aiValue(1 / abs(Mean));   // !!! Possible 1/0
 
             /* Now compute the variance.  The variance of compensations will
-             * do, and indeed it's more meaniningful... */
+             * do, and indeed it's more meaningful... */
             REAL Variance = 0;
             for (int ix = 0; ix < SwitchSequenceLength; ix ++)
                 Variance += sqr(abs(K[ix][c] - Mean));

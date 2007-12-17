@@ -41,7 +41,7 @@
 
 /* Period in seconds between polls of the persistent state.  Any update will
  * be written out within this interval, even if the IOC crashes first. */
-#define PERSISTENCE_POLL_INTERVAL       100
+#define PERSISTENCE_POLL_INTERVAL       1000
 
 
 static const char * StateFileName = NULL;

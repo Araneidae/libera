@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 530
-y 532
+x 535
+y 553
 w 286
 h 117
 font "arial-medium-r-18.0"
@@ -114,65 +114,6 @@ value {
   "Open IOC by name:"
 }
 autoSize
-endObjectProperties
-
-# (Group)
-object activeGroupClass
-beginObjectProperties
-major 4
-minor 0
-release 0
-x 16
-y 32
-w 72
-h 16
-
-beginGroup
-
-# (Menu Mux PV)
-object menuMuxPVClass
-beginObjectProperties
-major 4
-minor 0
-release 0
-x 48
-y 32
-w 40
-h 16
-fgColour index 14
-bgColour index 0
-topShadowColour index 0
-botShadowColour index 14
-font "arial-medium-r-8.0"
-numItems 1
-symbolTag {
-  0 "ioc-name"
-}
-symbol0 {
-  0 "device"
-}
-PV0 {
-  0 "LOC\\ioc-name"
-}
-endObjectProperties
-
-# (Rectangle)
-object activeRectangleClass
-beginObjectProperties
-major 4
-minor 0
-release 0
-x 16
-y 32
-w 72
-h 16
-lineColor index 3
-fill
-fillColor index 3
-endObjectProperties
-
-endGroup
-
 endObjectProperties
 
 # (Group)
@@ -795,5 +736,47 @@ endObjectProperties
 
 endGroup
 
+endObjectProperties
+
+# (Menu Mux PV)
+object menuMuxPVClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 48
+y 32
+w 40
+h 16
+fgColour index 14
+bgColour index 0
+topShadowColour index 0
+botShadowColour index 14
+font "arial-medium-r-8.0"
+numItems 1
+symbolTag {
+  0 "ioc-name"
+}
+symbol0 {
+  0 "device"
+}
+PV0 {
+  0 "LOC\\ioc-name"
+}
+endObjectProperties
+
+# (Rectangle)
+object activeRectangleClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 16
+y 32
+w 72
+h 16
+lineColor index 3
+fill
+fillColor index 3
 endObjectProperties
 
