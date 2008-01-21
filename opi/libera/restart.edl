@@ -7,9 +7,9 @@ x 663
 y 80
 w 472
 h 193
-font "arial-medium-r-16.0"
-ctlFont "arial-medium-r-16.0"
-btnFont "arial-medium-r-16.0"
+font "helvetica-medium-r-16.0"
+ctlFont "helvetica-medium-r-16.0"
+btnFont "helvetica-medium-r-16.0"
 fgColor index 14
 bgColor index 3
 textColor index 14
@@ -36,7 +36,7 @@ x 0
 y 0
 w 472
 h 32
-font "arial-medium-r-18.0"
+font "helvetica-medium-r-18.0"
 fontAlign "center"
 fgColor index 14
 bgColor index 73
@@ -60,7 +60,7 @@ bgColor index 3
 topShadowColor index 1
 botShadowColor index 11
 label "EXIT"
-font "arial-medium-r-12.0"
+font "helvetica-medium-r-12.0"
 3d
 endObjectProperties
 
@@ -84,7 +84,7 @@ pressValue "0"
 onLabel "Reboot IOC"
 offLabel "Reboot IOC"
 3d
-font "arial-bold-r-14.0"
+font "helvetica-bold-r-14.0"
 endObjectProperties
 
 # (Static Text)
@@ -97,7 +97,7 @@ x 8
 y 40
 w 332
 h 17
-font "arial-medium-r-16.0"
+font "helvetica-medium-r-16.0"
 fgColor index 14
 bgColor index 0
 useDisplayBg
@@ -127,7 +127,7 @@ pressValue "0"
 onLabel "Restart EPICS"
 offLabel "Restart EPICS"
 3d
-font "arial-bold-r-14.0"
+font "helvetica-bold-r-14.0"
 endObjectProperties
 
 # (Static Text)
@@ -140,7 +140,7 @@ x 144
 y 64
 w 278
 h 48
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fgColor index 14
 bgColor index 0
 useDisplayBg
@@ -162,7 +162,7 @@ x 144
 y 120
 w 300
 h 32
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fgColor index 21
 bgColor index 0
 useDisplayBg
@@ -187,7 +187,7 @@ fgColor index 14
 bgColor index 3
 topShadowColor index 1
 botShadowColor index 11
-font "arial-bold-r-12.0"
+font "helvetica-bold-r-12.0"
 buttonLabel "Login"
 numCmds 1
 command {

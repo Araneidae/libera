@@ -7,9 +7,9 @@ x 646
 y 121
 w 584
 h 840
-font "arial-medium-r-18.0"
-ctlFont "arial-medium-r-18.0"
-btnFont "arial-medium-r-18.0"
+font "helvetica-medium-r-18.0"
+ctlFont "helvetica-medium-r-18.0"
+btnFont "helvetica-medium-r-18.0"
 fgColor index 14
 bgColor index 3
 textColor index 14
@@ -36,7 +36,7 @@ x 0
 y 0
 w 584
 h 32
-font "arial-medium-r-18.0"
+font "helvetica-medium-r-18.0"
 fontAlign "center"
 fgColor index 14
 bgColor index 73
@@ -60,7 +60,7 @@ bgColor index 3
 topShadowColor index 1
 botShadowColor index 11
 label "EXIT"
-font "arial-medium-r-12.0"
+font "helvetica-medium-r-12.0"
 3d
 endObjectProperties
 
@@ -80,7 +80,7 @@ graphTitle "Button A I & Q"
 fgColor index 14
 bgColor index 3
 gridColor index 14
-font "arial-medium-r-12.0"
+font "helvetica-medium-r-12.0"
 # Operating Modes
 nPts 2
 # X axis properties
@@ -129,7 +129,7 @@ graphTitle "Button B I & Q"
 fgColor index 14
 bgColor index 3
 gridColor index 14
-font "arial-medium-r-12.0"
+font "helvetica-medium-r-12.0"
 # Operating Modes
 nPts 2
 # X axis properties
@@ -171,7 +171,7 @@ graphTitle "Button C I & Q"
 fgColor index 14
 bgColor index 3
 gridColor index 14
-font "arial-medium-r-12.0"
+font "helvetica-medium-r-12.0"
 # Operating Modes
 nPts 2
 # X axis properties
@@ -217,7 +217,7 @@ graphTitle "Button D I & Q"
 fgColor index 14
 bgColor index 3
 gridColor index 14
-font "arial-medium-r-12.0"
+font "helvetica-medium-r-12.0"
 # Operating Modes
 nPts 2
 # X axis properties

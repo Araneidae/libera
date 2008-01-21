@@ -7,9 +7,9 @@ x 763
 y 229
 w 321
 h 247
-font "arial-medium-r-14.0"
-ctlFont "arial-medium-r-14.0"
-btnFont "arial-bold-r-14.0"
+font "helvetica-medium-r-14.0"
+ctlFont "helvetica-medium-r-14.0"
+btnFont "helvetica-bold-r-14.0"
 fgColor index 14
 bgColor index 3
 textColor index 14
@@ -56,7 +56,7 @@ bgColor index 3
 topShadowColor index 1
 botShadowColor index 11
 label "EXIT"
-font "arial-medium-r-12.0"
+font "helvetica-medium-r-12.0"
 3d
 endObjectProperties
 
@@ -70,7 +70,7 @@ x 16
 y 48
 w 103
 h 16
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fgColor index 14
 bgColor index 0
 useDisplayBg
@@ -91,7 +91,7 @@ y 48
 w 72
 h 16
 controlPv "$(device):SE:VHEALTH"
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fgColor index 14
 fgAlarm
 bgColor index 4
@@ -113,7 +113,7 @@ x 0
 y 0
 w 320
 h 32
-font "arial-medium-r-18.0"
+font "helvetica-medium-r-18.0"
 fontAlign "center"
 fgColor index 14
 bgColor index 73
@@ -133,7 +133,7 @@ y 72
 w 72
 h 16
 controlPv "$(device):SE:VOLT1"
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fgColor index 14
 fgAlarm
 bgColor index 4
@@ -157,7 +157,7 @@ y 72
 w 144
 h 16
 controlPv "$(device):SE:VOLT1.DESC"
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fgColor index 14
 bgColor index 4
 useDisplayBg
@@ -179,7 +179,7 @@ y 88
 w 72
 h 16
 controlPv "$(device):SE:VOLT2"
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fgColor index 14
 fgAlarm
 bgColor index 4
@@ -203,7 +203,7 @@ y 88
 w 144
 h 16
 controlPv "$(device):SE:VOLT2.DESC"
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fgColor index 14
 bgColor index 4
 useDisplayBg
@@ -225,7 +225,7 @@ y 104
 w 72
 h 16
 controlPv "$(device):SE:VOLT3"
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fgColor index 14
 fgAlarm
 bgColor index 4
@@ -249,7 +249,7 @@ y 104
 w 144
 h 16
 controlPv "$(device):SE:VOLT3.DESC"
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fgColor index 14
 bgColor index 4
 useDisplayBg
@@ -271,7 +271,7 @@ y 120
 w 72
 h 16
 controlPv "$(device):SE:VOLT4"
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fgColor index 14
 fgAlarm
 bgColor index 4
@@ -295,7 +295,7 @@ y 120
 w 144
 h 16
 controlPv "$(device):SE:VOLT4.DESC"
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fgColor index 14
 bgColor index 4
 useDisplayBg
@@ -317,7 +317,7 @@ y 136
 w 72
 h 16
 controlPv "$(device):SE:VOLT5"
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fgColor index 14
 fgAlarm
 bgColor index 4
@@ -341,7 +341,7 @@ y 136
 w 144
 h 16
 controlPv "$(device):SE:VOLT5.DESC"
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fgColor index 14
 bgColor index 4
 useDisplayBg
@@ -363,7 +363,7 @@ y 152
 w 72
 h 16
 controlPv "$(device):SE:VOLT6"
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fgColor index 14
 fgAlarm
 bgColor index 4
@@ -387,7 +387,7 @@ y 152
 w 144
 h 16
 controlPv "$(device):SE:VOLT6.DESC"
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fgColor index 14
 bgColor index 4
 useDisplayBg
@@ -409,7 +409,7 @@ y 168
 w 72
 h 16
 controlPv "$(device):SE:VOLT7"
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fgColor index 14
 fgAlarm
 bgColor index 4
@@ -433,7 +433,7 @@ y 168
 w 144
 h 16
 controlPv "$(device):SE:VOLT7.DESC"
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fgColor index 14
 bgColor index 4
 useDisplayBg
@@ -455,7 +455,7 @@ y 184
 w 72
 h 16
 controlPv "$(device):SE:VOLT8"
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fgColor index 14
 fgAlarm
 bgColor index 4
@@ -479,7 +479,7 @@ y 184
 w 144
 h 16
 controlPv "$(device):SE:VOLT8.DESC"
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fgColor index 14
 bgColor index 4
 useDisplayBg

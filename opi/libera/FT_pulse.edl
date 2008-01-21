@@ -7,9 +7,9 @@ x 700
 y 320
 w 488
 h 504
-font "arial-medium-r-18.0"
-ctlFont "arial-medium-r-18.0"
-btnFont "arial-medium-r-18.0"
+font "helvetica-medium-r-18.0"
+ctlFont "helvetica-medium-r-18.0"
+btnFont "helvetica-medium-r-18.0"
 fgColor index 14
 bgColor index 3
 textColor index 14
@@ -72,7 +72,7 @@ xLabel "34ns per division"
 fgColor index 14
 bgColor index 3
 gridColor index 14
-font "arial-medium-r-12.0"
+font "helvetica-medium-r-12.0"
 # Operating Modes
 nPts 2
 # X axis properties
@@ -115,7 +115,7 @@ y 376
 w 96
 h 16
 controlPv "$(device):FT:X"
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fontAlign "right"
 fgColor index 14
 bgColor index 5
@@ -140,7 +140,7 @@ y 400
 w 96
 h 16
 controlPv "$(device):FT:Y"
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fontAlign "right"
 fgColor index 14
 bgColor index 5
@@ -165,7 +165,7 @@ y 448
 w 96
 h 16
 controlPv "$(device):FT:S"
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fontAlign "right"
 fgColor index 14
 bgColor index 5
@@ -189,7 +189,7 @@ y 424
 w 96
 h 16
 controlPv "$(device):FT:Q"
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fontAlign "right"
 fgColor index 14
 bgColor index 5
@@ -213,7 +213,7 @@ x 192
 y 376
 w 10
 h 16
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fgColor index 14
 bgColor index 0
 useDisplayBg
@@ -233,7 +233,7 @@ x 192
 y 400
 w 9
 h 16
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fgColor index 14
 bgColor index 0
 useDisplayBg
@@ -253,7 +253,7 @@ x 192
 y 448
 w 10
 h 16
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fgColor index 14
 bgColor index 0
 useDisplayBg
@@ -273,7 +273,7 @@ x 192
 y 424
 w 12
 h 16
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fgColor index 14
 bgColor index 0
 useDisplayBg
@@ -293,7 +293,7 @@ x 0
 y 0
 w 488
 h 32
-font "arial-medium-r-18.0"
+font "helvetica-medium-r-18.0"
 fontAlign "center"
 fgColor index 14
 bgColor index 73
@@ -312,7 +312,7 @@ x 344
 y 376
 w 35
 h 16
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fgColor index 14
 bgColor index 0
 useDisplayBg
@@ -332,7 +332,7 @@ x 344
 y 400
 w 48
 h 16
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fgColor index 14
 bgColor index 0
 useDisplayBg
@@ -353,7 +353,7 @@ y 376
 w 96
 h 16
 controlPv "$(device):FT:A"
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fontAlign "right"
 fgColor index 14
 bgColor index 5
@@ -378,7 +378,7 @@ y 400
 w 96
 h 16
 controlPv "$(device):FT:B"
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fontAlign "right"
 fgColor index 14
 bgColor index 5
@@ -403,7 +403,7 @@ y 424
 w 96
 h 16
 controlPv "$(device):FT:C"
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fontAlign "right"
 fgColor index 14
 bgColor index 5
@@ -428,7 +428,7 @@ y 448
 w 96
 h 16
 controlPv "$(device):FT:D"
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fontAlign "right"
 fgColor index 14
 bgColor index 5
@@ -453,7 +453,7 @@ y 472
 w 48
 h 16
 controlPv "$(device):FT:MAXADC"
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fontAlign "right"
 fgColor index 14
 fgAlarm
@@ -478,7 +478,7 @@ x 16
 y 472
 w 65
 h 16
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fgColor index 14
 bgColor index 0
 useDisplayBg
@@ -502,7 +502,7 @@ fgColor index 43
 bgColor index 3
 topShadowColor index 1
 botShadowColor index 11
-font "arial-bold-r-12.0"
+font "helvetica-bold-r-12.0"
 buttonLabel "Overview"
 numPvs 4
 numDsps 1
@@ -529,7 +529,7 @@ bgColor index 3
 topShadowColor index 1
 botShadowColor index 11
 label "EXIT"
-font "arial-medium-r-12.0"
+font "helvetica-medium-r-12.0"
 3d
 endObjectProperties
 
@@ -543,7 +543,7 @@ x 24
 y 376
 w 10
 h 16
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fgColor index 27
 bgColor index 0
 useDisplayBg
@@ -563,7 +563,7 @@ x 24
 y 400
 w 10
 h 16
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fgColor index 16
 bgColor index 0
 useDisplayBg
@@ -583,7 +583,7 @@ x 24
 y 424
 w 10
 h 16
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fgColor index 22
 bgColor index 0
 useDisplayBg
@@ -603,7 +603,7 @@ x 24
 y 448
 w 10
 h 16
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fgColor index 31
 bgColor index 0
 useDisplayBg
@@ -624,7 +624,7 @@ y 376
 w 40
 h 20
 controlPv "$(device):FT:OFF_S"
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fgColor index 14
 bgColor index 0
 useDisplayBg
@@ -649,7 +649,7 @@ y 400
 w 40
 h 20
 controlPv "$(device):FT:LEN_S"
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fgColor index 14
 bgColor index 0
 useDisplayBg
@@ -673,7 +673,7 @@ x 8
 y 352
 w 120
 h 16
-font "arial-medium-r-12.0"
+font "helvetica-medium-r-12.0"
 fontAlign "center"
 fgColor index 1
 bgColor index 10
@@ -706,7 +706,7 @@ x 336
 y 352
 w 120
 h 16
-font "arial-medium-r-12.0"
+font "helvetica-medium-r-12.0"
 fontAlign "center"
 fgColor index 1
 bgColor index 10
@@ -739,7 +739,7 @@ x 200
 y 472
 w 47
 h 16
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fgColor index 14
 bgColor index 0
 useDisplayBg
@@ -760,7 +760,7 @@ y 472
 w 72
 h 16
 controlPv "$(device):FT:CHARGE"
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fontAlign "right"
 fgColor index 14
 bgColor index 5
@@ -785,7 +785,7 @@ y 472
 w 56
 h 16
 controlPv "$(device):FT:MAXADC_PC"
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fontAlign "right"
 fgColor index 14
 fgAlarm
@@ -810,7 +810,7 @@ x 132
 y 472
 w 4
 h 16
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fgColor index 14
 bgColor index 0
 useDisplayBg

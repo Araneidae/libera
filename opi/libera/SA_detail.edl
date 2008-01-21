@@ -7,9 +7,9 @@ x 348
 y 107
 w 409
 h 686
-font "arial-medium-r-18.0"
-ctlFont "arial-medium-r-18.0"
-btnFont "arial-medium-r-18.0"
+font "helvetica-medium-r-18.0"
+ctlFont "helvetica-medium-r-18.0"
+btnFont "helvetica-medium-r-18.0"
 fgColor index 14
 bgColor index 3
 textColor index 14
@@ -36,7 +36,7 @@ x 0
 y 0
 w 408
 h 32
-font "arial-medium-r-18.0"
+font "helvetica-medium-r-18.0"
 fontAlign "center"
 fgColor index 14
 bgColor index 73
@@ -60,7 +60,7 @@ bgColor index 3
 topShadowColor index 1
 botShadowColor index 11
 label "EXIT"
-font "arial-medium-r-12.0"
+font "helvetica-medium-r-12.0"
 3d
 endObjectProperties
 
@@ -81,7 +81,7 @@ yLabel "dBm"
 fgColor index 14
 bgColor index 3
 gridColor index 6
-font "arial-medium-r-10.0"
+font "helvetica-medium-r-10.0"
 # Operating Modes
 plotMode "plotLastNPts"
 nPts 250
@@ -133,7 +133,7 @@ yLabel "mA"
 fgColor index 14
 bgColor index 3
 gridColor index 6
-font "arial-medium-r-10.0"
+font "helvetica-medium-r-10.0"
 # Operating Modes
 plotMode "plotLastNPts"
 nPts 250
@@ -179,7 +179,7 @@ y 368
 w 96
 h 16
 controlPv "$(device):SA:S"
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fontAlign "right"
 fgColor index 14
 bgColor index 3
@@ -203,7 +203,7 @@ x 64
 y 368
 w 10
 h 16
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fgColor index 14
 bgColor index 0
 useDisplayBg
@@ -224,7 +224,7 @@ y 368
 w 96
 h 16
 controlPv "$(device):SA:CURRENT"
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fontAlign "right"
 fgColor index 14
 bgColor index 3
@@ -248,7 +248,7 @@ x 216
 y 368
 w 4
 h 16
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fgColor index 14
 bgColor index 0
 useDisplayBg
@@ -274,7 +274,7 @@ graphTitle "Buttons A,B,C,D"
 fgColor index 14
 bgColor index 3
 gridColor index 4
-font "arial-medium-r-10.0"
+font "helvetica-medium-r-10.0"
 # Operating Modes
 plotMode "plotLastNPts"
 nPts 250
@@ -326,7 +326,7 @@ y 632
 w 96
 h 16
 controlPv "$(device):SA:A"
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fontAlign "right"
 fgColor index 14
 bgColor index 3
@@ -350,7 +350,7 @@ x 8
 y 632
 w 10
 h 16
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fgColor index 27
 bgColor index 0
 useDisplayBg
@@ -371,7 +371,7 @@ y 656
 w 96
 h 16
 controlPv "$(device):SA:C"
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fontAlign "right"
 fgColor index 14
 bgColor index 3
@@ -395,7 +395,7 @@ x 8
 y 656
 w 10
 h 16
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fgColor index 22
 bgColor index 0
 useDisplayBg
@@ -416,7 +416,7 @@ y 632
 w 96
 h 16
 controlPv "$(device):SA:B"
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fontAlign "right"
 fgColor index 14
 bgColor index 3
@@ -440,7 +440,7 @@ x 144
 y 632
 w 10
 h 16
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fgColor index 18
 bgColor index 0
 useDisplayBg
@@ -461,7 +461,7 @@ y 656
 w 96
 h 16
 controlPv "$(device):SA:D"
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fontAlign "right"
 fgColor index 14
 bgColor index 3
@@ -485,7 +485,7 @@ x 144
 y 656
 w 10
 h 16
-font "arial-medium-r-14.0"
+font "helvetica-medium-r-14.0"
 fgColor index 33
 bgColor index 0
 useDisplayBg
@@ -509,7 +509,7 @@ fgColor index 25
 bgColor index 3
 topShadowColor index 1
 botShadowColor index 11
-font "arial-bold-r-12.0"
+font "helvetica-bold-r-12.0"
 buttonLabel "Strip"
 numCmds 1
 command {

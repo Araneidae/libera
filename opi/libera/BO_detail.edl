@@ -7,9 +7,9 @@ x 88
 y 65
 w 586
 h 696
-font "arial-medium-r-18.0"
-ctlFont "arial-medium-r-18.0"
-btnFont "arial-medium-r-18.0"
+font "helvetica-medium-r-18.0"
+ctlFont "helvetica-medium-r-18.0"
+btnFont "helvetica-medium-r-18.0"
 fgColor index 14
 bgColor index 3
 textColor index 14
@@ -43,7 +43,7 @@ yLabel "Intensity"
 fgColor index 14
 bgColor index 3
 gridColor index 14
-font "arial-medium-r-12.0"
+font "helvetica-medium-r-12.0"
 # Operating Modes
 nPts 2
 # X axis properties
@@ -85,7 +85,7 @@ x 0
 y 0
 w 586
 h 32
-font "arial-medium-r-18.0"
+font "helvetica-medium-r-18.0"
 fontAlign "center"
 fgColor index 14
 bgColor index 73
@@ -112,7 +112,7 @@ yLabel "nm"
 fgColor index 14
 bgColor index 3
 gridColor index 14
-font "arial-medium-r-12.0"
+font "helvetica-medium-r-12.0"
 # Operating Modes
 nPts 2
 # X axis properties
@@ -163,7 +163,7 @@ yLabel "nm"
 fgColor index 14
 bgColor index 3
 gridColor index 14
-font "arial-medium-r-12.0"
+font "helvetica-medium-r-12.0"
 # Operating Modes
 nPts 2
 # X axis properties
@@ -210,7 +210,7 @@ fgColor index 43
 bgColor index 3
 topShadowColor index 1
 botShadowColor index 11
-font "arial-bold-r-12.0"
+font "helvetica-bold-r-12.0"
 buttonLabel "Overview"
 numPvs 4
 numDsps 1
@@ -237,7 +237,7 @@ bgColor index 3
 topShadowColor index 1
 botShadowColor index 11
 label "EXIT"
-font "arial-medium-r-12.0"
+font "helvetica-medium-r-12.0"
 3d
 endObjectProperties
 
@@ -255,7 +255,7 @@ fgColor index 43
 bgColor index 3
 topShadowColor index 1
 botShadowColor index 11
-font "arial-bold-r-12.0"
+font "helvetica-bold-r-12.0"
 buttonLabel "I & Q"
 numPvs 4
 numDsps 1
