@@ -1,4 +1,4 @@
-/* $Id: libera.h,v 1.78.2.5 2007/06/01 11:14:21 ales Exp $ */
+/* $Id: libera.h,v 1.88 2007/11/13 08:04:31 tomazb Exp $ */
 
 /** \file libera.h */
 /** Public include file for GNU/Linux Libera driver. */
@@ -33,10 +33,10 @@ extern "C" {
 
 #include <linux/ioctl.h>
 #ifndef __KERNEL__
-#  include <time.h>
+#include <time.h>
+#include <limits.h>
 #endif
 
-#include <limits.h>
 
 
 /** Libera magic number for ioctl() calls */
@@ -61,7 +61,7 @@ typedef long long libera_S64_t;
 /** Libera unsigned 64-bit */
 typedef unsigned long long libera_U64_t;
 /** Libera 64-bit time storage type. Used for (L)MT & (L)ST */
-typedef unsigned long long libera_hw_time_t;
+typedef unsigned long long libera_hw_time_t; 
 /** Libera timing pair, LMT & LST */    
 typedef struct 
 {
@@ -220,10 +220,21 @@ typedef enum {
     LIBERA_CFG_MCPLL,
     /** SC PLL status */
     LIBERA_CFG_SCPLL,
+    /** Customer Feature Register */
+    LIBERA_CFG_FEATURE_CUSTOMER,
+    /** ITECH Feature Register */
+    LIBERA_CFG_FEATURE_ITECH,
     /** First custom (Libera member specific) parameter */
     LIBERA_CFG_CUSTOM_FIRST = 128,
 } LIBERA_CFG_COMMON;
 
+/** Feature detection using ioctl(CFG_GET, LIBERA_CFG_FEATURE_ITECH) */
+#define LIBERA_IS_BPM(_cfg)        ((_cfg & 0xf0000000) == 0)
+#define LIBERA_IS_BRILLIANCE(_cfg) (LIBERA_IS_BPM(_cfg) && ((_cfg & 0x0f000000) == 0x01000000))
+#define LIBERA_IS_GBETHERNET(_cfg) (LIBERA_IS_BPM(_cfg) && ((_cfg & 8) == 8))
+#define LIBERA_IS_GBE_DEMO(_cfg) (LIBERA_IS_BPM(_cfg) && ((_cfg & 4) == 4))
+#define LIBERA_IS_DESY_MOLEX(_cfg) (LIBERA_IS_BPM(_cfg) && ((_cfg & 2) == 2))
+#define LIBERA_IS_GROUPING(_cfg) (LIBERA_IS_BPM(_cfg) && ((_cfg & 1) == 1))
 
 enum libera_ioc_ids_t
 {
@@ -277,10 +288,6 @@ enum libera_ioc_ids_t
 				    libera_timestamp_t),
 
      /* All DEBUG IDs have to be declared at the bottom of enum! */
-#ifdef DEBUG
-    LIBERA_IOC_MODULERESET  = _IOW(LIBERA_IOC_MAGIC, 
-				   LIBERA_CFG_MODULERESET, libera_S32_t),
-#endif
     
 };
 
@@ -504,17 +511,12 @@ enum libera_event_ids_t
 typedef enum
 {
     LIBERA_DSC_SET = LIBERA_IOC_DSC,
-    LIBERA_DSC_ADC, 
 } libera_dsc_tags_t;
 
 enum libera_dsc_ids_t
 {    
     LIBERA_DSC_SET_DSC       =  _IOW(LIBERA_DSC_MAGIC,
                                      LIBERA_DSC_SET,
-                                     libera_U32_t),
-
-    LIBERA_DSC_GET_ADC       =  _IOR(LIBERA_DSC_MAGIC,
-                                     LIBERA_DSC_ADC,
                                      libera_U32_t),
 };
 
@@ -527,6 +529,9 @@ enum libera_dsc_ids_t
 #endif
 #ifdef HBPP
 #include "hbpp.h"
+#endif
+#ifdef DPP
+#include "dpp.h"
 #endif
 
 

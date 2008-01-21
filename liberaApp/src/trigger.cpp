@@ -71,10 +71,9 @@ TRIGGER::TRIGGER(bool InitialValue) :
 /* This method signals that the trigger is ready. */
 void TRIGGER::Ready(const struct timespec *NewTimestamp)
 {
-    /* If we've been given a timestamp then use that -- but only if the Libera
-     * system clock has been synchronised -- otherwise fetch the current time
-     * as our timestamp. */
-    if (NewTimestamp == NULL  ||  ! UseLiberaTimestamps())
+    /* If we've been given a timestamp then use that, otherwise fetch the
+     * current time as our timestamp. */
+    if (NewTimestamp == NULL)
         TEST_(clock_gettime, CLOCK_REALTIME, & Timestamp);
     else
         Timestamp = *NewTimestamp;

@@ -1,4 +1,4 @@
-/* $Id: ebpp.h,v 1.21.2.2 2007/02/15 15:40:53 ales Exp $ */
+/* $Id: ebpp.h,v 1.34 2007/11/08 16:46:11 tomazb Exp $ */
 
 /** \file ebpp.h */
 /** Public include file for Libera Electron Beam Position Processor (EBPP). */
@@ -50,8 +50,23 @@ typedef enum {
     LIBERA_CFG_LEVEL,
     LIBERA_CFG_AGC,
     LIBERA_CFG_DSC,
+    LIBERA_CFG_ILKSTATUS,
+    LIBERA_CFG_PMOFFSET,
+    LIBERA_CFG_EXTSWITCH,
+    LIBERA_CFG_SWDELAY,
+    LIBERA_CFG_DFA,
+    LIBERA_CFG_DEC_DDC,
+    LIBERA_CFG_DDC_MAFLENGTH,
+    LIBERA_CFG_DDC_MAFDELAY,
+    LIBERA_CFG_TRIGDELAY,
+    // Add new parameters before this line.
+#define LIBERA_CFG_COEFF   256 // position of coefficients in the param array
+#define LIBERA_CFG_NOTCH_MAX 5 // hardcoded number of coefficients
+    LIBERA_CFG_NOTCH1 = LIBERA_CFG_COEFF,  // start of FIR coefficients
+    LIBERA_CFG_NOTCH2 = LIBERA_CFG_NOTCH1 + LIBERA_CFG_NOTCH_MAX,
+    LIBERA_CFG_POLYPHASE_FIR = LIBERA_CFG_NOTCH2 + LIBERA_CFG_NOTCH_MAX,
+#define LIBERA_CFG_FIR_MAX 192 // max polyphase FIR = 3 * max decimation
 } LIBERA_CFG_EBPP_GENERIC;
-
 
 #define LIBERA_DD_CIRCBUF_ATOMS   2097152
 /** No. of DD atoms in one DMA block */
@@ -110,6 +125,10 @@ typedef struct {
     /* 6 values reserved for future use */
     libera_S32_t reserved[6];
 } libera_atom_sa_t;
+
+#define SA_FIFO_DEPTH    32 /* Top/botoom half SA buffer length in atoms. */
+#define SA_SIZE_WIDTH     1
+#define SA_LOG           64 // SA terminal pipe buffer depth. Must be 2^n.
 
 
 #endif // _EBPP_H_

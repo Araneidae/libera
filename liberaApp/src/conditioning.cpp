@@ -32,6 +32,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <math.h>
+#include <limits.h>
 
 #include <dbFldTypes.h>         // DBF_UCHAR
 #include <iocsh.h>
@@ -178,11 +179,18 @@ static REAL variance(int sum_values, long long int sum_squares, int samples)
 }
 
 
-/* Helper routine for writing real values to ai fields. */
+/* Helper routine for writing real values to ai fields.  Also takes care to
+ * avoid integer overflow in REAL to int conversion. */
 
 static int aiValue(REAL x)
 {
-    return (int) round(AI_SCALE * x);
+    REAL scaled = round(AI_SCALE * x);
+    if (scaled < LONG_MIN)
+        return LONG_MIN;
+    else if (LONG_MAX < scaled)
+        return LONG_MAX;
+    else
+        return (int) scaled;
 }
 
 

@@ -425,14 +425,42 @@ static int PhaseCompDirty = 0;
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 
+/* Discovers whether this is a Libera Brillance system. */
+
+static bool DiscoverBrilliance()
+{
+    int cfg = open("/dev/libera.cfg", O_RDONLY);
+    if (cfg == -1)
+    {
+        perror("Unable to open libera.cfg file");
+        return false;
+    }
+    else
+    {
+        /* Try to read the iTech FPGA feature configuration register to
+         * discover whether this is a Brilliance Libera. */
+        libera_cfg_request_t req;
+        req.idx = LIBERA_CFG_FEATURE_ITECH;
+        if (ioctl(cfg, LIBERA_IOC_GET_CFG, &req) == -1)
+            /* The feature register isn't present, so this can't possibly be
+             * a Brilliance Libera. */
+            LiberaBrilliance = false;
+        else
+            LiberaBrilliance = LIBERA_IS_BRILLIANCE(req.val);
+        close(cfg);
+        return true;
+    }
+}
+
+
 static bool InitialiseDSC()
 {
     bool Ok =
+        /* Interrogate whether Libera Brilliance is installed. */
+        DiscoverBrilliance()  &&
         /* Open /dev/libera.dsc for signal conditioning control. */
         TEST_IO(DevDsc, "Unable to open /dev/libera.dsc",
-            open, "/dev/libera.dsc", O_RDWR | O_SYNC)  &&
-        /* Interrogate whether Libera Brilliance is installed. */
-        TEST_(ioctl, DevDsc, LIBERA_DSC_GET_ADC, &LiberaBrilliance);
+            open, "/dev/libera.dsc", O_RDWR | O_SYNC);
     /* If the LiberaBrilliance flag is set then the ADC is 16 bits, otherwise
      * we're operating an older Libera with 12 bits.  We actually record and
      * use the excess bits which need to be handled specially. */
