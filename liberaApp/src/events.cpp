@@ -34,12 +34,12 @@
 #include <errno.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <stropts.h>
 #include <signal.h>
 #include <sys/select.h>
 #include <pthread.h>
 #include <assert.h>
 
-#include "eventd.h"     // for LIBERA_SIGNAL
 #include "hardware.h"
 #include "thread.h"
 
@@ -62,7 +62,7 @@ int MergeParameters(
 {
     switch (EventId)
     {
-        case CSPI_EVENT_INTERLOCK:
+        case LIBERA_EVENT_INTERLOCK:
             /* For the interlock we keep the original parameter and throw new
              * values away: we're only interested in the *first* interlock
              * reason. */
@@ -70,15 +70,15 @@ int MergeParameters(
                 return OldParameter;
             else
                 return NewParameter;
-        case CSPI_EVENT_TRIGGET:
-        case CSPI_EVENT_PM:
+        case LIBERA_EVENT_TRIGGET:
+        case LIBERA_EVENT_PM:
             /* For normal and postmortem triggers just count the number of
              * missed triggers. */
             if (MergeRequired)
                 return OldParameter + 1;
             else
                 return 0;
-        case CSPI_EVENT_TRIGSET:
+        case LIBERA_EVENT_TRIGSET:
             /* For synchronisation triggers complain if we miss a trigger:
              * this shouldn't happen. */
             if (MergeRequired)
@@ -280,8 +280,9 @@ static EVENT_DISPATCHER * EventDispatcher = NULL;
 
 
 
-/* This thread receives the CSPI event notifications (which arrive as
- * signals) and dispatches them to the appropriate event handler thread. */
+/* This thread receives the device driver event notifications from the
+ * /dev/libera.event pipe and dispatches them to the appropriate event handler
+ * thread. */
 
 class EVENT_RECEIVER : public THREAD
 {
@@ -289,53 +290,21 @@ public:
     EVENT_RECEIVER() : THREAD("EVENT_RECEIVER") {}
     
 private:
-    /* Just hand the event straight over to the event dispatcher thread. */
-    static int CspiSignal(CSPI_EVENT *Event)
-    {
-        EventDispatcher->NotifyEvent(Event->hdr.id, Event->hdr.param);
-        return 1;
-    }
-    
-    /* This thread simply passes CSPI events through to the dispatcher thread
-     * so that they can be processed and merged if necessary. */
+    /* We connect directly to the event source and dispatch our events
+     * ourselves.  The events are processed in a separate thread to ensure
+     * that all events are actually seen, even if the consumer is too busy. */
+
     void Thread()
     {
-        struct sigaction CspiAction;
-        sigset_t EnableSet;
-        bool Ok =
-            /* Request CSPI events. */
-            ConfigureEventCallback(
-                EventDispatcher->EventMask(), CspiSignal, this)  &&
-            /* Now completely reprogram the signal handler so that we can
-             * handle the LIBERA_SIGNAL synchronously.  First pick up the
-             * CSPI action and then reset the action to default so we can
-             * receive it synchronously. */
-            TEST_(sigaction, LIBERA_SIGNAL, NULL, &CspiAction)  &&
-            /* Enable delivery of the LIBERA_SIGNAL signal, to this thread
-             * only: this is required for CSPI event dispatching. */
-            TEST_(sigemptyset, &EnableSet)  &&
-            TEST_(sigaddset, &EnableSet, LIBERA_SIGNAL);
-        if (Ok)
+        if (SetEventMask(EventDispatcher->EventMask()))
         {
             StartupOk();
-
+            /* Run until we're forcibly killed from outside. */
             while (true)
             {
-                /* Now process all CSPI event notifications.  We want to do
-                 * this synchronously so that we have access to normal thread
-                 * synchronisation primitives.  We rely on the fact that
-                 * LIBERA_SIGNAL (SIGUSR1) is blocked globally -- and so we
-                 * can use sigwaitinfo() to receive the signal.
-                 *     To avoid violence to the existing CSPI structure we
-                 * actually dispatch the event by calling the sigaction
-                 * already set up by CSPI: this then calls us back on
-                 * CspiSignal() above. */
-                siginfo_t SigInfo;
-                int Signal = sigwaitinfo(&EnableSet, &SigInfo);
-                if (Signal == LIBERA_SIGNAL)
-                    CspiAction.sa_sigaction(Signal, &SigInfo, NULL);
-                else
-                    printf("Unexpected signal %d\n", Signal);
+                int EventId, Param;
+                if (ReadEvent(EventId, Param))
+                    EventDispatcher->NotifyEvent(EventId, Param);
             }
         }
     }
@@ -354,22 +323,22 @@ static EVENT_RECEIVER * EventReceiver = NULL;
 
 void RegisterTriggerEvent(I_EVENT &Event, int Priority)
 {
-    EventDispatcher->Register(Event, CSPI_EVENT_TRIGGET, Priority);
+    EventDispatcher->Register(Event, LIBERA_EVENT_TRIGGET, Priority);
 }
 
 void RegisterTriggerSetEvent(I_EVENT &Event, int Priority)
 {
-    EventDispatcher->Register(Event, CSPI_EVENT_TRIGSET, Priority);
+    EventDispatcher->Register(Event, LIBERA_EVENT_TRIGSET, Priority);
 }
 
 void RegisterPostmortemEvent(I_EVENT &Event, int Priority)
 {
-    EventDispatcher->Register(Event, CSPI_EVENT_PM, Priority);
+    EventDispatcher->Register(Event, LIBERA_EVENT_PM, Priority);
 }
 
 void RegisterInterlockEvent(I_EVENT &Event, int Priority)
 {
-    EventDispatcher->Register(Event, CSPI_EVENT_INTERLOCK, Priority);
+    EventDispatcher->Register(Event, LIBERA_EVENT_INTERLOCK, Priority);
 }
 
 
@@ -380,10 +349,10 @@ bool InitialiseEventReceiver()
     /* Enable the set of events to be supported: this needs to be done before
      * the event receiver thread is started.  Every event for which a
      * register function exist above should be enabled here. */
-    EventDispatcher->EnableEvent(CSPI_EVENT_TRIGGET);
-    EventDispatcher->EnableEvent(CSPI_EVENT_TRIGSET);
-    EventDispatcher->EnableEvent(CSPI_EVENT_PM);
-    EventDispatcher->EnableEvent(CSPI_EVENT_INTERLOCK);
+    EventDispatcher->EnableEvent(LIBERA_EVENT_TRIGGET);
+    EventDispatcher->EnableEvent(LIBERA_EVENT_TRIGSET);
+    EventDispatcher->EnableEvent(LIBERA_EVENT_PM);
+    EventDispatcher->EnableEvent(LIBERA_EVENT_INTERLOCK);
     return
         EventDispatcher->StartThread()  &&
         EventReceiver->StartThread();

@@ -95,10 +95,10 @@ public:
     LOCKED_THREAD(const char * Name);
 
 protected:
-    void Lock()   { TEST_(pthread_mutex_lock,   &Mutex); }
-    void Unlock() { TEST_(pthread_mutex_unlock, &Mutex); }
-    void Signal() { TEST_(pthread_cond_signal,  &Condition); }
-    void Wait()   { TEST_(pthread_cond_wait,    &Condition, &Mutex); }
+    void Lock()   { TEST_0(pthread_mutex_lock,   &Mutex); }
+    void Unlock() { TEST_0(pthread_mutex_unlock, &Mutex); }
+    void Signal() { TEST_0(pthread_cond_signal,  &Condition); }
+    void Wait()   { TEST_0(pthread_cond_wait,    &Condition, &Mutex); }
 
     /* Waits for at least the specified number of milliseconds or until the
      * specified time before timing out.  Returns true if the wait was

@@ -55,8 +55,8 @@ ioc_SRCS += cordic.cpp          # Fast computation of sqrt(x*x+y*y)
 ioc_SRCS += convert.cpp         # Positions configuration and conversion
 ioc_SRCS += configure.cpp       # Switches and attenuation configuration
 ioc_SRCS += timestamps.cpp      # Synchronisation and timestamp support
-ioc_SRCS += hardware.cpp        # CSPI level hardware interface
-ioc_SRCS += events.cpp          # Reception of trigger and other CSPI events
+ioc_SRCS += hardware.cpp        # Driver level hardware interface
+ioc_SRCS += events.cpp          # Reception of trigger and other device events
 ioc_SRCS += numeric.cpp         # Fast arithmetic support
 ioc_SRCS += thread.cpp          # Simple support for pthreads
 ioc_SRCS += persistent.cpp      # Persistent configuration settings
@@ -71,11 +71,10 @@ USR_CXXFLAGS += -DBUILD_FF_SUPPORT
 ioc_SRCS += fastFeedback.cpp    # Fast feedback register access
 endif
 
-ioc_LIBS += cspi
 ioc_LIBS += $(EPICS_BASE_IOC_LIBS) 
 
-# Point to the Libera CSPI and device driver includes
-USR_INCLUDES += -I$(CSPI)/driver -I$(CSPI) -I$(LIBERA_PLL)
+# Point to the device driver includes
+USR_INCLUDES += -I$(LIBERA_PLL)
 
 
 include $(TOP)/configure/RULES

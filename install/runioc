@@ -145,6 +145,10 @@ if [ -e /var/run/ldscd.pid ]; then
     sleep 1
 fi
 
+# Finally ensure the CSPI levent daemon isn't running: we want to dispatch
+# our own events, thank you very much.
+[ -e /var/run/leventd.pid ]  &&  kill $(cat /var/run/leventd.pid)
+
 
 # Export the database parameters needed to configure libera.db.  These are
 # record lengths which need to be defined at IOC startup.

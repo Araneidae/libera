@@ -663,10 +663,11 @@ private:
         int TargetLength = Length * sizeof(LIBERA_ROW);
         int Read;
         return
-            TEST_IO(Read, "Error seeking", lseek, DevDd, 0, CSPI_SEEK_ST)  &&
-            TEST_IO(Read, "Error reading",
-                read, DevDd, Data, TargetLength)  &&
-            TEST_OK(Read == TargetLength, "Read from DD was incomplete");
+            /* Seeking to SEEK_ST:0 is handled specially by the driver:
+             * instead, it seeks to the end of the current waveform. */
+            TEST_IO(Read, lseek, DevDd, 0, SEEK_SET)  &&    // SEEK_ST
+            TEST_IO(Read, read, DevDd, Data, TargetLength)  &&
+            TEST_OK(Read == TargetLength);
     }
 
 
@@ -993,8 +994,7 @@ private:
         CommitDscState();
         Unlock();
         
-        if (!TEST_IO(DevDd, "Unable to open /dev/libera.dd for conditioning",
-                open, "/dev/libera.dd", O_RDONLY))
+        if (!TEST_IO(DevDd, open, "/dev/libera.dd", O_RDONLY))
             /* Returning early causes error return. */
             return;
         StartupOk();

@@ -18,7 +18,6 @@ BUILD_FF_SUPPORT=$(shell \
 
 EPICS_BASE=/dls_sw/epics/R3.14.9/base
 
-CSPI=$(TOP)/cspi
 LIBERA_PLL=$(TOP)/system/lmtd
 
 # Identifies which python compiler to use.  Must be at least version 2.4.

@@ -96,7 +96,8 @@ public:
 
     /* This signals EPICS that there is data to be read and sets the
      * interlock up ready to be read. */
-    void Ready(const CSPI_TIMESTAMP &NewTimestamp = *(CSPI_TIMESTAMP*)NULL);
+    void Ready(const LIBERA_TIMESTAMP &NewTimestamp =
+        *(LIBERA_TIMESTAMP*)NULL);
 
     /* This blocks until EPICS reports back by processing the DONE record.
      * The first call must be made before calling Ready() and will wait for

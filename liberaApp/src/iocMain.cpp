@@ -39,7 +39,6 @@
 #include <iocsh.h>
 #include <epicsThread.h>
 
-#include "eventd.h"     // for LIBERA_SIGNAL
 #include "hardware.h"
 #include "firstTurn.h"
 #include "booster.h"
@@ -170,8 +169,7 @@ static void DoNothing(int signal)
 
 
 /* Set up basic signal handling environment.  We configure four shutdown
- * signals (HUP, INT, QUIT and TERM) to call AtExit() and block the
- * LIBERA_SIGNAL (SIGUSR1) -- we'll unmask it where we want to catch it! */
+ * signals (HUP, INT, QUIT and TERM) to call AtExit(). */
 
 static bool InitialiseSignals()
 {
@@ -181,7 +179,6 @@ static bool InitialiseSignals()
     struct sigaction DoNothingHandler;
     DoNothingHandler.sa_handler = DoNothing;
     DoNothingHandler.sa_flags = 0;
-    sigset_t BlockSet;
     return
         /* Block all signals during AtExit() signal processing. */
         TEST_(sigfillset, &AtExitHandler.sa_mask)  &&
@@ -194,13 +191,7 @@ static bool InitialiseSignals()
         /* Configure SIGUSR2 to do nothing: we can then use this generally
          * without side effects. */
         TEST_(sigfillset, &DoNothingHandler.sa_mask)  &&
-        TEST_(sigaction, SIGUSR2, &DoNothingHandler, NULL)  &&
-
-        /* Block the LIBERA_SIGNAL signal globally: we only want this to be
-         * delivered where we're ready for it! */
-        TEST_(sigemptyset, &BlockSet)  &&
-        TEST_(sigaddset, &BlockSet, LIBERA_SIGNAL) &&
-        TEST_(sigprocmask, SIG_BLOCK, &BlockSet, NULL);
+        TEST_(sigaction, SIGUSR2, &DoNothingHandler, NULL);
 }
 
 

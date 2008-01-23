@@ -141,7 +141,7 @@ public:
     void CaptureFrom(const WAVEFORMS<T> & Source, size_t Offset);
 
     /* Reads the timestamp. */
-    const CSPI_TIMESTAMP & GetTimestamp() { return Timestamp; }
+    const LIBERA_TIMESTAMP & GetTimestamp() { return Timestamp; }
 
     /* Direct access to the raw data.  No more than GetLength() rows should
      * be written to this waveform, and no more than WorkingLength() can
@@ -171,7 +171,7 @@ protected:
     /* The waveform itself. */
     T * const Data;
     /* The timestamp of the waveform. */
-    CSPI_TIMESTAMP Timestamp;
+    LIBERA_TIMESTAMP Timestamp;
 
     /* Some tiresome problems with C++ access management.  Anything that
      * looks across instances needs special helper declarations here. */

@@ -28,7 +28,7 @@
 
 
 #define EBPP
-#include "cspi.h"
+#include "driver/libera.h"
 
 /* Exports for libera device driver interface routines. */
 
@@ -118,6 +118,10 @@ bool ReadRawRegister(unsigned int Address, unsigned int &Value);
 /*                   Reading waveform data from the FPGA.                    */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+/* Waveforms are timestamped with both the machine and the system time of the
+ * start of the waveform. */
+typedef libera_timestamp_t LIBERA_TIMESTAMP;
+
 
 /* Reads a waveform of the given length (number of rows) using the given
  * decimation into the given block of data.  Returns the number of rows
@@ -125,11 +129,11 @@ bool ReadRawRegister(unsigned int Address, unsigned int &Value);
  *     At present only decimation values of 1 or 64 are suppported. */
 size_t ReadWaveform(
     int Decimation, size_t WaveformLength, LIBERA_ROW * Data,
-    CSPI_TIMESTAMP & Timestamp);
+    LIBERA_TIMESTAMP & Timestamp);
 
 /* Reads the postmortem buffer. */
 size_t ReadPostmortem(
-    size_t WaveformLength, LIBERA_ROW * Data, CSPI_TIMESTAMP & Timestamp);
+    size_t WaveformLength, LIBERA_ROW * Data, LIBERA_TIMESTAMP & Timestamp);
 
 /* Reads a full 1024 point ADC waveform. */
 bool ReadAdcWaveform(ADC_DATA &Data);
@@ -147,10 +151,19 @@ int ReadMaxAdc();
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 
+/* The interlock hardware can operate in one of the following three modes. */
+enum LIBERA_ILKMODE
+{
+    LIBERA_ILK_DISABLE = 0,         // Interlock disabled
+    LIBERA_ILK_ENABLE = 1,          // Interlock unconditionally enabled
+    LIBERA_ILK_ENABLE_GAINDEP = 3,  // Position ilk off, ADC overflow ilk on
+};
+
+
 /* Interlock settings.   As the CSPI interface requires that we set all the
  * parameters together, we present the interface in one piece. */
 bool WriteInterlockParameters(
-    CSPI_ILKMODE mode,
+    LIBERA_ILKMODE mode,
     // Valid X,Y positions for interlock
     int Xlow, int Xhigh, int Ylow, int Yhigh,
     // Interlock overflow limit and duration (ADC value and clocks)
@@ -167,15 +180,16 @@ bool WriteCalibrationSettings(
 
 /* Set clock synchronisation. */
 bool SetMachineClockTime();
-bool SetSystemClockTime(struct timespec & NewTime);
+bool SetSystemClockTime(const struct timespec & NewTime);
 bool GetClockState(bool &LmtdLocked, bool &LstdLocked);
 
 
+/* Programs the set of Libera events which will be notified. */
+bool SetEventMask(int EventMask);
+/* Returns the next event from the Libera event queue.  Blocks until the next
+ * event is available. */
+bool ReadEvent(int &EventId, int &Parameter);
 
-/* Links the given CSPI event handler to the CSPI event system.  By default
- * this will be delivered through the LIBERA_SIGNAL signal. */
-bool ConfigureEventCallback(
-    int EventMask, int (*Handler)(CSPI_EVENT*), void *Context);
 
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -272,41 +286,76 @@ bool WriteSwitchTriggerDelay(int Delay);
 /*                                                                           */
 /*****************************************************************************/
 
-#define TEST_OK(test, message...) \
-    ( { \
-        bool __ok__ = (test); \
-        if (!__ok__)  printf(message); \
-        __ok__; \
-    } )
+#include <errno.h>
 
-/* Helper macro for OS I/O commands which return -1 on error and set errno.
- * Arguments are:
- *      var     Variable to receive result of command
- *      error   Error message to print on error
- *      command I/O command to call
- *      args    Arguments to I/O command
- * Return true on success, prints an error message and returns false if the
- * I/O command fails. */
-#define TEST_IO(var, error, command, args...) \
+void print_error(const char * Message, const char * FileName, int LineNumber);
+
+
+/* Helper macros for OS calls: in all cases the call is wrapped by a macro
+ * which converts the return code into a boolean value.  If the call fails
+ * then an automatically generated error message (including filename and line
+ * number) is printed.
+ *     In all cases true is returned iff the call is successful.
+ *
+ * There are three main cases, depending on how the return value is
+ * interpreted:
+ *
+ *  TEST_IO(Result, function, arguments)
+ *      Computes
+ *          Result = function(arguments)
+ *      and reports an error message if Result == -1.
+ *  
+ *  TEST_(function, arguments)
+ *      Computes
+ *          function(arguments)
+ *      and reports an error message if the function returns -1.
+ *  
+ *  TEST_0(function, arguments)
+ *      Computes
+ *          function(arguments)
+ *      and reports an error message if the function returns any non-zero
+ *      value.  This is designed for use with the pthread_ family of
+ *      functions, and the returned value is assigned to errno.
+ *
+ * The following is slightly different in purpose.
+ *  
+ *  TEST_OK(test)
+ *      Evaluates test as a boolean and prints an error message if it
+ *      evaluates to false. */
+
+#define TEST_IO(var, command, args...) \
     ( { \
         var = (command)(args); \
-        if ((int) var == -1)  perror(error); \
+        if ((int) var == -1) \
+            print_error(#var " = " #command "(" #args ")", \
+                __FILE__, __LINE__); \
         (int) var != -1; \
     } )
 
-/* Much the same as for TEST_IO, but for I/O commands which return 0 on
- * success and an ignorable non-zero code on failure.  No variable needs to be
- * specified. */
-#define TEST_RC(error, command, args...) \
+#define TEST_(command, args...) \
     ( { \
-        bool __ok__ = (command)(args) == 0; \
-        if (!__ok__)  perror(error); \
+        bool __ok__ = (command)(args) != -1; \
+        if (!__ok__) \
+            print_error(#command "(" #args ")", __FILE__, __LINE__); \
         __ok__; \
     } )
 
-/* An even more simplified version of TEST_RC, where the error string is
- * simply the function name. */
-#define TEST_(command, args...)  TEST_RC(#command, command, args)
+#define TEST_0(command, args...) \
+    ( { \
+        errno = (command)(args); \
+        if (errno != 0) \
+            print_error(#command "(" #args ")", __FILE__, __LINE__); \
+        errno == 0; \
+    } )
+
+#define TEST_OK(test) \
+    ( { \
+        bool __ok__ = (test); \
+        if (!__ok__) \
+            { errno = 0; print_error(#test, __FILE__, __LINE__); } \
+        __ok__; \
+    } )
+
 
 
 /* A rather randomly placed helper routine.  This and its equivalents are

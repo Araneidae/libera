@@ -27,7 +27,7 @@
  */
 
 
-/* Libera device interface reimplemented through CSPI. */
+/* Libera device interface: direct access to device drivers. */
 
 #include <stdio.h>
 #include <errno.h>
@@ -45,29 +45,44 @@
 #include "hardware.h"
 
 
-
 /* This register records the maximum ADC reading since it was last read. */
 #define REGISTER_MAX_ADC_RAW    0x1400C000
 
 
-#define CSPI_(command, args...) \
-    ( { int error = (command)(args); \
-        if (error != CSPI_OK) \
-            printf("CSPI error in %s (%s, %d): %s\n", \
-                #command, __FILE__, __LINE__, cspi_strerror(error)); \
-        error == CSPI_OK; } )
 
-#if 0
-/* This version of the CSPI macro logs every CSPI call! */
-#undef CSPI_
-#define CSPI_(command, args...) \
-    ( { printf("%s", "CSPI " #command " (" #args ") => "); \
-        int error = (command)(args); \
-        printf("%d\n", error); \
-        if (error != CSPI_OK) \
-            printf("CSPI error in %s: %s\n", #command, cspi_strerror(error)); \
-        error == CSPI_OK; } )
-#endif
+/* Routine for printing an error message complete with associated file name
+ * and line number. */
+
+void print_error(const char * Message, const char * FileName, int LineNumber)
+{
+    /* Large enough not to really worry about overflow.  If we do generate a
+     * silly message that's too big, then that's just too bad. */
+    const int MESSAGE_LENGTH = 512;
+    int Error = errno;
+    char ErrorMessage[MESSAGE_LENGTH];
+    
+    int Count = snprintf(ErrorMessage, MESSAGE_LENGTH,
+        "%s (%s, %d)", Message, FileName, LineNumber);
+    if (errno != 0)
+    {
+        /* This is very annoying: strerror() is not not necessarily thread
+         * safe ... but not for any compelling reason, see:
+         *  http://sources.redhat.com/ml/glibc-bugs/2005-11/msg00101.html
+         * and the rather unhelpful reply:
+         *  http://sources.redhat.com/ml/glibc-bugs/2005-11/msg00108.html
+         *
+         * On the other hand, the recommended routine strerror_r() is
+         * inconsistently defined -- depending on the precise library and its
+         * configuration, it returns either an int or a char*.  Oh dear.
+         *
+         * Ah well.  We go with the GNU definition, so here is a buffer to
+         * maybe use for the message. */
+        char StrError[256];
+        snprintf(ErrorMessage + Count, MESSAGE_LENGTH - Count,
+            ": (%d) %s", Error, strerror_r(Error, StrError, sizeof(StrError)));
+    }
+    printf("%s\n", ErrorMessage);
+}
 
 
 /*****************************************************************************/
@@ -76,23 +91,23 @@
 /*                                                                           */
 /*****************************************************************************/
 
-/* The following handles manage our connection to CSPI. */
 
-/* This is the main environment handle needed for establishing the initial
- * connection and to manage the other active connections. */
-static CSPIHENV CspiEnv = NULL;
-/* Connection to ADC rate buffer. */
-static CSPIHCON CspiConAdc = NULL;
-/* Connection to turn-by-turn or decimated data buffer, also known as the
- * "data on demand" (DD) data source. */
-static CSPIHCON CspiConDd = NULL;
-/* Connection to slow acquisition data source, updating at just over 10Hz. */
-static CSPIHCON CspiConSa = NULL;
-/* Connection to 16384 point postmortem buffer. */
-static CSPIHCON CspiConPm = NULL;
-/* Connection handle used to configure CSPI event deliver. */
-static CSPIHCON EventSource = NULL;
+/* Device handles. */
+static int DevCfg = -1;     /* /dev/libera.cfg  General configuration. */
+static int DevAdc = -1;     /* /dev/libera.adc  ADC configuration. */
+static int DevDsc = -1;     /* /dev/libera.dsc  Signal conditioning i/f. */
+static int DevEvent = -1;   /* /dev/libera.event    Event signalling. */
+static int DevPm = -1;      /* /dev/libera.pm   Postmortem data. */
+static int DevSa = -1;      /* /dev/libera.sa   Slow acquisition. */
+static int DevDd = -1;      /* /dev/libera.dd   Turn by turn data. */
+#ifdef RAW_REGISTER
+static int DevMem = -1;     /* /dev/mem         Direct register access. */
+#endif
 
+
+/* Whether the Libera Brilliance option is installed.  This enables
+ * completely different handling of attenuators and 16 bit ADC. */
+static bool LiberaBrilliance = false;
 
 /* The ADC nominally returns 16 bits (signed short) through the interface
  * provided here, but there are (at least) two types of ADC available: one
@@ -109,9 +124,30 @@ static int AdcExcessBits = 4;
 /*****************************************************************************/
 
 
+/* Wrappers for reading and writing device driver configuration values.  Each
+ * value is an integer identified by an id named in the form LIBERA_CFG_... */
+
+static bool ReadCfgValue(int Index, int &Result)
+{
+    libera_cfg_request_t Request;
+    Request.idx = Index;
+    bool Ok = TEST_(ioctl, DevCfg, LIBERA_IOC_GET_CFG, &Request);
+    if (Ok)
+        Result = Request.val;
+    return Ok;
+}
+
+static bool WriteCfgValue(int Index, int Value)
+{
+    libera_cfg_request_t Request;
+    Request.idx = Index;
+    Request.val = Value;
+    return TEST_(ioctl, DevCfg, LIBERA_IOC_SET_CFG, &Request);
+}
+
 
 bool WriteInterlockParameters(
-    CSPI_ILKMODE mode,
+    LIBERA_ILKMODE mode,
     int Xlow, int Xhigh, int Ylow, int Yhigh,
     int overflow_limit, int overflow_dur,
     int gain_limit)
@@ -120,59 +156,61 @@ bool WriteInterlockParameters(
      * by the DSC.  Do this here allows the rest of the system to believe
      * everything is 16 bits. */
     overflow_limit >>= AdcExcessBits;
-    
-    CSPI_ENVPARAMS EnvParams;
-    EnvParams.ilk.mode = mode;
-    EnvParams.ilk.Xlow = Xlow;
-    EnvParams.ilk.Xhigh = Xhigh;
-    EnvParams.ilk.Ylow = Ylow;
-    EnvParams.ilk.Yhigh = Yhigh;
-    EnvParams.ilk.overflow_limit = overflow_limit;
-    EnvParams.ilk.overflow_dur = overflow_dur;
-    EnvParams.ilk.gain_limit = gain_limit;
-    return CSPI_(cspi_setenvparam, CspiEnv, &EnvParams, CSPI_ENV_ILK);
+    return
+        WriteCfgValue(LIBERA_CFG_ILK_MODE,           mode)  &&
+        WriteCfgValue(LIBERA_CFG_ILK_XLOW,           Xlow)  &&
+        WriteCfgValue(LIBERA_CFG_ILK_XHIGH,          Xhigh)  &&
+        WriteCfgValue(LIBERA_CFG_ILK_YLOW,           Ylow)  &&
+        WriteCfgValue(LIBERA_CFG_ILK_YHIGH,          Yhigh)  &&
+        WriteCfgValue(LIBERA_CFG_ILK_OVERFLOW_LIMIT, overflow_limit)  &&
+        WriteCfgValue(LIBERA_CFG_ILK_OVERFLOW_DUR,   overflow_dur)  &&
+        /* It is important that this configuration value is written last, as
+         * it turns out that nothing is written to hardware until this value
+         * is written.  Eww: it would be better to have an explicit call if
+         * that the way things should be. */
+        WriteCfgValue(LIBERA_CFG_ILK_GAIN_LIMIT,     gain_limit);
 }
 
 
 bool WriteCalibrationSettings(
     int Kx, int Ky, int Kq, int Xoffset, int Yoffset)
 {
-    CSPI_ENVPARAMS EnvParams;
-    EnvParams.Kx = Kx;
-    EnvParams.Ky = Ky;
-    EnvParams.Xoffset = Xoffset;
-    EnvParams.Yoffset = Yoffset;
-    return CSPI_(cspi_setenvparam, CspiEnv, &EnvParams,
-        CSPI_ENV_KX | CSPI_ENV_KY | CSPI_ENV_XOFFSET | CSPI_ENV_YOFFSET);
+    return
+        WriteCfgValue(LIBERA_CFG_KX, Kx)  &&
+        WriteCfgValue(LIBERA_CFG_KY, Ky)  &&
+        WriteCfgValue(LIBERA_CFG_XOFFSET, Xoffset)  &&
+        WriteCfgValue(LIBERA_CFG_YOFFSET, Yoffset);
 }
 
 
 bool SetMachineClockTime()
 {
-    CSPI_SETTIMESTAMP Timestamp;
+    libera_HRtimestamp_t Timestamp;
     Timestamp.mt = 0;
     Timestamp.phase = 0;
-    return CSPI_(cspi_settime, CspiEnv, &Timestamp, CSPI_TIME_MT);
+    return TEST_(ioctl, DevEvent, LIBERA_EVENT_SET_MT, &Timestamp);
 }
 
 
-bool SetSystemClockTime(struct timespec & NewTime)
+bool SetSystemClockTime(const struct timespec & NewTime)
 {
-    CSPI_SETTIMESTAMP Timestamp;
+    libera_HRtimestamp_t Timestamp;
     Timestamp.st = NewTime;
-    return CSPI_(cspi_settime, CspiEnv, &Timestamp, CSPI_TIME_ST);
+    return TEST_(ioctl, DevEvent, LIBERA_EVENT_SET_ST, &Timestamp);
 }
 
 
 bool GetClockState(bool &LmtdLocked, bool &LstdLocked)
 {
-    CSPI_ENVPARAMS EnvParams;
-    bool Ok = CSPI_(cspi_getenvparam, CspiEnv, &EnvParams, CSPI_ENV_PLL);
-    if (Ok)
-    {
-        LmtdLocked = EnvParams.pll.mc;
-        LstdLocked = EnvParams.pll.sc;
-    }
+    int LmtdLockedInt = 0;
+    int LstdLockedInt = 0;
+    bool Ok =
+        ReadCfgValue(LIBERA_CFG_MCPLL, LmtdLockedInt)  &&
+        ReadCfgValue(LIBERA_CFG_SCPLL, LstdLockedInt);
+    /* If either call fails the corresponding value will be left as false:
+     * this is a sensible default value to return on failure. */
+    LmtdLocked = LmtdLockedInt;
+    LstdLocked = LstdLockedInt;
     return Ok;
 }
 
@@ -185,81 +223,44 @@ bool GetClockState(bool &LmtdLocked, bool &LstdLocked)
 /*                                                                           */
 /*****************************************************************************/
 
+/* Calling lseek() on /dev/libera.dd behaves quite differently depending on
+ * how the whence parameter is set.  The following definitions document the
+ * available options. */
+#define LIBERA_SEEK_ST  SEEK_SET    // System clock
+#define LIBERA_SEEK_MT  SEEK_CUR    // Machine clock
+#define LIBERA_SEEK_TR  SEEK_END    // Trigger point (offset is ignored)
 
-#define READ_CHUNK_SIZE         65536
-#define CHUNK_SIZE(Length) \
-    ((Length) > READ_CHUNK_SIZE ? READ_CHUNK_SIZE : (Length))
 
 size_t ReadWaveform(
     int Decimation, size_t WaveformLength, LIBERA_ROW * Data,
-    CSPI_TIMESTAMP & Timestamp)
+    LIBERA_TIMESTAMP & Timestamp)
 {
-    CSPI_CONPARAMS_DD ConParams;
-    ConParams.dec = Decimation;
-    unsigned long long Offset = 0;
-
-    /* Don't read more than a single chunk at a time: managing the blocks
-     * like this prevents us from starving other activities. */
-    size_t ChunkSize = CHUNK_SIZE(WaveformLength);
-    
-    size_t TotalRead;
+    const int ReadSize = sizeof(LIBERA_ROW) * WaveformLength;
+    int Read;
     bool Ok =
-        // Set the decimation mode
-        CSPI_(cspi_setconparam, CspiConDd,
-            (CSPI_CONPARAMS *)&ConParams, CSPI_CON_DEC)  &&
-        // Seek to the trigger point
-        CSPI_(cspi_seek, CspiConDd, &Offset, CSPI_SEEK_TR)  &&
-        // Read the data
-        CSPI_(cspi_read_ex, CspiConDd, Data, ChunkSize, &TotalRead, NULL)  &&
-        // Finally read the timestamp: needs to be done after data read.
-        CSPI_(cspi_gettimestamp, CspiConDd, &Timestamp);
+        TEST_(ioctl, DevDd, LIBERA_IOC_SET_DEC, &Decimation)  &&
+        TEST_(lseek, DevDd, 0, LIBERA_SEEK_TR)  &&
+        TEST_IO(Read, read, DevDd, Data, ReadSize) &&
+        TEST_(ioctl, DevDd, LIBERA_IOC_GET_DD_TSTAMP, &Timestamp);
 
-    /* Check if we need to do multiple reads (and if we managed to perform a
-     * complete read in the first place). */
-    if (Ok  &&  TotalRead == ChunkSize  &&  ChunkSize < WaveformLength)
-    {
-        /* One chunk wasn't enough.  Unfortunately there is a quirk in the
-         * driver: repeated reads after CSPI_SEEK_TR don't actually give us
-         * successive data blocks!  Instead we'll need to perform an absolute
-         * seek: then we can read the rest in sequence.
-         *    In this extra bit of code we are rather less fussy about
-         * errors: we've already got good data in hand, so there's no point
-         * in not returning what we have if anything subsequent fails. */
-        Offset = Timestamp.mt + ChunkSize;
-        if (CSPI_(cspi_seek, CspiConDd, &Offset, CSPI_SEEK_MT))
-        {
-            int cspi_rc;
-            do
-            {
-                /* Count off the chunk just read and prepare for the next. */
-                WaveformLength -= ChunkSize;
-                Data += ChunkSize;
-                ChunkSize = CHUNK_SIZE(WaveformLength);
-                /* Read incoming chunks until either we've read everything or
-                 * a read comes up short. */
-                size_t Read;
-                cspi_rc = cspi_read_ex(
-                    CspiConDd, Data, ChunkSize, &Read, NULL);
-                if (cspi_rc == CSPI_OK  ||  cspi_rc == CSPI_W_INCOMPLETE)
-                    TotalRead += Read;
-            } while (cspi_rc == CSPI_OK  &&  ChunkSize < WaveformLength);
-        }
-    }
-
-    return Ok ? TotalRead : 0;
+    return Ok ? Read / sizeof(LIBERA_ROW) : 0;
 }
 
 
 size_t ReadPostmortem(
-    size_t WaveformLength, LIBERA_ROW * Data, CSPI_TIMESTAMP & Timestamp)
+    size_t WaveformLength, LIBERA_ROW * Data, LIBERA_TIMESTAMP & Timestamp)
 {
-    size_t Read;
+    const int ReadSize = sizeof(LIBERA_ROW) * WaveformLength;
+    int Read;
     bool Ok =
-        CSPI_(cspi_read_ex, CspiConPm, Data, 16384, &Read, NULL)  &&
-        // Finally read the timestamp: needs to be done after data read.
-        CSPI_(cspi_gettimestamp, CspiConDd, &Timestamp);
-
-    return Ok ? Read : 0;
+        /* Very odd design in the driver: the postmortem waveform isn't
+         * actually read until we do this ioctl!  This really isn't terribly
+         * sensible, but never mind, that's how it works at the moment... */
+        TEST_(ioctl, DevEvent, LIBERA_EVENT_ACQ_PM)  &&
+        TEST_IO(Read, read, DevPm, Data, ReadSize)  &&
+        TEST_(ioctl, DevPm, LIBERA_IOC_GET_PM_TSTAMP, &Timestamp);
+    
+    return Ok  &&  Read != -1  ?  Read / sizeof(LIBERA_ROW)  :  0;
 }
 
 
@@ -267,8 +268,8 @@ bool ReadAdcWaveform(ADC_DATA &Data)
 {
     size_t Read;
     bool Ok =
-        CSPI_(cspi_read_ex, CspiConAdc, &Data, ADC_LENGTH, &Read, NULL)  &&
-        Read == 1024;
+        TEST_IO(Read, read, DevAdc, Data, sizeof(ADC_DATA))  &&
+        TEST_OK(Read == sizeof(ADC_DATA));
     if (Ok  &&  AdcExcessBits > 0)
     {
         /* Normalise all of the ADC data to 16 bits. */
@@ -284,8 +285,12 @@ bool ReadAdcWaveform(ADC_DATA &Data)
 
 bool ReadSlowAcquisition(ABCD_ROW &ButtonData, XYQS_ROW &PositionData)
 {
-    CSPI_SA_ATOM Result;
-    if (CSPI_(cspi_get, CspiConSa, &Result))
+    libera_atom_sa_t Result;
+    int Read;
+    bool Ok =
+        TEST_IO(Read, read, DevSa, &Result, sizeof(libera_atom_sa_t))  &&
+        TEST_OK(Read == sizeof(libera_atom_sa_t));
+    if (Ok)
     {
         ButtonData.A = Result.Va;
         ButtonData.B = Result.Vb;
@@ -295,10 +300,8 @@ bool ReadSlowAcquisition(ABCD_ROW &ButtonData, XYQS_ROW &PositionData)
         PositionData.Y = Result.Y;
         PositionData.Q = Result.Q;
         PositionData.S = Result.Sum;
-        return true;
     }
-    else
-        return false;
+    return Ok;
 }
 
 
@@ -311,15 +314,38 @@ int ReadMaxAdc()
 
 
 
-bool ConfigureEventCallback(
-    int EventMask, int (*Handler)(CSPI_EVENT*), void *Context)
+bool SetEventMask(int EventMask)
 {
-    CSPI_CONPARAMS ConParams;
-    ConParams.event_mask = EventMask;
-    ConParams.handler = Handler;
-    ConParams.user_data = Context;
-    return CSPI_(cspi_setconparam, EventSource, &ConParams,
-        CSPI_CON_EVENTMASK | CSPI_CON_HANDLER | CSPI_CON_USERDATA);
+    return TEST_(ioctl, DevEvent, LIBERA_EVENT_SET_MASK, &EventMask);
+}
+
+
+/* Reads a single event from the event queue. */
+
+bool ReadEvent(int &EventId, int &Parameter)
+{
+    libera_event_t Event;
+    int Read = read(DevEvent, &Event, sizeof(Event));
+    if (Read == sizeof(Event))
+    {
+        EventId = Event.id;
+        Parameter = Event.param;
+        return true;
+    }
+    else if (Read == 0)
+        /* Odd.  Looks like every successful read is followed by a failed
+         * read.  This appears to be a minor bug in the 1.46 device driver
+         * (tests are done in the wrong order); easy to just ignore this. */
+        return false;
+    else
+    {
+        /* This really really isn't supposed to happen, you know: the
+         * device takes care to return multiples of sizeof(Event)!  Well,
+         * all we can do now is fill up the log file... */
+        printf("Reading /dev/libera.event unexpectedly returned %d (%d)\n",
+            Read, errno);
+        return false;
+    }
 }
 
 
@@ -329,14 +355,6 @@ bool ConfigureEventCallback(
 /*                            DSC Direct Access                              */
 /*                                                                           */
 /*****************************************************************************/
-
-
-/* Handle to /dev/libera.dsc device, used for DSC interface. */
-static int DevDsc = -1;
-
-/* Whether the Libera Brilliance option is installed.  This enables
- * completely different handling of attenuators and 16 bit ADC. */
-static bool LiberaBrilliance = false;
 
 
 /* The following DSC offsets are all relative to the base of the Libera EBPP
@@ -429,43 +447,27 @@ static int PhaseCompDirty = 0;
 
 static bool DiscoverBrilliance()
 {
-    int cfg = open("/dev/libera.cfg", O_RDONLY);
-    if (cfg == -1)
-    {
-        perror("Unable to open libera.cfg file");
-        return false;
-    }
+    /* Try to read the iTech FPGA feature configuration register to
+     * discover whether this is a Brilliance Libera.  We do the ioctl by hand
+     * here, rather than calling ReadCfgValue(), to avoid generating an error
+     * message if the the requested feature isn't available. */
+    libera_cfg_request_t req;
+    req.idx = LIBERA_CFG_FEATURE_ITECH;
+    if (ioctl(DevCfg, LIBERA_IOC_GET_CFG, &req) == -1)
+        /* The feature register isn't present, so this can't possibly be
+         * a Brilliance Libera. */
+        LiberaBrilliance = false;
     else
-    {
-        /* Try to read the iTech FPGA feature configuration register to
-         * discover whether this is a Brilliance Libera. */
-        libera_cfg_request_t req;
-        req.idx = LIBERA_CFG_FEATURE_ITECH;
-        if (ioctl(cfg, LIBERA_IOC_GET_CFG, &req) == -1)
-            /* The feature register isn't present, so this can't possibly be
-             * a Brilliance Libera. */
-            LiberaBrilliance = false;
-        else
-            LiberaBrilliance = LIBERA_IS_BRILLIANCE(req.val);
-        close(cfg);
-        return true;
-    }
-}
+        LiberaBrilliance = LIBERA_IS_BRILLIANCE(req.val);
 
-
-static bool InitialiseDSC()
-{
-    bool Ok =
-        /* Interrogate whether Libera Brilliance is installed. */
-        DiscoverBrilliance()  &&
-        /* Open /dev/libera.dsc for signal conditioning control. */
-        TEST_IO(DevDsc, "Unable to open /dev/libera.dsc",
-            open, "/dev/libera.dsc", O_RDWR | O_SYNC);
+    if (LiberaBrilliance)
+        printf("Libera Brilliance detected\n");
+    
     /* If the LiberaBrilliance flag is set then the ADC is 16 bits, otherwise
      * we're operating an older Libera with 12 bits.  We actually record and
      * use the excess bits which need to be handled specially. */
     AdcExcessBits = 16 - (LiberaBrilliance ? 16 : 12);
-    return Ok;
+    return true;
 }
 
 
@@ -475,12 +477,9 @@ static bool ReadDscWords(int offset, void *words, int length)
     offset -= DSC_DEVICE_OFFSET;
     int Read;
     return 
-        TEST_IO(Read, "Error seeking /dev/libera.dsc",
-            lseek, DevDsc, offset, SEEK_SET)  &&
-        TEST_IO(Read, "Error reading from /dev/libera.dsc",
-            read, DevDsc, words, length)  &&
-        TEST_OK(Read == length,
-            "Read from DSC was incomplete (read %d of %d)\n", Read, length);
+        TEST_(lseek, DevDsc, offset, SEEK_SET)  &&
+        TEST_IO(Read, read, DevDsc, words, length)  &&
+        TEST_OK(Read == length);
 }
 
 
@@ -493,13 +492,9 @@ static bool WriteDscWords(int offset, void *words, int length)
     offset -= DSC_DEVICE_OFFSET;
     int Written;
     return
-        TEST_IO(Written, "Error seeking /dev/libera.dsc",
-            lseek, DevDsc, offset, SEEK_SET)  &&
-        TEST_IO(Written, "Error writing to /dev/libera.dsc",
-            write, DevDsc, words, length) &&
-        TEST_OK(Written == length,
-            "Write to DSC was incomplete (wrote %d of %d)\n",
-            Written, length);
+        TEST_(lseek, DevDsc, offset, SEEK_SET)  &&
+        TEST_IO(Written, write, DevDsc, words, length) &&
+        TEST_OK(Written == length);
 }
 
 
@@ -598,7 +593,6 @@ static bool WriteDemuxState(int Offset)
     CHECK_DIRTY(SwitchDemux);
     return WriteDscWords(Offset, RawSwitchDemux, DSC_SWITCH_DEMUX_DB);
 }
-
 
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -761,9 +755,6 @@ bool WriteSwitchTriggerDelay(int Delay)
 /* Uses /dev/mem to directly access a specified hardware address. */
 
 
-/* The following handle to /dev/mem is held open for direct hardware register
- * access. */
-static int DevMem = -1;
 /* Paging information. */
 static unsigned int OsPageSize;         // 0x1000
 static unsigned int OsPageMask;         // 0x0FFF
@@ -830,17 +821,6 @@ bool ReadRawRegister(unsigned int Address, unsigned int &Value)
 
 
 
-static bool InitialiseConnection(CSPIHCON &Connection, int Mode)
-{
-    CSPI_CONPARAMS ConParams;
-    ConParams.mode = Mode;
-    return 
-        CSPI_(cspi_allochandle, CSPI_HANDLE_CON, CspiEnv, &Connection)  &&
-        CSPI_(cspi_setconparam, Connection, &ConParams, CSPI_CON_MODE)  &&
-        CSPI_(cspi_connect, Connection);
-}
-
-
 bool InitialiseHardware()
 {
 #ifdef RAW_REGISTER
@@ -848,24 +828,18 @@ bool InitialiseHardware()
     OsPageMask = OsPageSize - 1;
 #endif
     
-    CSPI_LIBPARAMS LibParams;
-    LibParams.superuser = 1;    // Allow us to change settings!
     return
-        /* First ensure that the library allows us to change settings! */
-        CSPI_(cspi_setlibparam, &LibParams, CSPI_LIB_SUPERUSER)  &&
-        /* Open the CSPI environment and then open CSPI handles for each of
-         * the data channels we need. */
-        CSPI_(cspi_allochandle, CSPI_HANDLE_ENV, 0, &CspiEnv)  &&
-        CSPI_(cspi_allochandle, CSPI_HANDLE_CON, CspiEnv, &EventSource)  &&
-        InitialiseConnection(CspiConAdc, CSPI_MODE_ADC)  &&
-        InitialiseConnection(CspiConDd, CSPI_MODE_DD)  &&
-        InitialiseConnection(CspiConSa, CSPI_MODE_SA)  &&
-        InitialiseConnection(CspiConPm, CSPI_MODE_PM)  &&
-        InitialiseDSC()  &&
+        /* Just open all the Libera devices and check for the presence of the
+         * Brilliance option. */
+        TEST_IO(DevCfg,   open, "/dev/libera.cfg",   O_RDWR)  &&
+        TEST_IO(DevAdc,   open, "/dev/libera.adc",   O_RDONLY)  &&
+        TEST_IO(DevDsc,   open, "/dev/libera.dsc",   O_RDWR | O_SYNC)  &&
+        TEST_IO(DevEvent, open, "/dev/libera.event", O_RDWR)  &&
+        TEST_IO(DevPm,    open, "/dev/libera.pm",    O_RDONLY)  &&
+        TEST_IO(DevSa,    open, "/dev/libera.sa",    O_RDONLY)  &&
+        TEST_IO(DevDd,    open, "/dev/libera.dd",    O_RDONLY)  &&
 #ifdef RAW_REGISTER
-        /* Open /dev/mem for register access. */
-        TEST_IO(DevMem, "Unable to open /dev/mem",
-            open, "/dev/mem", O_RDWR | O_SYNC)  &&
+        TEST_IO(DevMem,   open, "/dev/mem", O_RDWR | O_SYNC)  &&
 #endif
-        true;
+        DiscoverBrilliance();
 }

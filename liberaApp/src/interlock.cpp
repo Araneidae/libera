@@ -135,8 +135,8 @@ static int InterlockHoldoff = 3;
  * is the slow acquisition update thread. */
 pthread_mutex_t InterlockMutex = PTHREAD_MUTEX_INITIALIZER;
 
-static void Lock()   { TEST_(pthread_mutex_lock,   &InterlockMutex); }
-static void Unlock() { TEST_(pthread_mutex_unlock, &InterlockMutex); }
+static void Lock()   { TEST_0(pthread_mutex_lock,   &InterlockMutex); }
+static void Unlock() { TEST_0(pthread_mutex_unlock, &InterlockMutex); }
 
 
 
@@ -145,18 +145,18 @@ static void Unlock() { TEST_(pthread_mutex_unlock, &InterlockMutex); }
 
 static void WriteInterlockState()
 {
-    CSPI_ILKMODE InterlockMode;
+    LIBERA_ILKMODE InterlockMode;
     if (!GlobalBpmEnable)
         /* In BPM disable state the interlock is unconditionally disabled.
          * The variable GlobalBpmEnable tracks CF:ENABLED. */
-        InterlockMode = CSPI_ILK_DISABLE;
+        InterlockMode = LIBERA_ILK_DISABLE;
     else if (InterlockHoldoff > 0)
         /* In holdoff mode the interlock is unconditionally disabled.  This
          * masks out interlocks after the attenuators have changed. */
-        InterlockMode = CSPI_ILK_DISABLE;
+        InterlockMode = LIBERA_ILK_DISABLE;
     else if (MasterInterlockEnable)
         /* In normal enabled mode the interlock is unconditionally enabled. */
-        InterlockMode = CSPI_ILK_ENABLE;
+        InterlockMode = LIBERA_ILK_ENABLE;
     else if (OverflowEnable)
         /* In overflow detection mode (with the master interlock disabled) we
          * use a tricksy hack to enable ADC overflow detection while
@@ -164,10 +164,10 @@ static void WriteInterlockState()
          * mode, which enables position interlocking only when the "gain" is
          * above a certain threshold, and we simultaneously set an impossibly
          * high gain threshold. */
-        InterlockMode = CSPI_ILK_ENABLE_GAINDEP;
+        InterlockMode = LIBERA_ILK_ENABLE_GAINDEP;
     else
         /* If none of the above apply then the interlock is disabled. */
-        InterlockMode = CSPI_ILK_DISABLE;
+        InterlockMode = LIBERA_ILK_DISABLE;
 
     WriteInterlockParameters(
         InterlockMode,

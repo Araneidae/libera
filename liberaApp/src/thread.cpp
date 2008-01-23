@@ -56,8 +56,8 @@ SEMAPHORE::SEMAPHORE(bool InitialReady)
 {
     /* Initialise our internal resources. */
     Ready = InitialReady;
-    TEST_(pthread_cond_init, &ReadyCondition, NULL);
-    TEST_(pthread_mutex_init, &ReadyMutex, NULL);
+    TEST_0(pthread_cond_init, &ReadyCondition, NULL);
+    TEST_0(pthread_mutex_init, &ReadyMutex, NULL);
 }
 
 bool SEMAPHORE::Wait(int Seconds)
@@ -84,19 +84,19 @@ bool SEMAPHORE::Signal()
     Lock();
     bool OldReady = Ready;
     Ready = true;
-    TEST_(pthread_cond_signal, &ReadyCondition);
+    TEST_0(pthread_cond_signal, &ReadyCondition);
     UnLock();
     return OldReady;
 }
 
 void SEMAPHORE::Lock()
 {
-    TEST_(pthread_mutex_lock, &ReadyMutex);
+    TEST_0(pthread_mutex_lock, &ReadyMutex);
 }
 
 void SEMAPHORE::UnLock()
 {
-    TEST_(pthread_mutex_unlock, &ReadyMutex);
+    TEST_0(pthread_mutex_unlock, &ReadyMutex);
 }
 
 
@@ -124,8 +124,7 @@ bool THREAD::StartThread()
     ThreadRunning = true;
     ThreadOkFlag = false;
     /* Start the thread and then wait for it to report back. */
-    if (TEST_(
-            pthread_create, &ThreadId, NULL, StaticThread, this))
+    if (TEST_0(pthread_create, &ThreadId, NULL, StaticThread, this))
         TEST_(sem_wait, &ThreadStatusSemaphore);
     /* At this point we know that the thread is only running if StartupOk()
      * was called, so ThreadOkFlag is a good proxy for the thread's state. */
@@ -140,7 +139,7 @@ void THREAD::Terminate()
         ThreadRunning = false;
         OnTerminate();
         /* Wait for the thread to finish (hope we don't get stuck here!) */
-        TEST_(pthread_join, ThreadId, NULL);
+        TEST_0(pthread_join, ThreadId, NULL);
         /* Call any post shutdown processing: poor man's pthread_cancel
          * hooks! */
         ThreadShutdown();
@@ -151,7 +150,7 @@ void THREAD::Terminate()
 void THREAD::OnTerminate()
 {
     /* The default terminate action is to cancel the thread directly. */
-    TEST_(pthread_cancel, ThreadId);
+    TEST_0(pthread_cancel, ThreadId);
 }
 
 
@@ -193,8 +192,8 @@ LOCKED_THREAD::LOCKED_THREAD(const char * Name) :
      * never destroyed because this class (instance) is never destroyed ...
      * because EPICS doesn't support any kind of restart, there's no point in
      * doing this anywhere else! */
-    TEST_(pthread_cond_init, &Condition, NULL);
-    TEST_(pthread_mutex_init, &Mutex, NULL);
+    TEST_0(pthread_cond_init, &Condition, NULL);
+    TEST_0(pthread_mutex_init, &Mutex, NULL);
 }
 
 

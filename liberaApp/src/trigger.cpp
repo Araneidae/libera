@@ -146,8 +146,8 @@ public:
     {
         /* Initialise our internal resources. */
         EpicsReady = false;
-        TEST_(pthread_cond_init, &ReadyCondition, NULL);
-        pthread_mutex_init(&ReadyMutex, NULL);
+        TEST_0(pthread_cond_init, &ReadyCondition, NULL);
+        TEST_0(pthread_mutex_init, &ReadyMutex, NULL);
         /* Register with the EPICS initialisation process so that we will be
          * informed when initialisation is complete. */
         return initHookRegister(EpicsReadyInitHook) == 0;
@@ -163,7 +163,7 @@ public:
         {
             Lock();
             while (!EpicsReady)
-                TEST_(pthread_cond_wait, &ReadyCondition, &ReadyMutex);
+                TEST_0(pthread_cond_wait, &ReadyCondition, &ReadyMutex);
             UnLock();
         }
     }
@@ -181,19 +181,19 @@ private:
              * threads to go ahead. */
             Lock();
             EpicsReady = true;
-            TEST_(pthread_cond_broadcast, &ReadyCondition);
+            TEST_0(pthread_cond_broadcast, &ReadyCondition);
             UnLock();
         }
     }
 
     static void Lock()
     {
-        TEST_(pthread_mutex_lock, &ReadyMutex);
+        TEST_0(pthread_mutex_lock, &ReadyMutex);
     }
 
     static void UnLock()
     {
-        TEST_(pthread_mutex_unlock, &ReadyMutex);
+        TEST_0(pthread_mutex_unlock, &ReadyMutex);
     }
 
     static bool EpicsReady;
@@ -252,7 +252,7 @@ void INTERLOCK::Publish(
     }
 }
 
-void INTERLOCK::Ready(const CSPI_TIMESTAMP &Timestamp)
+void INTERLOCK::Ready(const LIBERA_TIMESTAMP &Timestamp)
 {
     if (&Timestamp == NULL)
         /* No timestamp: let the trigger use current time. */

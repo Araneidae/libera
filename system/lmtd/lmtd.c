@@ -51,7 +51,7 @@
 
 #include <pthread.h>
 
-#include "libera.h"
+#include "driver/libera.h"
 
 #include "debug.h"
 #include "libera_pll.h"

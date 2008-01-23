@@ -168,9 +168,9 @@ private:
                 &MachineClockSynchronised) != 5)
             printf("Error scanning lmtd status line \"%s\"\n", Line);
 
-        /* Pick up the LSTD state: this one we just pick up directly from
-         * CSPI.  Longer term we probably want to integrate LSTD and LMTD
-         * together and just use the status pipe. */
+        /* Pick up the LSTD state: this one we just pick up directly from the
+         * device driver.  Longer term we probably want to integrate LSTD and
+         * LMTD together and just use the status pipe. */
         bool Dummy;
         GetClockState(Dummy, LstdLocked);
         /* Also update the synchronisation state accordingly: on loss of lock
@@ -268,7 +268,7 @@ private:
         
         /* The only way to get a timestamp from this trigger is to read some
          * triggered data.  Read the least possible amount right now! */
-        CSPI_TIMESTAMP Timestamp;
+        LIBERA_TIMESTAMP Timestamp;
         LIBERA_ROW OneRow;
         ReadWaveform(1, 1, &OneRow, Timestamp);
 

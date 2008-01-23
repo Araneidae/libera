@@ -2,6 +2,6 @@
 TOP = .
 include $(TOP)/configure/CONFIG
 DIRS += configure 
-DIRS += cspi system/lmtd liberaApp 
+DIRS += system/lmtd liberaApp 
 DIRS += install
 include $(TOP)/configure/RULES_TOP

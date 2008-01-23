@@ -267,9 +267,9 @@ void GainCorrect(int Channel, int *Column, int Count)
 /*                                                                          */
 
 
-/* Called whenever any of the scaling calibration settings has changed.
- * These are then written to CSPI to ensure that the FPGA calculations remain
- * in step with ours. */
+/* Called whenever any of the scaling calibration settings has changed.  These
+ * are then written to the FPGA to ensure that the FPGA calculations remain in
+ * step with ours. */
 
 static void UpdateCalibration()
 {

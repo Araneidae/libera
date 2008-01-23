@@ -11,7 +11,7 @@ DEBUG = 0
 
 USR_CFLAGS += -Werror -Wno-comment -std=gnu99 -DDEBUG=$(DEBUG)
 
-USR_INCLUDES += -I$(CSPI)/driver -I$(CSPI) 
+USR_INCLUDES += -I$(TOP)/liberaApp/src
 
 PROD_IOC = lmtd # lstd
 
