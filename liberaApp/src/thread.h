@@ -104,7 +104,7 @@ protected:
      * specified time before timing out.  Returns true if the wait was
      * interrupted by a signal, false if a timeout occurred. */
     bool WaitFor(int milliseconds);
-    bool WaitUntil(const struct timespec *target);
+    bool WaitUntil(const struct timespec &target);
     
 private:
     pthread_cond_t Condition;

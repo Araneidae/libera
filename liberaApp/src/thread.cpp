@@ -218,19 +218,22 @@ bool LOCKED_THREAD::WaitFor(int milliseconds)
         target.tv_nsec -= S_NS;
     }
     
-    return WaitUntil(&target);
+    return WaitUntil(target);
 }
 
 
-bool LOCKED_THREAD::WaitUntil(const struct timespec *target)
+bool LOCKED_THREAD::WaitUntil(const struct timespec &target)
 {
-    int rc = pthread_cond_timedwait(&Condition, &Mutex, target);
+    int rc = pthread_cond_timedwait(&Condition, &Mutex, &target);
     if (rc == 0)
         return true;
     else
     {
         if (rc != ETIMEDOUT)
+        {
+            errno = rc;
             perror("pthread_cond_timedwait");
+        }
         return false;
     }
 }

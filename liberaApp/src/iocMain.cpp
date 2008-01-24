@@ -241,15 +241,15 @@ static bool InitialiseLibera()
         /* Initialise the connections to the Libera device.  This also needs
          * to be done early, as this is used by other initialisation code. */
         InitialiseHardware()  &&
+        /* Get the event receiver up and running.  This spawns background
+         * threads for dispatching trigger events. */
+        InitialiseEventReceiver()  &&
 
         /* Initialise the persistent state system early on so that other
          * components can make use of it. */
         InitialisePersistentState(StateFileName)  &&
         /* Initialise the signal conditioning hardware interface. */
         InitialiseSignalConditioning(Harmonic, Decimation)  &&
-        /* Get the event receiver up and running.  This spawns a background
-         * thread for dispatching trigger events. */
-        InitialiseEventReceiver()  &&
         /* Initialise conversion code.  This needs to be done fairly early as
          * it is used globally. */
         InitialiseConvert()  &&

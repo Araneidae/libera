@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 700
-y 320
+x 705
+y 341
 w 488
 h 504
 font "helvetica-medium-r-18.0"
@@ -251,7 +251,7 @@ minor 1
 release 0
 x 192
 y 448
-w 10
+w 9
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -271,7 +271,7 @@ minor 1
 release 0
 x 192
 y 424
-w 12
+w 11
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -310,7 +310,7 @@ minor 1
 release 0
 x 344
 y 376
-w 35
+w 33
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -330,7 +330,7 @@ minor 1
 release 0
 x 344
 y 400
-w 48
+w 47
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -476,7 +476,7 @@ minor 1
 release 0
 x 16
 y 472
-w 65
+w 66
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -541,7 +541,7 @@ minor 1
 release 0
 x 24
 y 376
-w 10
+w 11
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 27
@@ -561,7 +561,7 @@ minor 1
 release 0
 x 24
 y 400
-w 10
+w 9
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 16
@@ -818,5 +818,31 @@ value {
   "/"
 }
 autoSize
+endObjectProperties
+
+# (Related Display)
+object relatedDisplayClass
+beginObjectProperties
+major 4
+minor 2
+release 0
+x 344
+y 440
+w 88
+h 24
+fgColor index 43
+bgColor index 3
+topShadowColor index 1
+botShadowColor index 11
+font "helvetica-bold-r-12.0"
+buttonLabel "XY wf"
+numPvs 4
+numDsps 1
+displayFileName {
+  0 "libera/FR_overview.edl"
+}
+symbols {
+  0 "device=$(device),mode=FT"
+}
 endObjectProperties
 

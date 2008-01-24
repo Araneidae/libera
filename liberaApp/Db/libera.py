@@ -96,7 +96,7 @@ def XYQS_wf(length, prefix='WF'):
 
 def XYQS_(prec, logMax=0, suffix=''):
     sl = [
-        Libera.longin('S' + suffix, MDEL = -1,
+        longIn('S' + suffix, MDEL = -1,
             DESC = '%s total button intensity' % ChannelName())]
     if logMax:
         sl.append(records.calc('SL' + suffix,
@@ -174,12 +174,13 @@ def FirstTurn():
     maxadc, maxadc_pc = MaxAdc()
     charge = aIn('CHARGE', 0, 2000, 1e-6, 'nC', 2,
         DESC = 'Charge of bunch train')
+    max_S = longIn('MAXS', DESC = 'Maximum S in waveform')
 
     Trigger(False, 
         # Raw waveforms as read from the ADC rate buffer
-        RAW_ADC(LONG_LENGTH) + [maxadc, maxadc_pc, charge] +
+        RAW_ADC(LONG_LENGTH) + [maxadc, maxadc_pc, charge, max_S] +
         # ADC data reduced by 1/4 by recombination
-        ABCD_wf(SHORT_LENGTH) +
+        ABCD_wf(SHORT_LENGTH) + XYQS_wf(SHORT_LENGTH) + 
         # Synthesised button positions from windowed averages
         ABCD_() + 
         # Final computed positions with logarithmic scale.

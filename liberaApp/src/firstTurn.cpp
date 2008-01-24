@@ -51,6 +51,9 @@
 #include "firstTurn.h"
 
 
+#define SHORT_ADC_LENGTH    (ADC_LENGTH / 4)
+
+
 /* Recorded S level at 45dB attenuation and input power 0dBm. */
 static int S_0 = 2340000;
 
@@ -140,7 +143,7 @@ static void ExtractRawData(
  *
  * At the same time we rescale the data to lie in the range 0..2^30. */
 static void CondenseAdcData(
-    const int Raw[ADC_LENGTH], int Condensed[ADC_LENGTH/4])
+    const int Raw[ADC_LENGTH], int Condensed[SHORT_ADC_LENGTH])
 {
     const int *p = Raw;
     int *q = Condensed;
@@ -168,7 +171,8 @@ class FIRST_TURN : I_EVENT
 public:
     FIRST_TURN(int Harmonic, int Decimation) :
         RawAdc(ADC_LENGTH),
-        Adc(ADC_LENGTH/4),
+        Adc(SHORT_ADC_LENGTH),
+        WaveformXYQS(SHORT_ADC_LENGTH),
         ChargeScale(PMFP(10 << 3) / (PMFP(S_0) * 117))
     {
         /* Sensible defaults for offset and length.  Must be bounded to lie
@@ -193,6 +197,7 @@ public:
         /* Computed button totals and associated button values. */
         RawAdc.PublishRaw("FT");
         Adc.Publish("FT");
+        WaveformXYQS.Publish("FT");
         Publish_ABCD("FT", ABCD);
         Publish_XYQS("FT", XYQS);
 
@@ -200,6 +205,8 @@ public:
         Publish_longin("FT:MAXADC", MaxAdc);
         /* The integrated charge. */
         Publish_ai("FT:CHARGE", Charge);
+        /* Maximum S value. */
+        Publish_longin("FT:MAXS", MaxS);
 
         /* Finally the trigger used to notify events.  The database wires this
          * up so that the all the variables above are processed when a trigger
@@ -236,6 +243,11 @@ public:
         ABCDtoXYQS(&ABCD, &XYQS, 1);
         /* Convert raw charge into displayable value in proper units. */
         Charge = ComputeScaledCurrent(ChargeScale, RawCharge);
+
+        /* Convert reduced ADC waveform to button positions and finally
+         * perform the display fixup. */
+        WaveformXYQS.CaptureConvert(Adc);
+        ThresholdXYQS();
 
         /* Finally tell EPICS there's stuff to read. */
         Interlock.Ready();
@@ -283,10 +295,10 @@ private:
              * readings appear in the correct sequence. */
             int Channel = Permutation[i];
             size_t Field = AbcdFields[i];
-            int Condensed[ADC_LENGTH/4];
+            int Condensed[SHORT_ADC_LENGTH];
             CondenseAdcData(Extracted[Channel], Condensed);
-            GainCorrect(Channel, Condensed, ADC_LENGTH/4);
-            Adc.Write(Field, Condensed, ADC_LENGTH/4);
+            GainCorrect(Channel, Condensed, SHORT_ADC_LENGTH);
+            Adc.Write(Field, Condensed, SHORT_ADC_LENGTH);
             
             /* Also update the appropriate field of the ABCD structure.  Note
              * that we use different algorithms for computing button
@@ -386,11 +398,38 @@ private:
     }
 
 
+    /* Adjusts WaveformXYQS for display.  First we compute the maximum S
+     * value and then for all points where S < MAXS/2 we set the X, Y and Q
+     * values to 0. */
+    void ThresholdXYQS()
+    {
+        XYQS_ROW * Waveform = WaveformXYQS.Waveform();
+        
+        /* First compute MaxS. */
+        MaxS = 0;
+        for (int i = 0; i < SHORT_ADC_LENGTH; i ++)
+        {
+            int S = Waveform[i].S;
+            if (S > MaxS)
+                MaxS = S;
+        }
+
+        /* Now perform the thresholding. */
+        int Threshold = MaxS / 2;
+        for (int i = 0; i < SHORT_ADC_LENGTH; i ++)
+            if (Waveform[i].S < Threshold)
+            {
+                Waveform[i].X = 0;
+                Waveform[i].Y = 0;
+                Waveform[i].Q = 0;
+            }
+    }
+
 
     /* Access methods for offset and length. */
     bool SetOffset(int newOffset)
     {
-        if (0 <= newOffset  &&  newOffset + Length <= ADC_LENGTH/4)
+        if (0 <= newOffset  &&  newOffset + Length <= SHORT_ADC_LENGTH)
         {
             Offset = newOffset;
             return true;
@@ -405,7 +444,7 @@ private:
 
     bool SetLength(int newLength)
     {
-        if (0 < newLength  &&  Offset + newLength <= ADC_LENGTH/4)
+        if (0 < newLength  &&  Offset + newLength <= SHORT_ADC_LENGTH)
         {
             Length = newLength;
             return true;
@@ -427,6 +466,7 @@ private:
      * points, and the appropriate elements are published to epics. */
     ABCD_WAVEFORMS RawAdc;
     ABCD_WAVEFORMS Adc;
+    XYQS_WAVEFORMS WaveformXYQS;
     ABCD_ROW ABCD;
     XYQS_ROW XYQS;
 
@@ -434,6 +474,8 @@ private:
     int MaxAdc;
     /* Integrated charge corresponding to measured S. */
     int Charge;
+    /* Computed maximum S value. */
+    int MaxS;
 
     /* Epics trigger and interlock. */
     INTERLOCK Interlock;

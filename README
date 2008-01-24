@@ -133,6 +133,14 @@ First Turn (<group> = FT):
         256 point arrays at approximately 34ns sampling interval, updated on
         trigger.
 
+    WF<positions>
+        Estimated intra-turn positions computed from the WF<buttons> array and
+        thresholded for sensible display: all X,Y and Q for positions where
+        S < MAXS/2 are set to 0.
+
+    MAXS
+        Maximum S value over the WFS array.
+
     <buttons>
         Button values integrated within the window specified by OFF and LEN.
 

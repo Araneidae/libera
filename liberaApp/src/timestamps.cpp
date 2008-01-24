@@ -193,14 +193,16 @@ private:
         size_t LineLength = 0;
         while (Running())
         {
-            if (getline(&Line, &LineLength, LmtdStatus) == -1)
-                perror("Error reading lmtd status");
-            else
+            if (TEST_(getline, &Line, &LineLength, LmtdStatus))
             {
                 Interlock.Wait();
                 ProcessStatusLine(Line);
                 Interlock.Ready();
             }
+            else
+                /* If getline fails then it does no good to keep on trying.
+                 * Back off a little bit. */
+                sleep(1);
         }
         fclose(LmtdStatus);
     }
