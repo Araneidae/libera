@@ -192,6 +192,9 @@ def FirstTurn():
     longOut('LEN', 1, SHORT_LENGTH,
         DESC = 'Sample window length')
 
+    Waveform('AXIS', SHORT_LENGTH, 'FLOAT', PINI='YES',
+        DESC = 'FT waveform axis')
+
     UnsetChannelName()
 
 

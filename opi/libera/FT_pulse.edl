@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 705
-y 341
+x 482
+y 48
 w 488
 h 504
 font "helvetica-medium-r-18.0"
@@ -95,6 +95,12 @@ yPv {
   1 "$(device):FT:WFB"
   2 "$(device):FT:WFC"
   3 "$(device):FT:WFD"
+}
+plotUpdateMode {
+  0 "y"
+  1 "y"
+  2 "y"
+  3 "y"
 }
 plotColor {
   0 index 27
@@ -488,32 +494,6 @@ value {
 autoSize
 endObjectProperties
 
-# (Related Display)
-object relatedDisplayClass
-beginObjectProperties
-major 4
-minor 2
-release 0
-x 344
-y 472
-w 64
-h 24
-fgColor index 43
-bgColor index 3
-topShadowColor index 1
-botShadowColor index 11
-font "helvetica-bold-r-12.0"
-buttonLabel "Overview"
-numPvs 4
-numDsps 1
-displayFileName {
-  0 "libera/overview.edl"
-}
-symbols {
-  0 "device=$(device)"
-}
-endObjectProperties
-
 # (Exit Button)
 object activeExitButtonClass
 beginObjectProperties
@@ -818,31 +798,5 @@ value {
   "/"
 }
 autoSize
-endObjectProperties
-
-# (Related Display)
-object relatedDisplayClass
-beginObjectProperties
-major 4
-minor 2
-release 0
-x 344
-y 440
-w 88
-h 24
-fgColor index 43
-bgColor index 3
-topShadowColor index 1
-botShadowColor index 11
-font "helvetica-bold-r-12.0"
-buttonLabel "XY wf"
-numPvs 4
-numDsps 1
-displayFileName {
-  0 "libera/FR_overview.edl"
-}
-symbols {
-  0 "device=$(device),mode=FT"
-}
 endObjectProperties
 

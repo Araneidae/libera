@@ -41,7 +41,6 @@
 
 #include "hardware.h"
 #include "firstTurn.h"
-#include "booster.h"
 #include "turnByTurn.h"
 #include "freeRun.h"
 #include "slowAcquisition.h"
@@ -54,6 +53,8 @@
 #include "interlock.h"
 #include "sensors.h"
 #include "conditioning.h"
+#include "waveform.h"
+#include "booster.h"
 
 #include "fastFeedback.h"
 

@@ -47,6 +47,7 @@
 #include "numeric.h"
 #include "cordic.h"
 #include "conditioning.h"
+#include "booster.h"
 
 #include "firstTurn.h"
 
@@ -173,6 +174,7 @@ public:
         RawAdc(ADC_LENGTH),
         Adc(SHORT_ADC_LENGTH),
         WaveformXYQS(SHORT_ADC_LENGTH),
+        AxisScale(SHORT_ADC_LENGTH),
         ChargeScale(PMFP(10 << 3) / (PMFP(S_0) * 117))
     {
         /* Sensible defaults for offset and length.  Must be bounded to lie
@@ -187,6 +189,9 @@ public:
         Length = 31;
 
         InitialiseRotation(Harmonic, Decimation);
+
+        // to do: compute this properly!!!!
+        FillAxis(AxisScale, SHORT_ADC_LENGTH, 8.7);
         
         /* Now initialise the persistence of these and initialise the length
          * state accordingly. */
@@ -214,6 +219,8 @@ public:
          * the waveforms are updated before the trigger is updated.   */
         Interlock.Publish("FT");
         Enable.Publish("FT");
+
+        Publish_waveform("FT:AXIS", AxisScale);
 
         /* Also publish access to the offset and length controls for the
          * averaging window. */
@@ -469,6 +476,9 @@ private:
     XYQS_WAVEFORMS WaveformXYQS;
     ABCD_ROW ABCD;
     XYQS_ROW XYQS;
+
+    /* Waveform for labelling axis. */
+    FLOAT_WAVEFORM AxisScale;
 
     /* Maximum raw ADC across all four buttons. */
     int MaxAdc;

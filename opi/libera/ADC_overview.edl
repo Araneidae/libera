@@ -3,7 +3,7 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 179
+x 171
 y 22
 w 588
 h 696
@@ -19,7 +19,7 @@ ctlBgColor1 index 0
 ctlBgColor2 index 14
 topShadowColor index 0
 botShadowColor index 14
-title "Turn by Turn"
+title "Intra turn positions"
 showGrid
 snapToGrid
 gridSize 8
@@ -72,21 +72,21 @@ xMax 1
 showYAxis
 yAxisStyle "log10"
 yAxisSrc "fromUser"
-yMin 100000
+yMin 1e+06
 yMax 1e+09
 # Y2 axis properties
 y2AxisSrc "AutoScale"
 y2Max 1
 # Trace Properties
 numTraces 1
+xPv {
+  0 "$(device):FT:AXIS"
+}
 yPv {
-  0 "$(device):$(mode):WFS"
+  0 "$(device):FT:WFS"
 }
-xSigned {
-  0 779036
-}
-ySigned {
-  0 1099264
+plotUpdateMode {
+  0 "y"
 }
 plotColor {
   0 index 14
@@ -106,7 +106,7 @@ w 568
 h 216
 # Appearance
 graphTitle "X position"
-xLabel "Turns"
+xLabel "microseconds"
 yLabel "nm"
 fgColor index 14
 bgColor index 3
@@ -127,14 +127,14 @@ y2AxisSrc "AutoScale"
 y2Max 1
 # Trace Properties
 numTraces 1
+xPv {
+  0 "$(device):FT:AXIS"
+}
 yPv {
-  0 "$(device):$(mode):WFX"
+  0 "$(device):FT:WFX"
 }
-xSigned {
-  0 764946
-}
-ySigned {
-  0 68140
+plotUpdateMode {
+  0 "y"
 }
 plotColor {
   0 index 14
@@ -154,7 +154,7 @@ w 568
 h 216
 # Appearance
 graphTitle "Y position"
-xLabel "Turns"
+xLabel "microseconds"
 yLabel "nm"
 fgColor index 14
 bgColor index 3
@@ -175,14 +175,14 @@ y2AxisSrc "AutoScale"
 y2Max 1
 # Trace Properties
 numTraces 1
+xPv {
+  0 "$(device):FT:AXIS"
+}
 yPv {
-  0 "$(device):$(mode):WFY"
+  0 "$(device):FT:WFY"
 }
-xSigned {
-  0 2053200
-}
-ySigned {
-  0 -2380320
+plotUpdateMode {
+  0 "y"
 }
 plotColor {
   0 index 14
@@ -204,14 +204,14 @@ bgColor index 3
 topShadowColor index 1
 botShadowColor index 11
 font "helvetica-bold-r-12.0"
-buttonLabel "I & Q"
+buttonLabel "Detail"
 numPvs 4
 numDsps 1
 displayFileName {
-  0 "libera/TT_iq.edl"
+  0 "libera/FT_pulse.edl"
 }
 symbols {
-  0 "device=$(device),mode=$(mode)"
+  0 "device=$(device)"
 }
 endObjectProperties
 
@@ -232,5 +232,117 @@ botShadowColor index 11
 label "EXIT"
 font "helvetica-medium-r-12.0"
 3d
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 8
+y 664
+w 142
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "X/Y in sample window:"
+}
+autoSize
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 184
+y 664
+w 48
+h 16
+controlPv "$(device):FT:X"
+font "helvetica-medium-r-14.0"
+fontAlign "right"
+fgColor index 14
+bgColor index 5
+useDisplayBg
+autoHeight
+limitsFromDb
+nullColor index 0
+fastUpdate
+useHexPrefix
+showUnits
+newPos
+objType "monitors"
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 272
+y 664
+w 48
+h 16
+controlPv "$(device):FT:Y"
+font "helvetica-medium-r-14.0"
+fontAlign "right"
+fgColor index 14
+bgColor index 5
+useDisplayBg
+autoHeight
+limitsFromDb
+nullColor index 0
+fastUpdate
+useHexPrefix
+showUnits
+newPos
+objType "monitors"
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 160
+y 664
+w 10
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "X"
+}
+autoSize
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 248
+y 664
+w 9
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "Y"
+}
+autoSize
 endObjectProperties
 

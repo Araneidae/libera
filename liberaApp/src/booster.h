@@ -27,5 +27,7 @@
  */
 
 
+void FillAxis(FLOAT_WAVEFORM &Axis, int Length, float Duration);
+
 /* Booster waveform support. */
 bool InitialiseBooster(int ShortWaveformLength, float FRev);

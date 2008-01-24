@@ -3,10 +3,10 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 1562
-y 26
+x 446
+y 22
 w 296
-h 400
+h 401
 font "helvetica-medium-r-14.0"
 ctlFont "helvetica-medium-r-14.0"
 btnFont "helvetica-bold-r-14.0"
@@ -437,7 +437,7 @@ buttonLabel "ADC"
 numPvs 4
 numDsps 1
 displayFileName {
-  0 "libera/FT_pulse.edl"
+  0 "libera/ADC_overview.edl"
 }
 symbols {
   0 "device=$(device)"
@@ -478,7 +478,7 @@ minor 1
 release 0
 x 96
 y 80
-w 82
+w 81
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -518,7 +518,7 @@ minor 1
 release 0
 x 96
 y 128
-w 69
+w 70
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -564,7 +564,7 @@ minor 1
 release 0
 x 8
 y 36
-w 45
+w 46
 h 14
 font "helvetica-medium-r-12.0"
 fgColor index 14
@@ -607,7 +607,7 @@ minor 1
 release 0
 x 152
 y 36
-w 28
+w 27
 h 14
 font "helvetica-medium-r-12.0"
 fgColor index 14
@@ -674,7 +674,7 @@ minor 1
 release 0
 x 96
 y 160
-w 34
+w 32
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -717,7 +717,7 @@ minor 1
 release 0
 x 40
 y 240
-w 48
+w 47
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -926,7 +926,7 @@ minor 1
 release 0
 x 96
 y 96
-w 62
+w 61
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -1014,7 +1014,7 @@ minor 1
 release 0
 x 96
 y 184
-w 85
+w 84
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -1034,7 +1034,7 @@ minor 1
 release 0
 x 96
 y 200
-w 86
+w 85
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -1054,7 +1054,7 @@ minor 1
 release 0
 x 96
 y 144
-w 69
+w 68
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14

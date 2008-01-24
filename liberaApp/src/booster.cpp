@@ -49,6 +49,16 @@
 #define DECIMATION      64              // Libera decimation factor
 
 
+/* Fill out each axis waveform with an appropriate linear scale running
+ * from 0 to Duration. */
+void FillAxis(FLOAT_WAVEFORM &Axis, int Length, float Duration)
+{
+    float *a = Axis.Array();
+    for (int i = 0; i < Length; i ++)
+        a[i] = (Duration * i) / (Length - 1);
+}
+
+
 class BOOSTER : I_EVENT
 {
 public:
@@ -133,15 +143,6 @@ private:
             }
             ShortXyqs.Write(Field, Short, ShortWaveformLength);
         }
-    }
-
-    /* Fill out each axis waveform with an appropriate linear scale running
-     * from 0 to Duration. */
-    void FillAxis(FLOAT_WAVEFORM &Axis, int Length, float Duration)
-    {
-        float *a = Axis.Array();
-        for (int i = 0; i < Length; i ++)
-            a[i] = (Duration * i) / (Length - 1);
     }
 
     /* Startup configurable dimensions. */
