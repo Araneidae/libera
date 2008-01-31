@@ -28,4 +28,5 @@
 
 
 /* First turn waveform support. */
-bool InitialiseFirstTurn(int Harmonic, int Decimation, int S0_FT);
+bool InitialiseFirstTurn(
+    int Harmonic, int Decimation, float RevolutionFrequency, int S0_FT);

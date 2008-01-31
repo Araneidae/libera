@@ -32,6 +32,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include <string.h>
 #include <math.h>       // Note: only used during initialisation
 
 #include "device.h"
@@ -51,8 +52,12 @@
 
 #include "firstTurn.h"
 
+#include "filter-header.h"
 
-#define SHORT_ADC_LENGTH    (ADC_LENGTH / 4)
+
+/* The short ADC waveform is decimated 1:4 from the raw ADC waveform.  We
+ * also lose one point from the end due to the 8 point filter being used. */
+#define SHORT_ADC_LENGTH    (ADC_LENGTH / 4 - 1)
 
 
 /* Recorded S level at 45dB attenuation and input power 0dBm. */
@@ -116,6 +121,7 @@ static void ExtractRawData(
 }
 
 
+
 /* This stage of processing the ADC data takes advantage of a couple of
  * important features of the data being sampled.  The input signal is RF (at
  * approximately 500MHz) and is undersampled (at approximately 117Mhz) so that
@@ -135,30 +141,35 @@ static void ExtractRawData(
  * frequency, mixing can be simplified here to a matter of multiplying
  * successively by exp(pi*i*n/2), in other words, by the sequence
  *      1,  i,  -1,  -i,  1,  ...
- * and if we then low pass filter by averaging four points together before
- * computing the magnitude, we can reduce the data stream
+ * We apply an 8 point low pass filter to this data stream, and so the stream
+ * of points
  *      x1, x2, x3, x4, x5, ...
- * to the stream
- *      |(x1-x3,x2-x4)|, |(x5-x7,x6-x8)|, ...
+ * is reduced to (where f1 .. f8 are the filter coefficients)
+ *      |(x1.f1-x3.f3+x5.f5-x7.f7, x2.f2-x4.f4+x6.f6-x8.f8)|, ...
  * Of course, we know how to compute |(x,y)| with great efficiency.
  *
- * At the same time we rescale the data to lie in the range 0..2^30. */
+ * At the same time we rescale the data to lie in a sensible data range.  This
+ * scaling factor is required to ensure that each data point fits into 32 bits
+ * after accumulation through the filter.  The filter adds just over 18 bits
+ * (see filter-header.h) which given signed 15-bit inputs means that in theory
+ * we are pushing our luck with a scaling of 2 bits (need to fit into signed
+ * 31-bits).  However in practice this value works just fine. */
+#define FILTER_SCALE 2
+#define FILTER_TERM(i, j, Raw) \
+    ((FilterADC[j] * Raw[4*i + j]) >> FILTER_SCALE)
+
 static void CondenseAdcData(
     const int Raw[ADC_LENGTH], int Condensed[SHORT_ADC_LENGTH])
 {
-    const int *p = Raw;
-    int *q = Condensed;
-    for (int i = 0; i < ADC_LENGTH; i += 4)
+    for (int i = 0; i < SHORT_ADC_LENGTH; i ++)
     {
-        int x1 = *p++, x2 = *p++, x3 = *p++, x4 = *p++;
-        /* Scale the raw values so that they're compatible in magnitude with
-         * turn-by-turn filtered values.  This means that we can use the same
-         * scaling rules downstream.
-         *    A raw ADC value is +-2^15, and by combining pairs we get +-2^16.
-         * Scaling by 2^14 gives us values in the range +-2^30, which will be
-         * comfortable.  After cordic this becomes 0..sqrt(2)*0.5822*2^30 or
-         * 0.823*2^30. */
-        *q++ = CordicMagnitude((x1-x3)<<14, (x2-x4)<<14);
+        int SumI =
+            FILTER_TERM(i, 0, Raw) - FILTER_TERM(i, 2, Raw) +
+            FILTER_TERM(i, 4, Raw) - FILTER_TERM(i, 6, Raw);
+        int SumQ =
+            FILTER_TERM(i, 1, Raw) - FILTER_TERM(i, 3, Raw) +
+            FILTER_TERM(i, 5, Raw) - FILTER_TERM(i, 7, Raw);
+        Condensed[i] = CordicMagnitude(SumI, SumQ);
     }
 }
 
@@ -170,10 +181,11 @@ static void CondenseAdcData(
 class FIRST_TURN : I_EVENT
 {
 public:
-    FIRST_TURN(int Harmonic, int Decimation) :
+    FIRST_TURN(int Harmonic, int Decimation, float RevolutionFrequency) :
         RawAdc(ADC_LENGTH),
         Adc(SHORT_ADC_LENGTH),
         WaveformXYQS(SHORT_ADC_LENGTH),
+        Permutation(4),
         AxisScale(SHORT_ADC_LENGTH),
         ChargeScale(PMFP(10 << 3) / (PMFP(S_0) * 117))
     {
@@ -190,8 +202,11 @@ public:
 
         InitialiseRotation(Harmonic, Decimation);
 
-        // to do: compute this properly!!!!
-        FillAxis(AxisScale, SHORT_ADC_LENGTH, 8.7);
+        /* With a revolution frequency of f_RF and d samples per revolution,
+         * the ADC waveform extends over 10^6 * 1024 / (f_RF * d)
+         * microseconds.  This is used to annotate waveforms. */
+        FillAxis(AxisScale, SHORT_ADC_LENGTH,
+            1e6 * ADC_LENGTH / (RevolutionFrequency * Decimation));
         
         /* Now initialise the persistence of these and initialise the length
          * state accordingly. */
@@ -220,6 +235,7 @@ public:
         Interlock.Publish("FT");
         Enable.Publish("FT");
 
+        Publish_waveform("FT:PERM", Permutation);
         Publish_waveform("FT:AXIS", AxisScale);
 
         /* Also publish access to the offset and length controls for the
@@ -281,7 +297,10 @@ private:
      *  7. Finally compute XYQS. */
     int ProcessAdcWaveform()
     {
-        const PERMUTATION & Permutation = SwitchPermutation();
+        /* Pick up the permutation corresponding to the current switch
+         * position and read the raw data from the ADC.  Of course, when the
+         * switches are rotating this isn't very meaningful... */
+        memcpy(Permutation.Array(), SwitchPermutation(), sizeof(PERMUTATION));
         ADC_DATA RawData;
         ReadAdcWaveform(RawData);
         
@@ -300,7 +319,7 @@ private:
              * processing channel, bug after condensing and gain correction
              * we want to undo the switch permutation so that the button
              * readings appear in the correct sequence. */
-            int Channel = Permutation[i];
+            int Channel = Permutation.Array()[i];
             size_t Field = AbcdFields[i];
             int Condensed[SHORT_ADC_LENGTH];
             CondenseAdcData(Extracted[Channel], Condensed);
@@ -476,6 +495,7 @@ private:
     XYQS_WAVEFORMS WaveformXYQS;
     ABCD_ROW ABCD;
     XYQS_ROW XYQS;
+    INT_WAVEFORM Permutation;
 
     /* Waveform for labelling axis. */
     FLOAT_WAVEFORM AxisScale;
@@ -540,9 +560,10 @@ private:
 
 static FIRST_TURN * FirstTurn = NULL;
 
-bool InitialiseFirstTurn(int Harmonic, int Decimation, int S0_FT)
+bool InitialiseFirstTurn(
+    int Harmonic, int Decimation, float RevolutionFrequency, int S0_FT)
 {
     S_0 = S0_FT;
-    FirstTurn = new FIRST_TURN(Harmonic, Decimation);
+    FirstTurn = new FIRST_TURN(Harmonic, Decimation, RevolutionFrequency);
     return true;
 }

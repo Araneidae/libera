@@ -94,18 +94,10 @@ def XYQS_wf(length, prefix='WF'):
             DESC = '%s total button intensity' % ChannelName(),
             LOPR = 0, HOPR = MAX_S)]
 
-def XYQS_(prec, logMax=0, suffix=''):
+def XYQS_(prec, suffix=''):
     sl = [
         longIn('S' + suffix, MDEL = -1,
             DESC = '%s total button intensity' % ChannelName())]
-    if logMax:
-        sl.append(records.calc('SL' + suffix,
-            DESC = '%s nominal power' % ChannelName(),
-            CALC = '20*(LOG(A)-%g)' % logMax,
-            INPA = sl[0],
-            MDEL = -1,
-            LOPR = -50,   HOPR = 0,
-            EGU  = 'dB',  PREC = 0))
     return [
         aIn(position + suffix, -MAX_mm, MAX_mm, 1e-6, 'mm', prec,
             DESC = '%s %s position' % (ChannelName(), position))
@@ -166,7 +158,7 @@ def MaxAdc(Name = 'MAXADC'):
 # the trigger for use on transfer paths and during injection.
 def FirstTurn():
     LONG_LENGTH = 1024
-    SHORT_LENGTH = LONG_LENGTH // 4
+    SHORT_LENGTH = LONG_LENGTH // 4 - 1
 
     SetChannelName('FT')
     Enable()
@@ -175,16 +167,16 @@ def FirstTurn():
     charge = aIn('CHARGE', 0, 2000, 1e-6, 'nC', 2,
         DESC = 'Charge of bunch train')
     max_S = longIn('MAXS', DESC = 'Maximum S in waveform')
+    perm = Waveform('PERM', 4, DESC = 'Switch permutation')
 
     Trigger(False, 
         # Raw waveforms as read from the ADC rate buffer
-        RAW_ADC(LONG_LENGTH) + [maxadc, maxadc_pc, charge, max_S] +
+        RAW_ADC(LONG_LENGTH) +
+        [maxadc, maxadc_pc, charge, max_S, perm] +
         # ADC data reduced by 1/4 by recombination
         ABCD_wf(SHORT_LENGTH) + XYQS_wf(SHORT_LENGTH) + 
-        # Synthesised button positions from windowed averages
-        ABCD_() + 
-        # Final computed positions with logarithmic scale.
-        XYQS_(1, logMax = log10(2**30 * 0.582217 * sqrt(2))))
+        # Buttons and positions computed within selected window
+        ABCD_() + XYQS_(2))
 
     # Sample window control
     longOut('OFF', 0, SHORT_LENGTH - 1,

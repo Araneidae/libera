@@ -124,6 +124,12 @@ First Turn (<group> = FT):
             Note that the ADC readings are adjusted to 16 bits full scale
         independently of the actual full scale range of the ADC.
 
+    PERM
+        Switch permutations: when CF:AUTOSW_S is set to Manual this can be
+        used to convert the RAW<channel> readings into buttons according to
+        the rule 
+            value at <button> = RAW<PERM[<button>] + 1>  (A=0, ... D=4)
+
     MAXADC, MAXADC_PC
         Maximum ADC reading in the entire 1024 point capture, across all
         channels, both as a raw 16-bit ADC value and as a percentage of full

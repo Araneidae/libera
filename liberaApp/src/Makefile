@@ -85,6 +85,9 @@ include $(TOP)/configure/RULES
 # The numeric module uses a pre-built lookup table.
 numeric.o: numeric-lookup.h
 
+# First turn also depends on a prebuilt table
+firstTurn.o: filter-header.h
+
 %.h: ../%.py
 	$(PYTHON) $< >$@
 

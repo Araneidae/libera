@@ -264,7 +264,8 @@ static bool InitialiseLibera()
         /* Initialise interlock settings. */
         InitialiseInterlock()  &&
         /* First turn processing is designed for transfer path operation. */
-        InitialiseFirstTurn(Harmonic, Decimation, S0_FT)  &&
+        InitialiseFirstTurn(
+            Harmonic, Decimation, RevolutionFrequency, S0_FT)  &&
         /* Turn by turn is designed for long waveform capture at revolution
          * clock frequencies. */
         InitialiseTurnByTurn(LongTurnByTurnLength, TurnByTurnWindowLength)  &&

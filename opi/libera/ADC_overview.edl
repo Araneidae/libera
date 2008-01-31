@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 171
-y 22
+x 344
+y 193
 w 588
 h 696
 font "helvetica-medium-r-18.0"
@@ -70,8 +70,7 @@ xAxisSrc "AutoScale"
 xMax 1
 # Y axis properties
 showYAxis
-yAxisStyle "log10"
-yAxisSrc "fromUser"
+yAxisSrc "AutoScale"
 yMin 1e+06
 yMax 1e+09
 # Y2 axis properties
