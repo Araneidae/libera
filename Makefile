@@ -2,6 +2,7 @@
 TOP = .
 include $(TOP)/configure/CONFIG
 DIRS += configure 
-DIRS += system/lmtd liberaApp 
+DIRS += clockPllApp
+DIRS += liberaApp 
 DIRS += install
 include $(TOP)/configure/RULES_TOP

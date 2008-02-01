@@ -73,8 +73,8 @@ endif
 
 ioc_LIBS += $(EPICS_BASE_IOC_LIBS) 
 
-# Point to the device driver includes
-USR_INCLUDES += -I$(LIBERA_PLL)
+# Point to the clock PLL include
+USR_INCLUDES += -I$(TOP)/clockPllApp
 
 
 include $(TOP)/configure/RULES
