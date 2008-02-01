@@ -96,7 +96,6 @@ def BuildFilter(theta, N):
 
 low_pass = BuildFilter(numpy.pi / 6, 2)
 
-# low_pass = numpy.ones(4) / 4.
 
 
 
@@ -105,12 +104,10 @@ def RawToButton(raw, permutation):
     raw_rotated = rotate * (raw - numpy.mean(raw, 1)[:, None])
 #    raw_rotated = rotate * raw
 
-#     for row in raw_rotated:
-#         row[:] = numpy.convolve(row, low_pass, mode = 'same')
+    for row in raw_rotated:
+        row[:] = numpy.convolve(row, low_pass, mode = 'same')
 
     plot_fft.plot(abs(numpy.fft.fft(raw_rotated)))
-#     plot_fft.plot(abs(numpy.fft.fft(
-#         numpy.concatenate((low_pass, numpy.zeros(1024-8))))))
 
     return abs(raw_rotated[:,::4])
 
@@ -134,8 +131,6 @@ def ProcessRaw(raw, permutation, timestamp):
     buttons = RawToButton(raw, permutation)
     plot_buttons.plot(buttons)
 
-#    plot_fft.plot(abs(numpy.fft.fft(raw)))
-
     xy = ButtonToXY(buttons)
     plot_xy.plot(xy)
     
@@ -146,8 +141,6 @@ cothread.iqt()
 
 ioc = sys.argv[1]
 
-# raw = numpy.array(catools.caget(
-#     ['%s:FT:RAW%d' % (ioc, n+1) for n in range(4)]))
 
 pylab.ioff()
 pylab.figure()

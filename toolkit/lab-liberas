@@ -3,7 +3,7 @@
 # Wrapper script for sending commands to the lab
 
 LAB_BASE_IP=172.23.252
-LAB_N=6
+LAB_N=7
 
 LAB_LIST="$(seq -f$LAB_BASE_IP.%g $LAB_N)"
 

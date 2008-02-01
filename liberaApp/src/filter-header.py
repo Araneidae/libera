@@ -27,6 +27,9 @@
 
 # Python script to compute low pass filter.
 
+# Note that the filter really ought to be loaded at run time rather than
+# being compiled in.
+
 from __future__ import division
 
 from numpy import *
@@ -43,10 +46,46 @@ def ConvolveSequence(*s):
         result = convolve(result, array(a, dtype = float))
     return result
 
+def FilterFromAngles(*angles):
+    '''Computes a (low pass) filter with zeros on the unit circle in the
+    z-plane at the specified angles from -pi: the angles are specified in
+    multiples of pi.  A zero at -1 is also added.'''
+    return ConvolveSequence([1, 1],
+        *[[1, 2 * cos(theta), 1]
+            for theta in pi * array(angles)])
+
 
 # Low pass filter
-filter = ConvolveSequence([1, 1],
-    *[[1, 2 * cos(theta), 1] for theta in [pi/6, 2*pi/6, pi/2]])
+#
+# This low pass filter is designed to be applied to the raw ADC waveform
+# after it has been frequency shifted so that the intermediate frequency is
+# close to DC.  As our intermediate frequency is close to 0.25 f_s (pi/2)
+# it's good enough to frequency shift by pi/2, and this has some extra
+# advantages.
+#   After frequency shifting the spectrum has the following features (working
+# around the unit circle in multiples of sample frequency):
+#
+#   0 (DC)  The signal of interest.
+#   0.25    A small DC residual
+#   0.5     The mirror image of the signal, to be filtered out
+#   0.75    The second harmonic of the signal
+#
+# We deal with this by synthesising a filter with zeros at +-0.25 and 0.5,
+# together with two further pairs of zeros close by:
+#
+#   0        0.25      0.5      -0.25       0
+#   +----|----+----|----+----|----+----|----+
+#   ###                                   ###   Signal of interest
+#             #                  ###            DC residual, second harmonic
+#                     #####                     Alias at opposite frequency
+#             0 0     0 0 0     0 0             7 zeros of filter
+#
+# The filter needs to be exactly 8 points long: the code in firstTurn.cpp is
+# crafted on this assumption, so we synthesise using 7 zeros as above.
+
+# Angles specified here in units of (1-angle)f_s/2 or pi(1-angle). 
+# filter = FilterFromAngles(1/6, 1/3, 1/2)
+filter = FilterFromAngles(0.05, 0.45, 0.5)
 
 # Scale the filter so that its values are in the range 0..2**16 (the filter
 # is entirely positive).  Given signed 16-bit input values the product at
