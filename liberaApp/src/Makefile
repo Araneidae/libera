@@ -73,8 +73,8 @@ endif
 
 ioc_LIBS += $(EPICS_BASE_IOC_LIBS) 
 
-# Point to the clock PLL include
-USR_INCLUDES += -I$(TOP)/clockPllApp
+# Point to the shared include directory
+USR_INCLUDES += -I$(TOP)/Include
 
 
 include $(TOP)/configure/RULES

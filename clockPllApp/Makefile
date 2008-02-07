@@ -7,15 +7,15 @@ STATIC_BUILD = YES
 CONFORM_CFLAGS_STRICT = 
 CONFORM_CXXFLAGS_STRICT = 
 
-DEBUG = 0
+USR_CFLAGS += -Werror -Wno-comment -std=gnu99
 
-USR_CFLAGS += -Werror -Wno-comment -std=gnu99 -DDEBUG=$(DEBUG)
+USR_INCLUDES += -I$(TOP)/Include
 
-USR_INCLUDES += -I$(TOP)/liberaApp/src
+PROD_IOC = clockPll
 
-PROD_IOC = lmtd # lstd
-
-lmtd_SRCS += lmtd.c
-lstd_SRCS += lstd.c
+clockPll_SRCS += clockPll.c     # Entry point for clockPll and communication
+clockPll_SRCS += controller.c   # PLL controller framework
+clockPll_SRCS += machineClock.c # Controller definitions for MC clock
+clockPll_SRCS += systemClock.c  # Controller definitions for SC clock
 
 include $(TOP)/configure/RULES

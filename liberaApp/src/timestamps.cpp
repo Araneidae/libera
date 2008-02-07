@@ -44,6 +44,8 @@
 #include <errno.h>
 #include <limits.h>
 #include <time.h>
+#include <poll.h>
+#include <ctype.h>
 
 #include "libera_pll.h"
 
@@ -62,162 +64,325 @@
 
 /*****************************************************************************/
 /*                                                                           */
-/*                              LMTD Interface                               */
+/*                        Clock PLL Daemon Interface                         */
 /*                                                                           */
 /*****************************************************************************/
 
 
-/* LMTD configuration: each of these is written to the LMTD. */
+/* PLL configuration: each of these is written to the PLL daemon. */
 static int SampleClockDetune = 0;   // CK:DETUNE - frequency offset
 static int IfClockDetune = 0;       // CK:IFOFF - IF offset ("double detune")
 static int PhaseOffset = 0;         // CK:PHASE - phase offset
 
 static bool UseSystemTime = false;
+static bool Verbose = false;
+static bool EnableOpenLoop = false;
 
 
 
-/* Sends a command to the LMTD daemon.  We close the file handle between
+/* Sends a command to the clockPll daemon.  We close the file handle between
  * commands to allow other (generally debugging) commands to be sent from
  * other processes. */
 
-static void SendLmtdCommand(const char * format, ...)
+static void SendPllCommand(const char * format, ...)
 {
-    FILE * LmtdCommandFile = fopen(LMTD_COMMAND_FIFO, "w");
-    if (LmtdCommandFile == NULL)
-        perror("Unable to open LMTD command fifo");
+    FILE * PllCommandFile = fopen(CLOCK_PLL_COMMAND_FIFO, "w");
+    if (PllCommandFile == NULL)
+        perror("Unable to open clockPll command fifo");
     else
     {
         va_list args;
         va_start(args, format);
-        vfprintf(LmtdCommandFile, format, args);
-        fprintf(LmtdCommandFile, "\n");
-        fclose(LmtdCommandFile);
+        vfprintf(PllCommandFile, format, args);
+        fprintf(PllCommandFile, "\n");
+        fclose(PllCommandFile);
     }
 }
 
 
 
-/* Manage the configured LMTD state by sending the appropropriate commands to
- * the LMTD. */
+/* Brings the entire state of the clock PLL daemon up to date.  It's safe to
+ * call this repeatedly. */
 
-static void UpdateLmtdState()
+static void UpdatePllState()
 {
-    SendLmtdCommand("o%d", SampleClockDetune);
-    SendLmtdCommand("n%d", IfClockDetune + SampleClockDetune);
-    SendLmtdCommand("p%d", PhaseOffset);
+    SendPllCommand("mo%d", SampleClockDetune);
+    SendPllCommand("mp%d", PhaseOffset);
+    SendPllCommand("n%d",  IfClockDetune + SampleClockDetune);
+    
+    SendPllCommand("mv%d", Verbose);
+    SendPllCommand("sv%d", Verbose);
+    SendPllCommand("mc%d", EnableOpenLoop);
+    SendPllCommand("sc%d", EnableOpenLoop);
 }
 
 
 
-/* This thread manages the lmtd state reporting thread.  All status reported
- * from the LMTD is read and converted into updating EPICS PVs. */
+/* Class for reading lines with timeout. */
 
-class LMTD_MONITOR : public THREAD
+class GETLINE
 {
 public:
-    LMTD_MONITOR() : THREAD("LMTD_MONITOR")
+    GETLINE(const char * FileName, int BufferLength) :
+        FileName(FileName),
+        BufferLength(BufferLength),
+        Buffer(new char[BufferLength])
     {
-        LmtdState = LMTD_NO_CLOCK;
+        FileFd.fd = -1;
+        FileFd.events = POLLIN;
+        InPointer = 0;
+    }
+
+    ~GETLINE() { Close(); }
+
+    bool Ok() { return FileFd.fd != -1; }
+
+    bool Open(int Timeout)
+    {
+        FileFd.fd = open(FileName, O_RDONLY | O_NONBLOCK);
+printf("Opening %s => %d\n", FileName, FileFd.fd);
+        /* A little hack: if we can't open the file then sleep a little.
+         * This will give the rest of the system a bit more time to do
+         * something about it. */
+        if (FileFd.fd == -1)
+            sleep(Timeout / 1000);
+        return FileFd.fd != -1;
+    }
+
+    void Close()
+    {
+        if (Ok())
+        {
+            close(FileFd.fd);
+            FileFd.fd = -1;
+        }
+    }
+
+    bool ReadLine(char * Line, int LineLength, int Timeout)
+    {
+        /* Try to open the file. */
+        if (!Ok()  &&  !Open(Timeout))
+            return false;
+        
+        /* Read from the pipe until either there's a line in the buffer or
+         * we time out. */
+        char * newline;
+        while (
+            newline = (char *) memchr(Buffer, '\n', InPointer),
+            newline == NULL)
+        {
+            /* Check for possible buffer overflow.  If the buffer has filled
+             * up without a newline appearing then the simplest thing we can
+             * do is throw it all away and start again. */
+            if (!TEST_OK(InPointer < BufferLength))
+                InPointer = 0;
+
+            int Read;
+            bool Ok =
+                /* Wait for input to arrive with specified timeout in
+                 * milliseconds. */
+                TEST_IO(Read, poll, &FileFd, 1, Timeout)  &&
+                /* Check that the file is readable; if not, timed out. */
+                Read == 1  &&
+                /* Try to read the incoming data. */
+                TEST_IO(Read,
+                    read, FileFd.fd,
+                    Buffer + InPointer, BufferLength - InPointer);
+            if (!Ok)
+                return false;
+            else if (Read == 0)
+            {
+                Close();
+                return false;
+            }
+            else
+                InPointer += Read;
+        }
+        
+        /* Copy one line of the read result back to the caller. */
+        *newline++ = '\0';
+        strncpy(Line, Buffer, LineLength);
+        /* If there is anything left in the buffer then for simplicity simply
+         * move it up to the start.  This is easier than managing a circular
+         * buffer, and is a rare case anyway. */
+        int Residue = Buffer + InPointer - newline;
+        memmove(Buffer, newline, Residue);
+        InPointer = Residue;
+        return true;
+    }
+    
+private:
+    const char * FileName;      // Name of file to open
+    const int BufferLength;     // Length of allocated buffer
+    char * Buffer;              // Line buffer
+    struct pollfd FileFd;       // File handle and poll() event mask
+    int InPointer;              // Length of read data in buffer
+};
+
+
+
+/* Handles the processing of the interface for one of two clocks. */
+
+class CLOCK_MONITOR
+{
+public:
+    CLOCK_MONITOR(const char * Clock) :
+        PrefixId(tolower(Clock[0]))
+    {
+        State = 0;
+        Synchronised = false;
         DacSetting = 0;
         PhaseError = 0;
         FrequencyError = 0;
-        MachineClockSynchronised = SYNC_NO_SYNC;
-        SystemClockSynchronised  = SYNC_NO_SYNC;
-        LstdLocked = false;
+        
+        char Prefix[20];
+        sprintf(Prefix, "CK:%s_", Clock);
+        Publish_mbbi  (Concat(Prefix, "LOCK"),    State);
+        Publish_mbbi  (Concat(Prefix, "SYNC"),    Synchronised);
 
-        Publish_mbbi  ("CK:MC_LOCK", LmtdState);
-        Publish_bi    ("CK:SC_LOCK", LstdLocked);
-        Publish_longin("CK:DAC", DacSetting);
-        Publish_longin("CK:PHASE_E", PhaseError);
-        Publish_longin("CK:FREQ_E", FrequencyError);
-        Publish_mbbi  ("CK:MC_SYNC", MachineClockSynchronised);
-        Publish_mbbi  ("CK:SC_SYNC", SystemClockSynchronised);
-        Interlock.Publish("CK");
+        Publish_longin(Concat(Prefix, "DAC"),     DacSetting);
+        Publish_longin(Concat(Prefix, "PHASE_E"), PhaseError);
+        Publish_longin(Concat(Prefix, "FREQ_E"),  FrequencyError);
+
+        PUBLISH_METHOD_OUT(longout, Concat(Prefix, "DAC"),
+            SetDac, DacSetting);
+
+        StatusInterlock.Publish("CK", false,
+            Concat(Clock, "_S_TRIG"), Concat(Clock, "_S_DONE"));
+        VerboseInterlock.Publish("CK", false,
+            Concat(Clock, "_V_TRIG"), Concat(Clock, "_V_DONE"));
     }
 
-
-    /* These methods will migrate into SC status reports from the PLL daemon,
-     * but for the moment we hear from the clock synchronisation thread
-     * directly. */
-    void ScWaiting()
+    void ProcessStatusLine(const char *Line)
     {
-        if (LstdLocked)
-            SystemClockSynchronised = SYNC_TRACKING;
+        switch(*Line++)
+        {
+            case 's':
+                StatusInterlock.Wait();
+                TEST_OK(sscanf(Line, "%d %d", &State, &Synchronised) == 2);
+                StatusInterlock.Ready();
+                break;
+            case 'v':
+                VerboseInterlock.Wait();
+                TEST_OK(sscanf(Line, "%d %d %d",
+                    &FrequencyError, &PhaseError, &DacSetting) == 3);
+                VerboseInterlock.Ready();
+                break;
+            default:
+                TEST_OK(false);
+        }
     }
 
-    void ScTriggered()
+    void ProcessStatusError()
     {
-        if (SystemClockSynchronised == SYNC_TRACKING)
-            SystemClockSynchronised = SYNC_SYNCHRONISED;
+        StatusInterlock.Wait();
+        State = 0;
+        Synchronised = false;
+        StatusInterlock.Ready();
+        
+        VerboseInterlock.Wait();
+        DacSetting = 0;
+        PhaseError = 0;
+        FrequencyError = 0;
+        VerboseInterlock.Ready();
     }
 
+    bool IsSynchronised()
+    {
+        return Synchronised == SYNC_SYNCHRONISED;
+    }
+    
+private:
+    CLOCK_MONITOR();
+    
+    bool SetDac(int NewDac)
+    {
+        if (EnableOpenLoop)
+            SendPllCommand("%cd%d", PrefixId, NewDac);
+        return EnableOpenLoop;
+    }
+    
+
+    const char PrefixId;
+        
+    int State;
+    int Synchronised;
+    int DacSetting;
+    int PhaseError;
+    int FrequencyError;
+
+    INTERLOCK StatusInterlock;
+    INTERLOCK VerboseInterlock;
+};
+
+
+/* This thread manages the PLL state reporting thread.  All status reported
+ * from the clockPll daemon is read and converted into updating EPICS PVs. */
+
+class CLOCK_PLL_MONITOR : public THREAD
+{
+public:
+    CLOCK_PLL_MONITOR() : THREAD("CLOCK_PLL_MONITOR")
+    {
+        MC_monitor = new CLOCK_MONITOR("MC");
+        SC_monitor = new CLOCK_MONITOR("SC");
+    }
 
     bool IsSystemClockSynchronised()
     {
-        return SystemClockSynchronised == SYNC_SYNCHRONISED;
+        return SC_monitor->IsSynchronised();
     }
     
 
 private:
-    /* Decodes a single status line read from the LMTD and ensures that
+    /* Decodes a single status line read from clockPll and ensures that
      * updates are reported as appropriate. */
     void ProcessStatusLine(const char * Line)
     {
-        if (sscanf(Line, "%d %d %d %d %d\n",
-                &LmtdState, &FrequencyError, &PhaseError, &DacSetting,
-                &MachineClockSynchronised) != 5)
-            printf("Error scanning lmtd status line \"%s\"\n", Line);
+        switch (*Line++)
+        {
+            case 'm':
+                MC_monitor->ProcessStatusLine(Line);
+                break;
+            case 's':
+                SC_monitor->ProcessStatusLine(Line);
+                break;
+            case 'x':
+                /* On receipt of reset reinitialise the PLL daemon. */
+                UpdatePllState();
+                break;
+            default:
+                printf("Invalid PLL status line: \"%s\"\n", Line);
+                ProcessStatusError();
+                break;
+        }
+    }
 
-        /* Pick up the LSTD state: this one we just pick up directly from the
-         * device driver.  Longer term we probably want to integrate LSTD and
-         * LMTD together and just use the status pipe. */
-        bool Dummy;
-        GetClockState(Dummy, LstdLocked);
-        /* Also update the synchronisation state accordingly: on loss of lock
-         * force the state to no sync. */
-        if (!LstdLocked)
-            SystemClockSynchronised = SYNC_NO_SYNC;
+    /* If we lose communication with the PLL daemon then switch all our state
+     * into the default error state. */
+    void ProcessStatusError()
+    {
+        MC_monitor->ProcessStatusError();
+        SC_monitor->ProcessStatusError();
     }
     
     void Thread()
     {
-        FILE * LmtdStatus = fopen(LMTD_STATUS_FIFO, "r");
-        if (LmtdStatus == NULL)
-        {
-            perror("Unable to open lmtd status pipe");
-            return;
-        }
         StartupOk();
-
-        char * Line = NULL;
-        size_t LineLength = 0;
+        
+        GETLINE PllStatus(CLOCK_PLL_STATUS_FIFO, 128);
         while (Running())
         {
-            if (TEST_(getline, &Line, &LineLength, LmtdStatus))
-            {
-                Interlock.Wait();
+            char Line[128];
+            if (PllStatus.ReadLine(Line, sizeof(Line), 2000))
                 ProcessStatusLine(Line);
-                Interlock.Ready();
-            }
             else
-                /* If getline fails then it does no good to keep on trying.
-                 * Back off a little bit. */
-                sleep(1);
+                ProcessStatusError();
         }
-        fclose(LmtdStatus);
     }
 
-
-    /* LMTD status variables. */
-    int LmtdState;
-    int DacSetting;
-    int PhaseError;
-    int FrequencyError;
-    int MachineClockSynchronised;
-    int SystemClockSynchronised;
-    bool LstdLocked;
-
-    INTERLOCK Interlock;
+    CLOCK_MONITOR * MC_monitor;
+    CLOCK_MONITOR * SC_monitor;
 };
 
 
@@ -293,7 +458,7 @@ private:
 
 
 
-static LMTD_MONITOR * LmtdMonitorThread = NULL;
+static CLOCK_PLL_MONITOR * PllMonitorThread = NULL;
 
 
 
@@ -377,7 +542,7 @@ private:
     {
         Lock();
         SystemClockSynchronising = true;
-        LmtdMonitorThread->ScWaiting();
+        SendPllCommand("ss%d", SYNC_TRACKING);
         Signal();
         Unlock();
         return true;
@@ -386,14 +551,14 @@ private:
 
     /* This is called in response to processing the CK:SYNCMC record: the
      * next trigger is a machine clock synchronisation trigger.  In response
-     * we need to let LMTD know that a sync is about to happen.
+     * we need to let clockPll know that a sync is about to happen.
      *    Because we need to receive the trigger (which is shared with SC
      * synchronisation) we need to be part of this thread. */
     bool SynchroniseMachineClock()
     {
         Lock();
         MachineClockSynchronising = true;
-        SendLmtdCommand("s%d", SYNC_TRACKING);
+        SendPllCommand("ms%d", SYNC_TRACKING);
         SetMachineClockTime();
         Unlock();
         return true;
@@ -409,12 +574,12 @@ private:
         if (MachineClockSynchronising)
         {
             MachineClockSynchronising = false;
-            SendLmtdCommand("s%d", SYNC_SYNCHRONISED);
+            SendPllCommand("ms%d", SYNC_SYNCHRONISED);
         }
         if (SystemClockSynchronising)
         {
             SystemClockSynchronising = false;
-            LmtdMonitorThread->ScTriggered();
+            SendPllCommand("ss%d", SYNC_SYNCHRONISED);
         }
         Signal();
         Unlock();
@@ -434,12 +599,16 @@ static SYNCHRONISE_CLOCKS * SynchroniseThread = NULL;
 bool InitialiseTimestamps()
 {
     PUBLISH_CONFIGURATION(longout, "CK:DETUNE", 
-        SampleClockDetune, UpdateLmtdState);
+        SampleClockDetune, UpdatePllState);
     PUBLISH_CONFIGURATION(longout, "CK:IFOFF", 
-        IfClockDetune, UpdateLmtdState);
+        IfClockDetune, UpdatePllState);
     PUBLISH_CONFIGURATION(longout, "CK:PHASE", 
-        PhaseOffset, UpdateLmtdState);
+        PhaseOffset, UpdatePllState);
     PUBLISH_CONFIGURATION(bo, "CK:TIMESTAMP", UseSystemTime, NULL_ACTION);
+    PUBLISH_FUNCTION_OUT(bo, "CK:VERBOSE", Verbose, UpdatePllState);
+
+    /* Open loop direct DAC control. */
+    PUBLISH_FUNCTION_OUT(bo, "CK:OPEN_LOOP",  EnableOpenLoop, UpdatePllState);
     
     new TICK_TRIGGER();
     
@@ -447,12 +616,12 @@ bool InitialiseTimestamps()
     if (!SynchroniseThread->StartThread())
         return false;
     
-    LmtdMonitorThread = new LMTD_MONITOR;
-    if (!LmtdMonitorThread->StartThread())
+    PllMonitorThread = new CLOCK_PLL_MONITOR;
+    if (!PllMonitorThread->StartThread())
         return false;
 
-    /* Program the LMTD to the required settings. */
-    UpdateLmtdState();
+    /* Program the PLL daemon to the required settings. */
+    UpdatePllState();
 
     return true;
 }
@@ -462,12 +631,12 @@ void TerminateTimestamps()
 {
     if (SynchroniseThread != NULL)
         SynchroniseThread->Terminate();
-    if (LmtdMonitorThread != NULL)
-        LmtdMonitorThread->Terminate();
+    if (PllMonitorThread != NULL)
+        PllMonitorThread->Terminate();
 }
 
 
 bool UseLiberaTimestamps()
 {
-    return UseSystemTime && LmtdMonitorThread->IsSystemClockSynchronised();
+    return UseSystemTime && PllMonitorThread->IsSystemClockSynchronised();
 }

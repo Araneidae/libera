@@ -127,14 +127,14 @@ if [ -n "$IOC_CORE" -a -d "$IOC_CORE" ]; then
 fi
 
 # Ensure that we're running our own version of lmtd
-if ((RESTART_LMTD))  ||  ! [ -e /tmp/lmtd.command ]; then
-    if [ -e /var/run/lmtd.pid ]; then
-        kill $(cat /var/run/lmtd.pid)
-    elif [ -e /var/run/lplld.pid ]; then
+if ((RESTART_LMTD))  ||  ! [ -e /tmp/clockPll.command ]; then
+    [ -e /var/run/lmtd.pid ]  &&  kill $(cat /var/run/lmtd.pid)
+    [ -e /var/run/lstd.pid ]  &&  kill $(cat /var/run/lstd.pid)
+    if [ -e /var/run/lplld.pid ]; then
         kill $(cat /var/run/lplld.pid)
         sleep 1
     fi
-    $BIN_DIR/lmtd -p$MCPRESC -d$DECIMATION -o$OFFSET_TUNE -r$HARMONIC
+    $BIN_DIR/clockPll -p$MCPRESC -d$DECIMATION -r$HARMONIC
 fi
 
 # Ensure the DSC daemon isn't running: we're going to replace its

@@ -537,7 +537,7 @@ def Conditioning():
 
 
 
-def AggregateSeverity(name, description, *recs):
+def AggregateSeverity(name, description, recs):
     ''' Aggregates the severity of all the given records into a single record.
     The value of the record is constant, but its SEVR value reflects the
     maximum severity of all of the given records.'''
@@ -548,8 +548,41 @@ def AggregateSeverity(name, description, *recs):
         # Assign each record of interest to a calc record input with MS.
         # This then automatically propagates to the severity of the whole
         # record.
-        **dict(zip(['INP'+c for c in 'ABCDEFGHIJKL'], map(MS, recs))))
+        **dict([
+            ('INP' + c, MS(r))
+            for c, r in zip ('ABCDEFGHIJKL', recs)]))
 
+
+def ClockStatus(id, name):
+    health = [
+        # MC monitoring PVS
+        mbbIn('%s_LOCK' % id,
+            ('No Clock',        0, 'MAJOR'),
+            ('Seek Frequency',  1, 'MAJOR'),
+            ('Slewing',         2, 'MINOR'),
+            ('Phase Locked',    3, 'NO_ALARM'),
+            ('Open Loop',       4, 'MAJOR'),
+            DESC = '%s clock lock status' % name),
+        mbbIn('%s_SYNC' % id,
+            ('Not Synched',     0, 'MINOR'),
+            ('Waiting Trigger', 1, 'MINOR'),
+            ('Synchronised',    2, 'NO_ALARM'),
+            DESC = '%s clock sync state' % name)]
+    Trigger(False, health,
+        TRIG = '%s_S_TRIG' % id, DONE = '%s_S_DONE' % id)
+    
+    detail = [
+        longIn('%s_DAC' % id, 0, 65535,
+            DESC = '%s clock DAC setting' % name),
+        longIn('%s_PHASE_E' % id,
+            DESC = '%s clock phase error' % name),
+        longIn('%s_FREQ_E' % id,
+            DESC = '%s clock freq error' % name)]
+    Trigger(False, detail,
+        TRIG = '%s_V_TRIG' % id, DONE = '%s_V_DONE' % id)
+
+    return health
+    
 
     
 # Clock configuation control records.  Used for managing clocks and
@@ -569,6 +602,16 @@ def Clock():
     boolOut('MC_SYNC', 'Synchronise', None, DESC = 'Synchronise machine clock')
     boolOut('SC_SYNC', 'Synchronise', None, DESC = 'Synchronise system clock')
 
+    boolOut('VERBOSE', 'Silent', 'Monitor',
+        ZSV  = 'MINOR',     OSV  = 'NO_ALARM',
+        DESC = 'Enable clock monitoring')
+
+    # Direct open loop DAC control
+    boolOut('OPEN_LOOP', 'PLL Control', 'Open Loop',
+        ZSV  = 'NO_ALARM',  OSV  = 'MAJOR',
+        DESC = 'Enable phased locked loop')
+    longOut('MC_DAC', 0, 65535, DESC = 'Open loop MC DAC control')
+    longOut('SC_DAC', 0, 65535, DESC = 'Open loop SC DAC control')
 
     # Create the tick health monitor.  This records the number of seconds
     # since the last recorded trigger and signals an alarm according to how
@@ -605,38 +648,6 @@ def Clock():
         tick_count, total_missed,
         VAL = 0,    PINI = 'YES',   DESC = 'Reset tick loss counters')
     
-    # Group together all the records that affect the alarm status. */
-    mc_health = [
-        # MC monitoring PVS
-        mbbIn('MC_LOCK',
-            ('No Clock',        0, 'MAJOR'),
-            ('Seek Frequency',  1, 'MAJOR'),
-            ('Slewing',         2, 'MINOR'),
-            ('Phase Locked',    3, 'NO_ALARM'),
-            DESC = 'Machine clock lock status'),
-        mbbIn('MC_SYNC',
-            ('Not Synched',     0, 'MINOR'),
-            ('Waiting Trigger', 1, 'MINOR'),
-            ('Synchronised',    2, 'NO_ALARM'),
-            DESC = 'Machine clock sync state')]
-
-    sc_health = [
-        # LSTD monitoring PVS
-        boolIn('SC_LOCK', 'Unlocked', 'Locked',
-            DESC = 'System clock lock status',
-            ZSV  = 'MINOR',     OSV  = 'NO_ALARM'),
-        mbbIn('SC_SYNC',
-            ('Not Synched',     0, 'MINOR'),
-            ('Waiting Trigger', 1, 'MINOR'),
-            ('Synchronised',    2, 'NO_ALARM'),
-            DESC = 'System clock sync state')]
-    # For the moment we don't aggregate SC health: it just doesn't stay
-    # healthy for long enough!  The problem is (almost certainly) that the
-    # lstd loses lock due to excessive oscillation, thus causing
-    # synchronisation to be dropped.
-    clock_health = AggregateSeverity('HEALTH', 'Clock status',
-        *mc_health + [tick])    # + sc_health
-
     # This trigger receives the normal machine trigger.
     Trigger(True, [
             tick_reset, tick_count,
@@ -645,12 +656,12 @@ def Clock():
             stringIn('TIME_SC',  DESC = 'System clock time')],
         TRIG = 'TIME', DONE = 'TIME_DONE')
     
-    Trigger(False, [
-        longIn('DAC', 0, 65535, DESC = 'LMTD VCXO DAC setting'),
-        longIn('PHASE_E', DESC = 'LMTD phase error'),
-        longIn('FREQ_E', DESC = 'LMTD frequency error')] + 
-        mc_health + sc_health + [clock_health,])
-    
+    # Generate the clock monitoring records.
+    mc_health = ClockStatus('MC', 'Machine')
+    sc_health = ClockStatus('SC', 'System')
+    clock_health = AggregateSeverity('HEALTH', 'Clock status',
+        map(CP, mc_health + sc_health + [tick]))
+
     UnsetChannelName()
 
     
@@ -688,7 +699,7 @@ def Voltages():
         VoltageSensor(8, 'Attenuators & switches ctrl', -5.09)]
 
     
-    health = AggregateSeverity('VOLTSOK', 'Voltage health', *voltages)
+    health = AggregateSeverity('VOLTSOK', 'Voltage health', voltages)
     health_display = records.mbbi('VHEALTH',
         DESC = 'Voltage health display',
         INP  = MS(health.SEVR),
@@ -736,7 +747,7 @@ def Sensors():
     # record.  Only the alarm status of this record is meaningful.
     alarmsensors = fans + [temp, memfree, ramfs, cpu, voltage_health]
     health = AggregateSeverity('HEALTH', 'Aggregated health',
-        *alarmsensors)
+        alarmsensors)
     
     Trigger(False, alarmsensors + voltages + [uptime, epicsup, health])
             

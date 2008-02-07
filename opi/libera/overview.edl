@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 446
-y 22
+x 1616
+y 21
 w 296
 h 401
 font "helvetica-medium-r-14.0"
@@ -257,6 +257,7 @@ bgColor index 4
 autoHeight
 precision 1
 nullColor index 0
+fastUpdate
 showUnits
 newPos
 objType "monitors"
@@ -320,6 +321,7 @@ bgColor index 4
 autoHeight
 limitsFromDb
 nullColor index 0
+fastUpdate
 newPos
 objType "monitors"
 endObjectProperties
@@ -342,6 +344,7 @@ bgColor index 4
 autoHeight
 limitsFromDb
 nullColor index 0
+fastUpdate
 newPos
 objType "monitors"
 endObjectProperties
@@ -364,6 +367,7 @@ bgColor index 4
 autoHeight
 limitsFromDb
 nullColor index 0
+fastUpdate
 showUnits
 newPos
 objType "monitors"
@@ -387,6 +391,7 @@ bgColor index 4
 autoHeight
 limitsFromDb
 nullColor index 0
+fastUpdate
 showUnits
 newPos
 objType "monitors"
@@ -661,6 +666,7 @@ bgColor index 4
 autoHeight
 limitsFromDb
 nullColor index 0
+fastUpdate
 showUnits
 newPos
 objType "monitors"
@@ -747,6 +753,7 @@ bgColor index 4
 autoHeight
 limitsFromDb
 nullColor index 0
+fastUpdate
 showUnits
 newPos
 objType "monitors"
@@ -914,6 +921,7 @@ useDisplayBg
 autoHeight
 limitsFromDb
 nullColor index 0
+fastUpdate
 newPos
 objType "monitors"
 endObjectProperties
