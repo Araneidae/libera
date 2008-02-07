@@ -32,8 +32,9 @@ bool InitialiseTimestamps();
 void TerminateTimestamps();
 
 
-/* This records whether the timestamps reported by Libera should be used.
- * These are based on the "system clock", and can only be relied on if the
- * system clock has been synchronised.  Otherwise local system time (which
- * should be synchronised using NTP) should be used. */
-bool UseLiberaTimestamps();
+/* This adjusts an event timestamp according to whether the timestamps
+ * reported by Libera should be used.  These are based on the "system clock",
+ * and can only be relied on if the system clock has been synchronised.
+ * Otherwise local system time (which should be synchronised using NTP) will
+ * be used. */
+void AdjustTimestamp(LIBERA_TIMESTAMP &Timestamp);

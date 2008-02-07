@@ -56,7 +56,7 @@ typedef struct CONTROLLER
     int frequency_offset;       // Extra phase advance (frequency shift)
     int phase_offset;           // Phase offset relative to synchronisation
     int max_normal_phase_error; // Maximum phase allowed when synchronised
-    int max_sync_phase_error;   // Maximum phase allowed during synchronisation
+    int max_slew_phase_error;   // Maximum phase allowed during slewing
 
     const char * name;          // Name of controller for logging
     char status_prefix;         // Prefix character used for reporting
@@ -81,6 +81,7 @@ typedef struct CONTROLLER
     int PhaseError;             // Current phase error
     int FrequencyError;         // Current frequency error
     int CurrentStage;           // Index of currently active stage
+    bool Slewing;               // True during programmed slewing
 
     /* Status reporting control. */
     bool Verbose;               // Enables error and DAC reporting
@@ -91,7 +92,6 @@ typedef struct CONTROLLER
 
     /* Synchronisation holding. */
     PLL_SYNC_STATE Synchronised;    // Synchronisation state
-    bool SynchroniseSlewing;    // True while slewing synchronisation
     PLL_SYNC_STATE WasSynchronised;
 
     /* Array of controller stages.  (This has to come last because of the open

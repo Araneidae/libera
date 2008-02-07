@@ -293,16 +293,14 @@ void IQ_WAVEFORMS::Capture(int Decimation)
     /* If Libera timestamps have been disabled (typically because the system
      * clock isn't synchronised) then we have to ignore the timestamp just
      * read and read the current time instead. */
-    if (! UseLiberaTimestamps())
-        TEST_(clock_gettime, CLOCK_REALTIME, & Timestamp.st);
+    AdjustTimestamp(Timestamp);
 }
 
 void IQ_WAVEFORMS::CapturePostmortem()
 {
     ActiveLength = ReadPostmortem(
         CurrentLength, (LIBERA_ROW *) Data, Timestamp);
-    if (! UseLiberaTimestamps())
-        TEST_(clock_gettime, CLOCK_REALTIME, & Timestamp.st);
+    AdjustTimestamp(Timestamp);
 }
 
 

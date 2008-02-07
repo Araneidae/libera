@@ -447,6 +447,9 @@ private:
 
         MissedEventCount = MissedEvents;
 
+        /* Fix up the timestamp if necessary before publishing so that we use
+         * the same timestamps as everybody else. */
+        AdjustTimestamp(Timestamp);
         Interlock.Ready(Timestamp);
     }
 
@@ -636,7 +639,11 @@ void TerminateTimestamps()
 }
 
 
-bool UseLiberaTimestamps()
+void AdjustTimestamp(LIBERA_TIMESTAMP &Timestamp)
 {
-    return UseSystemTime && PllMonitorThread->IsSystemClockSynchronised();
+    /* Unless both the use of system time is enabled *and* the system clock
+     * is currently synchronised, use current NTP time instead of the
+     * reported Libera system clock. */
+    if (!(UseSystemTime && PllMonitorThread->IsSystemClockSynchronised()))
+        TEST_(clock_gettime, CLOCK_REALTIME, & Timestamp.st);
 }

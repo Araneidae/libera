@@ -224,7 +224,6 @@ void WriteStatus(const char *Format, ...)
     status_pipe_overflow =
         write(status_pipe, Message, strlen(Message)) != strlen(Message);
     TEST_0(pthread_mutex_unlock, &status_mutex);
-// printf("WriteStatus (%d): %s", status_pipe_overflow, Message);
 }
 
 

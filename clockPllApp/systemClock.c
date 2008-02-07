@@ -107,7 +107,7 @@ static CONTROLLER SC_Controller =
     .frequency_offset = 0,
     .phase_offset = 0,
     .max_normal_phase_error = 10,
-    .max_sync_phase_error = 10,
+    .max_slew_phase_error = 10,
 
     .name = "SC",
     .status_prefix = 's',

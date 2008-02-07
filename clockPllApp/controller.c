@@ -92,6 +92,15 @@ int clip_to_int(long long value)
 }
 
 
+static void DropSynchronisation(CONTROLLER *Controller, const char * Reason)
+{
+    if (Controller->Synchronised == SYNC_SYNCHRONISED)
+        log_message(LOG_INFO, "%s: Synchronisation lost, %s",
+            Controller->name, Reason);
+    Controller->Synchronised = SYNC_NO_SYNC;
+}
+
+
 /* Updates the clock settings given a new clock reading. */
 
 static void UpdateClockState(
@@ -99,7 +108,7 @@ static void UpdateClockState(
 {
     Controller->PhaseLocked = PhaseLocked;
     if (! PhaseLocked)
-        Controller->Synchronised = SYNC_NO_SYNC;
+        DropSynchronisation(Controller, "phase lock lost");
     
     /* The frequency error is determined by comparing the actual clock advance
      * with the expected nominal advance. */
@@ -131,14 +140,11 @@ static void UpdateClockState(
 
     /* Check whether excessive phase error causes synchronisation to become
      * lost. */
-    int PhaseErrorLimit = Controller->SynchroniseSlewing ?
-        Controller->max_sync_phase_error :
+    int PhaseErrorLimit = Controller->Slewing ?
+        Controller->max_slew_phase_error :
         Controller->max_normal_phase_error;
     if (abs(Controller->PhaseError) > PhaseErrorLimit)
-    {
-printf("abs(%d) > %d\n", Controller->PhaseError, PhaseErrorLimit);
-        Controller->Synchronised = SYNC_NO_SYNC;
-    }
+        DropSynchronisation(Controller, "excessive phase error");
 
     /* Finally inform the driver of the current phase and clock
      * values. */
@@ -165,13 +171,10 @@ bool UpdateClock(CONTROLLER *Controller, bool OpenLoop, PHASE_LOCK PhaseLock)
     else
     {
         if (PhaseLock == PHASE_LOCK_NARROW  &&
-            Controller->Synchronised == SYNC_SYNCHRONISED)
-        {
-if (Controller->SynchroniseSlewing) printf("Resetting slewing flag\n");
+                Controller->Synchronised == SYNC_SYNCHRONISED)
             /* Once we're synchronised allow the slewing process to proceed.
              * (There is a race condition here...) */
-            Controller->SynchroniseSlewing = false;
-        }
+            Controller->Slewing = false;
         
         libera_hw_time_t clock;
         Controller->ClockOk = Controller->GetClock(&clock);
@@ -235,9 +238,8 @@ static void ReportState(CONTROLLER *Controller)
 
 void SetDAC(CONTROLLER *Controller, int dac)
 {
-    dac = ClipDAC(dac);
-    Controller->Dac = dac;
-    Controller->SetDAC(dac);
+    Controller->Dac = ClipDAC(dac);
+    Controller->SetDAC(Controller->Dac);
 
     /* Once the DAC has been set we're ready to fill out a complete report to
      * any interested parties. */
@@ -420,8 +422,8 @@ int run_IIR(CONTROLLER *Controller, const void *Context)
 
 static void run_get_clock(CONTROLLER *Controller)
 {
+    DropSynchronisation(Controller, "clock lost");
     Controller->PhaseLocked = false;
-    Controller->Synchronised = SYNC_NO_SYNC;
     Controller->CurrentStage = 0;
     do
     {
@@ -493,7 +495,7 @@ void run_controller(CONTROLLER *Controller)
     
     Controller->Synchronised = SYNC_NO_SYNC;
     Controller->WasSynchronised = SYNC_NO_SYNC;
-    Controller->SynchroniseSlewing = false;
+    Controller->Slewing = false;
 
     /* Sensible initial defaults for first reports. */
     Controller->PhaseError = 0;
@@ -526,7 +528,7 @@ static void SetFrequencyOffset(CONTROLLER *Controller, int Offset)
 {
     if (Offset != Controller->frequency_offset)
     {
-        Controller->Synchronised = SYNC_NO_SYNC;
+        DropSynchronisation(Controller, "frequency offset changed");
         Controller->frequency_offset = Offset;
     }
 }
@@ -542,7 +544,7 @@ static void SetSynchronisation(CONTROLLER *Controller, int Command)
     {
         case SYNC_NO_SYNC:
             /* Supported, but not so useful... */
-            Controller->Synchronised = SYNC_NO_SYNC;
+            DropSynchronisation(Controller, "explicitly dropped");
             break;
         case SYNC_TRACKING:
             /* Only allow synchronisation tracking if we're phase
@@ -550,14 +552,18 @@ static void SetSynchronisation(CONTROLLER *Controller, int Command)
             if (Controller->PhaseLocked)
             {
                 Controller->Synchronised = SYNC_TRACKING;
-                Controller->SynchroniseSlewing = true;
+                Controller->Slewing = true;
             }
             break;
         case SYNC_SYNCHRONISED:
             /* Don't allow a jump from NO_SYNC to SYNCHRONISED:
              * means synchronisation got lost somewhere. */
             if (Controller->Synchronised == SYNC_TRACKING)
+            {
+                log_message(LOG_INFO,
+                    "%s: Synchronised to trigger", Controller->name);
                 Controller->Synchronised = SYNC_SYNCHRONISED;
+            }
             break;
     }
 }
@@ -567,8 +573,20 @@ void SetPhaseOffset(CONTROLLER *Controller, int PhaseOffset)
 {
     /* Setting the phase offset can potentially introduce a massive phase
      * delta.  As this is clearly deliberate, we temporarily open the slewing
-     * interval to avoid dropping the synchronisation flag. */
-    // Not implemented yet !!!
+     * interval to avoid dropping the synchronisation flag.
+     *     Note the fudge factor to cope with trivial overshoot. */
+    if (abs(Controller->phase_offset - PhaseOffset) + 10 >
+            Controller->max_normal_phase_error)
+        /* Simply setting the slewing state works *most* of the time, but
+         * occasionally it will fail.  The problem is that we're not actually
+         * synchronising with the PLL thread.  Most of the time it is blocked
+         * in a GetClock() call ... but if the first half of UpdateClock()
+         * happens first then we're out of luck.
+         *    Alas, it's quite hard to get this right ... and almost a
+         * complete waste of time, as 1) the probability of dropping sync is
+         * low, and 2) the consequence of doing so pretty minimal, and 3) this
+         * function is seldom called! */
+        Controller->Slewing = true;
     Controller->phase_offset = PhaseOffset;
 }
 

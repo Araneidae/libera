@@ -424,7 +424,6 @@ Clock (<group> = CK):
         1MHz reference which can be used to provide precision timestamps.  If
         this PV is set to "System time" then this will be used, otherwise the
         Linux system time (which should be synchronised by NTP) is used.
-            In the present release "NTP time" is recommended.
 
     DETUNE_S
         This controls the detuning of the sample clock away from a precise
@@ -457,10 +456,6 @@ Clock (<group> = CK):
         the second; secondly, the local Linux system timestamp must already be
         accurate to with a few 100ms (this can be achieved using NTP).  
             Note: a 1Hz trigger can be used for system clock synchronisation.
-        Note also, however, that the current release of the system time
-        daemon does not hold synchronisation long enough for this 
-        synchronisation to be worth doing, instead TIMESTAMP_S should be set
-        to use NTP time. 
 
     MC_LOCK
     SC_LOCK
@@ -478,17 +473,29 @@ Clock (<group> = CK):
         (DETUNE_S) changes, and this release does not track system clock
         synchronisation over restarts of the EPICS IOC.
 
-    DAC
-        Readback of the currently machine clock VCXO setting.  This is very
-        sensitive to both temperature and frequency changes, and can provide a
-        useful diagnostic.
+    MC_DAC
+    SC_DAC
+        Readback of the currently machine and system clock VCXO settings.
+        This is very sensitive to both temperature and frequency changes, and
+        can provide a useful diagnostic. 
 
-    PHASE_E
-        Current machine clock phase error.  During normal operation this is
-        0+-1 unless the machine frequency changes very rapidly.
+    MC_PHASE_E
+    SC_PHASE_E
+        Current machine and system clock phase errors.  During normal
+        operation MC_PHASE_E is 0+-1 unless the machine frequency changes
+        very rapidly, and SC_PHASE_E should only be 0+-1.
 
-    FREQ_E
+    MC_FREQ_E
+    SC_FREQ_E
         Frequency error.  Normally zero.
+
+    OPEN_LOOP_S
+    MC_DAC_S
+    SC_DAC_S
+        These PVs are provided for studying the behaviour of the VCXO.  If
+        OPEN_LOOP_S is set to 'Open Loop' then the PLL controllers are
+        disabled and writing to MC_DAC_S and SC_DAC_S will directly control
+        the VCXO control voltage.
 
     HEALTH
         This PV provides a report of the overall health of the clocks by

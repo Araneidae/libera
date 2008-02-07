@@ -204,7 +204,7 @@ static CONTROLLER MC_Controller =
     .frequency_offset = 0,
     .phase_offset = 0,
     .max_normal_phase_error = 100, 
-    .max_sync_phase_error = 30000,  // Allow large error during sync slew
+    .max_slew_phase_error = 30000,  // Allow large error during sync slew
 
     .name = "MC",
     .status_prefix = 'm',
