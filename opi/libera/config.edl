@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 1071
-y 29
+x 647
+y 325
 w 473
 h 521
 font "helvetica-medium-r-16.0"
@@ -258,7 +258,7 @@ minor 1
 release 0
 x 16
 y 88
-w 25
+w 24
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -304,7 +304,7 @@ minor 1
 release 0
 x 16
 y 280
-w 23
+w 22
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -349,7 +349,7 @@ minor 1
 release 0
 x 128
 y 280
-w 23
+w 22
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -394,7 +394,7 @@ minor 1
 release 0
 x 16
 y 304
-w 23
+w 22
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -439,7 +439,7 @@ minor 1
 release 0
 x 128
 y 304
-w 23
+w 22
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -710,7 +710,7 @@ minor 1
 release 0
 x 248
 y 96
-w 14
+w 13
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -782,7 +782,7 @@ minor 1
 release 0
 x 248
 y 120
-w 13
+w 12
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -854,7 +854,7 @@ minor 1
 release 0
 x 16
 y 376
-w 65
+w 66
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -912,7 +912,7 @@ minor 1
 release 0
 x 16
 y 400
-w 63
+w 62
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -1030,7 +1030,7 @@ minor 1
 release 0
 x 248
 y 208
-w 65
+w 66
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -1076,7 +1076,7 @@ minor 1
 release 0
 x 248
 y 232
-w 68
+w 69
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -1122,7 +1122,7 @@ minor 1
 release 0
 x 248
 y 144
-w 42
+w 37
 h 32
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -1180,7 +1180,7 @@ minor 1
 release 0
 x 248
 y 304
-w 63
+w 61
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -1200,7 +1200,7 @@ minor 1
 release 0
 x 368
 y 376
-w 80
+w 32
 h 24
 controlPv "$(device):CF:SETSW_S"
 font "helvetica-medium-r-14.0"
@@ -1226,7 +1226,7 @@ minor 1
 release 0
 x 248
 y 376
-w 98
+w 97
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -1272,7 +1272,7 @@ minor 1
 release 0
 x 248
 y 424
-w 78
+w 77
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -1386,7 +1386,7 @@ minor 1
 release 0
 x 16
 y 480
-w 109
+w 107
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -1485,7 +1485,7 @@ minor 1
 release 0
 x 248
 y 352
-w 34
+w 32
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -1505,7 +1505,7 @@ minor 1
 release 0
 x 248
 y 328
-w 73
+w 74
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -1624,7 +1624,7 @@ minor 1
 release 0
 x 16
 y 168
-w 34
+w 32
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -1696,7 +1696,7 @@ minor 1
 release 0
 x 16
 y 192
-w 34
+w 32
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -1768,7 +1768,7 @@ minor 1
 release 0
 x 16
 y 216
-w 51
+w 49
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -1814,7 +1814,7 @@ minor 1
 release 0
 x 248
 y 184
-w 73
+w 72
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -1891,7 +1891,7 @@ minor 1
 release 0
 x 384
 y 56
-w 23
+w 24
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -1936,7 +1936,7 @@ minor 1
 release 0
 x 384
 y 208
-w 26
+w 25
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -1971,6 +1971,52 @@ displayFileName {
 }
 symbols {
   0 "device=$(device)"
+}
+endObjectProperties
+
+# (X-Y Graph)
+object xyGraphClass
+beginObjectProperties
+major 4
+minor 3
+release 0
+# Geometry
+x 408
+y 375
+w 40
+h 22
+# Appearance
+plotAreaBorder
+fgColor index 14
+bgColor index 3
+gridColor index 14
+font "helvetica-medium-r-8.0"
+# Operating Modes
+nPts 2
+# X axis properties
+xAxisSrc "fromUser"
+xMin -0.5
+xMax 3.5
+# Y axis properties
+yAxisSrc "fromUser"
+yMin -0.5
+yMax 3.5
+# Y2 axis properties
+y2AxisSrc "AutoScale"
+y2Max 1
+# Trace Properties
+numTraces 1
+yPv {
+  0 "$(device):FT:PERM"
+}
+plotStyle {
+  0 "point"
+}
+plotSymbolType {
+  0 "circle"
+}
+plotColor {
+  0 index 14
 }
 endObjectProperties
 

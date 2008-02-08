@@ -3,10 +3,10 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 275
-y 302
+x 305
+y 247
 w 481
-h 362
+h 337
 font "helvetica-medium-r-16.0"
 ctlFont "helvetica-medium-r-16.0"
 btnFont "helvetica-medium-r-16.0"
@@ -612,6 +612,7 @@ w 192
 h 16
 controlPv "$(device):CK:TIME_SC"
 font "helvetica-medium-r-14.0"
+fontAlign "right"
 fgColor index 14
 fgAlarm
 bgColor index 4
@@ -635,6 +636,7 @@ w 192
 h 16
 controlPv "$(device):CK:TIME_NTP"
 font "helvetica-medium-r-14.0"
+fontAlign "right"
 fgColor index 14
 fgAlarm
 bgColor index 4
@@ -644,212 +646,6 @@ nullColor index 0
 fastUpdate
 newPos
 objType "monitors"
-endObjectProperties
-
-# (Rectangle)
-object activeRectangleClass
-beginObjectProperties
-major 4
-minor 0
-release 0
-x 208
-y 248
-w 264
-h 104
-lineColor index 14
-fill
-fillColor index 4
-endObjectProperties
-
-# (Static Text)
-object activeXTextClass
-beginObjectProperties
-major 4
-minor 1
-release 0
-x 208
-y 240
-w 120
-h 16
-font "helvetica-medium-r-12.0"
-fontAlign "center"
-fgColor index 1
-bgColor index 10
-value {
-  "Clocks & Graphs"
-}
-endObjectProperties
-
-# (Rectangle)
-object activeRectangleClass
-beginObjectProperties
-major 4
-minor 0
-release 0
-x 208
-y 240
-w 120
-h 16
-lineColor index 14
-fillColor index 3
-endObjectProperties
-
-# (Text Monitor)
-object activeXTextDspClass:noedit
-beginObjectProperties
-major 4
-minor 1
-release 0
-x 312
-y 328
-w 72
-h 16
-controlPv "$(device):CK:MC_PHASE_E"
-font "helvetica-medium-r-14.0"
-fgColor index 14
-fgAlarm
-bgColor index 4
-autoHeight
-limitsFromDb
-nullColor index 0
-fastUpdate
-showUnits
-newPos
-objType "monitors"
-endObjectProperties
-
-# (Text Monitor)
-object activeXTextDspClass:noedit
-beginObjectProperties
-major 4
-minor 1
-release 0
-x 312
-y 312
-w 72
-h 16
-controlPv "$(device):CK:MC_FREQ_E"
-font "helvetica-medium-r-14.0"
-fgColor index 14
-fgAlarm
-bgColor index 4
-autoHeight
-limitsFromDb
-nullColor index 0
-fastUpdate
-showUnits
-newPos
-objType "monitors"
-endObjectProperties
-
-# (Text Monitor)
-object activeXTextDspClass:noedit
-beginObjectProperties
-major 4
-minor 1
-release 0
-x 312
-y 296
-w 72
-h 16
-controlPv "$(device):CK:MC_DAC"
-font "helvetica-medium-r-14.0"
-fgColor index 14
-fgAlarm
-bgColor index 4
-autoHeight
-limitsFromDb
-nullColor index 0
-fastUpdate
-showUnits
-newPos
-objType "monitors"
-endObjectProperties
-
-# (Static Text)
-object activeXTextClass
-beginObjectProperties
-major 4
-minor 1
-release 0
-x 216
-y 328
-w 79
-h 16
-font "helvetica-medium-r-14.0"
-fgColor index 14
-bgColor index 0
-useDisplayBg
-value {
-  "Phase error:"
-}
-autoSize
-endObjectProperties
-
-# (Static Text)
-object activeXTextClass
-beginObjectProperties
-major 4
-minor 1
-release 0
-x 216
-y 312
-w 71
-h 16
-font "helvetica-medium-r-14.0"
-fgColor index 14
-bgColor index 0
-useDisplayBg
-value {
-  "Freq. error:"
-}
-autoSize
-endObjectProperties
-
-# (Static Text)
-object activeXTextClass
-beginObjectProperties
-major 4
-minor 1
-release 0
-x 216
-y 296
-w 81
-h 16
-font "helvetica-medium-r-14.0"
-fgColor index 14
-bgColor index 0
-useDisplayBg
-value {
-  "DAC setting:"
-}
-autoSize
-endObjectProperties
-
-# (Related Display)
-object relatedDisplayClass
-beginObjectProperties
-major 4
-minor 2
-release 0
-x 312
-y 264
-w 72
-h 22
-fgColor index 43
-bgColor index 3
-topShadowColor index 1
-botShadowColor index 11
-font "helvetica-bold-r-12.0"
-buttonLabel "MC"
-numPvs 4
-numDsps 1
-displayFileName {
-  0 "libera/clock_graphs.edl"
-}
-symbols {
-  0 "device=$(device),clock=MC"
-}
 endObjectProperties
 
 # (Text Monitor)
@@ -947,9 +743,9 @@ major 4
 minor 1
 release 0
 x 112
-y 328
+y 304
 w 88
-h 24
+h 22
 fgColor index 25
 bgColor index 3
 topShadowColor index 1
@@ -988,7 +784,7 @@ release 0
 x 312
 y 116
 w 112
-h 24
+h 22
 fgColor index 14
 fgAlarm
 bgColor index 3
@@ -1028,7 +824,7 @@ release 0
 x 208
 y 160
 w 264
-h 72
+h 56
 lineColor index 14
 fill
 fillColor index 4
@@ -1139,8 +935,8 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 280
-y 208
+x 416
+y 192
 w 48
 h 16
 controlPv "$(device):CK:MISSED_PC"
@@ -1230,7 +1026,7 @@ release 0
 x 392
 y 168
 w 72
-h 24
+h 22
 fgColor index 14
 onColor index 4
 offColor index 4
@@ -1244,6 +1040,238 @@ offLabel "Reset"
 font "helvetica-medium-r-14.0"
 endObjectProperties
 
+# (Related Display)
+object relatedDisplayClass
+beginObjectProperties
+major 4
+minor 2
+release 0
+x 16
+y 304
+w 88
+h 22
+fgColor index 43
+bgColor index 3
+topShadowColor index 1
+botShadowColor index 11
+font "helvetica-bold-r-12.0"
+buttonLabel "Open Loop"
+numPvs 4
+numDsps 1
+displayFileName {
+  0 "libera/open_loop.edl"
+}
+symbols {
+  0 "device=$(device)"
+}
+endObjectProperties
+
+# (Rectangle)
+object activeRectangleClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 208
+y 232
+w 264
+h 96
+lineColor index 14
+fill
+fillColor index 4
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 208
+y 224
+w 120
+h 16
+font "helvetica-medium-r-12.0"
+fontAlign "center"
+fgColor index 1
+bgColor index 10
+value {
+  "Clocks & Graphs"
+}
+endObjectProperties
+
+# (Rectangle)
+object activeRectangleClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 208
+y 224
+w 120
+h 16
+lineColor index 14
+fillColor index 3
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 312
+y 304
+w 72
+h 16
+controlPv "$(device):CK:MC_PHASE_E"
+font "helvetica-medium-r-14.0"
+fgColor index 14
+fgAlarm
+bgColor index 4
+autoHeight
+limitsFromDb
+nullColor index 0
+fastUpdate
+showUnits
+newPos
+objType "monitors"
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 312
+y 288
+w 72
+h 16
+controlPv "$(device):CK:MC_FREQ_E"
+font "helvetica-medium-r-14.0"
+fgColor index 14
+fgAlarm
+bgColor index 4
+autoHeight
+limitsFromDb
+nullColor index 0
+fastUpdate
+showUnits
+newPos
+objType "monitors"
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 312
+y 272
+w 72
+h 16
+controlPv "$(device):CK:MC_DAC"
+font "helvetica-medium-r-14.0"
+fgColor index 14
+fgAlarm
+bgColor index 4
+autoHeight
+limitsFromDb
+nullColor index 0
+fastUpdate
+showUnits
+newPos
+objType "monitors"
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 216
+y 304
+w 79
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "Phase error:"
+}
+autoSize
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 216
+y 288
+w 71
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "Freq. error:"
+}
+autoSize
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 216
+y 272
+w 81
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "DAC setting:"
+}
+autoSize
+endObjectProperties
+
+# (Related Display)
+object relatedDisplayClass
+beginObjectProperties
+major 4
+minor 2
+release 0
+x 312
+y 246
+w 72
+h 22
+fgColor index 43
+bgColor index 3
+topShadowColor index 1
+botShadowColor index 11
+font "helvetica-bold-r-12.0"
+buttonLabel "MC"
+numPvs 4
+numDsps 1
+displayFileName {
+  0 "libera/clock_graphs.edl"
+}
+symbols {
+  0 "device=$(device),clock=MC"
+}
+endObjectProperties
+
 # (Text Monitor)
 object activeXTextDspClass:noedit
 beginObjectProperties
@@ -1251,7 +1279,7 @@ major 4
 minor 1
 release 0
 x 392
-y 328
+y 304
 w 72
 h 16
 controlPv "$(device):CK:SC_PHASE_E"
@@ -1275,7 +1303,7 @@ major 4
 minor 1
 release 0
 x 392
-y 312
+y 288
 w 72
 h 16
 controlPv "$(device):CK:SC_FREQ_E"
@@ -1299,7 +1327,7 @@ major 4
 minor 1
 release 0
 x 392
-y 296
+y 272
 w 72
 h 16
 controlPv "$(device):CK:SC_DAC"
@@ -1322,34 +1350,8 @@ beginObjectProperties
 major 4
 minor 2
 release 0
-x 16
-y 328
-w 88
-h 22
-fgColor index 43
-bgColor index 3
-topShadowColor index 1
-botShadowColor index 11
-font "helvetica-bold-r-12.0"
-buttonLabel "Open Loop"
-numPvs 4
-numDsps 1
-displayFileName {
-  0 "libera/open_loop.edl"
-}
-symbols {
-  0 "device=$(device)"
-}
-endObjectProperties
-
-# (Related Display)
-object relatedDisplayClass
-beginObjectProperties
-major 4
-minor 2
-release 0
 x 392
-y 264
+y 246
 w 72
 h 22
 fgColor index 43
@@ -1375,9 +1377,9 @@ major 4
 minor 0
 release 0
 x 216
-y 264
+y 246
 w 88
-h 24
+h 22
 fgColor index 14
 fgAlarm
 bgColor index 3
