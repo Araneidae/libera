@@ -126,29 +126,6 @@ if [ -n "$IOC_CORE" -a -d "$IOC_CORE" ]; then
     echo "$IOC_CORE/core.%h.%t" >/proc/sys/kernel/core_pattern
 fi
 
-# Ensure that we're running our own version of lmtd
-if ((RESTART_LMTD))  ||  ! [ -e /tmp/clockPll.command ]; then
-    [ -e /var/run/lmtd.pid ]  &&  kill $(cat /var/run/lmtd.pid)
-    [ -e /var/run/lstd.pid ]  &&  kill $(cat /var/run/lstd.pid)
-    if [ -e /var/run/lplld.pid ]; then
-        kill $(cat /var/run/lplld.pid)
-        sleep 1
-    fi
-    $BIN_DIR/clockPll -p$MCPRESC -d$DECIMATION -r$HARMONIC
-fi
-
-# Ensure the DSC daemon isn't running: we're going to replace its
-# functionality!
-if [ -e /var/run/ldscd.pid ]; then
-    kill $(cat /var/run/ldscd.pid)
-    # It seems to be quite important to give the DSC daemon time to quit.
-    sleep 1
-fi
-
-# Finally ensure the CSPI levent daemon isn't running: we want to dispatch
-# our own events, thank you very much.
-[ -e /var/run/leventd.pid ]  &&  kill $(cat /var/run/leventd.pid)
-
 
 # Export the database parameters needed to configure libera.db.  These are
 # record lengths which need to be defined at IOC startup.
@@ -181,8 +158,9 @@ IocParameter -f $FREV
 # Now run the IOC.
 echo 'Starting IOC at' $(date)
 echo "IOC parameters: ${IOC_PARAMETERS[*]}"
-$BIN_DIR/ioc "${IOC_PARAMETERS[@]}" $BIN_DIR/st.cmd
+"$BIN_DIR"/ioc "${IOC_PARAMETERS[@]}" "$BIN_DIR"/st.cmd
 echo 'IOC stopped at' $(date)
+
 
 # When we exit make a good effort to clean up any debris.  If we crashed (and
 # were unlucky) we may have left lots of threads behind!

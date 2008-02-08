@@ -1,0 +1,121 @@
+#!/bin/sh
+
+# This file is part of the Libera EPICS Driver,
+# Copyright (C) 2005 Instrumentation Technologies
+# Copyright (C) 2008 Michael Abbott, Diamond Light Source Ltd.
+#
+# The Libera EPICS Driver is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# The Libera EPICS Driver is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc., 51
+# Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# Contact:
+#      Dr. Michael Abbott,
+#      Diamond Light Source Ltd,
+#      Diamond House,
+#      Chilton,
+#      Didcot,
+#      Oxfordshire,
+#      OX11 0DE
+#      michael.abbott@diamond.ac.uk
+
+# libera - Start/stop Libera (FPGA design, driver & PLL daemon).
+
+
+# Source function library.
+. /etc/init.d/functions
+
+# Pick up the Libera configuration
+CONFIGDIR=/etc/sysconfig
+. "$CONFIGDIR"/libera
+. "$CONFIGDIR"/epics_ioc    
+
+# Validate the configuration
+: "${DESIGN:?}"             # Path to FPGA design.
+: "${FLMCDHZ:?}"            # Machine clock frequency in dHz (10^-1 Hz)
+: "${DECIMATION:?}"         # Number of samples per machine revolution
+: "${DFA:?}"                # Number of turns per FA point
+: "${FREV:?}"               # Machine revolution frequency in Hz
+: "${MCPRESC:?}"            # Machine clocks per machine clock PLL interrupt
+: "${NCLK_ADC:?}"           # Number of times shift enable written(?)
+: "${HARMONIC:?}"           # Number of bunches per machine revolution
+: "${IL_K_CORR_ADC_LIMIT:?}"        # ADC interlock overflow filter scaling
+: "${IL_MAX_ADC_OVERFLOW_DUR:?}"    # factor and duration limit
+: "${LIBERA_IOC}"           # Path to EPICS IOC
+
+case "$1" in
+    start)
+        # First load the FPGA design
+        echo -n "Loading FPGA design..."
+        /opt/bin/fp < $DESIGN
+        evaluate_retval
+
+        # Initialize FPGA design
+        echo -n "Initializing FPGA design..."
+        /opt/bin/fpga_init $NCLK_ADC > /dev/null
+        evaluate_retval
+
+        # Load MSP driver
+        echo -n "Loading MSP driver..."
+        modprobe msp
+        evaluate_retval
+
+        # Load the driver with proper parameters
+        echo -n "Loading Libera driver..."
+        modprobe libera \
+            flmcdHz=$FLMCDHZ d=$DECIMATION dfa=$DFA \
+            kadc=$IL_K_CORR_ADC_LIMIT ilkdur=$IL_MAX_ADC_OVERFLOW_DUR
+        evaluate_retval
+
+        # Start the clock PLL daemon from the same directory as the EPICS IOC
+        echo -n "Loading clock PLL daemon..."
+        BIN_DIR="$(dirname "$LIBERA_IOC")"
+        "$BIN_DIR"/clockPll -p$MCPRESC -d$DECIMATION -r$HARMONIC
+        evaluate_retval
+
+        # Optionally start Libera Generic server
+        [ -n "$SERVER_BOOT" ]  &&  "$SERVER_BOOT" start
+        ;;
+
+    stop)
+        # Optionally stop Libera Generic server
+        [ -n "$SERVER_BOOT" ]  &&  "$SERVER_BOOT" stop
+
+        # Kill the daemon
+        echo -n "Killing clock PLL daemon..."
+        kill $(cat /var/run/clockPll.pid)
+        evaluate_retval
+
+        # Need to pause a moment
+        sleep 1
+
+        # Remove Libera driver
+        echo -n "Removing Libera driver..."
+        modprobe -r libera
+        evaluate_retval
+
+        # Remove MSP driver
+        echo -n "Removing MSP driver..."
+        modprobe -r msp
+        evaluate_retval
+        ;;
+
+    restart)
+        $0 stop
+        sleep 1
+        $0 start
+        ;;
+        
+    *)  echo "Usage: $0 {start|stop|restart}"
+        exit 1
+        ;;
+esac
