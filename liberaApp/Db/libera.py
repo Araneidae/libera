@@ -229,6 +229,8 @@ def FreeRunning():
     # In this mode we provide all the available data: raw IQ, buttons and
     # computed positions.
     Trigger(True, IQ_wf(LENGTH) + ABCD_wf(LENGTH) + XYQS_wf(LENGTH))
+    # Trigger capture offset
+    longOut('DELAY', DESC = 'Trigger capture offset')
     
     UnsetChannelName()
         
@@ -289,6 +291,8 @@ def TurnByTurn():
         DESC = 'TT set readout window offset')
     offset = longIn('OFFSET', 0, LONG_LENGTH, PINI = 'YES',
         DESC = 'TT readout offset readback')
+    # Trigger capture offset
+    longOut('DELAY', DESC = 'Trigger capture offset')
 
     Trigger(True, 
         # Raw I and Q values

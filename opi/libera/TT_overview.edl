@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 134
-y 65
+x 139
+y 86
 w 584
 h 760
 font "helvetica-medium-r-18.0"
@@ -97,7 +97,7 @@ minor 1
 release 0
 x 8
 y 664
-w 98
+w 97
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -142,7 +142,7 @@ minor 1
 release 0
 x 8
 y 688
-w 79
+w 78
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -187,7 +187,7 @@ minor 1
 release 0
 x 8
 y 712
-w 77
+w 73
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -231,7 +231,7 @@ minor 1
 release 0
 x 8
 y 736
-w 63
+w 62
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -485,5 +485,50 @@ displayFileName {
 symbols {
   0 "device=$(device)"
 }
+endObjectProperties
+
+# (Text Control)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 328
+y 664
+w 80
+h 20
+controlPv "$(device):TT:DELAY_S"
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+editable
+autoHeight
+motifWidget
+limitsFromDb
+nullColor index 0
+useHexPrefix
+newPos
+objType "controls"
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 216
+y 664
+w 92
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "Capture offset:"
+}
+autoSize
 endObjectProperties
 

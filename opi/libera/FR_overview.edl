@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 179
-y 22
+x 184
+y 43
 w 588
 h 696
 font "helvetica-medium-r-18.0"
@@ -232,5 +232,50 @@ botShadowColor index 11
 label "EXIT"
 font "helvetica-medium-r-12.0"
 3d
+endObjectProperties
+
+# (Text Control)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 120
+y 664
+w 80
+h 20
+controlPv "$(device):FR:DELAY_S"
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+editable
+autoHeight
+motifWidget
+limitsFromDb
+nullColor index 0
+useHexPrefix
+newPos
+objType "controls"
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 8
+y 664
+w 92
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "Capture offset:"
+}
+autoSize
 endObjectProperties
 

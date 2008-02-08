@@ -55,12 +55,17 @@ public:
         WaveformAbcd(WaveformLength),
         WaveformXyqs(WaveformLength)
     {
+        CaptureOffset = 0;
+        
         /* Publish all the waveforms and the interlock. */
         WaveformIq.Publish("FR");
         WaveformAbcd.Publish("FR");
         WaveformXyqs.Publish("FR");
+        Publish_longout("FR:DELAY", CaptureOffset);
+        
         Interlock.Publish("FR", true);
         Enable.Publish("FR");
+        
         /* Announce our interest in the trigger. */
         RegisterTriggerEvent(*this, PRIORITY_FR);
     }
@@ -80,7 +85,7 @@ public:
         Interlock.Wait();
 
         /* Capture and convert everything. */
-        WaveformIq.Capture();
+        WaveformIq.Capture(1, CaptureOffset);
         WaveformAbcd.CaptureCordic(WaveformIq);
         WaveformXyqs.CaptureConvert(WaveformAbcd);
 
@@ -95,6 +100,8 @@ private:
     IQ_WAVEFORMS WaveformIq;
     ABCD_WAVEFORMS WaveformAbcd;
     XYQS_WAVEFORMS WaveformXyqs;
+
+    int CaptureOffset;
 
     /* EPICS interlock. */
     INTERLOCK Interlock;

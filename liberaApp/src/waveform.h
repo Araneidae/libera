@@ -188,7 +188,7 @@ public:
     
     /* Capture the currently selected active length of waveform from the data
      * source.  Possible decimations are 1 or 64, as determined by the FPGA. */
-    void Capture(int Decimation = 1);
+    void Capture(int Decimation = 1, int Offset = 0);
     /* Capture the postmortem buffer. */
     void CapturePostmortem();
 };

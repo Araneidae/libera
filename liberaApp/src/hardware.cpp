@@ -233,13 +233,13 @@ bool GetClockState(bool &LmtdLocked, bool &LstdLocked)
 
 size_t ReadWaveform(
     int Decimation, size_t WaveformLength, LIBERA_ROW * Data,
-    LIBERA_TIMESTAMP & Timestamp)
+    LIBERA_TIMESTAMP & Timestamp, int Offset)
 {
     const int ReadSize = sizeof(LIBERA_ROW) * WaveformLength;
     int Read;
     bool Ok =
         TEST_(ioctl, DevDd, LIBERA_IOC_SET_DEC, &Decimation)  &&
-        TEST_(lseek, DevDd, 0, LIBERA_SEEK_TR)  &&
+        TEST_(lseek, DevDd, Offset, LIBERA_SEEK_TR)  &&
         TEST_IO(Read, read, DevDd, Data, ReadSize) &&
         TEST_(ioctl, DevDd, LIBERA_IOC_GET_DD_TSTAMP, &Timestamp);
 

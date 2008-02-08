@@ -60,6 +60,7 @@ public:
         LongTrigger(false)
     {
         WindowOffset = 0;
+        CaptureOffset = 0;
         /* Make the default capture length equal to one window. */
         WindowLength = WindowWaveformLength;
         LongWaveform.SetLength(WindowLength);
@@ -87,6 +88,7 @@ public:
             SetWindowLength, WindowLength);
         PUBLISH_METHOD_IN(longin,   "TT:CAPTURED", GetCapturedLength);
         Publish_longin("TT:OFFSET", WindowOffset);
+        Publish_longout("TT:DELAY", CaptureOffset);
 
         /* Turn by turn triggering is rather complicated, and needs to occur
          * in two stages.  The idea is that only a single shot of turn by
@@ -114,7 +116,7 @@ public:
             Armed = false;
             /* Capture the full turn-by-turn undecimated waveform of the
              * requested length. */
-            LongWaveform.Capture();
+            LongWaveform.Capture(1, CaptureOffset);
 
             /* Also bring the short waveforms up to date.  Do this before
              * updating the long trigger so that the reader knows there is
@@ -261,6 +263,8 @@ private:
     /* This is the currently selected window length.  It is also maintained
      * as the working length of the three window waveform blocks. */
     int WindowLength;
+    /* This is the trigger offset. */
+    int CaptureOffset;
 };
 
 

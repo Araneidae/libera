@@ -286,10 +286,10 @@ void WAVEFORMS<IQ_ROW>::Publish(const char * Prefix, const char *SubName) const
 }
 
 
-void IQ_WAVEFORMS::Capture(int Decimation)
+void IQ_WAVEFORMS::Capture(int Decimation, int Offset)
 {
     ActiveLength = ReadWaveform(
-        Decimation, CurrentLength, (LIBERA_ROW *) Data, Timestamp);
+        Decimation, CurrentLength, (LIBERA_ROW *) Data, Timestamp, Offset);
     /* If Libera timestamps have been disabled (typically because the system
      * clock isn't synchronised) then we have to ignore the timestamp just
      * read and read the current time instead. */

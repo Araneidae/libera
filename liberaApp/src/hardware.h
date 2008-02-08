@@ -129,7 +129,7 @@ typedef libera_timestamp_t LIBERA_TIMESTAMP;
  *     At present only decimation values of 1 or 64 are suppported. */
 size_t ReadWaveform(
     int Decimation, size_t WaveformLength, LIBERA_ROW * Data,
-    LIBERA_TIMESTAMP & Timestamp);
+    LIBERA_TIMESTAMP & Timestamp, int Offset = 0);
 
 /* Reads the postmortem buffer. */
 size_t ReadPostmortem(
