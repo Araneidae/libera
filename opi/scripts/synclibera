@@ -4,6 +4,7 @@ import sys
 import os.path
 import optparse
 import time
+import datetime
 
 from pkg_resources import require
 require("dls.ca2")
@@ -169,12 +170,12 @@ def FindCommonValue(values):
     return v
         
 
-def AnalyseTimes(location, bpms, times):
+def AnalyseTimes(location, bpms, times, margin):
     common_time = FindCommonValue(times)
     
     print '%s:' % location, common_time
     for bpm, time in zip(bpms, times):
-        if time != common_time:
+        if abs(time - common_time) > margin:
             print ' ', bpm, time
 
         
@@ -193,7 +194,9 @@ def CheckSystemClocks(bpms, evrs, trigger):
     caput(PVs(evrs, 'TRIG:MODE'), 'Normal', catools.dbr_string)
     caput(PVs(bpms, 'CK:TIMESTAMP_S'), 'NTP time', catools.dbr_string)
     
-    AnalyseTimes('Time', bpms, [mcl.dbr.stamp for mcl in mcls])
+    AnalyseTimes(
+        'Time', bpms, [mcl.dbr.stamp for mcl in mcls],
+        margin = datetime.timedelta(0))
     
 
     
@@ -215,7 +218,8 @@ def CheckMachineClocks(lb_bpms, bs_bpms, sr_bpms, ts_bpms, evrs, trigger):
 
             AnalyseTimes(location, bpms,
                 [mcl.value + 2**31 * mch.value
-                    for mcl, mch in zip(mcls, mchs)])
+                    for mcl, mch in zip(mcls, mchs)],
+                margin = 1)
     
     print '  Restoring event processing'
     caput(PVs(evrs, 'TRIG:MODE'), 'Normal', catools.dbr_string)

@@ -1026,7 +1026,30 @@ font "helvetica-bold-r-12.0"
 buttonLabel "Strip"
 numCmds 1
 command {
-  0 "./scripts/channels.py $(device)"
+  0 "channels.py $(device)"
 }
 endObjectProperties
 
+
+# (Shell Command)
+object shellCmdClass
+beginObjectProperties
+major 4
+minor 2
+release 0
+x 4
+y 4
+w 24
+h 24
+fgColor index 14
+bgColor index 3
+topShadowColor index 1
+botShadowColor index 11
+font "helvetica-bold-r-14.0"
+buttonLabel "?"
+numCmds 1
+command {
+  0 "libera-help conditioning"
+}
+includeHelpIcon
+endObjectProperties

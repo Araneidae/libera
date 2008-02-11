@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 241
-y 48
+x 246
+y 69
 w 585
 h 696
 font "helvetica-medium-r-18.0"
@@ -58,7 +58,6 @@ w 568
 h 192
 # Appearance
 graphTitle "Total Intensity"
-yLabel "Intensity"
 fgColor index 14
 bgColor index 3
 gridColor index 14
@@ -239,5 +238,28 @@ botShadowColor index 11
 label "EXIT"
 font "helvetica-medium-r-12.0"
 3d
+endObjectProperties
+
+# (Shell Command)
+object shellCmdClass
+beginObjectProperties
+major 4
+minor 2
+release 0
+x 4
+y 4
+w 24
+h 24
+fgColor index 14
+bgColor index 3
+topShadowColor index 1
+botShadowColor index 11
+font "helvetica-bold-r-14.0"
+buttonLabel "?"
+numCmds 1
+command {
+  0 "libera-help BO_overview"
+}
+includeHelpIcon
 endObjectProperties
 

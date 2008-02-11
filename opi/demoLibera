@@ -6,4 +6,5 @@ EDM="$(
 
 cd "$(dirname "$0")"
 export EPICS_CA_MAX_ARRAY_BYTES=1000000
+PATH="$(pwd)"/scripts:"$PATH"
 $EDM -x -eolc launcher.edl &

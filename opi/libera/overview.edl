@@ -3,7 +3,7 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 1616
+x 1620
 y 21
 w 296
 h 401
@@ -78,7 +78,7 @@ fontAlign "center"
 fgColor index 14
 bgColor index 73
 value {
-  "$(device) Overview"
+  "$(device)"
 }
 endObjectProperties
 
@@ -1115,5 +1115,28 @@ nullColor index 0
 useHexPrefix
 newPos
 objType "controls"
+endObjectProperties
+
+# (Shell Command)
+object shellCmdClass
+beginObjectProperties
+major 4
+minor 2
+release 0
+x 4
+y 4
+w 24
+h 24
+fgColor index 14
+bgColor index 3
+topShadowColor index 1
+botShadowColor index 11
+font "helvetica-bold-r-14.0"
+buttonLabel "?"
+numCmds 1
+command {
+  0 "libera-help overview"
+}
+includeHelpIcon
 endObjectProperties
 
