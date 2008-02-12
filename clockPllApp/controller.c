@@ -42,9 +42,12 @@
 #include <math.h>
 #include <string.h>
 #include <syslog.h>
+#include <pthread.h>
 
 #include "driver/libera.h"
+#include "test_error.h"
 #include "libera_pll.h"
+
 #include "clockPll.h"
 
 #include "controller.h"
@@ -63,25 +66,10 @@
     array[0] = (value)
 
 
-/* The DAC always starts in the middle of its range in the absence of any
- * other information.  This only applies to system startup, anyway. */
-#define INITIAL_DAC     0x8000
 
+/* Truncates clock offset to 32 bit value. */
 
-/* Used to truncate DAC setting to valid range. */
-
-static int ClipDAC(int dac)
-{
-    if (dac < 0)
-        dac = 0;
-    else if (dac >= 0xFFFF)
-        dac = 0xFFFF;
-    return dac;
-}
-
-
-
-int clip_to_int(long long value)
+static int clip_to_int(long long value)
 {
     if (value < INT_MIN)
         return INT_MIN;
@@ -92,6 +80,10 @@ int clip_to_int(long long value)
 }
 
 
+/* Called whenever synchronisation appears to have been lost (we're quite
+ * touchy about holding this flag).  A message is logged if it really has
+ * been dropped. */
+
 static void DropSynchronisation(CONTROLLER *Controller, const char * Reason)
 {
     if (Controller->Synchronised == SYNC_SYNCHRONISED)
@@ -101,10 +93,22 @@ static void DropSynchronisation(CONTROLLER *Controller, const char * Reason)
 }
 
 
+/* Captures the next clock interrupt.  We spend most time waiting for the
+ * next interrupt, and so here we drop the synchronisation lock. */
+
+static bool GetClock(CONTROLLER *Controller)
+{
+    TEST_0(pthread_mutex_unlock, &Controller->Interlock);
+    Controller->ClockOk = Controller->GetClock(&Controller->Clock);
+    TEST_0(pthread_mutex_lock, &Controller->Interlock);
+    return Controller->ClockOk;
+}
+
+
 /* Updates the clock settings given a new clock reading. */
 
 static void UpdateClockState(
-    CONTROLLER *Controller, bool PhaseLocked, libera_hw_time_t clock)
+    CONTROLLER *Controller, bool PhaseLocked, libera_hw_time_t OldClock)
 {
     Controller->PhaseLocked = PhaseLocked;
     if (! PhaseLocked)
@@ -112,8 +116,7 @@ static void UpdateClockState(
     
     /* The frequency error is determined by comparing the actual clock advance
      * with the expected nominal advance. */
-    libera_hw_time_t ClockFrequency = clock - Controller->Clock;
-    Controller->Clock = clock;
+    libera_hw_time_t ClockFrequency = Controller->Clock - OldClock;
 
     /* The nominal clock advance (assuming correct frequency and perfect phase
      * lock) is determined by the prescale together with any frequency
@@ -126,13 +129,13 @@ static void UpdateClockState(
     if (PhaseLocked)
         Controller->NominalClock += NominalAdvance;
     else
-        Controller->NominalClock = clock;
+        Controller->NominalClock = Controller->Clock;
 
     /* The phase offset which we report to the driver is simply the difference
      * between the nominal clock and the actual clock; on the other hand, the
      * phase error which is reported and controlled also takes any programmed
      * phase offset into account. */
-    long long PhaseOffset = Controller->NominalClock - clock;
+    long long PhaseOffset = Controller->NominalClock - Controller->Clock;
     Controller->PhaseError =
         clip_to_int(PhaseOffset + Controller->phase_offset);
     Controller->FrequencyError =
@@ -153,18 +156,23 @@ static void UpdateClockState(
 }
 
 
+/* Controller synchronisation status: used to manage controller state and
+ * status reporting.  The slew acceptance determines how easily the
+ * synchronisation flag is lost. */
+
 typedef enum
 {
-    PHASE_UNLOCKED,
-    PHASE_LOCK_WIDE,
-    PHASE_LOCK_NARROW    
+    PHASE_UNLOCKED,     // Not phase locked, don't try to track phase
+    PHASE_LOCK_WIDE,    // Phase locked.  Allow wide acceptance slewing
+    PHASE_LOCK_NARROW   // Narrow phase lock, set minimum slew acceptance
 } PHASE_LOCK;
 
 
 /* Reads the current clock, if possible, and updates the frequency and phase
  * error calculations. */
 
-bool UpdateClock(CONTROLLER *Controller, bool OpenLoop, PHASE_LOCK PhaseLock)
+static bool UpdateClock(
+    CONTROLLER *Controller, bool OpenLoop, PHASE_LOCK PhaseLock)
 {
     if (OpenLoop != Controller->OpenLoop)
         return false;
@@ -172,18 +180,17 @@ bool UpdateClock(CONTROLLER *Controller, bool OpenLoop, PHASE_LOCK PhaseLock)
     {
         if (PhaseLock == PHASE_LOCK_NARROW  &&
                 Controller->Synchronised == SYNC_SYNCHRONISED)
-            /* Once we're synchronised allow the slewing process to proceed.
-             * (There is a race condition here...) */
+            /* Once we're synchronised and narrow phase lock is found restore
+             * the narrow phase error limit. */
             Controller->Slewing = false;
         
-        libera_hw_time_t clock;
-        Controller->ClockOk = Controller->GetClock(&clock);
-        if (Controller->ClockOk)
+        libera_hw_time_t OldClock = Controller->Clock;
+        if (GetClock(Controller))
             /* Note that we only need to update the internal state if we
              * successfully capture the clock: failed clock capture is
              * handled separately in run_get_clock(). */
             UpdateClockState(
-                Controller, PhaseLock != PHASE_UNLOCKED, clock);
+                Controller, PhaseLock != PHASE_UNLOCKED, OldClock);
         return Controller->ClockOk;
     }
 }
@@ -236,9 +243,14 @@ static void ReportState(CONTROLLER *Controller)
 
 
 
-void SetDAC(CONTROLLER *Controller, int dac)
+static void SetDAC(CONTROLLER *Controller, int dac)
 {
-    Controller->Dac = ClipDAC(dac);
+    /* Ensure DAC setting is in valid range before assigning. */
+    if (dac < 0)
+        dac = 0;
+    else if (dac >= 0xFFFF)
+        dac = 0xFFFF;
+    Controller->Dac = dac;
     Controller->SetDAC(Controller->Dac);
 
     /* Once the DAC has been set we're ready to fill out a complete report to
@@ -434,10 +446,7 @@ static void run_get_clock(CONTROLLER *Controller)
         Controller->NotifyDriver(
             Controller->prescale + Controller->frequency_offset, 0, false);
         ReportState(Controller);
-        
-        /* Now try again to capture the clock. */
-        Controller->ClockOk = Controller->GetClock(&Controller->Clock);
-    } while (!Controller->ClockOk);
+    } while (!GetClock(Controller));
     Controller->NominalClock = Controller->Clock;
 }
 
@@ -482,24 +491,17 @@ static void run_stages(CONTROLLER *Controller)
 
 /* This runs the controller. */
 
-void run_controller(CONTROLLER *Controller)
+static void* run_controller(void *Context)
 {
-    Controller->Dac = INITIAL_DAC;
-    Controller->OpenLoop = false;
-    Controller->Verbose = false;
-    Controller->StatusReportInterval = 10;
+    CONTROLLER *Controller = (CONTROLLER *) Context;
     
-    Controller->WasPhaseLocked = false;
-    Controller->PreviousStage = 0;
-    Controller->ReportAge = 0;
-    
-    Controller->Synchronised = SYNC_NO_SYNC;
-    Controller->WasSynchronised = SYNC_NO_SYNC;
-    Controller->Slewing = false;
-
-    /* Sensible initial defaults for first reports. */
-    Controller->PhaseError = 0;
-    Controller->FrequencyError = 0;
+    /* We take a very simple minded approach to interlocking between the
+     * command interpreter and the controller threads: all commands are
+     * interpreted under the lock, and the controller holds the lock except
+     * while it is reading the clock.  This is easy, requires no subtle
+     * analysis, and simply works.
+     *    So here we start things off by capturing the lock. */
+    TEST_0(pthread_mutex_lock, &Controller->Interlock);
     
     while (true)
     {
@@ -515,7 +517,9 @@ void run_controller(CONTROLLER *Controller)
                 run_stages(Controller);
         }
     }
+    return NULL;
 }
+
 
 
 /*****************************************************************************/
@@ -523,6 +527,10 @@ void run_controller(CONTROLLER *Controller)
 /*                          Command Interpreter                              */
 /*                                                                           */
 /*****************************************************************************/
+
+
+/* Adjust the detune frequency.  Of course, changing the detune drops the
+ * synchronisation flag. */
 
 static void SetFrequencyOffset(CONTROLLER *Controller, int Offset)
 {
@@ -534,12 +542,12 @@ static void SetFrequencyOffset(CONTROLLER *Controller, int Offset)
 }
 
 
+/* Manages the synchronisation flag.  Use s1 to start tracking
+ * synchronisation before generating a trigger, use s2 to confirm successful
+ * synchronisation. */
+
 static void SetSynchronisation(CONTROLLER *Controller, int Command)
 {
-    /* Updates the synchronisation state.  The two important
-     * cases are s1 and s2.
-     *    Note that we really should lock our threads: there are
-     * some interesting race conditions below! */
     switch (Command)
     {
         case SYNC_NO_SYNC:
@@ -569,32 +577,38 @@ static void SetSynchronisation(CONTROLLER *Controller, int Command)
 }
 
 
-void SetPhaseOffset(CONTROLLER *Controller, int PhaseOffset)
+/* Move the phase relative to the synchronised trigger point. */
+
+static void SetPhaseOffset(CONTROLLER *Controller, int PhaseOffset)
 {
     /* Setting the phase offset can potentially introduce a massive phase
      * delta.  As this is clearly deliberate, we temporarily open the slewing
-     * interval to avoid dropping the synchronisation flag.
-     *     Note the fudge factor to cope with trivial overshoot. */
+     * interval to avoid dropping the synchronisation flag.  Note the fudge
+     * factor to cope with trivial overshoot. */
     if (abs(Controller->phase_offset - PhaseOffset) + 10 >
             Controller->max_normal_phase_error)
-        /* Simply setting the slewing state works *most* of the time, but
-         * occasionally it will fail.  The problem is that we're not actually
-         * synchronising with the PLL thread.  Most of the time it is blocked
-         * in a GetClock() call ... but if the first half of UpdateClock()
-         * happens first then we're out of luck.
-         *    Alas, it's quite hard to get this right ... and almost a
-         * complete waste of time, as 1) the probability of dropping sync is
-         * low, and 2) the consequence of doing so pretty minimal, and 3) this
-         * function is seldom called! */
         Controller->Slewing = true;
     Controller->phase_offset = PhaseOffset;
 }
 
 
-/* Simple command interpreter. */
+/* Simple command interpreter.
+ *
+ * The following commands are for normal operation:
+ *  o   Detune: adds offset to the managed frequency
+ *  p   Phase offset: moves phase relative to synchronisation point
+ *  s   Synchronisation flag control
+ *  v   Controls verbosity of status reports
+ *
+ * The following commands are only intended for diagnostic use:
+ *  c   Selects open loop control: DAC is only set externally by d command
+ *  d   Set DAC value directly if open loop mode selected
+ *  i   Status report interval
+ */
 
 void ControllerCommand(CONTROLLER *Controller, char *Command)
 {
+    TEST_0(pthread_mutex_lock, &Controller->Interlock);
     int arg = atoi(Command + 1);
     switch (Command[0])
     {
@@ -608,4 +622,35 @@ void ControllerCommand(CONTROLLER *Controller, char *Command)
         default:
             log_message(LOG_ERR, "Unknown command \"%s\"", Command);
     }
+    TEST_0(pthread_mutex_unlock, &Controller->Interlock);
+}
+
+
+
+/* Runs the given controller in its own thread after initialising it. */
+
+bool spawn_controller(CONTROLLER *Controller)
+{
+    TEST_0(pthread_mutex_init, &Controller->Interlock, NULL);
+
+    /* Start the DAC in the middle of its range on startup. */
+    Controller->Dac = 0x8000;
+    Controller->OpenLoop = false;
+    Controller->Verbose = false;
+    Controller->StatusReportInterval = 10;
+    
+    Controller->WasPhaseLocked = false;
+    Controller->PreviousStage = 0;
+    Controller->ReportAge = 0;
+    
+    Controller->Synchronised = SYNC_NO_SYNC;
+    Controller->WasSynchronised = SYNC_NO_SYNC;
+    Controller->Slewing = false;
+
+    /* Sensible initial defaults for first reports. */
+    Controller->PhaseError = 0;
+    Controller->FrequencyError = 0;
+
+    pthread_t ThreadId;
+    return TEST_0(pthread_create, &ThreadId, NULL, run_controller, Controller);
 }

@@ -127,13 +127,6 @@ static CONTROLLER SC_Controller =
 
 
 
-static void* SystemClockThread(void*Context)
-{
-    run_controller(&SC_Controller);
-    return NULL;
-}
-
-
 void SystemClockCommand(char *Command)
 {
     ControllerCommand(&SC_Controller, Command);
@@ -143,11 +136,10 @@ void SystemClockCommand(char *Command)
 bool InitialiseSystemClock()
 {
     unsigned int init_locked = false;
-    pthread_t ThreadId;
     return 
         /* Enable machine clock trigger events. */
         TEST_(ioctl, event_fd, LIBERA_EVENT_ENABLE_SC_TRIG, TRIGGER_BIT(5))  &&
         /* Initially report the machine clock as unlocked.*/
         TEST_(ioctl, event_fd, LIBERA_EVENT_SET_SCPLL, &init_locked)  &&
-        TEST_0(pthread_create, &ThreadId, NULL, SystemClockThread, NULL);
+        spawn_controller(&SC_Controller);
 }

@@ -621,8 +621,8 @@ def Clock():
     # since the last recorded trigger and signals an alarm according to how
     # long the delay has been.
     tick = records.calc('TICK',
-        SCAN = '.1 second',
-        CALC = 'A+0.1',
+        SCAN = '.5 second',
+        CALC = 'A+0.5',
         EGU  = 's', PREC = 1,
         HIGH = 1,   HSV  = 'MINOR')
     tick.INPA = tick

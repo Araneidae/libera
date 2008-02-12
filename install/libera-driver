@@ -37,7 +37,7 @@
 # Pick up the Libera configuration
 CONFIGDIR=/etc/sysconfig
 . "$CONFIGDIR"/libera
-. "$CONFIGDIR"/epics_ioc    
+. "$CONFIGDIR"/epics_ioc
 
 # Validate the configuration
 : "${DESIGN:?}"             # Path to FPGA design.
@@ -82,25 +82,26 @@ case "$1" in
         "$BIN_DIR"/clockPll -p$MCPRESC -d$DECIMATION -r$HARMONIC
         evaluate_retval
 
-        # Optionally start Libera Generic server
-        [ -n "$SERVER_BOOT" ]  &&  "$SERVER_BOOT" start
+        # Optionally start the EPICS IOC
+        [ "$START_EPICS" = yes ]  && /etc/init.d/epics start
         ;;
 
     stop)
-        # Optionally stop Libera Generic server
-        [ -n "$SERVER_BOOT" ]  &&  "$SERVER_BOOT" stop
+        # Stop the EPICS IOC if it's running
+        [ -e /var/run/ioc.pid ]  &&  /etc/init.d/epics stop
 
         # Kill the daemon
         echo -n "Killing clock PLL daemon..."
         kill $(cat /var/run/clockPll.pid)
         evaluate_retval
 
-        # Need to pause a moment
-        sleep 1
-
-        # Remove Libera driver
+        # Remove Libera driver.  We need to keep trying, as earlier processes
+        # can end up taking quite a long time to go away at this point...
         echo -n "Removing Libera driver..."
-        modprobe -r libera
+        for ((i = 0; i < 10; i++)); do
+            sleep 0.5
+            modprobe -r libera  &&  break
+        done
         evaluate_retval
 
         # Remove MSP driver

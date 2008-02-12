@@ -43,7 +43,7 @@ typedef int CONTROLLER_ACTION(
 typedef struct
 {
     CONTROLLER_ACTION *Action;
-    void * Context;
+    const void * Context;
 } CONTROLLER_STAGE;
 
 
@@ -51,6 +51,9 @@ typedef struct
  * controller. */
 typedef struct CONTROLLER
 {
+    /*************************************************************************/
+    /* The following parameters must be specified to define the controller.  */
+    
     /* Clock definition parameters. */
     unsigned int prescale;      // Nominal phase advance per tick
     int frequency_offset;       // Extra phase advance (frequency shift)
@@ -71,6 +74,10 @@ typedef struct CONTROLLER
     void (*NotifyDriver)(
         libera_hw_time_t Frequency, libera_hw_time_t Phase, bool PhaseLocked);
 
+    
+    /*************************************************************************/
+    /* The following variables are private to the controller.                */
+    
     /* Controller state control. */
     bool ClockOk;               // True iff last reading of clock was ok
     bool OpenLoop;              // Controls open loop behaviour
@@ -93,6 +100,14 @@ typedef struct CONTROLLER
     /* Synchronisation holding. */
     PLL_SYNC_STATE Synchronised;    // Synchronisation state
     PLL_SYNC_STATE WasSynchronised;
+
+    pthread_mutex_t Interlock;  // Interlock between commands and control
+
+    /* End of controller private variables.                                  */
+    
+
+    /*************************************************************************/
+    /* The following parameters must be specified to define the controller.  */
 
     /* Array of controller stages.  (This has to come last because of the open
      * ended list.) */
@@ -154,7 +169,7 @@ CONTROLLER_ACTION run_IIR;
 
 
 /* Controller. */
-void run_controller(CONTROLLER *Controller) __attribute__((noreturn));
+bool spawn_controller(CONTROLLER *Controller);
 
 /* Command interpreter for controller. */
 void ControllerCommand(CONTROLLER *Controller, char *Command);

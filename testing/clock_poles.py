@@ -5,7 +5,7 @@
 from pkg_resources import require as Require
 Require('matplotlib')
 Require('dls.ca2')
-Require('dls.thread')
+Require('dls.thread==1.12')
 
 from dls import thread
 import pylab

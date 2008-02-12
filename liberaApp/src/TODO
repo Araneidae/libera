@@ -9,5 +9,3 @@ Work to do
   to 1/4 f_s.
 
 * Sort out scaling between SA:CURRENT and FT:CHARGE.
-
-* Implement smooth DSC transitions on attenuator change.

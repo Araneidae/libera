@@ -257,14 +257,6 @@ bool SetNcoFrequency(int nco_offset)
 
 
 
-static void * MachineClockThread(void *Context)
-{
-    run_controller(&MC_Controller);
-    return NULL;
-}
-
-
-
 void MachineClockCommand(char *Command)
 {
     ControllerCommand(&MC_Controller, Command);
@@ -279,7 +271,6 @@ bool InitialiseMachineClock(MC_PARAMETERS *Params)
     MC_Controller.prescale = Params->Prescale * Params->Decimation;
 
     unsigned int init_locked = false;    
-    pthread_t ThreadId;
     return 
         /* Enable machine clock trigger events. */
         TEST_(ioctl, event_fd, LIBERA_EVENT_ENABLE_MC_TRIG, TRIGGER_BIT(6))  &&
@@ -287,5 +278,5 @@ bool InitialiseMachineClock(MC_PARAMETERS *Params)
         SetNcoFrequency(0)  &&
         /* Initially report the machine clock as unlocked.*/
         TEST_(ioctl, event_fd, LIBERA_EVENT_SET_MCPLL, &init_locked)  &&
-        TEST_0(pthread_create, &ThreadId, NULL, MachineClockThread, NULL);
+        spawn_controller(&MC_Controller);
 }

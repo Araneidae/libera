@@ -3,12 +3,12 @@
 import sys
 import os.path
 import optparse
-import time
 import datetime
 
 from pkg_resources import require
-require("dls.ca2")
-from dls.ca2 import catools
+require("cothread==1.5")
+# sys.path.append('/home/mga83/epics/cothread/build/lib.linux-i686-2.4')
+from cothread import catools, Sleep
 
 
 
@@ -51,42 +51,37 @@ BS_TRIG = 'LI-TI-MTGEN-01:BS-DI-MODE'
 def PVs(bases, pv):
     return ['%s:%s' % (base, pv) for base in bases]
 
-def caput(pvs, value, datatype=None):
-    catools.caput(pvs, [value for _ in pvs], datatype = datatype, timeout = 5)
+def caput(pvs, value):
+    catools.caput(pvs, value, repeat_value = True, timeout = 5)
 
-def caget(pvs, datatype=None, throw=True):
-    return catools.caget(pvs, datatype = datatype, timeout = 5, throw = throw)
+def caget(pvs, datatype=None, throw=True, format=catools.FORMAT_RAW):
+    return catools.caget(pvs,
+        datatype = datatype, timeout = 5, throw = throw, format = format)
 
 
-def CheckReadbacks(bpms, pv, expected, datatype=None):
-    for bpm, s in zip(bpms, caget(PVs(bpms, pv), datatype = datatype)):
-        if s.value != expected:
-            print bpm, s.value, '-- should be:', expected
+def CheckReadbacks(bpms, pv, expected):
+    for bpm, s in zip(bpms, caget(PVs(bpms, pv), datatype = type(expected))):
+        if s != expected:
+            print bpm, s, '-- should be:', expected
+
+
+def GetActivePVs(iocs, pv):
+    enabled_list = caget(PVs(iocs, pv), throw = False)
+    result = []
+    for ioc, enabled in zip(iocs, enabled_list):
+        if enabled.ok:
+            result.append(ioc)
+        else:
+            print ' ', ioc, 'not responding'
+    return result
 
 def GetActiveBpms(bpms):
     print 'Checking active BPMs'
-    enabled_list = caget(PVs(bpms, 'CF:ENABLED_S'), throw = False)
-    result = []
-    for bpm, enabled in zip(bpms, enabled_list):
-        if enabled.status != catools.ECA_NORMAL:
-            print ' ', bpm, 'not responding'
-#         elif not enabled.value:
-#             print ' ', bpm, 'disabled'
-        else:
-            result.append(bpm)
-    return result
-    
+    return GetActivePVs(bpms, 'CF:ENABLED_S')
 
 def GetActiveEvrs(evrs):
     print 'Checking active EVRs'
-    enabled_list = caget(PVs(evrs, 'TRIG:MODE'), throw = False)
-    result = []
-    for evr, enabled in zip(evrs, enabled_list):
-        if enabled.status != catools.ECA_NORMAL:
-            print ' ', evr, 'not responding'
-        else:
-            result.append(evr)
-    return result
+    return GetActivePVs(evrs, 'TRIG:MODE')
 
 
 def GlobalSystemTrigger():
@@ -100,40 +95,36 @@ class GlobalMachineTrigger:
     def __init__(self, triggers):
         self.triggers = triggers
     def Disable(self):
-        caput(self.triggers, 'Off', catools.dbr_string)
+        caput(self.triggers, 'Off')
     def Enable(self):
-        caput(self.triggers, 'Every shot', catools.dbr_string)
+        caput(self.triggers, 'Every shot')
 
 class LabMachineTrigger:
     def Disable(self):
-        caput(
-            ['TS-DI-EVR-01:TRIG:MODE'], 'Synchronised',
-            datatype = catools.dbr_string)
+        caput(['TS-DI-EVR-01:TRIG:MODE'], 'Synchronised')
     def Enable(self):
-        caput(
-            ['TS-DI-EVR-01:TRIG:MODE'], 'Normal',
-            datatype = catools.dbr_string)
+        caput(['TS-DI-EVR-01:TRIG:MODE'], 'Normal')
     
 
 def SynchroniseSystemClocks(bpms, evrs, trigger):
     # First put all EVRs into Synchronised mode
     print 'Synchronising system clocks'
     print '  Switching to Synchronised mode'
-    caput(PVs(evrs, 'TRIG:MODE'), 'Synchronised', catools.dbr_string)
-    CheckReadbacks(evrs, 'TRIG:MODE', 'Synchronised', catools.dbr_string)
-    time.sleep(5)
+    caput(PVs(evrs, 'TRIG:MODE'), 'Synchronised')
+    CheckReadbacks(evrs, 'TRIG:MODE', 'Synchronised')
+    Sleep(5)
     
     print '  Enabling SC trigger'
     caput(PVs(bpms, 'CK:SC_SYNC_S'), 0)
-    time.sleep(2)
-    CheckReadbacks(bpms, 'CK:SC_SYNC', 'Waiting Trigger', catools.dbr_string)
+    Sleep(2)
+    CheckReadbacks(bpms, 'CK:SC_SYNC', 'Waiting Trigger')
     
     print '  Triggering SC synchronisation'
     trigger()
-    time.sleep(5)
+    Sleep(5)
     
     print '  Restoring Normal mode'
-    caput(PVs(evrs, 'TRIG:MODE'), 'Normal', catools.dbr_string)
+    caput(PVs(evrs, 'TRIG:MODE'), 'Normal')
 
     
 
@@ -143,16 +134,16 @@ def SynchroniseMachineClocks(bpms, triggers):
     # First disable all the triggers.
     print '  Disabling events'
     triggers.Disable()
-    time.sleep(5)
+    Sleep(5)
     
     print '  Arming MC trigger'
     caput(PVs(bpms, 'CK:MC_SYNC_S'), 0)
-    time.sleep(5)
-    CheckReadbacks(bpms, 'CK:MC_SYNC', 'Waiting Trigger', catools.dbr_string)
+    Sleep(5)
+    CheckReadbacks(bpms, 'CK:MC_SYNC', 'Waiting Trigger')
     
     print '  Triggering MC synchronisation'
     triggers.Enable()
-    time.sleep(2)
+    Sleep(2)
 
 
 def FindCommonValue(values):
@@ -170,44 +161,51 @@ def FindCommonValue(values):
     return v
         
 
-def AnalyseTimes(location, bpms, times, margin):
+def AnalyseTimes(location, bpms, times, margin = 0):
     common_time = FindCommonValue(times)
-    
     print '%s:' % location, common_time
+    
+    good_bpms = []
+    bad_bpms = []
     for bpm, time in zip(bpms, times):
         if abs(time - common_time) > margin:
             print ' ', bpm, time
+            bad_bpms.append(bpm)
+        else:
+            good_bpms.append(bpm)
+    return good_bpms, bad_bpms
 
         
 
 def CheckSystemClocks(bpms, evrs, trigger):
     print 'Checking system clocks'
     print '  Switching to Synchronised mode'
-    caput(PVs(evrs, 'TRIG:MODE'), 'Synchronised', catools.dbr_string)
-    caput(PVs(bpms, 'CK:TIMESTAMP_S'), 'System time', catools.dbr_string)
-    time.sleep(5)
+    caput(PVs(evrs, 'TRIG:MODE'), 'Synchronised')
+    caput(PVs(bpms, 'CK:TIMESTAMP_S'), 'System time')
+    Sleep(5)
     print '  Triggering'
     trigger()
-    time.sleep(3)
-    mcls = caget(PVs(bpms, 'CK:MCL'), datatype = catools.dbr_time_long)
+    Sleep(3)
+    mcls = caget(PVs(bpms, 'CK:MCL'), format = catools.FORMAT_TIME)
     print '  Restoring Normal mode'
-    caput(PVs(evrs, 'TRIG:MODE'), 'Normal', catools.dbr_string)
-    caput(PVs(bpms, 'CK:TIMESTAMP_S'), 'NTP time', catools.dbr_string)
+    caput(PVs(evrs, 'TRIG:MODE'), 'Normal')
     
-    AnalyseTimes(
-        'Time', bpms, [mcl.dbr.stamp for mcl in mcls],
+    good_bpms, bad_bpms = AnalyseTimes(
+        'Time', bpms, [mcl.datetime for mcl in mcls],
         margin = datetime.timedelta(0))
+    # Put all bad bpms back to NTP time, leave the good ones with system time.
+    caput(PVs(bad_bpms, 'CK:TIMESTAMP_S'), 'NTP time')
     
 
     
 def CheckMachineClocks(lb_bpms, bs_bpms, sr_bpms, ts_bpms, evrs, trigger):
     print 'Checking machine clocks'
     print '  Disabling events'
-    caput(PVs(evrs, 'TRIG:MODE'), 'Synchronised', catools.dbr_string)
-    time.sleep(5)
+    caput(PVs(evrs, 'TRIG:MODE'), 'Synchronised')
+    Sleep(5)
     print '  Triggering'
     trigger()
-    time.sleep(5)
+    Sleep(5)
 
     for location, bpms in (
             ('LB', lb_bpms), ('BS', bs_bpms), ('SR', sr_bpms),
@@ -217,12 +215,12 @@ def CheckMachineClocks(lb_bpms, bs_bpms, sr_bpms, ts_bpms, evrs, trigger):
             mchs = caget(PVs(bpms, 'CK:MCH'))
 
             AnalyseTimes(location, bpms,
-                [mcl.value + 2**31 * mch.value
+                [mcl + 2**31 * mch
                     for mcl, mch in zip(mcls, mchs)],
                 margin = 1)
     
     print '  Restoring event processing'
-    caput(PVs(evrs, 'TRIG:MODE'), 'Normal', catools.dbr_string)
+    caput(PVs(evrs, 'TRIG:MODE'), 'Normal')
 
 
 # Temporary workaround: refresh the fast feedback configuration which
@@ -250,14 +248,14 @@ def RestartFastFeedback(Bpms, triggers):
     caput(PVs(Bpms, 'FF:STOP_S'), 0)
 #    caput([SR_TRIGGER], 0)
     triggers.Disable()
-    time.sleep(3)
+    Sleep(3)
     print '  Triggering synchronised start'
     caput(PVs(Bpms, 'FF:START_S'), 0)
-    time.sleep(3)
+    Sleep(3)
 #    caput([SR_TRIGGER], 1)
     triggers.Enable()
-    time.sleep(2)
-    nodes = [node.value for node in caget(PVs(Bpms, 'FF:BPM_COUNT'))]
+    Sleep(2)
+    nodes = caget(PVs(Bpms, 'FF:BPM_COUNT'))
     common_nodes = FindCommonValue(nodes)
     print 'Fast feedback: %s nodes' % common_nodes
     for bpm, n in zip(Bpms, nodes):
@@ -350,7 +348,7 @@ def main():
 
         if not options.no_test:
             print 'Pausing before test'
-            time.sleep(5.0)
+            Sleep(5.0)
             
     if not options.no_test:
         if options.system:

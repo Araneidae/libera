@@ -207,6 +207,8 @@ bool RunCommandLoop()
 
 
 
+/* Sends a status message to the listening client. */
+
 void WriteStatus(const char *Format, ...)
 {
     va_list args;
@@ -220,6 +222,7 @@ void WriteStatus(const char *Format, ...)
      * patch is not in the current Kernel. */
     TEST_0(pthread_mutex_lock, &status_mutex);
     if (status_pipe_overflow)
+        /* The x command is interpreted as loss of connection by the client. */
         write(status_pipe, "x\n", 2);
     status_pipe_overflow =
         write(status_pipe, Message, strlen(Message)) != strlen(Message);
@@ -268,11 +271,11 @@ static bool ProcessOptions(int argc, char *argv[], MC_PARAMETERS *Params)
 void ExitHandler(int signo) __attribute__((noreturn));
 void ExitHandler(int signo)
 {
-    /* Make sure we don't leave the PID file behind. */
-    unlink(CLOCK_PLL_PID_FILE);
     /* Similarly destroy the command and status pipes. */
     unlink(CLOCK_PLL_COMMAND_FIFO);
     unlink(CLOCK_PLL_STATUS_FIFO);
+    /* Make sure we don't leave the PID file behind -- do this last of all. */
+    unlink(CLOCK_PLL_PID_FILE);
     /* Die NOW! */
     _exit(0);
 }

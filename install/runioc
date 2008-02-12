@@ -164,9 +164,11 @@ echo 'IOC stopped at' $(date)
 
 # When we exit make a good effort to clean up any debris.  If we crashed (and
 # were unlucky) we may have left lots of threads behind!
+sleep 0.5
 DEBRIS="$(ps ho pid -C ioc)"
 if [ -n "$DEBRIS" ]; then
-    echo Killing residual ioc processes
+    echo Killing residual ioc processes: $DEBRIS
+    sleep 1
     kill -9 $DEBRIS
     DEBRIS="$(ps ho pid -C ioc)"
     [ -n "$DEBRIS" ]  &&

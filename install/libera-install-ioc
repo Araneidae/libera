@@ -65,14 +65,11 @@ fi
 TARGET=none
 AUTOSTART=none
 STARTNOW=0
-while getopts 'ftalsh' option; do
+while getopts 'ftlsh' option; do
     case "$option" in
     f)  TARGET=final ;;
     t)  TARGET=test ;;
-    a)  [ $AUTOSTART = none ] || Error "Inconsistent autostart parameters"
-        AUTOSTART=epics ;;
-    l)  [ $AUTOSTART = none ] || Error "Inconsistent autostart parameters"
-        AUTOSTART=libera ;;
+    l)  AUTOSTART=libera ;;
     s)  STARTNOW=1 ;;
     h)  echo -n 'Usage: libera-install-ioc <options>'
         if [ -n "$LOCATIONS" ]; then echo ' <location>'; else echo; fi
@@ -80,9 +77,10 @@ while getopts 'ftalsh' option; do
 where <options> includes
     -f  Final install: copy files to local /opt directory
     -t  Testing install: don't copy files, use from configured location
-    -a  Enable autostart of ioc: link /etc/init.d/epics into rc3.d and rc6.d
-    -l  Enable autostart via /etc/init.d/libera script.
+    -l  Enable autostart via /etc/init.d/libera-driver script.
     -s  Start IOC after installation
+If /etc/init.d/libera is found it will be renamed to /etc/init.d/libera.old
+and a new /etc/init.d/libera-driver script will always be installed.
 EOF
         [ -n "$LOCATIONS" ]  &&  cat <<EOF
 and <location> is a two character location code used to configure location
@@ -113,19 +111,17 @@ fi
     Error 'Invalid arguments: try -h for help'
 
 
-# Ensure epics driver isn't running at the moment.
-if [ -e /var/run/ioc.pid ]; then
-    if [ -x /etc/init.d/epics ]; then
-        /etc/init.d/epics stop
-    else
-        kill "$(cat /var/run/ioc.pid)"
-        rm -f /var/run/ioc.pid
-    fi
-fi
 
-# Similarly ensure that none of the libera drivers are running.
-if ! [ -x /etc/init.d/libera-driver ]; then
-    [ -e /var/run/clockPll.pid ]  &&  kill $(cat /var/run/clockPll.pid)
+
+# Make sure the libera driver isn't running: we need to stop everything, as
+# we need to restart the clock daemon.
+if [ -x /etc/init.d/libera-driver ]; then
+    /etc/init.d/libera-driver stop
+elif [ -x /etc/init.d/libera ]; then
+    # Ensure epics driver isn't running at the moment.
+    if [ -e /var/run/ioc.pid ]; then
+        /etc/init.d/epics stop
+    fi
     /etc/init.d/libera stop
     mv /etc/init.d/libera /etc/init.d/old-libera
 fi
@@ -173,7 +169,7 @@ fi
         ' "$SOURCE"/install/CONFIG
     # If libera autostart is configured then add the appropriate entry
     [ $AUTOSTART = libera ]  &&
-        echo 'SERVER_BOOT=/etc/init.d/epics'
+        echo 'START_EPICS=yes'
 ) > $CONFIGDIR/epics_ioc
 
 # Copy the startup scripts
@@ -191,11 +187,6 @@ rm -f /etc/rc3.d/S800libera /etc/rc6.d/K100libera
 
 ln -fs ../init.d/libera-driver /etc/rc3.d/S800libera-driver  
 ln -fs ../init.d/libera-driver /etc/rc6.d/K100libera-driver  
-
-if [ $AUTOSTART = epics ]; then
-    ln -sf ../init.d/epics /etc/rc3.d/S900epics  
-    ln -sf ../init.d/epics /etc/rc6.d/K100epics
-fi
 
 if ((STARTNOW)); then
     /etc/init.d/libera-driver start
