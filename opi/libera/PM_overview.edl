@@ -3,9 +3,9 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 251
-y 90
-w 585
+x 194
+y 85
+w 588
 h 696
 font "helvetica-medium-r-18.0"
 ctlFont "helvetica-medium-r-18.0"
@@ -19,7 +19,7 @@ ctlBgColor1 index 0
 ctlBgColor2 index 14
 topShadowColor index 0
 botShadowColor index 14
-title "Decimated 1 Point per 1024 Turns"
+title "Postmortem"
 showGrid
 snapToGrid
 gridSize 8
@@ -72,21 +72,21 @@ xMax 1
 showYAxis
 yAxisStyle "log10"
 yAxisSrc "fromUser"
-yMin 10000
-yMax 1e+08
+yMin 100000
+yMax 1e+09
 # Y2 axis properties
 y2AxisSrc "AutoScale"
 y2Max 1
 # Trace Properties
 numTraces 1
-xPv {
-  0 "$(device):BN:AXISS"
-}
 yPv {
-  0 "$(device):BN:WFSS"
+  0 "$(device):PM:WFS"
 }
-plotUpdateMode {
-  0 "y"
+xSigned {
+  0 779036
+}
+ySigned {
+  0 1099264
 }
 plotColor {
   0 index 14
@@ -106,7 +106,7 @@ w 568
 h 216
 # Appearance
 graphTitle "X position"
-xLabel "ms"
+xLabel "Turns"
 yLabel "nm"
 fgColor index 14
 bgColor index 3
@@ -127,17 +127,14 @@ y2AxisSrc "AutoScale"
 y2Max 1
 # Trace Properties
 numTraces 1
-xPv {
-  0 "$(device):BN:AXISS"
-}
 yPv {
-  0 "$(device):BN:WFSX"
+  0 "$(device):PM:WFX"
 }
-plotUpdateMode {
-  0 "y"
+xSigned {
+  0 764946
 }
 ySigned {
-  0 1
+  0 68140
 }
 plotColor {
   0 index 14
@@ -157,7 +154,7 @@ w 568
 h 216
 # Appearance
 graphTitle "Y position"
-xLabel "ms"
+xLabel "Turns"
 yLabel "nm"
 fgColor index 14
 bgColor index 3
@@ -178,20 +175,43 @@ y2AxisSrc "AutoScale"
 y2Max 1
 # Trace Properties
 numTraces 1
-xPv {
-  0 "$(device):BN:AXISS"
-}
 yPv {
-  0 "$(device):BN:WFSY"
+  0 "$(device):PM:WFY"
 }
-plotUpdateMode {
-  0 "y"
+xSigned {
+  0 2053200
 }
 ySigned {
-  0 1
+  0 -2380320
 }
 plotColor {
   0 index 14
+}
+endObjectProperties
+
+# (Related Display)
+object relatedDisplayClass
+beginObjectProperties
+major 4
+minor 2
+release 0
+x 440
+y 664
+w 64
+h 24
+fgColor index 43
+bgColor index 3
+topShadowColor index 1
+botShadowColor index 11
+font "helvetica-bold-r-12.0"
+buttonLabel "I & Q"
+numPvs 4
+numDsps 1
+displayFileName {
+  0 "libera/TT_iq.edl"
+}
+symbols {
+  0 "device=$(device),mode=PM"
 }
 endObjectProperties
 
@@ -232,7 +252,7 @@ font "helvetica-bold-r-14.0"
 buttonLabel "?"
 numCmds 1
 command {
-  0 "libera-help BO_overview"
+  0 "libera-help PM_overview"
 }
 includeHelpIcon
 endObjectProperties

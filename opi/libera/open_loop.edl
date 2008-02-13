@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 223
-y 620
+x 228
+y 641
 w 210
 h 185
 font "helvetica-medium-r-8.0"
@@ -52,7 +52,7 @@ y 0
 w 208
 h 32
 font "helvetica-medium-r-18.0"
-fontAlign "center"
+fontAlign "right"
 fgColor index 14
 bgColor index 73
 value {
@@ -224,7 +224,6 @@ controlPv "$(device):CK:OPEN_LOOP_S"
 font "helvetica-medium-r-14.0"
 endObjectProperties
 
-
 # (Shell Command)
 object shellCmdClass
 beginObjectProperties
@@ -247,3 +246,4 @@ command {
 }
 includeHelpIcon
 endObjectProperties
+

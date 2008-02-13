@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 139
-y 86
+x 144
+y 107
 w 584
 h 760
 font "helvetica-medium-r-18.0"
@@ -441,7 +441,7 @@ beginObjectProperties
 major 4
 minor 2
 release 0
-x 368
+x 440
 y 728
 w 64
 h 24
@@ -458,32 +458,6 @@ displayFileName {
 }
 symbols {
   0 "device=$(device),mode=TT"
-}
-endObjectProperties
-
-# (Related Display)
-object relatedDisplayClass
-beginObjectProperties
-major 4
-minor 2
-release 0
-x 440
-y 728
-w 64
-h 24
-fgColor index 43
-bgColor index 3
-topShadowColor index 1
-botShadowColor index 11
-font "helvetica-bold-r-12.0"
-buttonLabel "Overview"
-numPvs 4
-numDsps 1
-displayFileName {
-  0 "libera/overview.edl"
-}
-symbols {
-  0 "device=$(device)"
 }
 endObjectProperties
 
@@ -532,7 +506,6 @@ value {
 autoSize
 endObjectProperties
 
-
 # (Shell Command)
 object shellCmdClass
 beginObjectProperties
@@ -555,3 +528,4 @@ command {
 }
 includeHelpIcon
 endObjectProperties
+

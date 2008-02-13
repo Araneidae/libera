@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 480
-y 66
+x 485
+y 87
 w 480
 h 311
 font "helvetica-medium-r-16.0"
@@ -118,7 +118,7 @@ minor 1
 release 0
 x 16
 y 136
-w 34
+w 32
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -234,7 +234,7 @@ minor 1
 release 0
 x 232
 y 64
-w 64
+w 63
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -254,7 +254,7 @@ minor 1
 release 0
 x 232
 y 80
-w 46
+w 44
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -497,7 +497,7 @@ minor 1
 release 0
 x 16
 y 88
-w 63
+w 62
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -609,7 +609,7 @@ minor 1
 release 0
 x 16
 y 112
-w 73
+w 74
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -799,7 +799,7 @@ minor 1
 release 0
 x 240
 y 112
-w 75
+w 73
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -819,7 +819,7 @@ minor 1
 release 0
 x 240
 y 128
-w 75
+w 74
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -839,7 +839,7 @@ minor 1
 release 0
 x 240
 y 144
-w 75
+w 74
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -996,7 +996,7 @@ minor 1
 release 0
 x 16
 y 248
-w 61
+w 62
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -1017,7 +1017,7 @@ release 0
 x 216
 y 280
 w 88
-h 22
+h 24
 fgColor index 25
 bgColor index 3
 topShadowColor index 1
@@ -1029,7 +1029,6 @@ command {
   0 "channels.py $(device)"
 }
 endObjectProperties
-
 
 # (Shell Command)
 object shellCmdClass
@@ -1053,3 +1052,4 @@ command {
 }
 includeHelpIcon
 endObjectProperties
+
