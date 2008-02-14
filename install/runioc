@@ -156,10 +156,12 @@ IocParameter -f $FREV
 [ -n "$IOC_STATE_PATH" ] && IocParameter -s "$IOC_STATE_PATH/$DEVICE.state"
 
 # Now run the IOC.
+echo
 echo 'Starting IOC at' $(date)
 echo "IOC parameters: ${IOC_PARAMETERS[*]}"
 "$BIN_DIR"/ioc "${IOC_PARAMETERS[@]}" "$BIN_DIR"/st.cmd
 echo 'IOC stopped at' $(date)
+echo
 
 
 # When we exit make a good effort to clean up any debris.  If we crashed (and

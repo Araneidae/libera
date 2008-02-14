@@ -63,13 +63,15 @@ fi
 
 # Parse local installation options
 TARGET=none
-AUTOSTART=none
+AUTOSTART=0
 STARTNOW=0
-while getopts 'ftlsh' option; do
+while getopts 'ftlash' option; do
     case "$option" in
     f)  TARGET=final ;;
     t)  TARGET=test ;;
-    l)  AUTOSTART=libera ;;
+    a)  AUTOSTART=1 ;;
+    l)  echo 'The -l option is obsolete: use -a'
+        AUTOSTART=1 ;;
     s)  STARTNOW=1 ;;
     h)  echo -n 'Usage: libera-install-ioc <options>'
         if [ -n "$LOCATIONS" ]; then echo ' <location>'; else echo; fi
@@ -77,7 +79,7 @@ while getopts 'ftlsh' option; do
 where <options> includes
     -f  Final install: copy files to local /opt directory
     -t  Testing install: don't copy files, use from configured location
-    -l  Enable autostart via /etc/init.d/libera-driver script.
+    -a  Enable autostart via /etc/init.d/libera-driver script.
     -s  Start IOC after installation
 If /etc/init.d/libera is found it will be renamed to /etc/init.d/libera.old
 and a new /etc/init.d/libera-driver script will always be installed.
@@ -168,8 +170,7 @@ fi
         /^IOC_/! d
         ' "$SOURCE"/install/CONFIG
     # If libera autostart is configured then add the appropriate entry
-    [ $AUTOSTART = libera ]  &&
-        echo 'START_EPICS=yes'
+    ((AUTOSTART))  &&  echo 'START_EPICS=yes'
 ) > $CONFIGDIR/epics_ioc
 
 # Copy the startup scripts
@@ -190,5 +191,5 @@ ln -fs ../init.d/libera-driver /etc/rc6.d/K100libera-driver
 
 if ((STARTNOW)); then
     /etc/init.d/libera-driver start
-    [ $AUTOSTART = libera ]  ||  /etc/init.d/epics start
+    ((AUTOSTART))  ||  /etc/init.d/epics start
 fi

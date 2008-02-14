@@ -7,10 +7,27 @@ Require('matplotlib')
 Require('dls.ca2')
 Require('dls.thread==1.12')
 
+import os
 from dls import thread
 import pylab
 import qt
 from numpy import *
+
+
+
+def LoadUiFile(filename, cls):
+    '''Loads python class from ui file by executing pyuic'''
+    pyuic = subprocess.Popen(
+        ["pyuic2.4", filename],
+        stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+    (stdout, stderr) = pyuic.communicate()
+    if pyuic.returncode != 0:
+        raise Exception(stderr)
+        
+    ns = {}
+    exec stdout in ns
+    globals()[cls] = ns[cls]
+
 
 
 

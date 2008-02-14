@@ -87,8 +87,8 @@ static int clip_to_int(long long value)
 static void DropSynchronisation(CONTROLLER *Controller, const char * Reason)
 {
     if (Controller->Synchronised == SYNC_SYNCHRONISED)
-        log_message(LOG_INFO, "%s: Synchronisation lost, %s",
-            Controller->name, Reason);
+        log_message(LOG_INFO, "%s: Synchronisation lost, %s (%d)",
+            Controller->name, Reason, Controller->PhaseError);
     Controller->Synchronised = SYNC_NO_SYNC;
 }
 
@@ -592,6 +592,56 @@ static void SetPhaseOffset(CONTROLLER *Controller, int PhaseOffset)
 }
 
 
+/* Exceptionally dangerous command for directly writing to individual
+ * controllers.  Incorrect use of this command WILL crash the clock PLL! */
+
+static void WriteToController(CONTROLLER *Controller, char *Command)
+{
+    /* The form of a command is
+     *      Wf s a v
+     * where f is either I for integers or F for floats, s selects the
+     * controller stage, a is the index (in longs) to be written, and v is the
+     * value to be written (either int or float). */
+    /* We're super lazy about error testing.  If the command is wrong, that's
+     * just too bad! */
+    char * ParsePtr;
+    int Stage = strtol(Command + 2, &ParsePtr, 10);
+    int Index = strtol(ParsePtr, &ParsePtr, 10);
+    int * Target = (int *) Controller->Stages[Stage].Context + Index;
+    switch (Command[1])
+    {
+        case 'I':
+        {
+            int Value = strtol(ParsePtr, &ParsePtr, 10);
+            log_message(LOG_INFO, "WI %d %d %d", Stage, Index, Value);
+            *(int *) Target = Value;
+            break;
+        }
+        case 'F':
+        {
+            float Value = strtof(ParsePtr, &ParsePtr);
+            log_message(LOG_INFO, "WI %d %d %g", Stage, Index, Value);
+            *(float *) Target = Value;
+            break;
+        }
+        case 'i':
+        {
+            log_message(LOG_INFO, "i %d %d = %d",
+                Stage, Index, *(int *) Target);
+            break;
+        }
+        case 'f':
+        {
+            log_message(LOG_INFO, "f %d %d = %g",
+                Stage, Index, *(float *) Target);
+            break;
+        }
+        default:
+            log_message(LOG_ERR, "Invalid Write command: %s", Command);
+    }
+}
+
+
 /* Simple command interpreter.
  *
  * The following commands are for normal operation:
@@ -619,6 +669,8 @@ void ControllerCommand(CONTROLLER *Controller, char *Command)
         case 'd':   Controller->Dac = arg;                      break;
         case 'v':   Controller->Verbose = arg;                  break;
         case 'i':   Controller->StatusReportInterval = arg;     break;
+
+        case 'W':   WriteToController(Controller, Command);     break;
         default:
             log_message(LOG_ERR, "Unknown command \"%s\"", Command);
     }

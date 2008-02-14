@@ -2007,7 +2007,7 @@ y2Max 1
 # Trace Properties
 numTraces 1
 yPv {
-  0 "$(device):FT:PERM"
+  0 "$(device):CF:PERM"
 }
 plotStyle {
   0 "point"

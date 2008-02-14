@@ -185,7 +185,6 @@ public:
         RawAdc(ADC_LENGTH),
         Adc(SHORT_ADC_LENGTH),
         WaveformXYQS(SHORT_ADC_LENGTH),
-        Permutation(4),
         AxisScale(SHORT_ADC_LENGTH),
         ChargeScale(PMFP(10 << 3) / (PMFP(S_0) * 117))
     {
@@ -235,7 +234,6 @@ public:
         Interlock.Publish("FT");
         Enable.Publish("FT");
 
-        Publish_waveform("FT:PERM", Permutation);
         Publish_waveform("FT:AXIS", AxisScale);
 
         /* Also publish access to the offset and length controls for the
@@ -300,7 +298,7 @@ private:
         /* Pick up the permutation corresponding to the current switch
          * position and read the raw data from the ADC.  Of course, when the
          * switches are rotating this isn't very meaningful... */
-        memcpy(Permutation.Array(), SwitchPermutation(), sizeof(PERMUTATION));
+        const PERMUTATION &Permutation = SwitchPermutation();
         ADC_DATA RawData;
         ReadAdcWaveform(RawData);
         
@@ -319,7 +317,7 @@ private:
              * processing channel, bug after condensing and gain correction
              * we want to undo the switch permutation so that the button
              * readings appear in the correct sequence. */
-            int Channel = Permutation.Array()[i];
+            int Channel = Permutation[i];
             size_t Field = AbcdFields[i];
             int Condensed[SHORT_ADC_LENGTH];
             CondenseAdcData(Extracted[Channel], Condensed);
@@ -495,7 +493,6 @@ private:
     XYQS_WAVEFORMS WaveformXYQS;
     ABCD_ROW ABCD;
     XYQS_ROW XYQS;
-    INT_WAVEFORM Permutation;
 
     /* Waveform for labelling axis. */
     FLOAT_WAVEFORM AxisScale;

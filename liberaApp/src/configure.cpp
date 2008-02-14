@@ -30,6 +30,7 @@
 /* Libera position calculations and conversions. */
 
 #include <stdio.h>
+#include <string.h>
 
 #include "device.h"
 #include "persistent.h"
@@ -39,6 +40,7 @@
 #include "numeric.h"
 #include "interlock.h"
 #include "conditioning.h"
+#include "waveform.h"
 
 #include "configure.h"
 
@@ -61,6 +63,9 @@ static bool AutoSwitchState = false;
 static READBACK<bool> * SwitchReadback = NULL;
 /* Selects which switch setting to use in manual mode. */
 static int ManualSwitch = 3;
+/* The permutation corresponding to the selected switch position is published
+ * for the use of external procedures. */
+static INT_WAVEFORM Permutation(4);
 
 
 /* Selects internal or external triggering for the rotating switches. */
@@ -107,8 +112,8 @@ static void UpdateAutoSwitch(bool NewSwitchState)
         /* The switches cannot be switched away from automatic mode without
          * first turning signal conditioning off. */
         UpdateSc(SC_MODE_FIXED);
-    
-    WriteSwitchState(AutoSwitchState, ManualSwitch);
+
+    WriteAutoSwitches(NewSwitchState);
 }
 
 
@@ -128,8 +133,9 @@ static void UpdateSc(int NewScState)
 static void UpdateManualSwitch()
 {
     /* Only update the switches if they're in manual mode. */
-    if (!AutoSwitchState)
-        WriteSwitchState(false, ManualSwitch);
+    WriteManualSwitches(ManualSwitch);
+    /* Update the permutation. */
+    memcpy(Permutation.Array(), SwitchPermutation(), sizeof(PERMUTATION));
 }
 
 
@@ -224,6 +230,7 @@ bool InitialiseConfigure()
         AutoSwitchState, UpdateAutoSwitch);
     PUBLISH_CONFIGURATION(longout, "CF:SETSW", 
         ManualSwitch, UpdateManualSwitch);
+    Publish_waveform("CF:PERM", Permutation);
     PUBLISH_CONFIGURATION(bo, "CF:TRIGSW", 
         ExternalSwitchTrigger, UpdateSwitchTrigger);
     PUBLISH_CONFIGURATION(longout, "CF:DELAYSW", 
@@ -243,6 +250,7 @@ bool InitialiseConfigure()
      * needs initialising. */
     UpdateAttenuation(CurrentAttenuation);
     UpdateAutoSwitch(AutoSwitchState);
+    UpdateManualSwitch();
     UpdateSc(ScState);
     UpdateSwitchTrigger();
     UpdateSwitchTriggerDelay();

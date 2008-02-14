@@ -1105,19 +1105,30 @@ static CONDITIONING * ConditioningThread = NULL;
 /* We remember the currently selected manual switch so that we can return the
  * appropriate permutation array. */
 static int ManualSwitch = 3;
+static bool AutoSwitchEnabled = false;
 
 
-bool WriteSwitchState(bool AutoSwitch, int NewManualSwitch)
+static void UpdateSwitchesState()
 {
-    if (AutoSwitch)
-        return ConditioningThread->LockedWriteSwitches(
+    if (AutoSwitchEnabled)
+        ConditioningThread->LockedWriteSwitches(
             SwitchSequence, SwitchSequenceLength);
     else
-    {
-        ManualSwitch = NewManualSwitch;
-        return ConditioningThread->LockedWriteSwitches(
-            (char *)&ManualSwitch, 1);
-    }
+        ConditioningThread->LockedWriteSwitches((char *)&ManualSwitch, 1);
+}
+
+
+void WriteAutoSwitches(bool AutoSwitch)
+{
+    AutoSwitchEnabled = AutoSwitch;
+    UpdateSwitchesState();
+}
+
+
+void WriteManualSwitches(int NewManualSwitch)
+{
+    ManualSwitch = NewManualSwitch;
+    UpdateSwitchesState();
 }
 
 

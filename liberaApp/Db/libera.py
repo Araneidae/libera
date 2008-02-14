@@ -167,12 +167,11 @@ def FirstTurn():
     charge = aIn('CHARGE', 0, 2000, 1e-6, 'nC', 2,
         DESC = 'Charge of bunch train')
     max_S = longIn('MAXS', DESC = 'Maximum S in waveform')
-    perm = Waveform('PERM', 4, DESC = 'Switch permutation')
 
     Trigger(False, 
         # Raw waveforms as read from the ADC rate buffer
         RAW_ADC(LONG_LENGTH) +
-        [maxadc, maxadc_pc, charge, max_S, perm] +
+        [maxadc, maxadc_pc, charge, max_S] +
         # ADC data reduced by 1/4 by recombination
         ABCD_wf(SHORT_LENGTH) + XYQS_wf(SHORT_LENGTH) + 
         # Buttons and positions computed within selected window
@@ -362,7 +361,10 @@ def Config():
     autoswitch = boolInOut('AUTOSW', 'Manual', 'Automatic',
         DESC = 'Configure rotating switches')
     # Select switch to use when automatic switching off
-    longOut('SETSW', 0, 15, DESC = 'Fixed multiplexor switch')
+    setsw = longOut('SETSW', 0, 15, DESC = 'Fixed multiplexor switch')
+    setsw.FLNK = Waveform('PERM', 4,
+        PINI = 'YES',
+        DESC = 'Switch permutation')
     # Switch trigger selection and delay from trigger
     boolOut('TRIGSW', 'Internal', 'External',
         DESC = 'Switching trigger source')
@@ -663,6 +665,7 @@ def Clock():
     # Generate the clock monitoring records.
     mc_health = ClockStatus('MC', 'Machine')
     sc_health = ClockStatus('SC', 'System')
+    sc_health = []  # For the time being don't monitor SC health
     clock_health = AggregateSeverity('HEALTH', 'Clock status',
         map(CP, mc_health + sc_health + [tick]))
 

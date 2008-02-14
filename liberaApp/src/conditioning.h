@@ -29,7 +29,8 @@
 
 /* Select either a specific switch or rotating switches.  If AutoSwitch is
  * True then the ManualSwitch argument is ignored. */
-bool WriteSwitchState(bool AutoSwitch, int ManualSwitch);
+void WriteAutoSwitches(bool AutoSwitch);
+void WriteManualSwitches(int ManualSwitch);
 
 /* Select signal conditioning mode. */
 enum SC_MODE {

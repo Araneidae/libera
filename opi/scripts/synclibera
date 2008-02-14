@@ -193,9 +193,13 @@ def CheckSystemClocks(bpms, evrs, trigger):
     good_bpms, bad_bpms = AnalyseTimes(
         'Time', bpms, [mcl.datetime for mcl in mcls],
         margin = datetime.timedelta(0))
-    # Put all bad bpms back to NTP time, leave the good ones with system time.
-    caput(PVs(bad_bpms, 'CK:TIMESTAMP_S'), 'NTP time')
-    
+#     # Put all bad bpms back to NTP time, leave the good ones with system
+#     # time.
+#     caput(PVs(bad_bpms, 'CK:TIMESTAMP_S'), 'NTP time')
+    # Alas we still can't enable System time for timestamps, as SC
+    # timestamping remains rather unreliable: so put everything back to NTP
+    # time for now.
+    caput(PVs(bpms, 'CK:TIMESTAMP_S'), 'NTP time')
 
     
 def CheckMachineClocks(lb_bpms, bs_bpms, sr_bpms, ts_bpms, evrs, trigger):

@@ -126,7 +126,6 @@ static void StartupMessage()
     printf(
 "\n"
 "Libera EPICS Driver, Version %s.  Built: %s.\n"
-"\n"
 "Copyright (C) 2005-2007 Michael Abbott, Diamond Light Source.\n"
 "This program comes with ABSOLUTELY NO WARRANTY.  This is free software,\n"
 "and you are welcome to redistribute it under certain conditions.\n"

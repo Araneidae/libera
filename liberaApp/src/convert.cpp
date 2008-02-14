@@ -243,8 +243,8 @@ void ABCDtoXYQS(const ABCD_ROW *ABCD, XYQS_ROW *XYQS, int Count)
         }
         else
         {
-            xyqs.X = DeltaToPosition(K_X, D - B, InvS, shift) << 1 - X_0;
-            xyqs.Y = DeltaToPosition(K_Y, A - C, InvS, shift) << 1 - Y_0;
+            xyqs.X = (DeltaToPosition(K_X, D - B, InvS, shift) << 1) - X_0;
+            xyqs.Y = (DeltaToPosition(K_Y, A - C, InvS, shift) << 1) - Y_0;
         }
         xyqs.Q = DeltaToPosition(K_Q, A - B + C - D, InvS, shift);
         xyqs.S = S;

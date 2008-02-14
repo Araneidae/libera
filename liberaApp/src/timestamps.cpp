@@ -140,7 +140,6 @@ public:
     bool Open(int Timeout)
     {
         FileFd.fd = open(FileName, O_RDONLY | O_NONBLOCK);
-printf("Opening %s => %d\n", FileName, FileFd.fd);
         /* A little hack: if we can't open the file then sleep a little.
          * This will give the rest of the system a bit more time to do
          * something about it. */
