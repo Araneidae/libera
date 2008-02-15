@@ -7,4 +7,4 @@ LAB_N=7
 
 LAB_LIST="$(seq -f$LAB_BASE_IP.%g $LAB_N)"
 
-liberas -l<(cat <<<"$LAB_LIST") '' "$@"
+liberas -w -l<(cat <<<"$LAB_LIST") '' "$@"

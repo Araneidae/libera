@@ -30,12 +30,34 @@
 
 # libera - Start/stop Libera (FPGA design, driver & PLL daemon).
 
+# This code is shared between two quite different versions of Libera.
+# Distinguishing which version is installed is the challenge addressed here.
+# For the moment we simply look for the presence of /etc/sysconfig: this is
+# crude, and will need to be revisted...
+LINUX_VERSION="$(uname -r | sed -r 's/(^[^.]*\.[^.]*)\..*/\1/')"
+if [ -d /etc/sysconfig ]; then
+    # Old school Libera
+    NEW_LIBERA=0
+    EXPECT_VERSION=2.4
+    CONFIGDIR=/etc/sysconfig
+    . /etc/init.d/functions
+    
+else
+    # Newer Libera
+    NEW_LIBERA=1
+    EXPECT_VERSION=2.6
+    CONFIGDIR=/etc/default
 
-# Source function library.
-. /etc/init.d/functions
+    evaluate_retval() { echo done.; }
+fi
+if [ "$EXPECT_VERSION" != "$LINUX_VERSION" ]; then
+    echo Expected Linux version "$EXPECT_VERSION", found "$LINUX_VERSION"
+    echo Refusing to start!
+    exit 1
+fi
+
 
 # Pick up the Libera configuration
-CONFIGDIR=/etc/sysconfig
 . "$CONFIGDIR"/libera
 . "$CONFIGDIR"/epics_ioc
 
@@ -43,7 +65,6 @@ CONFIGDIR=/etc/sysconfig
 : "${DESIGN:?}"             # Path to FPGA design.
 : "${FLMCDHZ:?}"            # Machine clock frequency in dHz (10^-1 Hz)
 : "${DECIMATION:?}"         # Number of samples per machine revolution
-: "${DFA:?}"                # Number of turns per FA point
 : "${FREV:?}"               # Machine revolution frequency in Hz
 : "${MCPRESC:?}"            # Machine clocks per machine clock PLL interrupt
 : "${NCLK_ADC:?}"           # Number of times shift enable written(?)
@@ -51,6 +72,11 @@ CONFIGDIR=/etc/sysconfig
 : "${IL_K_CORR_ADC_LIMIT:?}"        # ADC interlock overflow filter scaling
 : "${IL_MAX_ADC_OVERFLOW_DUR:?}"    # factor and duration limit
 : "${LIBERA_IOC}"           # Path to EPICS IOC
+if ((NEW_LIBERA)); then
+    : "${POSTMORTEM_BUFFER:?}"  # Length of PM buffer
+else
+    : "${DFA:?}"                # Number of turns per FA point
+fi
 
 case "$1" in
     start)
@@ -58,6 +84,11 @@ case "$1" in
         echo -n "Loading FPGA design..."
         /opt/bin/fp < $DESIGN
         evaluate_retval
+
+        if ((NEW_LIBERA)); then
+            # Health checking needs to go here ...
+            :
+        fi
 
         # Initialize FPGA design
         echo -n "Initializing FPGA design..."
@@ -69,11 +100,18 @@ case "$1" in
         modprobe msp
         evaluate_retval
 
-        # Load the driver with proper parameters
+        # Load the driver with proper parameters.  The parameters depend on
+        # which version we're running, though.
         echo -n "Loading Libera driver..."
+        if ((NEW_LIBERA)); then
+            DEV_PARAMS="pmsize=$POSTMORTEM_BUFFER"
+        else
+            DEV_PARAMS="d=$DECIMATION dfa=$DFA"
+        fi
         modprobe libera \
-            flmcdHz=$FLMCDHZ d=$DECIMATION dfa=$DFA \
-            kadc=$IL_K_CORR_ADC_LIMIT ilkdur=$IL_MAX_ADC_OVERFLOW_DUR
+            flmcdHz=$FLMCDHZ \
+            kadc=$IL_K_CORR_ADC_LIMIT ilkdur=$IL_MAX_ADC_OVERFLOW_DUR \
+            $DEV_PARAMS
         evaluate_retval
 
         # Start the clock PLL daemon from the same directory as the EPICS IOC

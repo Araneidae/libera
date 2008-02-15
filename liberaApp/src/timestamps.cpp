@@ -385,6 +385,9 @@ private:
 };
 
 
+static CLOCK_PLL_MONITOR * PllMonitorThread = NULL;
+
+
 
 /* Publish a ticking record to publish the fact that trigger has been
  * processed, together with timing information for this trigger. */
@@ -447,8 +450,11 @@ private:
         MissedEventCount = MissedEvents;
 
         /* Fix up the timestamp if necessary before publishing so that we use
-         * the same timestamps as everybody else. */
-        AdjustTimestamp(Timestamp);
+         * the same timestamps as everybody else.  This is the same test as
+         * in AdjustTimestamp(), but here we use the NtpTime we've already
+         * fetched to avoid confusion. */
+        if (!(UseSystemTime && PllMonitorThread->IsSystemClockSynchronised()))
+            memcpy(&Timestamp.st, &NtpTime, sizeof(Timestamp.st));
         Interlock.Ready(Timestamp);
     }
 
@@ -458,9 +464,6 @@ private:
     int MissedEventCount;
 };
 
-
-
-static CLOCK_PLL_MONITOR * PllMonitorThread = NULL;
 
 
 

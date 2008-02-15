@@ -49,16 +49,31 @@ function Error()
 [ "$(uname -m)" != armv5tel ]  &&
     Error This should be run on Libera
 
+# The following version checking code is also present, in a similar form, in
+# libera-driver and similar tests need to be done in epics and runioc.  In
+# each case the goal is to avoid branching the code while both versions of
+# target are supported.
+LINUX_VERSION="$(uname -r | sed -r 's/(^[^.]*\.[^.]*)\..*/\1/')"
+if [ -d /etc/sysconfig ]; then
+    # Old school Libera
+    NEW_LIBERA=0
+    EXPECT_VERSION=2.4
+    CONFIGDIR=/etc/sysconfig
+else
+    # Newer Libera
+    NEW_LIBERA=1
+    EXPECT_VERSION=2.6
+    CONFIGDIR=/etc/default
+fi
+if [ "$EXPECT_VERSION" != "$LINUX_VERSION" ]; then
+    echo Expected Linux version "$EXPECT_VERSION", found "$LINUX_VERSION"
+    exit 1
+fi
+
+
 SOURCE="$(cd "$(dirname "$0")"/..; pwd)"
 
 LOCATIONS="$(cat "$SOURCE"/install/locations)"
-
-# Pick up appropriate configuration directory.
-if [ -d /etc/sysconfig ]; then
-    CONFIGDIR=/etc/sysconfig
-else
-    CONFIGDIR=/etc/default
-fi
 
 
 # Parse local installation options
@@ -111,7 +126,6 @@ fi
 
 (($# != 0))  &&
     Error 'Invalid arguments: try -h for help'
-
 
 
 
@@ -183,11 +197,13 @@ cp -f "$SOURCE"/install/epics /etc/init.d
 # libera, or we invite the libera script to start/stop us at the same time.
 rm -f /etc/rc3.d/S900epics /etc/rc6.d/K100epics  
 rm -f $CONFIGDIR/libera-server  
-rm -f /etc/init.d/libera-server  
-rm -f /etc/rc3.d/S800libera /etc/rc6.d/K100libera  
+rm -f /etc/init.d/libera-server
 
-ln -fs ../init.d/libera-driver /etc/rc3.d/S800libera-driver  
-ln -fs ../init.d/libera-driver /etc/rc6.d/K100libera-driver  
+rm -f /etc/rc*.d/*libera
+
+for rcd in 2.d/S 0.d/K 1.d/K 6.d/K; do
+    ln -fs ../init.d/libera-driver /etc/rc${rcd}100libera-driver
+done
 
 if ((STARTNOW)); then
     /etc/init.d/libera-driver start
