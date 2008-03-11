@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 2899
-y 870
+x 2900
+y 876
 w 295
 h 117
 font "helvetica-medium-r-18.0"
@@ -19,6 +19,7 @@ ctlBgColor1 index 0
 ctlBgColor2 index 14
 topShadowColor index 0
 botShadowColor index 14
+title "Lab Libera Launcher"
 showGrid
 snapToGrid
 gridSize 8
@@ -53,7 +54,7 @@ minor 1
 release 0
 x 8
 y 48
-w 280
+w 208
 h 24
 controlPv "LOC\\ioc-name=s:"
 font "helvetica-medium-r-18.0"
@@ -863,6 +864,29 @@ buttonLabel "Sync"
 numCmds 1
 command {
   0 "xterm -T 'Sync BPMs' -e 'synclibera -Lsmf; read -p \"press return\"'"
+}
+endObjectProperties
+
+# (Related Display)
+object relatedDisplayClass
+beginObjectProperties
+major 4
+minor 2
+release 0
+x 224
+y 48
+w 64
+h 24
+fgColor index 14
+bgColor index 3
+topShadowColor index 0
+botShadowColor index 14
+font "helvetica-medium-r-14.0"
+buttonLabel "Lab"
+numPvs 4
+numDsps 1
+displayFileName {
+  0 "lab_control.edl"
 }
 endObjectProperties
 
