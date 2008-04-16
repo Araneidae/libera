@@ -277,6 +277,26 @@ Postmortem (<group> = PM):
         16384 point postmortem waveforms of turn-by-turn data captured up to
         the point of the postmortem trigger.
 
+    X_OFFSET, X_OFL
+    Y_OFFSET, Y_OFL
+    ADC_OFFSET, ADC_OFL
+        Offset of the first turn in the waveform buffer where the selected
+        interlock overflow event occurred (X position, Y position or ADC
+        reading), together with a flag to indicate whether the overflow was
+        seen at all in the buffer.
+            If overflow is seen at the first point the corresponding _OFFSET
+        is set to 0; if no overflow is seen then _OFFSET is set to 16384 (the
+        buffer length) and _OFL is false.
+
+    FLAGS
+        16384 point waveform of flags extracted from the bottom bit of each of
+        the WF<iq> waveforms.  The bits are numbered (from lsb to msb) thus:
+
+            0   Switching synchronisation flag
+            1   ADC overflow
+            2   X interlock error
+            3   Y interlock error
+
 
 Interlock Control (<group> = IL):
 =================================

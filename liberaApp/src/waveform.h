@@ -59,6 +59,13 @@ public:
     FLOAT_WAVEFORM(size_t WaveformSize, float * ExternalWaveform = NULL);
 };
 
+class UCHAR_WAVEFORM : public SIMPLE_WAVEFORM<unsigned char>
+{
+public:
+    UCHAR_WAVEFORM(
+        size_t WaveformSize, unsigned char * ExternalWaveform = NULL);
+};
+
 typedef INT_WAVEFORM        int_WAVEFORM;
 typedef FLOAT_WAVEFORM      float_WAVEFORM;
 

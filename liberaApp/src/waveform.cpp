@@ -99,6 +99,11 @@ FLOAT_WAVEFORM::FLOAT_WAVEFORM(size_t WaveformSize, float * ExternalWaveform) :
     SIMPLE_WAVEFORM<float>(
         DBF_FLOAT, sizeof(float), WaveformSize, ExternalWaveform) { }
 
+UCHAR_WAVEFORM::UCHAR_WAVEFORM(
+        size_t WaveformSize, unsigned char * ExternalWaveform) :
+    SIMPLE_WAVEFORM<unsigned char>(
+        DBF_UCHAR, sizeof(unsigned char), WaveformSize, ExternalWaveform) { }
+
 /* The complex waveform is implemented as a waveform of floating point values
  * with 2 EPICS points (floating point numbers) per point. */
 COMPLEX_WAVEFORM::COMPLEX_WAVEFORM(
@@ -109,6 +114,7 @@ COMPLEX_WAVEFORM::COMPLEX_WAVEFORM(
 
 template class SIMPLE_WAVEFORM<int>;
 template class SIMPLE_WAVEFORM<float>;
+template class SIMPLE_WAVEFORM<unsigned char>;
 template class SIMPLE_WAVEFORM<complex>;
 
 

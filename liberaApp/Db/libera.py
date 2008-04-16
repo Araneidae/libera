@@ -237,11 +237,23 @@ def FreeRunning():
 # Postmortem fixed length buffer.  This mode is always enabled.
 def Postmortem():
     LENGTH = 16384
+
+    def Overflow(name):
+        return [
+            longIn('%s_OFFSET' % name, 0, LENGTH,
+                DESC = '%s overflow offset' % name),
+            boolIn('%s_OFL' % name, 'No overflow', 'Overflowed',
+                DESC = '%s overflow occurred' % name)]
     
     SetChannelName('PM')
 
-    # All turn-by-turn data is provided.
-    Trigger(True, IQ_wf(LENGTH) + ABCD_wf(LENGTH) + XYQS_wf(LENGTH))
+    # All turn-by-turn data is provided.  We also provide digests of the
+    # postmortem reason.
+    Trigger(True,
+        IQ_wf(LENGTH) + ABCD_wf(LENGTH) + XYQS_wf(LENGTH) +
+        Overflow('X') + Overflow('Y') + Overflow('ADC') +
+        [Waveform('FLAGS', LENGTH, 'UCHAR',
+            DESC = 'Interlock overflow flags'),])
     
     UnsetChannelName()
         
