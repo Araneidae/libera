@@ -80,15 +80,15 @@ fi
 
 case "$1" in
     start)
-        # First load the FPGA design
-        echo -n "Loading FPGA design..."
-        /opt/bin/fp < $DESIGN
-        evaluate_retval
-
         if ((NEW_LIBERA)); then
             # Health checking needs to go here ...
             :
         fi
+
+        # First load the FPGA design
+        echo -n "Loading FPGA design..."
+        /opt/bin/fp < $DESIGN
+        evaluate_retval
 
         # Initialize FPGA design
         echo -n "Initializing FPGA design..."

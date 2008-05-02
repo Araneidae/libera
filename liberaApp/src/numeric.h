@@ -46,17 +46,29 @@ inline unsigned int CLZ(unsigned int x)
 }
 
 
-/* Returns 2^-32 * x * y.  This is particularly convenient for fixed point
- * arithmetic, and is reasonably inexpensive (approximately 30ns). */
+/* Returns 2^-32 * x * y, signed or unsigned.  This is particularly convenient
+ * for fixed point arithmetic, and is remarkably inexpensive (approximately
+ * 30ns).
+ *    We do these using inline assembler because the compiler is too
+ * dim-witted to do this right otherwise (gcc 3.4.5 does the whole 64 bit
+ * right shift).  Note the "=&r" modifiers: the true constraint on -mull is
+ * that the first three registers be distinct, but the only practical way to
+ * achieve this seems to be to mark the two (already separate) outputs as
+ * "early clobber" to force them to be distinct from both inputs. */
 inline unsigned int MulUU(unsigned int x, unsigned int y)
 {
-    return ((unsigned long long) x * y) >> 32;
+    unsigned int result, temp; 
+    __asm__("umull   %1, %0, %2, %3" :
+        "=&r"(result), "=&r"(temp) : "r"(x), "r"(y)); 
+    return result; 
 }
-
 
 inline int MulSS(int x, int y)
 {
-    return ((long long) x * y) >> 32;
+    unsigned int result, temp; 
+    __asm__("smull   %1, %0, %2, %3" :
+        "=&r"(result), "=&r"(temp) : "r"(x), "r"(y)); 
+    return result; 
 }
 
 
@@ -64,18 +76,22 @@ inline int MulSS(int x, int y)
  * care when multiplying a signed by an unsigned integer.  This routine works
  * by writing the signed part as
  *      y = y0 - s*2^31
- * where s is the sign bit and y0 the rest of y.  We can then use unsigned
- * multiplication to compute
- *      x*y*2^-32 = x*y0*2^-32 - s*x*2^-1.
+ * where s is the sign bit and y0 the bottom 31 bits of y.
+ *
+ * As an unsigned number, this same y is treated as
+ *      y_ = y0 + s*2^31 ,
+ * so when we calculcate x*y_ (for unsigned x) we get
+ *      x*y_ = x*y0 + s*x*2^31 = x*y + s*x*2^32
+ * and so we can use unsigned multiplication to compute
+ *      x*y = x*y_ - s*x*2^32 .
  *      
  * If it is known that x < 2^31 (and so cannot be mistaken for a signed
  * value) then it will be faster to use MulSS instead. */
 inline int MulUS(unsigned int x, int y)
 {
-    unsigned int y0 = y & 0x7FFFFFFF;
-    int result = (int) MulUU(x, y0);
+    int result = (int) MulUU(x, y);
     if (y < 0)
-        result -= x >> 1;
+        result -= x;
     return result;
 }
 
