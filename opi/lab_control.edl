@@ -3,10 +3,10 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 590
-y 212
-w 261
-h 174
+x 1931
+y 21
+w 368
+h 179
 font "helvetica-medium-r-18.0"
 ctlFont "helvetica-medium-r-18.0"
 btnFont "helvetica-medium-r-18.0"
@@ -180,5 +180,97 @@ topShadowColor index 1
 botShadowColor index 11
 controlPv "TS-DI-MUX-01:SEL4"
 font "helvetica-medium-r-14.0"
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 192
+y 8
+w 123
+h 112
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "1. Pulse Trigger"
+  " 1-1 Machine clock"
+  " 1-2 Trigger"
+  "2. Postmortem"
+  " 2-1 Postmortem"
+  " 2-2 1Hz"
+  " 2-3 Pulse Trigger"
+}
+autoSize
+endObjectProperties
+
+# (Menu Button)
+object activeMenuButtonClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 104
+y 144
+w 120
+h 24
+fgColor index 14
+bgColor index 3
+inconsistentColor index 14
+topShadowColor index 1
+botShadowColor index 11
+controlPv "TS-DI-EVR-01:TRIG:MODE"
+font "helvetica-medium-r-14.0"
+endObjectProperties
+
+# (Message Button)
+object activeMessageButtonClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 232
+y 144
+w 80
+h 24
+fgColor index 14
+onColor index 4
+offColor index 4
+topShadowColor index 1
+botShadowColor index 11
+controlPv "TS-DI-EVR-01:TS-RESET.OUT2"
+pressValue "1"
+onLabel "Triggering"
+offLabel "Trigger"
+3d
+useEnumNumeric
+font "helvetica-medium-r-14.0"
+visPv "TS-DI-EVR-01:TRIG:MODE"
+visMin "2"
+visMax "3"
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 16
+y 144
+w 46
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "Trigger"
+}
+autoSize
 endObjectProperties
 

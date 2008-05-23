@@ -475,7 +475,12 @@ def Interlock():
         OUT  = PP(reason))
     
     Trigger(False, [raw_reason, reason_check, poke])
-        
+
+    interlock_test = boolOut('TEST', 'Normal', 'Interlock Test',
+        ZSV  = 'NO_ALARM',  OSV  = 'MAJOR',
+        VAL  = 0,   PINI = 'YES',
+        DESC = 'Drop interlock for testing')
+    ExtraHealthRecords.append(CP(interlock_test))
     
     UnsetChannelName()
 
@@ -556,7 +561,7 @@ def Conditioning():
 
 
 def AggregateSeverity(name, description, recs):
-    ''' Aggregates the severity of all the given records into a single record.
+    '''Aggregates the severity of all the given records into a single record.
     The value of the record is constant, but its SEVR value reflects the
     maximum severity of all of the given records.'''
     
@@ -729,6 +734,8 @@ def Voltages():
     return voltages + [health, health_display], health
     
 
+# Extra health records can be accumulated onto this list
+ExtraHealthRecords = []
 
 def Sensors():
     SetChannelName('SE')
@@ -766,7 +773,7 @@ def Sensors():
     # record.  Only the alarm status of this record is meaningful.
     alarmsensors = fans + [temp, memfree, ramfs, cpu, voltage_health]
     health = AggregateSeverity('HEALTH', 'Aggregated health',
-        alarmsensors)
+        alarmsensors + ExtraHealthRecords)
     
     Trigger(False, alarmsensors + voltages + [uptime, epicsup, health])
             

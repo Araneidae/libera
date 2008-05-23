@@ -93,6 +93,10 @@ static bool MasterInterlockEnable = false;
  * MasterInterlockEnable variable above masked with GlobalBpmEnable. */
 static READBACK_bool * EnableReadback = NULL;
 
+/* The interlock test mode is used to force the interlock to be dropped.  This
+ * mode overrides all other activity. */
+static bool InterlockTestMode = false;
+
 
 
 /* The interlock holdoff mechanism is required to ensure that when we change
@@ -145,34 +149,42 @@ static void Unlock() { TEST_0(pthread_mutex_unlock, &InterlockMutex); }
 
 static void WriteInterlockState()
 {
-    LIBERA_ILKMODE InterlockMode;
-    if (!GlobalBpmEnable)
-        /* In BPM disable state the interlock is unconditionally disabled.
-         * The variable GlobalBpmEnable tracks CF:ENABLED. */
-        InterlockMode = LIBERA_ILK_DISABLE;
-    else if (InterlockHoldoff > 0)
-        /* In holdoff mode the interlock is unconditionally disabled.  This
-         * masks out interlocks after the attenuators have changed. */
-        InterlockMode = LIBERA_ILK_DISABLE;
-    else if (MasterInterlockEnable)
-        /* In normal enabled mode the interlock is unconditionally enabled. */
-        InterlockMode = LIBERA_ILK_ENABLE;
-    else if (OverflowEnable)
-        /* In overflow detection mode (with the master interlock disabled) we
-         * use a tricksy hack to enable ADC overflow detection while
-         * disabling position interlock: we enable gain dependent interlock
-         * mode, which enables position interlocking only when the "gain" is
-         * above a certain threshold, and we simultaneously set an impossibly
-         * high gain threshold. */
-        InterlockMode = LIBERA_ILK_ENABLE_GAINDEP;
+    if (InterlockTestMode)
+        /* In interlock test mode we unconditionally force the interlock to
+         * be dropped by writing an impossible window and overflow limit. */
+        WriteInterlockParameters(LIBERA_ILK_ENABLE, 0, 0, 0, 0, 1, 1, 0);
     else
-        /* If none of the above apply then the interlock is disabled. */
-        InterlockMode = LIBERA_ILK_DISABLE;
+    {
+        LIBERA_ILKMODE InterlockMode;
+        if (!GlobalBpmEnable)
+            /* In BPM disable state the interlock is unconditionally disabled.
+             * The variable GlobalBpmEnable tracks CF:ENABLED. */
+            InterlockMode = LIBERA_ILK_DISABLE;
+        else if (InterlockHoldoff > 0)
+            /* In holdoff mode the interlock is unconditionally disabled.
+             * This masks out interlocks after the attenuators have changed. */
+            InterlockMode = LIBERA_ILK_DISABLE;
+        else if (MasterInterlockEnable)
+            /* In normal enabled mode the interlock is unconditionally
+             * enabled. */
+            InterlockMode = LIBERA_ILK_ENABLE;
+        else if (OverflowEnable)
+            /* In overflow detection mode (with the master interlock disabled)
+             * we use a tricksy hack to enable ADC overflow detection while
+             * disabling position interlock: we enable gain dependent
+             * interlock mode, which enables position interlocking only when
+             * the "gain" is above a certain threshold, and we simultaneously
+             * set an impossibly high gain threshold. */
+            InterlockMode = LIBERA_ILK_ENABLE_GAINDEP;
+        else
+            /* If none of the above apply then the interlock is disabled. */
+            InterlockMode = LIBERA_ILK_DISABLE;
 
-    WriteInterlockParameters(
-        InterlockMode,
-        MinX - OffsetX, MaxX - OffsetX, MinY - OffsetY, MaxY - OffsetY,
-        OverflowLimit, OverflowTime, 0);
+        WriteInterlockParameters(
+            InterlockMode,
+            MinX - OffsetX, MaxX - OffsetX, MinY - OffsetY, MaxY - OffsetY,
+            OverflowLimit, OverflowTime, 0);
+    }
 }
 
 
@@ -338,6 +350,9 @@ bool InitialiseInterlock()
     PUBLISH_INTERLOCK(bo,  "IL:OVERFLOW", OverflowEnable);
     PUBLISH_INTERLOCK(longout, "IL:OVER", OverflowLimit);
     PUBLISH_INTERLOCK(longout, "IL:TIME", OverflowTime);
+    /* Interlock testing. */
+    PUBLISH_FUNCTION_OUT(bo,  "IL:TEST",
+        InterlockTestMode, LockedWriteInterlockState);
 
     /* The interlock enable is dynamic state. */
     EnableReadback = PUBLISH_READBACK(bi, bo, "IL:ENABLE",

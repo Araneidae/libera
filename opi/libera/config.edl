@@ -3,10 +3,10 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 647
-y 325
+x 532
+y 445
 w 473
-h 521
+h 544
 font "helvetica-medium-r-16.0"
 ctlFont "helvetica-medium-r-16.0"
 btnFont "helvetica-medium-r-16.0"
@@ -48,7 +48,7 @@ major 4
 minor 0
 release 0
 x 240
-y 280
+y 304
 w 224
 h 200
 lineColor index 14
@@ -127,7 +127,7 @@ major 4
 minor 1
 release 0
 x 408
-y 488
+y 512
 w 56
 h 22
 fgColor index 25
@@ -643,7 +643,7 @@ release 0
 x 240
 y 48
 w 224
-h 216
+h 240
 lineColor index 14
 fill
 fillColor index 4
@@ -1159,7 +1159,7 @@ major 4
 minor 0
 release 0
 x 344
-y 296
+y 320
 w 112
 h 22
 fgColor index 14
@@ -1179,7 +1179,7 @@ major 4
 minor 1
 release 0
 x 248
-y 304
+y 328
 w 61
 h 16
 font "helvetica-medium-r-14.0"
@@ -1199,7 +1199,7 @@ major 4
 minor 1
 release 0
 x 368
-y 376
+y 400
 w 32
 h 24
 controlPv "$(device):CF:SETSW_S"
@@ -1225,7 +1225,7 @@ major 4
 minor 1
 release 0
 x 248
-y 376
+y 400
 w 97
 h 16
 font "helvetica-medium-r-14.0"
@@ -1245,7 +1245,7 @@ major 4
 minor 1
 release 0
 x 368
-y 424
+y 448
 w 80
 h 24
 controlPv "$(device):CF:ATTEN_S"
@@ -1271,7 +1271,7 @@ major 4
 minor 1
 release 0
 x 248
-y 424
+y 448
 w 77
 h 16
 font "helvetica-medium-r-14.0"
@@ -1291,7 +1291,7 @@ major 4
 minor 1
 release 0
 x 240
-y 272
+y 296
 w 136
 h 16
 font "helvetica-medium-r-12.0"
@@ -1310,7 +1310,7 @@ major 4
 minor 0
 release 0
 x 240
-y 272
+y 296
 w 136
 h 16
 lineColor index 14
@@ -1438,7 +1438,7 @@ major 4
 minor 2
 release 0
 x 328
-y 488
+y 512
 w 72
 h 24
 fgColor index 43
@@ -1464,7 +1464,7 @@ major 4
 minor 0
 release 0
 x 344
-y 344
+y 368
 w 112
 h 22
 fgColor index 14
@@ -1484,7 +1484,7 @@ major 4
 minor 1
 release 0
 x 248
-y 352
+y 376
 w 32
 h 16
 font "helvetica-medium-r-14.0"
@@ -1504,7 +1504,7 @@ major 4
 minor 1
 release 0
 x 248
-y 328
+y 352
 w 74
 h 16
 font "helvetica-medium-r-14.0"
@@ -1524,7 +1524,7 @@ major 4
 minor 0
 release 0
 x 344
-y 320
+y 344
 w 112
 h 22
 fgColor index 14
@@ -1544,7 +1544,7 @@ major 4
 minor 1
 release 0
 x 368
-y 400
+y 424
 w 80
 h 20
 controlPv "$(device):CF:DELAYSW_S"
@@ -1570,7 +1570,7 @@ major 4
 minor 1
 release 0
 x 248
-y 400
+y 424
 w 87
 h 16
 font "helvetica-medium-r-14.0"
@@ -1955,7 +1955,7 @@ major 4
 minor 2
 release 0
 x 320
-y 448
+y 472
 w 136
 h 24
 fgColor index 43
@@ -1982,7 +1982,7 @@ minor 3
 release 0
 # Geometry
 x 408
-y 375
+y 400
 w 40
 h 22
 # Appearance
@@ -2020,7 +2020,6 @@ plotColor {
 }
 endObjectProperties
 
-
 # (Shell Command)
 object shellCmdClass
 beginObjectProperties
@@ -2043,3 +2042,44 @@ command {
 }
 includeHelpIcon
 endObjectProperties
+
+# (Menu Button)
+object activeMenuButtonClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 328
+y 256
+w 128
+h 24
+fgColor index 14
+fgAlarm
+bgColor index 3
+inconsistentColor index 0
+topShadowColor index 1
+botShadowColor index 11
+controlPv "$(device):IL:TEST_S"
+font "helvetica-medium-r-14.0"
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 248
+y 264
+w 71
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "Test mode:"
+}
+autoSize
+endObjectProperties
+

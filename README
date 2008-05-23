@@ -352,6 +352,10 @@ Interlock Control (<group> = IL):
         This field should be manually set to zero after the interlock reason
         has been recorded.
 
+    TEST_S
+        Setting this PV to "Interlock Test" will unconditionally force the
+        interlock output to be open.  This overrides the action of ENABLE_S.
+
 
 Configuration (<group> = CF):
 =============================

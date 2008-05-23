@@ -167,21 +167,24 @@ _mbbPrefixes = [
     'ZR', 'ON', 'TW', 'TH', 'FR', 'FV', 'SX', 'SV',     # 0-7
     'EI', 'NI', 'TE', 'EL', 'TV', 'TT', 'FT', 'FF']     # 8-15
 
-def mbbOut(name, *option_values, **fields):
-    for prefix, (option, value) in zip(_mbbPrefixes, option_values):
-        fields[prefix + 'ST'] = option
-        fields[prefix + 'VL'] = value
-    return Libera.mbbo(name + '_S', address=name,
-        OMSL = 'supervisory', **fields)
-    
-def mbbIn(name, *option_values, **fields):
-    def process_value(prefix, option, value, severity=None):
+# Adds a list of (option, value [,severity]) tuples into field settings
+# suitable for mbbi and mbbo records.
+def process_mbb_values(fields, option_values):
+    def process_value(fields, prefix, option, value, severity=None):
         fields[prefix + 'ST'] = option
         fields[prefix + 'VL'] = value
         if severity:
             fields[prefix + 'SV'] = severity
     for prefix, value in zip(_mbbPrefixes, option_values):
-        process_value(prefix, *value)
+        process_value(fields, prefix, *value)
+        
+def mbbOut(name, *option_values, **fields):
+    process_mbb_values(fields, option_values)
+    return Libera.mbbo(name + '_S', address=name,
+        OMSL = 'supervisory', **fields)
+    
+def mbbIn(name, *option_values, **fields):
+    process_mbb_values(fields, option_values)
     return Libera.mbbi(name, **fields)
 
 
