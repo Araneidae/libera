@@ -10,8 +10,8 @@ include $(TOP)/configure/CONFIG
 #USR_CXXFLAGS += -E
 #USR_CXXFLAGS += -g -O0
 
-USR_CXXFLAGS += -Werror 
-USR_CXXFLAGS += -Wextra -Wno-unused-parameter
+USR_CXXFLAGS += -march=armv5te
+USR_CXXFLAGS += -Werror -Wall -Wextra -Wno-unused-parameter
 
 # Make sure that we pick up the version from install/CONFIG.
 USR_CXXFLAGS += -DLIBERA_VERSION='"$(shell \

@@ -55,7 +55,7 @@
 
 
 #define INITIALISE_HISTORY(array, value) \
-    for (int i = 0; i < sizeof(array) / sizeof(array[0]); i ++) \
+    for (unsigned int i = 0; i < sizeof(array) / sizeof(array[0]); i ++) \
         array[i] = value
 
 /* Adds a point to the start of a history array, moving all other entries up

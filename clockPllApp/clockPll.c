@@ -224,8 +224,8 @@ void WriteStatus(const char *Format, ...)
     if (status_pipe_overflow)
         /* The x command is interpreted as loss of connection by the client. */
         write(status_pipe, "x\n", 2);
-    status_pipe_overflow =
-        write(status_pipe, Message, strlen(Message)) != strlen(Message);
+    int written = write(status_pipe, Message, strlen(Message));
+    status_pipe_overflow = (size_t) written != strlen(Message);
     TEST_0(pthread_mutex_unlock, &status_mutex);
 }
 

@@ -7,7 +7,9 @@ STATIC_BUILD = YES
 CONFORM_CFLAGS_STRICT = 
 CONFORM_CXXFLAGS_STRICT = 
 
-USR_CFLAGS += -Werror -Wno-comment -std=gnu99
+USR_CFLAGS += -march=armv5te 
+USR_CFLAGS += -std=gnu99
+USR_CFLAGS += -Werror -Wall -Wextra -Wno-unused-parameter
 
 USR_INCLUDES += -I$(TOP)/Include
 
