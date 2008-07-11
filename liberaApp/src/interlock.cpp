@@ -131,6 +131,10 @@ static int InterlockHoldoffCount = 1;   // Not so clear what's suitable
 
 static int InterlockHoldoff = 3;
 
+/* Interlock IIR filter constant.  The interlock position is filtered by an
+ * IIR with constant factor 2^-K determined by this setting. */
+static int InterlockIIR_K = 0;
+
 
 /* We're going to need to use a mutex, as there are two possible threads
  * coming through here and interactions between them need to be guarded.  One
@@ -335,6 +339,11 @@ private:
 };
 
 
+void SetInterlockIIR_K()
+{
+    WriteInterlockIIR_K(InterlockIIR_K);
+}
+
 
 bool InitialiseInterlock()
 {
@@ -362,9 +371,12 @@ bool InitialiseInterlock()
         InterlockHoldoffCount, NULL_ACTION);
     PUBLISH_CONFIGURATION(longout, "IL:IHOLDOFF", 
         CurrentHoldoffCount, NULL_ACTION);
+    PUBLISH_CONFIGURATION(longout, "IL:IIRK",
+        InterlockIIR_K, SetInterlockIIR_K);
     
     new INTERLOCK_EVENT();
 
+    SetInterlockIIR_K();
     LockedWriteInterlockState();
 
     return true;

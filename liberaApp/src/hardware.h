@@ -278,6 +278,11 @@ bool WriteSwitchTriggerSelect(bool ExternalTrigger);
 bool WriteSwitchTriggerDelay(int Delay);
 
 
+/* Writes a filter coefficient for an IIR on the position interlock.  This
+ * can be a value between 0 and 6 (inclusive), corresponding to a coefficient
+ * of 2^-K for a one pole IIR (pole at z=1-2^-K). */
+bool WriteInterlockIIR_K(int K);
+
 
 /* Pick up the generic helper test macros. */
 #include "test_error.h"

@@ -5,10 +5,10 @@ This software provides an EPICS interface to the Libera electron beam position
 monitor, allowing the performance of the electron beam to be monitored through
 epics channels.
 
-This version of the epics driver is designed to work with with version 1.40 or
-1.42 of the Libera device driver, as distributed by Instrumentation
-Technologies, http://www.i-tech.si, and has been built to support the
-operation of the Diamond light source, http://www.diamond.ac.uk.
+This version of the epics driver is designed to work with with version 1.46 of
+the Libera device driver, as distributed by Instrumentation Technologies,
+http://www.i-tech.si, and has been built to support the operation of the
+Diamond light source, http://www.diamond.ac.uk.
 
 The normal distribution point for this software is SourceForge, from URL
     http://sourceforge.net/projects/libera-epics
@@ -324,6 +324,11 @@ Interlock Control (<group> = IL):
         threshold can be set as a 16 bit number (using OVER_S) or as a
         percentage of full scale (using OVER_PC_S).
 
+    IIRK_S
+        This is a one pole IIR filter applied to ADC readings before ADC
+        overflow detection is applied.  The coefficient K corresponds to a
+        pole at 1-2^-K per sample for K in the range 0..6.
+
     OVERFLOW_S
         This can be set to Enabled to enable ADC overflow detection even when
         the interlock is otherwise disabled.
@@ -480,6 +485,10 @@ Clock (<group> = CK):
         the second; secondly, the local Linux system timestamp must already be
         accurate to with a few 100ms (this can be achieved using NTP).  
             Note: a 1Hz trigger can be used for system clock synchronisation.
+        Note also, however, that the current implementation of the system time
+        clock does not hold synchronisation long enough for this 
+        synchronisation to be worth doing, instead TIMESTAMP_S should be set
+        to use NTP time. 
 
     MC_LOCK
     SC_LOCK

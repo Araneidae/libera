@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 532
-y 445
+x 537
+y 466
 w 473
 h 544
 font "helvetica-medium-r-16.0"
@@ -1048,7 +1048,7 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 328
+x 352
 y 232
 w 48
 h 24
@@ -1075,15 +1075,15 @@ major 4
 minor 1
 release 0
 x 248
-y 232
-w 69
+y 236
+w 92
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
 bgColor index 0
 useDisplayBg
 value {
-  "ADC Time:"
+  "ADC Time/IIR:"
 }
 autoSize
 endObjectProperties
@@ -2079,6 +2079,52 @@ bgColor index 0
 useDisplayBg
 value {
   "Test mode:"
+}
+autoSize
+endObjectProperties
+
+# (Text Control)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 424
+y 232
+w 32
+h 20
+controlPv "$(device):IL:IIRK_S"
+font "helvetica-medium-r-14.0"
+fontAlign "right"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+editable
+autoHeight
+motifWidget
+limitsFromDb
+nullColor index 0
+useHexPrefix
+newPos
+objType "controls"
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 408
+y 236
+w 4
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "/"
 }
 autoSize
 endObjectProperties

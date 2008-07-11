@@ -367,6 +367,7 @@ bool ReadEvent(int &EventId, int &Parameter)
                                       
 #define DSC_FILTER_DELAY        0xC028  // Analogue to digitial filter delay
 #define DSC_HISTORY_MARKER      0xC030  // History marker origin and delay
+#define DSC_INTERLOCK_IIR_K     0xC034  // Interlock IIR coefficient
 #define DSC_SWITCH_DIVIDER      0xC038  // Switch division and trigger select
 #define DSC_SWITCH_DELAY        0xC03C  // Switch delay control
 
@@ -743,6 +744,15 @@ bool WriteSwitchTriggerDelay(int Delay)
             (DelayControl & 0xFFFF0000) | (Delay & 0x3FF));
 }
 
+
+/* This is not properly part of the DSC interface, but happens to be
+ * accessible through the DSC device, as this is the part of the FPGA address
+ * space occupied by this register. */
+
+bool WriteInterlockIIR_K(int K)
+{
+    return WriteDscWord(DSC_INTERLOCK_IIR_K, K);
+}
 
 
 #ifdef RAW_REGISTER
