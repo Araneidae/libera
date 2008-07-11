@@ -552,14 +552,14 @@ def Conditioning():
                 DESC = 'Raw digest of IQ data'),
             # Compensation matrix used to generate the IQ_wf() array
             Waveform('LASTCOMP', COMP_MAT_SIZE, 
-                DESC = 'Last channel gains'),
+                DESC = 'Last channel compensation'),
             # Current compensation matrix: will be copied to LASTCOMP the
             # next time SC processes.
             Waveform('COMP', COMP_MAT_SIZE, 
-                DESC = 'Last channel gains'),
+                DESC = 'Current channel compensation'),
         ] + [
             aIn('PHASE%s' % button, -180, 180,
-                PREC = 2, EGU  = 'deg',
+                PREC = 3, EGU  = 'deg',
                 DESC = 'Button %s input phase' % button)
             for button in 'BCD'
         ] + [
@@ -573,7 +573,7 @@ def Conditioning():
                     PREC = 5, 
                     DESC = 'Channel %s gain' % channel),
                 aIn('C%sVAR' % channel, 0, 0.1,
-                    PREC = 3, 
+                    PREC = 4, 
                     DESC = 'Channel %s variance' % channel),
         ] + IQ_wf(MAX_SC_IQ))
     

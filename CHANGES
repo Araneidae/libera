@@ -1,5 +1,56 @@
 Change history of Libera EPICS Driver development
 
+2008/07/?? Version 1.46.3.4
+===========================
+Many changes in this release.  
+
+The following are important new features in this release:
+ - Support for Libera Brilliance and Linux 2.6 installation.  This driver
+   works with Libera 1.60 and 1.82 (though there has not been much testing on
+   these platforms).
+
+
+The following major changes will introduce incompatibilites:
+ - The EPICS driver now completely replaces much of the preexising Libera
+   driver functionality.  Two changes in particular will be visible:
+   1. The script used to start, stop or restart the Libera system is now
+      /etc/init.d/libera-driver rather than libera (which is renamed by
+      installation to old-libera, and can savely be removed).
+   2. CSPI applications (such as the libera application) will no longer work.
+ - ADC readings reported by FT processing are now scaled to 16 bit values.
+   This is designed for compatibility with Libera Brilliance.
+
+The following extra features are worth noting.  For more details see the
+README file for details.
+ - New beam position statistics have been added to FR data.
+ - Add new IL:IIRK_S configuration setting to control a filter in the ADC
+   overflow detection path.
+ - Add new IL:TEST_S PV for testing the interlock.
+ - Fix exceptionally long standing bug in Vertical mode calculation: if a
+   non-zero origin is specified then all positions were returned as zero.  Due
+   to a << vs - precedence error!
+ - Add support for trigger offset to FR and TT waveforms.
+ - Improve FT WF position calculations by using a proper 8 point filter for
+   decimating raw ADC data down to display resolution.  This filter turns out
+   to add a negligible amount of time to processing.
+      Note that this filter is currently hard wired and relies on the
+   intermediate frequency being close to 1/4 sample frequency.
+ - Add FT:WF<X,Y,Q,S> and FT:MAXS pvs to provide an estimate of "intra-turn"
+   beam position.
+ - Change all screens from arial to helvetica fonts.  The Helvetica font has
+   the virtue of having fixed pitch digits.
+ - Ensure that the DONE PV updates with a current timestamp.  To ensure that
+   its processing can be observed it is changed from a bo to a longout record.
+ - Revisit the power and charge calculations.  The key scaling parameter S_0
+   is now a configuration parameter for each affected mode (SA and FT).
+ - Implement interlock holdoff when changing signal conditioning.  Also means
+   that we can reduce the default interlock holdoff interval.
+ - Change first turn ADC readouts to return full 16 bit values.  In
+   pre-brilliance Libera we return zeros in the bottom four bits, in
+   Brilliance we return the full 16 bit ADC reading.
+ - Create new SC signal conditioning code to replace DSC daemon.
+
+
 2007/09/27 Version 1.46.1
 =========================
 Support for Libera 1.46 driver.  Note that this version will not work

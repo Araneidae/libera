@@ -159,6 +159,9 @@ First Turn (<group> = FT):
         Train charge as integrated within the integration window, and scaled
         by CF:ISCALE.
 
+    AXIS
+        Waveform in microseconds that can be used to label WF<...> waveforms.
+
 
 Free Running (<group> = FR):
 ============================
@@ -167,6 +170,11 @@ Free Running (<group> = FR):
     WF<buttons>
     WF<positions>
         2048 point arrays updated on each trigger at turn-by-turn frequency.
+
+    DELAY_S
+        Configures the delay in samples from the trigger to the first captured
+        point.  A negative delay can be used for "pretriggering", ie to
+        capture turn by turn data before the trigger.
 
     ENABLE_S
         If set to Disabled then FR processing will not occur.
@@ -207,6 +215,10 @@ Turn by Turn (<group> = TT):
     WF<iq>, WF<buttons>, WF<positions>
         Waveforms of up to 32768 points read from the internal captured long
         waveform using the specified OFFSET and LENGTH.
+
+    DELAY_S
+        Just as for FR:DELAY_S, allows the delay from trigger to sampled data
+        to be configured.
 
 The following protocol should be used when using this group of records.
 First the record must be armed, and then the trigger should be waited for.
@@ -274,6 +286,11 @@ Slow Acquisition (<group> = SA):
     CURRENT
         Beam current.  This is scaled by CF:ISCALE.
 
+    MAXADC, MAXADC_PC
+        Maximum ADC reading over a single SA interval (approximately 100ms).
+        This is a true maximum ADC value, but requires a Diamond specific
+        register to be implemented in the FPGA.
+
 
 Postmortem (<group> = PM):
 ==========================
@@ -303,6 +320,8 @@ Postmortem (<group> = PM):
             1   ADC overflow
             2   X interlock error
             3   Y interlock error
+
+        The remaining four bits repeat the same sequence.
 
 
 Interlock Control (<group> = IL):
@@ -355,7 +374,7 @@ Interlock Control (<group> = IL):
         the interlock is disabled after the attenuator setting is changed.
         The units are in 1/10 second.
 
-    CHK_REASON
+    REASON
         When an interlock check is reported this PV records the interlock 
         reason bits with the following meanings:
             1 => overflow in X
@@ -529,6 +548,11 @@ Clock (<group> = CK):
     SC_FREQ_E
         Frequency error.  Normally zero.
 
+    VERBOSE_S
+        Controls whether the values _DAC, _PHASE_E and _FREQ_E are reported
+        for MC and SC.  As these values are not normally useful and cost
+        processing resources to generate, by default this is disabled.
+
     OPEN_LOOP_S
     MC_DAC_S
     SC_DAC_S
@@ -606,6 +630,40 @@ Sensors (<group> = SE):
         percent are reported with minor and major severity EPICS alarms
         respectively, and VHEALTH aggregates the state of all voltages (except
         for VOLT2 which is unused).
+
+
+Signal Conditioning (<group> = SC):
+===================================
+
+    CIIR_S
+        Filter coefficient for one pole IIR for application of channel
+        compensation change.
+
+    INTERVAL_S
+        Interval in seconds between signal conditioning computations.
+
+    MAXDEV_S
+        Maximum allowed deviation of signal for conditioning processing as a
+        percentage of minimum signal level.
+
+    DEV
+        Measured signal deviation on last update.
+
+    STATUS
+        Status of last signal conditioning round.
+
+    PHASEB, PHASEC, PHASED
+        Measured button signal angles relative to button A in degrees.
+
+    C<channel>PHASE, C<channel>MAG, C<channel>VAR
+        Computed channel gains in phase and magnitude together with the
+        measured variance on each channel.
+
+    IQDIGEST
+    WF<iq>
+    SETCOMP_S
+    COMP, LASTCOMP
+        Internal PVs for develoment and diagnostic use.
 
 
 Other (no group):

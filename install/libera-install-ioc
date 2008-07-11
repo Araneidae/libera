@@ -96,7 +96,7 @@ where <options> includes
     -t  Testing install: don't copy files, use from configured location
     -a  Enable autostart via /etc/init.d/libera-driver script.
     -s  Start IOC after installation
-If /etc/init.d/libera is found it will be renamed to /etc/init.d/libera.old
+If /etc/init.d/libera is found it will be renamed to /etc/init.d/old-libera
 and a new /etc/init.d/libera-driver script will always be installed.
 EOF
         [ -n "$LOCATIONS" ]  &&  cat <<EOF
