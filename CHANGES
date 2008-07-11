@@ -1,5 +1,13 @@
 Change history of Libera EPICS Driver development
 
+2007/09/27 Version 1.46.1
+=========================
+Support for Libera 1.46 driver.  Note that this version will not work
+correctly with earlier versions of the driver.  
+
+The only change is to track an incompatible change in the driver interface.
+
+
 2007/06/12 Version 1.40.2
 =========================
 More complete support for iTech Libera 1.40 and 1.42 driver.

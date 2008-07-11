@@ -218,6 +218,27 @@ def Booster():
     UnsetChannelName()
 
 
+# Statistics for FR waveforms
+def FreeRunningStats(axis):
+    return [
+        aIn('MEAN%s' % axis, -1e4, 1e4, 1e-3, 
+            PREC = 2, EGU = 'um', 
+            DESC = 'Mean %s FR position' % axis),
+        aIn('STD%s' % axis, 0, 1e4, 1e-3,
+            PREC = 2, EGU = 'um', 
+            DESC = 'Standard dev. %s FR position' % axis),
+        aIn('MIN%s' % axis, -1e4, 1e4, 1e-3, 
+            PREC = 2, EGU = 'um',
+            DESC = 'Minimum %s FR position' % axis),
+        aIn('MAX%s' % axis, -1e4, 1e4, 1e-3, 
+            PREC = 2, EGU = 'um',
+            DESC = 'Maximum %s FR position' % axis),
+        aIn('PP%s' % axis, 0, 2e4, 1e-3, 
+            PREC = 2, EGU = 'um',
+            DESC = 'Peak to peak %s FR' % axis)]
+        
+
+
 # Free running short (typically 2048) turn-by-turn buffer.  
 def FreeRunning():
     LENGTH = Parameter('FR_LENGTH')
@@ -225,9 +246,10 @@ def FreeRunning():
     SetChannelName('FR')
     Enable()
 
-    # In this mode we provide all the available data: raw IQ, buttons and
-    # computed positions.
-    Trigger(True, IQ_wf(LENGTH) + ABCD_wf(LENGTH) + XYQS_wf(LENGTH))
+    # In this mode we provide all the available data: raw IQ, buttons,
+    # computed positions and statistics.
+    Trigger(True, IQ_wf(LENGTH) + ABCD_wf(LENGTH) + XYQS_wf(LENGTH) +
+        FreeRunningStats('X') + FreeRunningStats('Y'))
     # Trigger capture offset
     longOut('DELAY', DESC = 'Trigger capture offset')
     
@@ -429,7 +451,7 @@ def Interlock():
     # enabled and configured.
     boolOut('OVERFLOW', 'Disabled', 'Enabled',
         DESC = 'Enable ADC overflow detect')
-    longOut('TIME', 1, 1024,
+    longOut('TIME', 1, 4095,
         DESC = 'ADC overflow duration')
     overflow = longOut('OVER', 0, MAX_ADC,
         DESC = 'ADC overflow threshold')

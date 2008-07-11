@@ -54,14 +54,22 @@
  *
  */
 
-/* Some field identifiers used for indexes into the structures above. */
-#ifdef offsetof
-/* At present we only use offsets into ABCD. */
+/* Some field identifiers used for indexes into the structures described
+ * above. */
+
+/* Offsets into ABCD_ROW. */
 #define FIELD_A         offsetof(ABCD_ROW, A)
 #define FIELD_B         offsetof(ABCD_ROW, B)
 #define FIELD_C         offsetof(ABCD_ROW, C)
 #define FIELD_D         offsetof(ABCD_ROW, D)
-#endif
+
+/* Offsets into XYQS_ROW. */
+#define FIELD_X         offsetof(XYQS_ROW, X)
+#define FIELD_Y         offsetof(XYQS_ROW, Y)
+
+/* Dual of offsetof macro, used to reference a selected field. */
+#define use_offset(Type, Struct, Field) \
+    (*(Type *)((char *)&(Struct) + (Field)))
 
 
 /* Converts Count rows of IQ data into ABCD format by applying Cordic

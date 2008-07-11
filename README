@@ -104,7 +104,8 @@ In the list of records below we use a number of abbreviations:
         refers to four names, X, Y, Q, S referring to the computed electron
         beam position (X,Y), a skew factor (Q) and the total beam intensity
         (S).  The intensity S is in arbitrary units, normally scaled to
-        0.5822*2^31 full scale; the positions are in either nm or mm. 
+        0.5822*2^31 full scale; the positions are in nm for waveforms and in
+        mm for single points.
     ..._S
         Records of the form <name>_S are used to write values into the driver.
         Most of these written values are remembered over IOC restart.
@@ -169,6 +170,12 @@ Free Running (<group> = FR):
 
     ENABLE_S
         If set to Disabled then FR processing will not occur.
+
+    MEANX, STDX, MINX, MAXX, PPX
+    MEANY, STDY, MINY, MAXY, PPY
+        The mean, standard deviation, minimum and maximum value and
+        peak-to-peak deviation are computed over each FR waveform and
+        reported in microns.
 
 
 Turn by Turn (<group> = TT):

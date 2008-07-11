@@ -32,6 +32,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stddef.h>
+#include <limits.h>
+#include <math.h>
 
 #include "device.h"
 #include "persistent.h"
@@ -51,6 +54,7 @@ class FREE_RUN : I_EVENT
 {
 public:
     FREE_RUN(int WaveformLength) :
+        WaveformLength(WaveformLength),
         WaveformIq(WaveformLength),
         WaveformAbcd(WaveformLength),
         WaveformXyqs(WaveformLength)
@@ -62,6 +66,18 @@ public:
         WaveformAbcd.Publish("FR");
         WaveformXyqs.Publish("FR");
         Publish_longout("FR:DELAY", CaptureOffset);
+
+        /* Publish statistics. */
+        Publish_ai("FR:MEANX", MeanX);
+        Publish_ai("FR:MEANY", MeanY);
+        Publish_ai("FR:STDX",  StdX);
+        Publish_ai("FR:STDY",  StdY);
+        Publish_ai("FR:MINX",  MinX);
+        Publish_ai("FR:MINY",  MinY);
+        Publish_ai("FR:MAXX",  MaxX);
+        Publish_ai("FR:MAXY",  MaxY);
+        Publish_ai("FR:PPX",   PpX);
+        Publish_ai("FR:PPY",   PpY);
         
         Interlock.Publish("FR", true);
         Enable.Publish("FR");
@@ -71,6 +87,7 @@ public:
     }
 
 
+private:
     /* This code is called, possibly indirectly, in response to a trigger
      * event to read and process a First Turn waveform.  The waveform is read
      * and all associated values are computed.
@@ -89,18 +106,66 @@ public:
         WaveformAbcd.CaptureCordic(WaveformIq);
         WaveformXyqs.CaptureConvert(WaveformAbcd);
 
+        UpdateStatistics(FIELD_X, MeanX, StdX, MinX, MaxX, PpX);
+        UpdateStatistics(FIELD_Y, MeanY, StdY, MinY, MaxY, PpY);
+
         /* Let EPICS know there's stuff to read. */
         Interlock.Ready(WaveformIq.GetTimestamp());
     }
 
+
+    void UpdateStatistics(
+        int Field, int &Mean, int &Std, int &Min, int &Max, int &Pp)
+    {
+        /* I think it may be marginally faster to grab the waveform once into
+         * a properly aligned local waveform, rather than having to index the
+         * required field repeatedly. */
+        int Waveform[WaveformLength];
+        WaveformXyqs.Read(Field, Waveform, WaveformLength);
+        
+        long long int Total = 0;
+        Min = INT_MAX;
+        Max = INT_MIN;
+        for (int i = 0; i < WaveformLength; i ++)
+        {
+            int Value = use_offset(int, Waveform[i], Field);
+            Total += Value;
+            if (Value < Min)  Min = Value;
+            if (Value > Max)  Max = Value;
+        }
+        Mean = (int) (Total / WaveformLength);
+        Pp = Max - Min;
+
+        /* We get away with accumulating the variance in a long long.  This
+         * depends on reasonable ranges of values: at DLS the position is
+         * +-10mm (24 bits) and the waveform is 2^11 bits long.  2*24+11 fits
+         * into 63 bits, and seriously there is negligible prospect of this
+         * failing anyway with realistic inputs... */
+        long long int Variance = 0;
+        for (int i = 0; i < WaveformLength; i ++)
+        {
+            long long int Value = use_offset(int, Waveform[i], Field);
+            Variance += (Value - Mean) * (Value - Mean);
+        }
+        Variance /= WaveformLength;
+        /* At this point I'm lazy. */
+        Std = (int) sqrt(Variance);
+    }
+
+
+    const int WaveformLength;
     
-private:
     /* Captured and processed waveforms: these three blocks of waveforms are
      * all published to EPICS. */
     IQ_WAVEFORMS WaveformIq;
     ABCD_WAVEFORMS WaveformAbcd;
     XYQS_WAVEFORMS WaveformXyqs;
 
+    /* Statistics for the captured waveforms. */
+    int MeanX, StdX, MinX, MaxX, PpX;
+    int MeanY, StdY, MinY, MaxY, PpY;
+
+    /* Offset from trigger of capture. */
     int CaptureOffset;
 
     /* EPICS interlock. */

@@ -64,11 +64,6 @@
 static int S_0 = 2340000;
 
 
-/* Dual of offsetof macro, used to reference a selected field. */
-#define use_offset(Type, Struct, Field) \
-    (*(Type *)((char *)&(Struct) + (Field)))
-
-
 
 /* Processing the raw ADC data is a suprisingly complicated process.  The
  * following routines capture the stages. */
