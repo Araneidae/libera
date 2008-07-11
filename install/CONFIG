@@ -80,5 +80,5 @@ IOC_FR_LENGTH=2048
 # significant figures in these values, and the same settings should serve for
 # all Liberas with the same filter chain configuration.  Changing the
 # configured DDC filters will change these values.
-IOC_S0_SA=196000000
+IOC_S0_SA=99400000
 IOC_S0_FT=2342000
