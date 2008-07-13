@@ -33,18 +33,6 @@
 # ----------------------------------------------------------------------------
 # Support routines
 
-# Export named parameter to libera.db definitions.
-#
-#   LiberaParameter <name> <value>
-#
-export LIBERA_MACROS=''
-LiberaParameter()
-{
-    [ -n "$LIBERA_MACROS" ]  &&  LIBERA_MACROS="$LIBERA_MACROS",
-    LIBERA_MACROS="$LIBERA_MACROS$1=$2"
-}
-
-
 # Construct IOC parameter string array
 #
 #   IocParameter <flag> <value>
@@ -127,16 +115,8 @@ if [ -n "$IOC_CORE" -a -d "$IOC_CORE" ]; then
 fi
 
 
-# Export the database parameters needed to configure libera.db.  These are
-# record lengths which need to be defined at IOC startup.
-LiberaParameter DEVICE    "$DEVICE"
-LiberaParameter BN_SHORT  $((IOC_BN_LENGTH))
-LiberaParameter BN_LONG   $((16*IOC_BN_LENGTH))
-LiberaParameter TT_LONG   $((IOC_TT_LENGTH))
-LiberaParameter TT_WINDOW $((IOC_TT_WINDOW))
-LiberaParameter FR_LENGTH $((IOC_FR_LENGTH))
-
-# Define the corresponding record lengths for the IOC itself
+# Define all the parameters to pass through to the IOC
+IocParameter -d "$DEVICE"
 IocParameter -cBN= $((IOC_BN_LENGTH))
 IocParameter -cTT= $((IOC_TT_LENGTH))
 IocParameter -cTW= $((IOC_TT_WINDOW))
@@ -159,7 +139,7 @@ IocParameter -f $FREV
 echo
 echo 'Starting IOC at' $(date)
 echo "IOC parameters: ${IOC_PARAMETERS[*]}"
-"$BIN_DIR"/ioc "${IOC_PARAMETERS[@]}" "$BIN_DIR"/st.cmd
+"$BIN_DIR"/ioc "${IOC_PARAMETERS[@]}"
 echo 'IOC stopped at' $(date)
 echo
 

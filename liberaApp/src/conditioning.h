@@ -45,6 +45,11 @@ void WriteScMode(SC_MODE ScMode);
  * the conditioning filter will be reset as the attenuation is written. */
 bool ScWriteAttenuation(int Attenuation);
 
+/* Returns the maximum attenuation value: this is architecture dependent, and
+ * can be 62 or 31 depending on whether Libera Electron or Brilliance is
+ * present. */
+int MaximumAttenuation();
+
 
 /* A permutation is a mapping from channel to button: to be precise, if p is
  * the current permutation then button b (0..3 corresponding to A..D) was

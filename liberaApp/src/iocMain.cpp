@@ -38,6 +38,10 @@
 
 #include <iocsh.h>
 #include <epicsThread.h>
+#include <dbAccess.h>
+#include <caerr.h>
+#include <envDefs.h>
+#include <iocInit.h>
 
 #include "hardware.h"
 #include "firstTurn.h"
@@ -74,6 +78,9 @@ extern "C" void caRepeaterThread(void *);
 /* This variable records the PID file: if successfully written then it will
  * be removed when terminated. */
 static const char * PidFileName = NULL;
+
+/* Device name used for $(DEVICE) part of database. */
+static const char * DeviceName = NULL;
 
 /* This controls whether an IOC shell is used.  If not the main thread will
  * sleep indefinitely, waiting for the IOC to be killed by a signal. */
@@ -435,6 +442,7 @@ static void Usage(const char *IocName)
 "       S0SA    S0 power scaling for SA mode\n"
 "    -f <f_mc>          Machine revolution frequency\n"
 "    -s <state-file>    Read and record persistent state in <state-file>\n"
+"    -d <device>        Name of device for database\n"
 "\n"
 "Note: This IOC application should normally be run from within runioc.\n",
         IocName);
@@ -451,7 +459,7 @@ static bool ProcessOptions(int &argc, char ** &argv)
     bool Ok = true;
     while (Ok)
     {
-        switch (getopt(argc, argv, "+hvp:nc:f:s:"))
+        switch (getopt(argc, argv, "+hvp:nc:f:s:d:"))
         {
             case 'h':   Usage(argv[0]);                 return false;
             case 'v':   StartupMessage();               return false;
@@ -461,6 +469,7 @@ static bool ProcessOptions(int &argc, char ** &argv)
             case 'f':   Ok = ParseFloat(
                             optarg, RevolutionFrequency);  break;
             case 's':   StateFileName = optarg;         break;
+            case 'd':   DeviceName = optarg;            break;
             case '?':
             default:
                 printf("Try `%s -h` for usage\n", argv[0]);
@@ -562,6 +571,119 @@ static void DoCoreDump()
 }
 
 
+/*****************************************************************************/
+/*                                                                           */
+/*                            IOC Initialisation                             */
+/*                                                                           */
+/*****************************************************************************/
+
+
+#define TEST_EPICS(command, args...) \
+    ( { \
+        int __status__ = (command)(args); \
+        if (__status__ != 0) \
+            printf(#command "(" #args ") (%s, %d): %s (%d)\n", \
+                __FILE__, __LINE__, ca_message(__status__), __status__); \
+        __status__ == 0; \
+    } )
+
+
+static bool AddDbParameter(
+    char *&Destination, int &Length, const char * Parameter,
+    char * Format, ...)
+{
+    char FullFormat[128];
+    snprintf(FullFormat, sizeof(FullFormat), "%s=%s,", Parameter, Format);
+
+    va_list args;
+    va_start(args, Format);
+    int Output = vsnprintf(Destination, Length, FullFormat, args);
+    va_end(args);
+    
+    if (Output < Length)
+    {
+        Destination += Output;
+        Length -= Output;
+        return true;
+    }
+    else
+    {
+        printf("Macro buffer overrun on %s\n", Parameter);
+        return false;
+    }
+}
+
+static bool LoadDatabases()
+{
+    char LiberaMacros[1024];
+    char * Buffer = LiberaMacros;
+    int Length = sizeof(LiberaMacros);
+
+#define DB_INT(name, value) \
+    AddDbParameter(Buffer, Length, name, "%d", value)
+#define DB_STRING(name, value) \
+    AddDbParameter(Buffer, Length, name, "%s", value)
+
+    return
+        /* The following list of parameter must match the list of
+         * substitution parameters expected by the .db files. */
+        DB_STRING("DEVICE", DeviceName)  &&
+        DB_INT("BN_SHORT",  DecimatedShortLength)  &&
+        DB_INT("BN_LONG",   16 * DecimatedShortLength)  &&
+        DB_INT("TT_LONG",   LongTurnByTurnLength)  &&
+        DB_INT("TT_WINDOW", TurnByTurnWindowLength)  &&
+        DB_INT("FR_LENGTH", FreeRunLength)  &&
+        DB_INT("MAX_ATTEN", MaximumAttenuation())  &&
+        
+        TEST_EPICS(dbLoadRecords, "db/libera.db", LiberaMacros)  &&
+#ifdef BUILD_FF_SUPPORT
+        TEST_EPICS(dbLoadRecords, "db/fastFeedback.db", LiberaMacros);
+#else
+        true;
+#endif
+
+#undef DB_INT
+#undef DB_STRING
+}
+
+static bool SetPrompt()
+{
+    if (DeviceName == NULL)
+    {
+        printf("DEVICE not set!\n");
+        return false;
+    }
+
+    int Length = strlen(DeviceName) + 64;    // "%s> " + slack
+    char Prompt[Length];
+    snprintf(Prompt, Length, "%s> ", DeviceName);
+    epicsEnvSet("IOCSH_PS1", Prompt);
+    return true;
+}
+
+extern "C" int ioc_registerRecordDeviceDriver(struct dbBase *pdbbase);
+
+/* This implements the following st.cmd:
+ *
+ *      dbLoadDatabase("dbd/ioc.dbd",0,0)
+ *      ioc_registerRecordDeviceDriver(pdbbase)
+ *      dbLoadRecords("db/libera.db", "${LIBERA_MACROS}")
+ *      dbLoadRecords("db/fastFeedback.db", "${LIBERA_MACROS}")
+ *      epicsEnvSet "IOCSH_PS1" "${DEVICE}> "
+ *      iocInit()
+ */
+
+static bool StartIOC()
+{
+    return
+        SetPrompt()  &&
+        TEST_EPICS(dbLoadDatabase, "dbd/ioc.dbd", NULL, NULL)  &&
+        TEST_EPICS(ioc_registerRecordDeviceDriver, pdbbase)  &&
+        LoadDatabases()  &&
+        TEST_EPICS(iocInit);
+}
+
+
 /****************************************************************************/
 /*                                                                          */
 
@@ -578,12 +700,13 @@ int main(int argc, char *argv[])
     /* Consume any option arguments and start the driver. */
     bool Ok =
         ProcessOptions(argc, argv)  &&
-        InitialiseLibera();
+        InitialiseLibera()  &&
+        StartIOC();
 
     /* Consume any remaining script arguments by running them through the IOC
      * shell. */
     for (; Ok  &&  argc > 0; argc--)
-        Ok = iocsh(*argv++) == 0;
+        Ok = TEST_EPICS(iocsh, *argv++);
 
     /* Run the entire IOC with a live IOC shell, or just block with the IOC
      * running in the background. */
@@ -592,7 +715,7 @@ int main(int argc, char *argv[])
         StartupMessage();
         if (RunIocShell)
             /* Run an interactive shell. */
-            Ok = iocsh(NULL);
+            Ok = TEST_EPICS(iocsh, NULL);
         else
         {
             /* Wait for the shutdown request. */

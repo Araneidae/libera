@@ -359,6 +359,8 @@ def SlowAcquisition():
 # Configuration control records.  Used for setting button or stripline
 # geometry and a variety of other configuration settings.
 def Config():
+    MAX_ATTEN = Parameter('MAX_ATTEN')
+    
     SetChannelName('CF')
 
     # Control enabling of this BPM.
@@ -412,7 +414,7 @@ def Config():
         DESC = 'Digital Signal Conditioning')
     
     # Control attenuation
-    longOut('ATTEN', 0, 62, EGU = 'dB', DESC = 'Attenuator setting')
+    longOut('ATTEN', 0, MAX_ATTEN, EGU = 'dB', DESC = 'Attenuator setting')
 
     # Scaling factor for conversion to bunch charge and stored current.
     aOut('ISCALE', 0, 20000, 

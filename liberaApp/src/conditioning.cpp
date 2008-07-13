@@ -1149,6 +1149,10 @@ const PERMUTATION & SwitchPermutation()
     return PermutationLookup[ManualSwitch];
 }
 
+int MaximumAttenuation()
+{
+    return Brilliance() ? 31 : 62;
+}
 
 
 
