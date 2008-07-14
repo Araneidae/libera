@@ -1,7 +1,7 @@
 Change history of Libera EPICS Driver development
 
-2008/07/?? Version 1.46.3.4
-===========================
+2008/07/14 Version 1.46.4
+=========================
 Many changes in this release.  
 
 The following are important new features in this release:
@@ -27,7 +27,7 @@ README file for details.
    overflow detection path.
  - Add new IL:TEST_S PV for testing the interlock.
  - Fix exceptionally long standing bug in Vertical mode calculation: if a
-   non-zero origin is specified then all positions were returned as zero.  Due
+   non-zero origin is specified then all positions were returned as zero, due
    to a << vs - precedence error!
  - Add support for trigger offset to FR and TT waveforms.
  - Improve FT WF position calculations by using a proper 8 point filter for

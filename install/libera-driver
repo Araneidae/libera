@@ -128,10 +128,12 @@ case "$1" in
         # Stop the EPICS IOC if it's running
         [ -e /var/run/ioc.pid ]  &&  /etc/init.d/epics stop
 
-        # Kill the daemon
-        echo -n "Killing clock PLL daemon..."
-        kill $(cat /var/run/clockPll.pid)
-        evaluate_retval
+        # Kill the clock daemon
+        if [ -e /var/run/clockPll.pid ]; then
+            echo -n "Killing clock PLL daemon..."
+            kill $(cat /var/run/clockPll.pid)
+            evaluate_retval
+        fi
 
         # Remove Libera driver.  We need to keep trying, as earlier processes
         # can end up taking quite a long time to go away at this point...

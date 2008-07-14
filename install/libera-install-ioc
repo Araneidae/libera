@@ -96,12 +96,15 @@ where <options> includes
     -t  Testing install: don't copy files, use from configured location
     -a  Enable autostart via /etc/init.d/libera-driver script.
     -s  Start IOC after installation
-If /etc/init.d/libera is found it will be renamed to /etc/init.d/old-libera
-and a new /etc/init.d/libera-driver script will always be installed.
 EOF
         [ -n "$LOCATIONS" ]  &&  cat <<EOF
 and <location> is a two character location code used to configure location
 specific settings, one of $(echo -n $LOCATIONS).
+
+EOF
+        cat <<'EOF'
+If /etc/init.d/libera is found it will be renamed to /etc/init.d/old-libera
+and a new /etc/init.d/libera-driver script will always be installed.
 EOF
         exit 0 ;;
     *)  Error 'Invalid option: try -h for help' ;;
