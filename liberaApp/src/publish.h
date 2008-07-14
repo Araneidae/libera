@@ -222,7 +222,7 @@ public:
     }
 
     /* In this case the callback method needs to do the update as well. */
-    CONFIGURATION_VALUE(T &Parameter, void (*DoUpdate)(T)) :
+    CONFIGURATION_VALUE(T &Parameter, bool (*DoUpdate)(T)) :
         Parameter(Parameter),
         OnUpdate(NULL),
         DoUpdate(DoUpdate)
@@ -237,20 +237,20 @@ public:
     bool write(T Value)
     {
         if (DoUpdate)
-            DoUpdate(Value);
+            return DoUpdate(Value);
         else
         {
             Parameter = Value;
             if (OnUpdate)
                 OnUpdate();
+            return true;
         }
-        return true;
     }
 
 private:
     T &Parameter;
     void (*OnUpdate)();
-    void (*DoUpdate)(T);
+    bool (*DoUpdate)(T);
 };
 
 
@@ -324,13 +324,13 @@ typedef UPDATER<int>  UPDATER_int;
 template<class T> class READBACK
 {
 public:
-    READBACK(T InitialValue, void (*OnUpdate)(T));
+    READBACK(T InitialValue, bool (*OnUpdate)(T));
     void Write(T NewValue);
     
 private:
     bool UserUpdate(T NewValue);
     T Value;
-    void (*const OnUpdate)(T);
+    bool (*const OnUpdate)(T);
 public:
     UPDATER<T> Writer;
     CLOSURE_OUT<READBACK<T>, T> Reader;

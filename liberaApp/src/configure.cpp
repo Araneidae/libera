@@ -100,10 +100,10 @@ static int CurrentScale = 100000000;
 
 
 /* Forward declaration: CF:DSC and CF:AUTOSW affect each other directly. */
-static void UpdateSc(int NewScState);
+static bool UpdateSc(int NewScState);
 
 
-static void UpdateAutoSwitch(bool NewSwitchState)
+static bool UpdateAutoSwitch(bool NewSwitchState)
 {
     AutoSwitchState = NewSwitchState;
     SwitchReadback->Write(AutoSwitchState);
@@ -114,10 +114,11 @@ static void UpdateAutoSwitch(bool NewSwitchState)
         UpdateSc(SC_MODE_FIXED);
 
     WriteAutoSwitches(NewSwitchState);
+    return true;
 }
 
 
-static void UpdateSc(int NewScState)
+static bool UpdateSc(int NewScState)
 {
     ScState = NewScState;
     ScReadback->Write(ScState);
@@ -125,6 +126,7 @@ static void UpdateSc(int NewScState)
     if (ScState == SC_MODE_AUTO)
         UpdateAutoSwitch(true);
     WriteScMode((SC_MODE) ScState);
+    return true;
 }
 
 
@@ -186,13 +188,14 @@ static void UpdateCurrentScale()
 
 /* Updates the attenuators and the associated current scaling factors. */
 
-void UpdateAttenuation(int NewAttenuation)
+bool UpdateAttenuation(int NewAttenuation)
 {
     ScWriteAttenuation(NewAttenuation);
     CurrentAttenuation = NewAttenuation;
     /* Update the scaling factors. */
     AttenuatorScalingFactor = PMFP(from_dB, ReadCorrectedAttenuation() - A_0);
     UpdateCurrentScale();
+    return true;
 }
 
 

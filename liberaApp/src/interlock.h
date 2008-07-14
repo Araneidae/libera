@@ -37,7 +37,7 @@ void NotifyInterlockCurrent(int Current);
 
 /* Called during configuration to record the state of the global enable flag.
  * This is used to control whether interlocks are enabled. */
-void NotifyInterlockBpmEnable(bool Enabled);
+bool NotifyInterlockBpmEnable(bool Enabled);
 
 /* Called to notify "Golden orbit" offsets so that interlocks can track the
  * true "nominal" zero even while "golden orbit" offsets are being generated

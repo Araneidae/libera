@@ -223,7 +223,7 @@ template class UPDATER<int>;
 
 
 template<class T>
-    READBACK<T>::READBACK(T InitialValue, void (*OnUpdate)(T)) :
+    READBACK<T>::READBACK(T InitialValue, bool (*OnUpdate)(T)) :
     
     OnUpdate(OnUpdate),
     Writer(Value),
@@ -253,12 +253,15 @@ template<class T>
 template<class T>
     bool READBACK<T>::UserUpdate(T NewValue)
 {
-    if (NewValue != Value)
+    if (NewValue == Value)
+        return true;
+    else
     {
-        Value = NewValue;
-        OnUpdate(NewValue);
+        bool ok = OnUpdate(NewValue);
+        if (ok)
+            Value = NewValue;
+        return ok;
     }
-    return true;
 }
 
 

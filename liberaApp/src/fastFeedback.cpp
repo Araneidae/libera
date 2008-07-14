@@ -303,7 +303,7 @@ static void StartFastFeedback()
 
 static READBACK_bool * ArmFFPMreadback = NULL;
 
-static void ArmFFPM(bool NewArmValue)
+static bool ArmFFPM(bool NewArmValue)
 {
     if (NewArmValue)
     {
@@ -314,6 +314,7 @@ static void ArmFFPM(bool NewArmValue)
         FA_ControlSpace->EnableFFPM = 0;
 
     ArmFFPMreadback->Write(NewArmValue);
+    return true;
 }
 
 

@@ -233,11 +233,12 @@ static void LockedWriteInterlockState()
  * underlying READBACK mechanism will ensure that this routine is only called
  * if the IL:ENABLE has actually changed. */
 
-static void LockedUpdateInterlockEnable(bool SetEnable)
+static bool LockedUpdateInterlockEnable(bool SetEnable)
 {
     Lock();
     UpdateInterlockEnable(SetEnable);
     Unlock();
+    return true;
 }
 
 
@@ -290,12 +291,13 @@ void HoldoffInterlock()
 
 /* Called when the global BPM enable state changes. */
 
-void NotifyInterlockBpmEnable(bool Enabled)
+bool NotifyInterlockBpmEnable(bool Enabled)
 {
     Lock();
     GlobalBpmEnable = Enabled;
     UpdateInterlockEnable(false);
     Unlock();
+    return true;
 }
 
 

@@ -111,6 +111,13 @@ public:
     virtual bool init(T&) = 0;
     /* Writes a new value. */
     virtual bool write(T) = 0;
+
+    /* Wrapper interface NOT for use outside device.cpp.  Used to implement
+     * restoration of original value if write() fails. */
+    bool _do_init(T&);
+    bool _do_write(T&);
+private:
+    T _good_value;
 };
 
 

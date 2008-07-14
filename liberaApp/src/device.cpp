@@ -216,6 +216,47 @@ private:
 
 
 
+template<class T>
+    bool I_WRITER<T>::_do_init(T &value)
+{
+    bool ok = init(value);
+    _good_value = value;
+    return ok;
+}
+
+template<class T>
+    bool I_WRITER<T>::_do_write(T &value)
+{
+    bool ok = write(value);
+    if (ok)
+        _good_value = value;
+    else
+        value = _good_value;
+    return ok;
+}
+
+bool I_WRITER<EPICS_STRING>::_do_init(EPICS_STRING &value)
+{
+    bool ok = init(value);
+    CopyEpicsString(value, _good_value);
+    return ok;
+}
+
+bool I_WRITER<EPICS_STRING>::_do_write(EPICS_STRING &value)
+{
+    bool ok = write(value);
+    if (ok)
+        CopyEpicsString(value, _good_value);
+    else
+        CopyEpicsString(_good_value, value);
+    return ok;
+}
+
+
+template class I_WRITER<int>;
+template class I_WRITER<bool>;
+template class I_WRITER<EPICS_STRING>;
+
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                               I_WAVEFORM                                  */
@@ -372,7 +413,7 @@ static void post_process(dbCommon *pr, epicsEnum16 nsta, I_RECORD *iRecord)
 #define POST_INIT_out(record, pr) \
     { \
         GET_RECORD(record, pr, iRecord); \
-        pr->udf = ! ACTION_VALUE(record, iRecord->init, pr->VAL(record)); \
+        pr->udf = ! ACTION_VALUE(record, iRecord->_do_init, pr->VAL(record)); \
         post_init_record_out((dbCommon*)pr, iRecord); \
         return OK; \
     }
@@ -408,19 +449,19 @@ static void post_process(dbCommon *pr, epicsEnum16 nsta, I_RECORD *iRecord)
 /* Standard boiler-plate default record processing action.  The val field is
  * either read or written and the alarm state is set by interrogating the
  * record interface.  This processing is adequate for most record types. */
-#define DEFINE_DEFAULT_PROCESS(record, action, ACTION) \
+#define DEFINE_DEFAULT_PROCESS(record, action, method, ACTION) \
     static long action##_##record(record##Record * pr) \
     { \
         GET_RECORD(record, pr, iRecord); \
-        bool Ok = ACTION_VALUE(record, iRecord->action, pr->VAL(record)); \
+        bool Ok = ACTION_VALUE(record, iRecord->method, pr->VAL(record)); \
         post_process((dbCommon *)pr, ACTION##_ALARM, iRecord); \
         return Ok ? OK : ERROR; \
     }
 
 #define DEFINE_DEFAULT_READ(record) \
-    DEFINE_DEFAULT_PROCESS(record, read,  READ) 
+    DEFINE_DEFAULT_PROCESS(record, read,  read, READ) 
 #define DEFINE_DEFAULT_WRITE(record) \
-    DEFINE_DEFAULT_PROCESS(record, write, WRITE) 
+    DEFINE_DEFAULT_PROCESS(record, write, _do_write, WRITE) 
 
 
 #define DEFINE_DEVICE(record, inOrOut, length, args...) \
