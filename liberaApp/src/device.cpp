@@ -422,13 +422,13 @@ static void post_process(dbCommon *pr, epicsEnum16 nsta, I_RECORD *iRecord)
 
 /* Record initialisation is simply a matter of constructing an instance of
  * the appropriate record type. */
-#define INIT_RECORD(record, inOrOut) \
+#define INIT_RECORD(record, inOrOut, post_init) \
     static long init_record_##record(record##Record *pr) \
     { \
         const char * Name = pr->inOrOut.value.constantStr; \
         if (init_record_( \
                 #record, Name, (dbCommon *) pr, Search_##record(Name))) \
-            POST_INIT_##inOrOut(record, pr) \
+            POST_INIT_##post_init(record, pr) \
         else \
             return ERROR; \
     }
@@ -459,13 +459,14 @@ static void post_process(dbCommon *pr, epicsEnum16 nsta, I_RECORD *iRecord)
     }
 
 #define DEFINE_DEFAULT_READ(record) \
+    INIT_RECORD(record, inp, inp) \
     DEFINE_DEFAULT_PROCESS(record, read,  read, READ) 
 #define DEFINE_DEFAULT_WRITE(record) \
+    INIT_RECORD(record, out, out) \
     DEFINE_DEFAULT_PROCESS(record, write, _do_write, WRITE) 
 
 
-#define DEFINE_DEVICE(record, inOrOut, length, args...) \
-    INIT_RECORD(record, inOrOut) \
+#define DEFINE_DEVICE(record, length, args...) \
     record##Device record##Libera = \
     { \
         length, \
@@ -533,6 +534,16 @@ DEFINE_DEFAULT_WRITE(mbbo)
 /* Reading a waveform doesn't fit into the fairly uniform pattern established
  * for the other record types. */
 
+#define POST_INIT_waveform(record, pr) \
+    { \
+        GET_RECORD(record, pr, iRecord); \
+        pr->udf = iRecord->init(pr->bptr, *(size_t*)&pr->nord); \
+        post_init_record_out((dbCommon*)pr, iRecord); \
+        return OK; \
+    }
+
+INIT_RECORD(waveform, inp, waveform)
+
 static long process_waveform(waveformRecord * pr)
 {
     GET_RECORD(waveform, pr, i_waveform);
@@ -559,14 +570,14 @@ static long linconv_ao(aoRecord *, int) { return OK; }
 
 #include "recordDevice.h"
 
-DEFINE_DEVICE(longin,    inp, 5, read_longin);
-DEFINE_DEVICE(longout,   out, 5, write_longout);
-DEFINE_DEVICE(ai,        inp, 6, read_ai,  linconv_ai);
-DEFINE_DEVICE(ao,        out, 6, write_ao, linconv_ao);
-DEFINE_DEVICE(bi,        inp, 5, read_bi);
-DEFINE_DEVICE(bo,        out, 5, write_bo);
-DEFINE_DEVICE(stringin,  inp, 5, read_stringin);
-DEFINE_DEVICE(stringout, out, 5, write_stringout);
-DEFINE_DEVICE(mbbi,      inp, 5, read_mbbi);
-DEFINE_DEVICE(mbbo,      out, 5, write_mbbo);
-DEFINE_DEVICE(waveform,  inp, 5, process_waveform);
+DEFINE_DEVICE(longin,    5, read_longin);
+DEFINE_DEVICE(longout,   5, write_longout);
+DEFINE_DEVICE(ai,        6, read_ai,  linconv_ai);
+DEFINE_DEVICE(ao,        6, write_ao, linconv_ao);
+DEFINE_DEVICE(bi,        5, read_bi);
+DEFINE_DEVICE(bo,        5, write_bo);
+DEFINE_DEVICE(stringin,  5, read_stringin);
+DEFINE_DEVICE(stringout, 5, write_stringout);
+DEFINE_DEVICE(mbbi,      5, read_mbbi);
+DEFINE_DEVICE(mbbo,      5, write_mbbo);
+DEFINE_DEVICE(waveform,  5, process_waveform);

@@ -193,8 +193,7 @@ def stringIn(name, **fields):
     
 
 def Waveform(name, length, FTVL='LONG', **fields):
-    return Libera.waveform(
-        name, name,
+    return Libera.waveform(name, 
         SCAN = 'Passive',
         NELM = length,
         FTVL = FTVL,

@@ -619,21 +619,20 @@ static bool LoadDatabases()
     char * Buffer = LiberaMacros;
     int Length = sizeof(LiberaMacros);
 
-#define DB_INT(name, value) \
-    AddDbParameter(Buffer, Length, name, "%d", value)
-#define DB_STRING(name, value) \
-    AddDbParameter(Buffer, Length, name, "%s", value)
+#define DB_(format, name, value) \
+    AddDbParameter(Buffer, Length, (name), (format), (value))
 
     return
         /* The following list of parameter must match the list of
          * substitution parameters expected by the .db files. */
-        DB_STRING("DEVICE", DeviceName)  &&
-        DB_INT("BN_SHORT",  DecimatedShortLength)  &&
-        DB_INT("BN_LONG",   16 * DecimatedShortLength)  &&
-        DB_INT("TT_LONG",   LongTurnByTurnLength)  &&
-        DB_INT("TT_WINDOW", TurnByTurnWindowLength)  &&
-        DB_INT("FR_LENGTH", FreeRunLength)  &&
-        DB_INT("MAX_ATTEN", MaximumAttenuation())  &&
+        DB_("%s", "DEVICE",         DeviceName)  &&
+        DB_("%d", "BN_SHORT",       DecimatedShortLength)  &&
+        DB_("%d", "BN_LONG",        16 * DecimatedShortLength)  &&
+        DB_("%d", "TT_LONG",        LongTurnByTurnLength)  &&
+        DB_("%d", "TT_WINDOW",      TurnByTurnWindowLength)  &&
+        DB_("%d", "FR_LENGTH",      FreeRunLength)  &&
+        DB_("%d", "MAX_ATTEN",      MaximumAttenuation())  &&
+        DB_("%d", "ATTEN_COUNT",    MaximumAttenuation() + 1)  &&
         
         TEST_EPICS(dbLoadRecords, "db/libera.db", LiberaMacros)  &&
 #ifdef BUILD_FF_SUPPORT
@@ -642,8 +641,7 @@ static bool LoadDatabases()
         true;
 #endif
 
-#undef DB_INT
-#undef DB_STRING
+#undef DB_
 }
 
 static bool SetPrompt()

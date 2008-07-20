@@ -37,8 +37,15 @@ public:
     PERSISTENT_BASE();
     /* Specifies a name for the persistent state and attempts to read an
      * updated value from the state file.  True is returned iff a value was
-     * read. */
+     * read.
+     *     Unfortunately we can't do this work in the constructor because it
+     * involves calling the vritual method ReadValue ... which isn't
+     * available until after the constructor has finished. */
     bool Initialise(const char *Name);
+    
+    /* Marks the persistent state as dirty, forcing a write on the next
+     * occasion. */
+    static void MarkDirty();
 
 protected:
     virtual bool WriteValue(FILE * Output) = 0;
@@ -74,6 +81,24 @@ typedef PERSISTENT<bool>   PERSISTENT_BOOL;
 //typedef PERSISTENT<double> PERSISTENT_DOUBLE;
 
 
+template<class T>
+class PERSISTENT_WAVEFORM : public PERSISTENT_BASE
+{
+public:
+    /* Binds the Value to a persistence state.  All changes to this variable
+     * will be tracked in the persistent state file. */
+    PERSISTENT_WAVEFORM(T *Waveform, size_t Length);
+
+private:
+    bool WriteValue(FILE * Output);
+    bool ReadValue(const char * String);
+    void BackupValue() {}
+    bool ValueChanged() { return false; }
+    T * const Waveform;
+    const size_t Length;
+};
+
+
 
 /* Calling this function is enough to establish persistence for the given
  * value. */
@@ -81,6 +106,14 @@ template<class T>
 void Persistent(const char * Name, T &Value)
 {
     PERSISTENT<T> & Persistence = * new PERSISTENT<T>(Value);
+    Persistence.Initialise(Name);
+}
+
+template<class T>
+void PersistentWaveform(const char * Name, T *Waveform, size_t Length)
+{
+    PERSISTENT_WAVEFORM<T> & Persistence =
+        * new PERSISTENT_WAVEFORM<T>(Waveform, Length);
     Persistence.Initialise(Name);
 }
 

@@ -31,6 +31,9 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+
+#include <dbFldTypes.h>
 
 #include "device.h"
 #include "persistent.h"
@@ -163,6 +166,11 @@ static void UpdateSwitchTriggerDelay()
 /* Attenuator configuration management. */
 
 
+/* The attenuator value reported by ReadCachedAttenuation() is not strictly
+ * accurate, due to minor offsets on attenuator values.  Here we attempt to
+ * compensate for these offsets by reading an offset configuration file. */
+static int * AttenuatorOffsets;
+
 /* This contains a precalculation of K_S * 10^((A-A_0)/20) to ensure that the
  * calculation of ComputeScaledCurrent is efficient. */
 static PMFP ScaledCurrentFactor;
@@ -171,12 +179,59 @@ static PMFP ScaledCurrentFactor;
 static PMFP AttenuatorScalingFactor;
 
 
+class ATTENUATOR_OFFSETS : public I_WAVEFORM
+{
+public:
+    ATTENUATOR_OFFSETS(const char *Name) :
+        I_WAVEFORM(DBF_FLOAT),
+        AttenuatorCount(MaximumAttenuation() + 1)
+    {
+        AttenuatorOffsets = (int *) calloc(AttenuatorCount, sizeof(int));
+        memset(AttenuatorOffsets, 0, AttenuatorCount * sizeof(int));
+
+        Publish_waveform(Name, *this);
+        PersistentWaveform(Name, AttenuatorOffsets, AttenuatorCount);
+    }
+
+    bool process(
+        void *array, size_t max_length, size_t &new_length)
+    {
+        float * farray = (float *) array;
+        size_t i;
+        for (i = 0; i < new_length; i ++)
+            AttenuatorOffsets[i] = (int) (DB_SCALE * farray[i]);
+        /* In case only part of the waveform was assigned (new_length <
+         * max_length) restore the rest of the array from the stored array.
+         * Otherwise AttenuatorOffsets and ATTEN:OFFSET_S will fall out of
+         * step. */
+        for (; i < max_length; i ++)
+            farray[i] = (float) AttenuatorOffsets[i] / DB_SCALE;
+        new_length = max_length;
+        
+        PERSISTENT_BASE::MarkDirty();
+        return true;
+    }
+
+    bool init(void *array, size_t &length)
+    {
+        float * farray = (float *) array;
+        for (size_t i = 0; i < AttenuatorCount; i ++)
+            farray[i] = (float) AttenuatorOffsets[i] / DB_SCALE;
+        length = AttenuatorCount;
+        return true;
+    }
+    
+private:
+    const size_t AttenuatorCount;
+};
+
 
 /* Returns the current cached attenuator setting. */
 
 int ReadCorrectedAttenuation()
 {
-    return CurrentAttenuation * DB_SCALE;
+    return CurrentAttenuation * DB_SCALE +
+        AttenuatorOffsets[CurrentAttenuation];
 }
 
 
@@ -248,6 +303,7 @@ bool InitialiseConfigure()
      * interlock mechanism is ready. */
     PUBLISH_CONFIGURATION(longout, "CF:ATTEN",
         CurrentAttenuation, UpdateAttenuation);
+    new ATTENUATOR_OFFSETS("CF:ATTEN:OFFSET");
     
     /* Write the initial state to the hardware and initialise everything that
      * needs initialising. */

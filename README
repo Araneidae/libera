@@ -463,7 +463,14 @@ Configuration (<group> = CF):
         persistent storage for reloading the next time the IOC is restarted.
 
     ATTEN_S
-        Attenuator settings in dB: a value between 0 and 62dB can be set.
+        Attenuator settings in dB: a value between 0 and 62dB or 31dB can be
+        set, depending on whether Libera Electron or Libera Brilliance
+        (respectively) is operational.
+
+    ATTEN:OFFSET_S
+        Waveform of corrections for attenuator settings, one entry for each
+        possible attenuator setting (63 for Libera Electron, 32 for Libera
+        Brilliance).  Affects SA:POWER and SA:CURRENT calculations.
 
     ISCALE_S
         Nominal beam current at 0dBm input power as seen by Libera.  This is

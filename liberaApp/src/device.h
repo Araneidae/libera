@@ -198,6 +198,10 @@ public:
      * from array. */
     virtual bool process(
         void *array, size_t max_length, size_t &new_length) = 0;
+
+    /* Record initialisation for output records that need an initial value to
+     * be established at startup.  The default action is to do nothing. */
+    virtual bool init(void *array, size_t &length) { return false; }
 };
 
 

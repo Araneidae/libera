@@ -359,7 +359,10 @@ def SlowAcquisition():
 # Configuration control records.  Used for setting button or stripline
 # geometry and a variety of other configuration settings.
 def Config():
-    MAX_ATTEN = Parameter('MAX_ATTEN')
+    # The number of attenuators depends on whether we're Electron or
+    # Brilliance.  Annoyingly we need to be given this number twice!
+    MAX_ATTEN   = Parameter('MAX_ATTEN')
+    ATTEN_COUNT = Parameter('ATTEN_COUNT')
     
     SetChannelName('CF')
 
@@ -414,7 +417,11 @@ def Config():
         DESC = 'Digital Signal Conditioning')
     
     # Control attenuation
-    longOut('ATTEN', 0, MAX_ATTEN, EGU = 'dB', DESC = 'Attenuator setting')
+    longOut('ATTEN', 0, MAX_ATTEN, EGU = 'dB',
+        DESC = 'Attenuator setting')
+    Waveform('ATTEN:OFFSET_S', address = 'ATTEN:OFFSET',
+        length = ATTEN_COUNT,   FTVL = 'FLOAT', EGU = 'dB',
+        DESC = 'Attenuator correction offset')
 
     # Scaling factor for conversion to bunch charge and stored current.
     aOut('ISCALE', 0, 20000, 

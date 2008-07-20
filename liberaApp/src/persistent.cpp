@@ -46,6 +46,7 @@
 
 static const char * StateFileName = NULL;
 static PERSISTENT_BASE * PersistentList = NULL;
+static bool PersistentDirty = false;
 
 
 /* Checks whether any persistent variables have changed since they were
@@ -53,6 +54,12 @@ static PERSISTENT_BASE * PersistentList = NULL;
 
 bool CheckStateChanged()
 {
+    if (PersistentDirty)
+    {
+        PersistentDirty = false;
+        return true;
+    }
+    
     for (PERSISTENT_BASE * Entry = PersistentList; Entry != NULL;
          Entry = Entry->Next)
         if (Entry->ValueChanged())
@@ -74,6 +81,8 @@ bool WritePersistentState(FILE *File)
              fprintf(File, "\n") == 1;
         Entry->BackupValue();
     }
+    if (!Ok)
+        printf("Writing persistent state failed\n");
     return Ok;
 }
 
@@ -85,31 +94,23 @@ bool WritePersistentState(FILE *File)
 #define BACKUP ".backup"
 static void WriteStateFile()
 {
-    /* Only actually write anything if:
-     *  1. We have a file name to write to(!) and
-     *  2. Anything has actually changed.
-     * Ensuring that we only write if variables has changed is important if
-     * the state file is hosted on the local flash file system. */
-    if (StateFileName != NULL  &&  CheckStateChanged())
+    char BackupFileName[strlen(StateFileName) + strlen(BACKUP) + 1];
+    strcpy(BackupFileName, StateFileName);
+    strcat(BackupFileName, BACKUP);
+    FILE * Backup = fopen(BackupFileName, "w");
+    if (Backup == NULL)
+        printf("Unable to write to state file \"%s\"\n", BackupFileName);
+    else
     {
-        char BackupFileName[strlen(StateFileName) + strlen(BACKUP) + 1];
-        strcpy(BackupFileName, StateFileName);
-        strcat(BackupFileName, BACKUP);
-        FILE * Backup = fopen(BackupFileName, "w");
-        if (Backup == NULL)
-            printf("Unable to write to state file \"%s\"\n", BackupFileName);
-        else
-        {
-            char TimeBuffer[80];
-            time_t Now = time(NULL);
-            bool Ok =
-                fprintf(Backup, "# Written: %s",
-                    ctime_r(&Now, TimeBuffer)) > 0  &&
-                WritePersistentState(Backup);
-            fclose(Backup);
-            if (Ok)
-                TEST_(rename, BackupFileName, StateFileName);
-        }
+        char TimeBuffer[80];
+        time_t Now = time(NULL);
+        bool Ok =
+            fprintf(Backup, "# Written: %s",
+                ctime_r(&Now, TimeBuffer)) > 0  &&
+            WritePersistentState(Backup);
+        fclose(Backup);
+        if (Ok)
+            TEST_(rename, BackupFileName, StateFileName);
     }
 }
 
@@ -135,7 +136,7 @@ bool PERSISTENT_BASE::Initialise(const char *SetName)
         if (Input != NULL)
         {
             int NameLength = strlen(Name);
-            char Line[1024];
+            char Line[10240];
             while (fgets(Line, sizeof(Line), Input))
             {
                 if (strncmp(Line, Name, NameLength) == 0  &&
@@ -169,6 +170,11 @@ bool PERSISTENT_BASE::Initialise(const char *SetName)
     PersistentList = this;
     
     return Initialised;
+}
+
+void PERSISTENT_BASE::MarkDirty()
+{
+    PersistentDirty = true;
 }
 
 
@@ -263,6 +269,48 @@ bool PERSISTENT<double>::ReadValue(const char * String)
 template class PERSISTENT<int>;
 template class PERSISTENT<bool>;
 //template PERSISTENT<double>;
+template class PERSISTENT_WAVEFORM<int>;
+
+
+template<class T>
+PERSISTENT_WAVEFORM<T>::PERSISTENT_WAVEFORM(T *Waveform, size_t Length) :
+    Waveform(Waveform),
+    Length(Length)
+{
+}
+
+
+/* Instance specific implementations. */
+
+bool PERSISTENT_WAVEFORM<int>::WriteValue(FILE * Output)
+{
+    bool Ok = true;
+    for (size_t i = 0; Ok && i < Length; i ++)
+        Ok = fprintf(Output, " %d", Waveform[i]) > 0;
+    return Ok;
+}
+
+
+bool PERSISTENT_WAVEFORM<int>::ReadValue(const char * String)
+{
+    /* Read the waveform into an intermediate buffer in case reading it fails
+     * for some reason. */
+    int Buffer[Length];
+    
+    char * end;
+    bool Ok = true;
+    for (size_t i = 0;  Ok  &&  i < Length; i ++)
+    {
+        Buffer[i] = strtol(String, &end, 10);
+        Ok = String < end;
+        String = end;
+    }
+    Ok = Ok  &&  *end == '\0';
+    if (Ok)
+        memcpy(Waveform, Buffer, sizeof(int) * Length);
+    return Ok;
+}
+
 
 
 /* We write the state file in a background time thread.  This has advantages
@@ -284,7 +332,12 @@ private:
         while (Running())
         {
             sleep(PERSISTENCE_POLL_INTERVAL);
-            WriteStateFile();
+            if (CheckStateChanged())
+                /* Only actually write anything if anything has actually
+                 * changed.  Ensuring that we only write if variables has
+                 * changed is important as the state file is hosted on the
+                 * local flash file system. */
+                WriteStateFile();
         }
     }
 
@@ -307,6 +360,7 @@ bool InitialisePersistentState(const char * FileName)
 {
     StateFileName = FileName;
     if (StateFileName == NULL)
+        /* Allow operation with no state file. */
         return true;
     else
     {
