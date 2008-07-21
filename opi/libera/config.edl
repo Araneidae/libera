@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 537
-y 466
+x 84
+y 104
 w 473
 h 544
 font "helvetica-medium-r-16.0"
@@ -1954,9 +1954,9 @@ beginObjectProperties
 major 4
 minor 2
 release 0
-x 320
+x 360
 y 472
-w 136
+w 96
 h 24
 fgColor index 43
 bgColor index 3
@@ -2127,5 +2127,31 @@ value {
   "/"
 }
 autoSize
+endObjectProperties
+
+# (Related Display)
+object relatedDisplayClass
+beginObjectProperties
+major 4
+minor 2
+release 0
+x 248
+y 472
+w 88
+h 24
+fgColor index 43
+bgColor index 3
+topShadowColor index 1
+botShadowColor index 11
+font "helvetica-bold-r-12.0"
+buttonLabel "Atten Offset"
+numPvs 4
+numDsps 1
+displayFileName {
+  0 "libera/waveform.edl"
+}
+symbols {
+  0 "device=$(device),wf=CF:ATTEN:OFFSET_S,xunits=dB,yunits=Offset (dB),title=Attenuation Offsets"
+}
 endObjectProperties
 
