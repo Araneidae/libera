@@ -128,7 +128,7 @@ private:
         Max = INT_MIN;
         for (int i = 0; i < WaveformLength; i ++)
         {
-            int Value = use_offset(int, Waveform[i], Field);
+            int Value = Waveform[i];
             Total += Value;
             if (Value < Min)  Min = Value;
             if (Value > Max)  Max = Value;
