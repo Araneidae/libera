@@ -202,12 +202,14 @@ bool PERSISTENT<T>::ValueChanged()
 
 /* Instance specific implementations. */
 
+template<>
 bool PERSISTENT<int>::WriteValue(FILE * Output)
 {
     return fprintf(Output, "%d", Value) > 0;
 }
 
 
+template<>
 bool PERSISTENT<int>::ReadValue(const char * String)
 {
     char * end;
@@ -222,12 +224,14 @@ bool PERSISTENT<int>::ReadValue(const char * String)
         return false;
 }
 
+template<>
 bool PERSISTENT<bool>::WriteValue(FILE * Output)
 {
     return fprintf(Output, "%s", Value ? "yes" : "no") > 0;
 }
 
 
+template<>
 bool PERSISTENT<bool>::ReadValue(const char * String)
 {
     if (strcmp(String, "no") == 0)
@@ -245,12 +249,14 @@ bool PERSISTENT<bool>::ReadValue(const char * String)
  * an atomic way to read Value.
  *
  * Fortunately we don't actually use persistent doubles at present. */
+template<>
 bool PERSISTENT<double>::WriteValue(FILE * Output)
 {
     return fprintf(Output, "%g", Value) > 0;
 }
 
 
+template<>
 bool PERSISTENT<double>::ReadValue(const char * String)
 {
     char * end;
@@ -266,12 +272,6 @@ bool PERSISTENT<double>::ReadValue(const char * String)
 #endif
 
 
-template class PERSISTENT<int>;
-template class PERSISTENT<bool>;
-//template PERSISTENT<double>;
-template class PERSISTENT_WAVEFORM<int>;
-
-
 template<class T>
 PERSISTENT_WAVEFORM<T>::PERSISTENT_WAVEFORM(T *Waveform, size_t Length) :
     Waveform(Waveform),
@@ -282,6 +282,7 @@ PERSISTENT_WAVEFORM<T>::PERSISTENT_WAVEFORM(T *Waveform, size_t Length) :
 
 /* Instance specific implementations. */
 
+template<>
 bool PERSISTENT_WAVEFORM<int>::WriteValue(FILE * Output)
 {
     bool Ok = true;
@@ -291,6 +292,7 @@ bool PERSISTENT_WAVEFORM<int>::WriteValue(FILE * Output)
 }
 
 
+template<>
 bool PERSISTENT_WAVEFORM<int>::ReadValue(const char * String)
 {
     /* Read the waveform into an intermediate buffer in case reading it fails
@@ -311,6 +313,11 @@ bool PERSISTENT_WAVEFORM<int>::ReadValue(const char * String)
     return Ok;
 }
 
+
+template class PERSISTENT<int>;
+template class PERSISTENT<bool>;
+//template PERSISTENT<double>;
+template class PERSISTENT_WAVEFORM<int>;
 
 
 /* We write the state file in a background time thread.  This has advantages

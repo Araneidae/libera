@@ -278,6 +278,7 @@ void WAVEFORMS<T>::PublishColumn(
 /*                           IQ Waveform Support                             */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+template<>
 void WAVEFORMS<IQ_ROW>::Publish(const char * Prefix, const char *SubName) const
 {
     PREPARE_PUBLISH(Prefix, SubName);
@@ -315,6 +316,7 @@ void IQ_WAVEFORMS::CapturePostmortem()
 /*                          ABCD Waveform Support                            */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+template<>
 void WAVEFORMS<ABCD_ROW>::Publish(
     const char * Prefix, const char *SubName) const
 {
@@ -346,6 +348,7 @@ void ABCD_WAVEFORMS::CaptureCordic(const IQ_WAVEFORMS & Source)
 /*                          XYQS Waveform Support                            */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+template<>
 void WAVEFORMS<XYQS_ROW>::Publish(
     const char * Prefix, const char *SubName) const
 {

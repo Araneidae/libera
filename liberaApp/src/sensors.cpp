@@ -146,7 +146,7 @@ static void InitialiseUptime()
 static int FindRamfsUsage()
 {
     /* The following mount points all contain ram file systems. */
-    static char * const RamFileSystems[] =
+    static const char * const RamFileSystems[] =
     {
         "/var/log",
         "/var/lock",
@@ -155,7 +155,8 @@ static int FindRamfsUsage()
         NULL
     };
 
-    FTS * fts = fts_open(RamFileSystems, FTS_PHYSICAL | FTS_XDEV, NULL);
+    FTS * fts = fts_open(
+        (char**) RamFileSystems, FTS_PHYSICAL | FTS_XDEV, NULL);
     if (fts == NULL)
     {
         perror("Unable to open ram file systems");

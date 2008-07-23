@@ -498,7 +498,7 @@ static bool ProcessOptions(int &argc, char ** &argv)
 /* Fairly generic routine to start a new detached process in a clean
  * environment. */
 
-static void DetachProcess(const char *Process, char *const argv[])
+static void DetachProcess(const char *Process, const char *const argv[])
 {
     /* We fork twice to avoid leaving "zombie" processes behind.  These are
      * harmless enough, but annoying.  The double-fork is a simple enough
@@ -533,7 +533,7 @@ static void DetachProcess(const char *Process, char *const argv[])
 
             /* Finally we can actually exec the new process... */
             char * envp[] = { NULL };
-            execve(Process, argv, envp);
+            execve(Process, (char**) argv, envp);
         }
         else
             /* The middle process simply exits without further ceremony.  The
@@ -553,14 +553,14 @@ static void DetachProcess(const char *Process, char *const argv[])
 
 static void DoReboot()
 {
-    char * Args[] = { "/sbin/reboot", NULL };
+    const char * Args[] = { "/sbin/reboot", NULL };
     DetachProcess(Args[0], Args);
 }
 
 
 static void DoRestart()
 {
-    char * Args[] = { "/etc/init.d/epics", "restart", NULL };
+    const char * Args[] = { "/etc/init.d/epics", "restart", NULL };
     DetachProcess(Args[0], Args);
 }
 
@@ -590,7 +590,7 @@ static void DoCoreDump()
 
 static bool AddDbParameter(
     char *&Destination, int &Length, const char * Parameter,
-    char * Format, ...)
+    const char * Format, ...)
 {
     char FullFormat[128];
     snprintf(FullFormat, sizeof(FullFormat), "%s=%s,", Parameter, Format);
@@ -634,9 +634,9 @@ static bool LoadDatabases()
         DB_("%d", "MAX_ATTEN",      MaximumAttenuation())  &&
         DB_("%d", "ATTEN_COUNT",    MaximumAttenuation() + 1)  &&
         
-        TEST_EPICS(dbLoadRecords, "db/libera.db", LiberaMacros)  &&
+        TEST_EPICS(dbLoadRecords, (char*) "db/libera.db", LiberaMacros)  &&
 #ifdef BUILD_FF_SUPPORT
-        TEST_EPICS(dbLoadRecords, "db/fastFeedback.db", LiberaMacros);
+        TEST_EPICS(dbLoadRecords, (char*) "db/fastFeedback.db", LiberaMacros);
 #else
         true;
 #endif
@@ -675,7 +675,7 @@ static bool StartIOC()
 {
     return
         SetPrompt()  &&
-        TEST_EPICS(dbLoadDatabase, "dbd/ioc.dbd", NULL, NULL)  &&
+        TEST_EPICS(dbLoadDatabase, (char *) "dbd/ioc.dbd", NULL, NULL)  &&
         TEST_EPICS(ioc_registerRecordDeviceDriver, pdbbase)  &&
         LoadDatabases()  &&
         TEST_EPICS(iocInit);

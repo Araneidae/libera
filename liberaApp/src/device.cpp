@@ -66,6 +66,15 @@
 #include "device.h"
 
 
+/* Special casting operation to bypass strict aliasing warnings. */
+#define CAST(type, value) \
+    ( { \
+        union { typeof(value) a; type b; } __u; \
+        __u.a = (value); \
+        __u.b; \
+    } )
+
+
 /* Epics processing return codes. */
 #define OK              0
 #define ERROR           1
@@ -235,6 +244,7 @@ template<class T>
     return ok;
 }
 
+template<>
 bool I_WRITER<EPICS_STRING>::_do_init(EPICS_STRING &value)
 {
     bool ok = init(value);
@@ -242,6 +252,7 @@ bool I_WRITER<EPICS_STRING>::_do_init(EPICS_STRING &value)
     return ok;
 }
 
+template<>
 bool I_WRITER<EPICS_STRING>::_do_write(EPICS_STRING &value)
 {
     bool ok = write(value);
@@ -478,6 +489,13 @@ static void post_process(dbCommon *pr, epicsEnum16 nsta, I_RECORD *iRecord)
     }; \
     epicsExportAddress(dset, record##Libera)
 
+/* Redefine epicsExportAddress to avoid strict aliasing warnings. */
+#undef epicsExportAddress
+#define epicsExportAddress(typ,obj) \
+    epicsShareExtern typeof(obj) *EPICS_EXPORT_POBJ(typ, obj); \
+    epicsShareDef typeof(obj) *EPICS_EXPORT_POBJ(typ, obj) = &obj
+
+
 
 
 /*****************************************************************************/
@@ -537,7 +555,7 @@ DEFINE_DEFAULT_WRITE(mbbo)
 #define POST_INIT_waveform(record, pr) \
     { \
         GET_RECORD(record, pr, iRecord); \
-        pr->udf = iRecord->init(pr->bptr, *(size_t*)&pr->nord); \
+        pr->udf = iRecord->init(pr->bptr, *CAST(size_t*, &pr->nord)); \
         post_init_record_out((dbCommon*)pr, iRecord); \
         return OK; \
     }
@@ -549,7 +567,8 @@ static long process_waveform(waveformRecord * pr)
     GET_RECORD(waveform, pr, i_waveform);
     /* Naughty cast: I want to a reference to size_t, pr->nord is actually an
      * unsigned int.  Force the two to match! */
-    bool Ok = i_waveform->process(pr->bptr, pr->nelm, *(size_t*)&pr->nord);
+    bool Ok = i_waveform->process(
+        pr->bptr, pr->nelm, *CAST(size_t*, &pr->nord));
     post_process((dbCommon *)pr, READ_ALARM, i_waveform);
     /* Note, by the way, that the waveform record support carefully ignores
      * my return code! */

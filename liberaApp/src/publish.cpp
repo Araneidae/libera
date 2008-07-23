@@ -145,6 +145,7 @@ private:
  * doesn't allow assignment of arrays.  Fortunately it seems that simply
  * defining the following is enough. */
 
+template<>
 bool PUBLISH_READ<EPICS_STRING>::read(EPICS_STRING &Value)
 {
     PRINTF("Read %s: %d\n", Name, (int)  Variable);
@@ -152,12 +153,14 @@ bool PUBLISH_READ<EPICS_STRING>::read(EPICS_STRING &Value)
     return true;
 }
 
+template<>
 bool PUBLISH_WRITE<EPICS_STRING>::init(EPICS_STRING &Result)
 {
     CopyEpicsString(Variable, Result);
     return true;
 }
 
+template<>
 bool PUBLISH_WRITE<EPICS_STRING>::write(EPICS_STRING Value)
 {
     CopyEpicsString(Value, Variable);
