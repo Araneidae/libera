@@ -112,7 +112,6 @@ static const PERMUTATION BrillancePermutationLookup[] =
 
 
 /* Some magic numbers to be configurable real soon now. */
-#define SWITCH_PERIOD   40
 #define SWITCH_HOLDOFF  6
 #define SAMPLE_SIZE     2048
 #define PRESCALE        8
@@ -305,12 +304,13 @@ static bool SwitchMarker(const LIBERA_ROW *Data, size_t Length, size_t &Marker)
 class CONDITIONING : public LOCKED_THREAD
 {
 public:
-    CONDITIONING(REAL f_if) :
+    CONDITIONING(REAL f_if, int TurnsPerSwitch) :
         LOCKED_THREAD("Conditioning"),
         
         cotan_if(1.0/tan(f_if)),
         cosec_if(1.0/sin(f_if)),
         m_cis_if(exp(-I*f_if)),
+        TurnsPerSwitch(TurnsPerSwitch),
         IqData(SAMPLE_SIZE, true),
         EpicsWritePhaseArray(*this)
     {
@@ -687,20 +687,20 @@ private:
          * accumulating total readings by button and switch position.  Also
          * accumulate squares so we can compute the variance at the end for
          * sanity checking. */
-        const size_t SampleLength = SWITCH_PERIOD * SwitchSequenceLength;
+        const size_t SampleLength = TurnsPerSwitch * SwitchSequenceLength;
         size_t Marker = 0;
         int Samples = 0;
         while(SwitchMarker(Data, SAMPLE_SIZE - SampleLength, Marker))
         {
-            Samples += SWITCH_PERIOD - SWITCH_HOLDOFF;
+            Samples += TurnsPerSwitch - SWITCH_HOLDOFF;
             /* Work through each of the switch positions, pushing both the
              * switch index and the marker. */
             for (int ix = 0; ix < SwitchSequenceLength; ix ++)
             {
-                const int Start = Marker + ix * SWITCH_PERIOD;
+                const int Start = Marker + ix * TurnsPerSwitch;
                 /* Skip the first few points after the switch transition, as
                  * the data in this part is a bit rough. */
-                for (int i = SWITCH_HOLDOFF; i < SWITCH_PERIOD; i ++)
+                for (int i = SWITCH_HOLDOFF; i < TurnsPerSwitch; i ++)
                 {
                     /* Work through all of the I and Q button readings. */
                     for (int b = 0; b < 2*BUTTON_COUNT; b ++)
@@ -1031,6 +1031,8 @@ private:
     const REAL cosec_if;    // cosecant of IF
     const complex m_cis_if; // -exp(i * IF)
 
+    const int TurnsPerSwitch;
+
     /* Device handle used to read raw IQ waveforms.  Needs to be abstracted
      * into hardware.h at some point. */
     int DevDd;
@@ -1197,7 +1199,8 @@ static void SCdebug(const iocshArgBuf *args)
 static const iocshFuncDef SCdebugFuncDef = { "SCdebug", 0, NULL };
 
 
-bool InitialiseSignalConditioning(int Harmonic, int Decimation)
+bool InitialiseSignalConditioning(
+    int Harmonic, int Decimation, int TurnsPerSwitch)
 {
     iocshRegister(&SCdebugFuncDef, SCdebug);
     
@@ -1219,7 +1222,7 @@ bool InitialiseSignalConditioning(int Harmonic, int Decimation)
     /* Start the conditioning thread.  The intermediate frequency needs to be
      * in radians per sample. */
     REAL f_if = 2 * M_PI * (REAL) (Harmonic % Decimation) / Decimation;
-    ConditioningThread = new CONDITIONING(f_if);
+    ConditioningThread = new CONDITIONING(f_if, TurnsPerSwitch);
     return ConditioningThread->StartThread();
 }
 

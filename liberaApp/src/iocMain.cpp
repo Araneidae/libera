@@ -114,6 +114,8 @@ static int Harmonic = 936;              // Bunches per revolution
 static int Decimation = 220;            // Samples per revolution
 static int LmtdPrescale = 53382;        // Prescale for lmtd
 
+static int TurnsPerSwitch = 40;
+
 /* Power scaling factors for FT and SA modes. */
 static int S0_FT = 0;
 static int S0_SA = 0;
@@ -256,7 +258,7 @@ static bool InitialiseLibera()
          * components can make use of it. */
         InitialisePersistentState(StateFileName)  &&
         /* Initialise the signal conditioning hardware interface. */
-        InitialiseSignalConditioning(Harmonic, Decimation)  &&
+        InitialiseSignalConditioning(Harmonic, Decimation, TurnsPerSwitch)  &&
         /* Initialise conversion code.  This needs to be done fairly early as
          * it is used globally. */
         InitialiseConvert()  &&
@@ -364,6 +366,7 @@ static bool ParseConfigInt(char *optarg)
         { "HA", Harmonic },
         { "DE", Decimation },
         { "LP", LmtdPrescale },
+        { "NT", TurnsPerSwitch },
         { "S0FT", S0_FT },
         { "S0SA", S0_SA },
     };
@@ -438,6 +441,7 @@ static void Usage(const char *IocName)
 "       HA      Harmonic: number of bunches per revolution\n"
 "       DE      Decimation: number of samples per revolution\n"
 "       LP      LMTD prescale factor\n"
+"       NT      Turns per switch position\n"
 "       S0FT    S0 power scaling for FT mode\n"
 "       S0SA    S0 power scaling for SA mode\n"
 "    -f <f_mc>          Machine revolution frequency\n"

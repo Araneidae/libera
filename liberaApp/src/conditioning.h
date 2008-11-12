@@ -61,5 +61,6 @@ typedef unsigned int PERMUTATION[4];
 const PERMUTATION & SwitchPermutation();
 
 
-bool InitialiseSignalConditioning(int Harmonic, int Decimation);
+bool InitialiseSignalConditioning(
+    int Harmonic, int Decimation, int TurnsPerSwitch);
 void TerminateSignalConditioning();

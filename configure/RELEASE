@@ -17,6 +17,7 @@ BUILD_FF_SUPPORT=$(shell \
 # the Epics version changes.
 
 EPICS_BASE=/dls_sw/epics/R3.14.9/base
+# EPICS_BASE=/scratch/local/base-3.14.9
 
 # Identifies which python compiler to use.  Must be at least version 2.4.
 PYTHON=python2.4

@@ -59,7 +59,7 @@ else
 fi
 
 # Read the libera configuration.  We're interested in FREV, HARMONIC,
-# DECIMATION and MCPRESC at present.  Do this early to ensure our own
+# DECIMATION, MCPRESC and NTBT at present.  Do this early to ensure our own
 # definitions don't get overwritten.
 . $CONFIGDIR/libera
 
@@ -127,6 +127,7 @@ IocParameter -cS0SA= $((IOC_S0_SA))
 IocParameter -cHA= $((HARMONIC))
 IocParameter -cDE= $((DECIMATION))
 IocParameter -cLP= $((MCPRESC))
+IocParameter -cNT= $((NTBT))
 
 # Where the IOC should write its pid file
 IocParameter -p "$PIDFILE"

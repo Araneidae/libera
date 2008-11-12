@@ -204,7 +204,7 @@ rm -f /etc/init.d/libera-server
 
 rm -f /etc/rc*.d/*libera
 
-for rcd in 3.d/S800 0.d/K100 1.d/K100 6.d/K100; do
+for rcd in 2.d/S800 3.d/S800 0.d/K100 1.d/K100 6.d/K100; do
     ln -fs ../init.d/libera-driver /etc/rc${rcd}libera-driver
 done
 

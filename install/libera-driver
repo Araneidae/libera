@@ -69,6 +69,7 @@ fi
 : "${MCPRESC:?}"            # Machine clocks per machine clock PLL interrupt
 : "${NCLK_ADC:?}"           # Number of times shift enable written(?)
 : "${HARMONIC:?}"           # Number of bunches per machine revolution
+: "${NTBT:?}"               # Number of turns per switch position
 : "${IL_K_CORR_ADC_LIMIT:?}"        # ADC interlock overflow filter scaling
 : "${IL_MAX_ADC_OVERFLOW_DUR:?}"    # factor and duration limit
 : "${LIBERA_IOC}"           # Path to EPICS IOC

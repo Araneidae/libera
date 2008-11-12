@@ -39,6 +39,10 @@ set -e
 VERSION="${1:?Which version to distribute?}"
 TARGET="${2:?Where to put the distribution?}"
 
+# Convert target into absolute path.
+mkdir -p "$TARGET"  &&
+TARGET="$(cd "$TARGET" && pwd)"
+
 # Figure out the subversion source.  For testing pick up the trunk version.
 if [ "$VERSION" = trunk ]; then
     SVN_SOURCE="$SVN_ROOT/diamond/trunk/ioc/Libera"
@@ -50,7 +54,7 @@ if [ "$VERSION" = trunk ]; then
 else
     SVN_SOURCE="$SVN_ROOT/diamond/release/ioc/Libera/$VERSION"
 fi
-LIBERA_VERSION=Libera."$VERSION"
+LIBERA_VERSION=Libera-"$VERSION"
 
 # Do all the work in a temporary directory
 TEMP_ROOT="$(mktemp -d /tmp/distribute-libera.XXXXXX)"
@@ -73,17 +77,16 @@ sed -r -i 's/(^BUILD_FF_SUPPORT=).*$/\1no/' install/CONFIG
 TAR_FILE="$TARGET/libera-epics-$VERSION.tar"
 tar cf "$TAR_FILE" -C.. "$LIBERA_VERSION"
 
-# Now prepare the prebuilt files.  Unfortunately it looks as if we need to
-# build everything, even though we're only interested in two files!
-#make
-# As this is tedious, we fake the build instead.
+# Now prepare the prebuilt files.
 mkdir install/prebuilt
 ln -s liberaApp/src dbd
-python liberaApp/Db/libera.py /dev/stdout |
-sed '/^# \*\*\* Please do not edit/d' \
-    >install/prebuilt/libera.db
-python liberaApp/src/numeric-lookup.py \
-    >install/prebuilt/numeric-lookup.h
+for db in libera fastFeedback; do
+    python2.4 liberaApp/Db/$db.py /dev/stdout |
+        sed '/^# \*\*\* Please do not edit/d' >install/prebuilt/$db.db
+done
+for py in liberaApp/src/*.py; do
+    python2.4 $py >install/prebuilt/$(basename $py .py).h
+done
 
 # Add the prebuilt files and finish off the distribution
 tar rf "$TAR_FILE" -C.. "$LIBERA_VERSION/install/prebuilt"
