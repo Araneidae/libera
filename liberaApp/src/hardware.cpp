@@ -45,9 +45,18 @@
 #include "hardware.h"
 
 
+/* Feature registers used to identify special functionality. */
+#define REGISTER_DLS_FEATURE    0x14000018
+#define REGISTER_ITECH_FEATURE  0x1400001C
 /* This register records the maximum ADC reading since it was last read. */
 #define REGISTER_MAX_ADC_RAW    0x1400C000
+/* This register is used to set the turn by turn ADC overflow threshold. */
+#define REGISTER_ADC_OVERFLOW   0x1400C004
 
+/* This bit is set in the ITECH register to enable DLS extensions. */
+#define DLS_EXTENSION_BIT       (1 << 23)
+/* The following bits in the DLS feature register define extensions. */
+#define DLS_CORE_EXTENSIONS     (1 << 31)   // Must be set
 
 
 /* Routine for printing an error message complete with associated file name
@@ -115,6 +124,12 @@ static bool LiberaBrilliance = false;
  * be corrected. */
 static int AdcExcessBits = 4;
 
+/* Max ADC register read at SA rate. */
+static unsigned int * RegisterMaxAdcRaw = NULL;
+/* If we need to write directly to the DLS ADC overflow register, this
+ * points to the necessary location. */
+static unsigned int * RegisterAdcOverflow = NULL;
+
 
 
 /*****************************************************************************/
@@ -153,7 +168,7 @@ bool WriteInterlockParameters(
     int gain_limit)
 {
     /* Match the overflow limit setting to the actual number of bits provided
-     * by the DSC.  Do this here allows the rest of the system to believe
+     * by the DSC.  Doing this here allows the rest of the system to believe
      * everything is 16 bits. */
     overflow_limit >>= AdcExcessBits;
     return
@@ -168,7 +183,14 @@ bool WriteInterlockParameters(
          * it turns out that nothing is written to hardware until this value
          * is written.  Eww: it would be better to have an explicit call if
          * that the way things should be. */
-        WriteCfgValue(LIBERA_CFG_ILK_GAIN_LIMIT,     gain_limit);
+        WriteCfgValue(LIBERA_CFG_ILK_GAIN_LIMIT,     gain_limit)  &&
+#ifdef RAW_REGISTER
+        /* Finally, if the DLS ADC overflow register is in use, write to that
+         * as well: in this case the overflow_limit above is ignored. */
+        IF_(RegisterAdcOverflow != NULL, 
+            DO_(*RegisterAdcOverflow = overflow_limit))  &&
+#endif
+        true;
 }
 
 
@@ -307,9 +329,10 @@ bool ReadSlowAcquisition(ABCD_ROW &ButtonData, XYQS_ROW &PositionData)
 
 int ReadMaxAdc()
 {
-    unsigned int MaxAdc = 0;
-    ReadRawRegister(REGISTER_MAX_ADC_RAW, MaxAdc);
-    return MaxAdc << AdcExcessBits;
+    if (RegisterMaxAdcRaw == NULL)
+        return 0;
+    else
+        return *RegisterMaxAdcRaw << AdcExcessBits;
 }
 
 
@@ -374,13 +397,12 @@ bool ReadEvent(int &EventId, int &Parameter)
 /* Double buffered blocks.  For each block the name <name>_DB identifies the
  * length of the sub-block and the double-buffer division point. */
 #define DSC_ATTENUATORS         0xC008  // Attenuator control registers
-#define DSC_SWITCH_PATTERN      0xC800  // Switch sequencing pattern
-#define DSC_PHASE_COMP          0xE800  // Phase compensation coefficients
-#define DSC_SWITCH_DEMUX        0xF000  // Switch demultiplex coefficients
-
 #define DSC_ATTENUATORS_DB      0x0008
+#define DSC_SWITCH_PATTERN      0xC800  // Switch sequencing pattern
 #define DSC_SWITCH_PATTERN_DB   0x0400
+#define DSC_PHASE_COMP          0xE800  // Phase compensation coefficients
 #define DSC_PHASE_COMP_DB       0x0200
+#define DSC_SWITCH_DEMUX        0xF000  // Switch demultiplex coefficients
 #define DSC_SWITCH_DEMUX_DB     0x0400
 
 
@@ -830,6 +852,35 @@ bool ReadRawRegister(unsigned int Address, unsigned int &Value)
 /*****************************************************************************/
 
 
+#ifdef RAW_REGISTER
+
+/* Enable DLS FPGA specific extensions according to bits set in the feature
+ * register. */
+static bool EnableDlsExtensions(unsigned int Features)
+{
+    printf("Using DLS FPGA: %08x\n", Features);
+    RegisterMaxAdcRaw   = MapRawRegister(REGISTER_MAX_ADC_RAW);
+    RegisterAdcOverflow = MapRawRegister(REGISTER_ADC_OVERFLOW);
+    return true;
+}
+
+
+/* Checks the magic bits to see if the DLS FPGA is loaded. */
+
+static bool CheckDlsExtensions()
+{
+    unsigned int iTechFeatures, DlsFeatures;
+    return
+        ReadRawRegister(REGISTER_ITECH_FEATURE, iTechFeatures)  &&
+        ReadRawRegister(REGISTER_DLS_FEATURE, DlsFeatures)  &&
+        IF_((iTechFeatures & DLS_EXTENSION_BIT) != 0  &&
+            (DlsFeatures & DLS_CORE_EXTENSIONS) != 0,
+            EnableDlsExtensions(DlsFeatures));
+}
+
+#endif
+
+
 
 bool InitialiseHardware()
 {
@@ -850,6 +901,7 @@ bool InitialiseHardware()
         TEST_IO(DevDd,    open, "/dev/libera.dd",    O_RDONLY)  &&
 #ifdef RAW_REGISTER
         TEST_IO(DevMem,   open, "/dev/mem", O_RDWR | O_SYNC)  &&
+        CheckDlsExtensions()  &&
 #endif
         DiscoverBrilliance();
 }

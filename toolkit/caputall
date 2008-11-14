@@ -1,30 +1,26 @@
 #!/usr/bin/env python2.4
 
 from pkg_resources import require
-require("dls.ca2")
-from dls.ca2 import catools
-
+require("cothread")
+from cothread import catools
 
 import re
 import sys
 import os
 
 
+allbpms = os.path.join(os.path.dirname(__file__), 'allbpms')
+
 pattern = re.compile(sys.argv[1])
 pv = sys.argv[2]
 value = sys.argv[3]
 
-allbpms = os.path.join(os.path.dirname(__file__), 'allbpms')
 bpms = [line[:-1] for line in file(allbpms) if pattern.search(line)]
-
-sl = catools.caput(
-    ['%s:%s' % (bpm, pv) for bpm in bpms], [value for bpm in bpms],
-    datatype = catools.dbr_string, timeout = 5, throw = False)
+pvs = ['%s:%s' % (bpm, pv) for bpm in bpms]
 
 errorcode = 0
-for s, bpm in zip(sl, bpms):
-    if s != catools.ECA_NORMAL:
-        print >>sys.stderr, bpm, catools.ca_message(s)
+for s in catools.caput(pvs, value, timeout = 2, throw = False):
+    if not s:
+        print >>sys.stderr, s.name, s
         errorcode = 1
-
 sys.exit(errorcode)

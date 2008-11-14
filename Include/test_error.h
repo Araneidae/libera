@@ -97,6 +97,13 @@ void print_error(const char * Message, const char * FileName, int LineNumber);
     } )
 
 
+/* These two macros facilitates using the macros above by creating an if
+ * expression that's slightly more sensible looking than ?: in context. */
+#define DO_(action)                     ({action; true;})
+#define IF_(test, iftrue)               ((test) ? (iftrue) : true)
+#define IF_ELSE(text, iftrue, iffalse)  ((test) ? (iftrue) : (iffalse))
+
+
 
 /* A rather randomly placed helper routine.  This and its equivalents are
  * defined all over the place, but there doesn't appear to be a definitive

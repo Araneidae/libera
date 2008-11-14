@@ -80,7 +80,8 @@ LOCATIONS="$(cat "$SOURCE"/install/locations)"
 TARGET=none
 AUTOSTART=0
 STARTNOW=0
-while getopts 'ftlash' option; do
+REMOUNT_RW=0
+while getopts 'ftlaswh' option; do
     case "$option" in
     f)  TARGET=final ;;
     t)  TARGET=test ;;
@@ -88,6 +89,7 @@ while getopts 'ftlash' option; do
     l)  echo 'The -l option is obsolete: use -a'
         AUTOSTART=1 ;;
     s)  STARTNOW=1 ;;
+    w)  REMOUNT_RW=1 ;;
     h)  echo -n 'Usage: libera-install-ioc <options>'
         if [ -n "$LOCATIONS" ]; then echo ' <location>'; else echo; fi
         cat <<'EOF'
@@ -96,6 +98,7 @@ where <options> includes
     -t  Testing install: don't copy files, use from configured location
     -a  Enable autostart via /etc/init.d/libera-driver script.
     -s  Start IOC after installation
+    -w  Remount ro rootfs rw if necessary
 EOF
         [ -n "$LOCATIONS" ]  &&  cat <<EOF
 and <location> is a two character location code used to configure location
@@ -130,6 +133,18 @@ fi
 (($# != 0))  &&
     Error 'Invalid arguments: try -h for help'
 
+
+# Check whether we can write to the filesystem.
+if cat /proc/mounts | grep -q ' / [^ ]* ro '; then
+    # Root is mounted read only.  Bail unless remount requested.
+    if ((REMOUNT_RW)); then
+        mount -o rw,remount /  ||
+            Error 'Unable to remount rootfs for writing'
+        trap 'mount -o ro,remount /' EXIT
+    else
+        Error 'Rootfs is mounted read-only.  Try -w option'
+    fi
+fi
 
 
 # Make sure the libera driver isn't running: we need to stop everything, as
