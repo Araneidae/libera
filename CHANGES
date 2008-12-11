@@ -1,5 +1,29 @@
 Change history of Libera EPICS Driver development
 
+2008/12/15 Version 1.46.4.2
+===========================
+Mostly minor changes since 1.46.4.
+
+ - Add CF:ATTEN_OFFSET_S waveforms to correct for built in attenuator offsets.
+ - Code now compiles without warnings with gcc 4.2.4 -- this is in preparation
+   for migration to a newer environment.
+ - Pick up the number of turns per switch position (NTBT) so that signal
+   conditioning works correctly.
+ - Other minor bug fixes.
+
+There is also some preliminary support for Diamond specific FPGA features:
+these are detected by looking for bit 23 set in the ITECH feature register
+(FPGA register 0x1C) and bit 31 set in register 0x18.  At present the
+following features are enabled:
+ - Continuous MAXADC detection: used to generate SA:MAXADC 
+ - Slow (turn by turn) ADC overflow detection configuration
+
+Note that if your Libera intermediate frequency (HARMONIC/DECIMATION mod 1) is
+far away from 1/4 (values of 1/5 or 1/3 may be problematic) then some of the
+first turn calculations may not work properly.  If you have this problem, let
+me know.
+
+
 2008/07/14 Version 1.46.4
 =========================
 Many changes in this release.  
