@@ -31,7 +31,7 @@ import sys
 from math import *
 
 from support import * 
-from dls.builder import *
+from iocbuilder import *
 
 
 # 10 bit BPM identifier, so range is 0..1023

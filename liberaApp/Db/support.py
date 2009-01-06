@@ -31,15 +31,14 @@ import sys
 import os
 
 from pkg_resources import require
-require("dls.builder==1.0")
-from dls.builder import ModuleVersion, TemplateRecordNames, Configure
+require("iocbuilder==1.6")
+from iocbuilder import ModuleVersion, TemplateRecordNames, ConfigureTemplate
 
 
 # Ensure that we can find the Libera dbd files.  The home directory is where
 # the top level Libera directory has been placed.
 HomeDir = os.path.realpath(
     os.path.join(os.path.dirname(sys.argv[0]), '../..'))
-ModuleVersion('Libera', home=HomeDir, use_name=False)
 
 
 class LiberaRecordNames(TemplateRecordNames):
@@ -68,9 +67,11 @@ class LiberaRecordNames(TemplateRecordNames):
 
 
 RecordNames = LiberaRecordNames()
-Configure(recordnames = RecordNames)
-from dls.builder import *
-from dls.builder.hardware import Device
+
+ConfigureTemplate(record_names = RecordNames)
+ModuleVersion('Libera', home=HomeDir, use_name=False)
+
+from iocbuilder import *
 
 
 def ChannelName():
