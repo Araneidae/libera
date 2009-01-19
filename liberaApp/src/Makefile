@@ -18,6 +18,7 @@ USR_CXXFLAGS += -DLIBERA_VERSION='"$(shell \
     sed -n '/^VERSION=/{s///;p}' $(TOP)/install/CONFIG)"'
 # Compute a sensible format of build date
 USR_CXXFLAGS += -DBUILD_DATE_TIME='"$(shell date '+%Y-%m-%d %H:%M')"'
+USR_CXXFLAGS += -DRAW_REGISTER
 
 # The lines below defeat the -ansi flag: we want to use some gcc specific
 # features (typeof, in particular).

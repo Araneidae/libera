@@ -41,11 +41,11 @@
 
 /* If RAW_REGISTER is defined then raw register access through /dev/mem will
  * be enabled. */
-#define RAW_REGISTER
 #include "hardware.h"
 
 
 /* Feature registers used to identify special functionality. */
+#define REGISTER_BUILD_NUMBER   0x14000008
 #define REGISTER_DLS_FEATURE    0x14000018
 #define REGISTER_ITECH_FEATURE  0x1400001C
 /* This register records the maximum ADC reading since it was last read. */
@@ -477,9 +477,21 @@ static bool DiscoverBrilliance()
     libera_cfg_request_t req;
     req.idx = LIBERA_CFG_FEATURE_ITECH;
     if (ioctl(DevCfg, LIBERA_IOC_GET_CFG, &req) == -1)
-        /* The feature register isn't present, so this can't possibly be
-         * a Brilliance Libera. */
+    {
+#ifdef RAW_REGISTER
+        /* No ioctl, we must be running old school.  Probe the register
+         * directly instead. */
+        unsigned int BuildNumber;
+        LiberaBrilliance =
+            ReadRawRegister(REGISTER_BUILD_NUMBER, BuildNumber)  &&
+            BuildNumber == 0x10;
+#else
+        
+        /* The feature register isn't present, and we can't probe the
+         * hardware, so we have to assume that this isn't Brilliance. */
         LiberaBrilliance = false;
+#endif
+    }
     else
         LiberaBrilliance = LIBERA_IS_BRILLIANCE(req.val);
 
