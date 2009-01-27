@@ -31,7 +31,7 @@ import sys
 import os
 
 from pkg_resources import require
-require("iocbuilder==1.6")
+require('iocbuilder==1.7')
 from iocbuilder import ModuleVersion, TemplateRecordNames, ConfigureTemplate
 
 
@@ -81,7 +81,7 @@ def ChannelName():
 # This class wraps the creation of records which talk directly to the
 # Libera device driver.
 class Libera(Device):
-    DbdFileList = ['libera.dbd']
+    DbdFileList = ['libera']
 
     class makeRecord:
         def __init__(self, builder, addr_name):
