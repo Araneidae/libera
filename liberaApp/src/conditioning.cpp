@@ -33,6 +33,7 @@
 #include <fcntl.h>
 #include <math.h>
 #include <limits.h>
+#include <stdint.h>
 
 #include <dbFldTypes.h>         // DBF_UCHAR
 #include <iocsh.h>
@@ -54,8 +55,8 @@
 
 /* There are two standard switch sequences that we use: an 8 round sequence
  * for Libera Electron, and a 4 round sequence for Libera Brilliance. */
-static const char ElectronSwitchSequence[8]   = { 3, 7, 15, 11, 0, 4, 12, 8 };
-static const char BrillianceSwitchSequence[4] = { 15, 0, 9, 6 };
+static const uint8_t ElectronSwitchSequence[8]   = { 3, 7, 15, 11, 0, 4, 12, 8 };
+static const uint8_t BrillianceSwitchSequence[4] = { 15, 0, 9, 6 };
 
 
 /* The arrays below translate switch positions into button permutations.  This
@@ -122,7 +123,7 @@ static const PERMUTATION BrillancePermutationLookup[] =
 
 
 /* This is the currently programmed sequence of switches. */
-static const char * SwitchSequence;
+static const uint8_t * SwitchSequence;
 static int SwitchSequenceLength;
 
 static const PERMUTATION * PermutationLookup;
@@ -1116,7 +1117,7 @@ static void UpdateSwitchesState()
         ConditioningThread->LockedWriteSwitches(
             SwitchSequence, SwitchSequenceLength);
     else
-        ConditioningThread->LockedWriteSwitches((char *)&ManualSwitch, 1);
+        ConditioningThread->LockedWriteSwitches((uint8_t *)&ManualSwitch, 1);
 }
 
 

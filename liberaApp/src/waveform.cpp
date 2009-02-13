@@ -34,6 +34,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #include <dbFldTypes.h>         // DBF_LONG, DBF_FLOAT
 

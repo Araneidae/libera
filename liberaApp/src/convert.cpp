@@ -30,6 +30,7 @@
 /* Libera position calculations and conversions. */
 
 #include <stdio.h>
+#include <stdint.h>
 
 #include "device.h"
 #include "persistent.h"

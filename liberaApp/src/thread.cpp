@@ -33,6 +33,7 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <sys/time.h>
+#include <stdint.h>
 
 #include "hardware.h"
 #include "thread.h"

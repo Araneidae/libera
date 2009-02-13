@@ -34,6 +34,7 @@
 #include <stddef.h>
 #include <string.h>
 #include <math.h>       // Note: only used during initialisation
+#include <stdint.h>
 
 #include "device.h"
 #include "persistent.h"

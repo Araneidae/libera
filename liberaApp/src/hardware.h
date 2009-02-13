@@ -201,7 +201,7 @@ bool ReadEvent(int &EventId, int &Parameter);
 /* Here we arbitrarily (there are only 16 switch positions, dammit) constrain
  * the length of a switch sequence to 16. */
 #define MAX_SWITCH_SEQUENCE 16
-typedef char SWITCH_SEQUENCE[MAX_SWITCH_SEQUENCE];
+typedef uint8_t SWITCH_SEQUENCE[MAX_SWITCH_SEQUENCE];
 
 
 /* A phase and amplitude compensation array C takes four uncompensated channel

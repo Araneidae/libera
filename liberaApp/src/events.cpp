@@ -39,6 +39,7 @@
 #include <sys/select.h>
 #include <pthread.h>
 #include <assert.h>
+#include <stdint.h>
 
 #include "hardware.h"
 #include "thread.h"

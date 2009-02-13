@@ -37,7 +37,7 @@
 #include <sys/types.h>
 #include <fcntl.h>
 #include <sys/mman.h>
-
+#include <stdint.h>
 
 #include "device.h"
 #include "persistent.h"

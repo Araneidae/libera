@@ -40,6 +40,7 @@
 #include <string.h>
 #include <errno.h>
 #include <pthread.h>
+#include <stdint.h>
 
 #include <initHooks.h>
 

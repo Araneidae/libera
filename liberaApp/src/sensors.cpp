@@ -37,6 +37,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <fts.h>
+#include <stdint.h>
 
 #include "device.h"
 #include "persistent.h"

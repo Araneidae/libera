@@ -35,6 +35,7 @@
 #include <stddef.h>
 #include <limits.h>
 #include <math.h>
+#include <stdint.h>
 
 #include "device.h"
 #include "persistent.h"

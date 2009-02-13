@@ -46,6 +46,7 @@
 #include <time.h>
 #include <poll.h>
 #include <ctype.h>
+#include <stdint.h>
 
 #include "libera_pll.h"
 

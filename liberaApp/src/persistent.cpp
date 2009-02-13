@@ -33,6 +33,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <signal.h>
+#include <stdint.h>
 
 #include "hardware.h"
 #include "thread.h"

@@ -38,6 +38,7 @@
 #include <sys/ioctl.h>
 #include <linux/unistd.h>
 #include <sys/mman.h>
+#include <stdint.h>
 
 /* If RAW_REGISTER is defined then raw register access through /dev/mem will
  * be enabled. */
@@ -425,7 +426,7 @@ bool ReadEvent(int &EventId, int &Parameter)
 static int Attenuation;
 
 /* Records the currently selected switching pattern. */
-static char SwitchPattern[MAX_SWITCH_SEQUENCE];
+static uint8_t SwitchPattern[MAX_SWITCH_SEQUENCE];
 
 /* Records the current array of phase and amplitude and of demultiplexing (and
  * crosstalk) compensation values as raw processed values ready to be written
@@ -567,9 +568,9 @@ static bool WriteAttenuatorState(int Offset)
     {
         /* For normal libera we split the attenuator value evenly across two
          * attenuators per channel. */
-        char Atten1 = Attenuation / 2;
-        char Atten2 = Attenuation - Atten1;
-        char OneWord[4] = { Atten2, Atten1, Atten2, Atten1 };
+        uint8_t Atten1 = Attenuation / 2;
+        uint8_t Atten2 = Attenuation - Atten1;
+        uint8_t OneWord[4] = { Atten2, Atten1, Atten2, Atten1 };
         AttenuatorWords[1] = AttenuatorWords[0] = *(int*)OneWord;
     }
     return WriteDscWords(Offset, AttenuatorWords, sizeof(AttenuatorWords));
@@ -596,12 +597,12 @@ static bool WriteSwitchesState(int Offset)
     CHECK_DIRTY(SwitchPattern);
     
     /* Two switches per byte.  Pack the switches. */
-    char Template[MAX_SWITCH_SEQUENCE/2];
+    uint8_t Template[MAX_SWITCH_SEQUENCE/2];
     for (unsigned int i = 0; i < sizeof(Template); i++)
         Template[i] = SwitchPattern[2*i] | (SwitchPattern[2*i + 1] << 4);
 
     /* Now prepare the full block before writing it to the DSC device. */
-    char SwitchPatternBlock[DSC_SWITCH_PATTERN_DB];
+    uint8_t SwitchPatternBlock[DSC_SWITCH_PATTERN_DB];
     for (int i = 0; i < DSC_SWITCH_PATTERN_DB; i += sizeof(Template))
         memcpy(SwitchPatternBlock + i, Template, sizeof(Template));
 

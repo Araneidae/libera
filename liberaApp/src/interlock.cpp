@@ -34,6 +34,7 @@
 #include <string.h>
 #include <stddef.h>
 #include <pthread.h>
+#include <stdint.h>
  
 #include "device.h"
 #include "persistent.h"
