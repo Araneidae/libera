@@ -1,6 +1,12 @@
 Change history of Libera EPICS Driver development
 =================================================
 
+
+Change accidentially omitted from svn commit log:
+    SVN commit 28695 also includes change to device link type from CONSTANT
+    to INST_IO.
+
+
 2008/12/15 Version 1.46.4.2
 ---------------------------
 Mostly minor changes since 1.46.4.
