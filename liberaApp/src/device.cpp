@@ -436,7 +436,7 @@ static void post_process(dbCommon *pr, epicsEnum16 nsta, I_RECORD *iRecord)
 #define INIT_RECORD(record, inOrOut, post_init) \
     static long init_record_##record(record##Record *pr) \
     { \
-        const char * Name = pr->inOrOut.value.constantStr; \
+        const char * Name = pr->inOrOut.value.instio.string; \
         if (init_record_( \
                 #record, Name, (dbCommon *) pr, Search_##record(Name))) \
             POST_INIT_##post_init(record, pr) \

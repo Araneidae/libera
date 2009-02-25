@@ -94,7 +94,7 @@ class Libera(Device):
             record = self.builder(name, **fields)
             record.DTYP = 'Libera'
             ChannelName = RecordNames.GetChannelName(address)
-            setattr(record, self.addr_name, ChannelName)
+            setattr(record, self.addr_name, '@' + ChannelName)
 
             # Check for a description, make a report if none given.
             if 'DESC' not in fields:

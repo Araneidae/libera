@@ -4,5 +4,6 @@ include $(TOP)/configure/CONFIG_APP
 
 # Cross-compiling for linux-arm
 HOST_ARCH=linux-x86
-# BUILD_ARCHS=linux-arm linux-arm_gnueabi
-BUILD_ARCHS=linux-arm
+
+# Choose the appropriate target architecture here.
+BUILD_ARCHS=linux-arm linux-arm_gnueabi
