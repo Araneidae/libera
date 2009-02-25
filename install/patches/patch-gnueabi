@@ -1,0 +1,72 @@
+diff -urN base-3.14.9-original/configure/os/CONFIG.Common.linux-arm_gnueabi base-3.14.9/configure/os/CONFIG.Common.linux-arm_gnueabi
+--- base-3.14.9-original/configure/os/CONFIG.Common.linux-arm_gnueabi	1970-01-01 01:00:00.000000000 +0100
++++ base-3.14.9/configure/os/CONFIG.Common.linux-arm_gnueabi	2009-02-13 09:29:38.000000000 +0000
+@@ -0,0 +1,26 @@
++# CONFIG.Common.linux-arm_gnueabi
++#
++# This file is maintained by the build community.
++#
++# Definitions for linux-arm_gnueabi target builds
++# Sites may override these definitions in CONFIG_SITE.Common.linux-arm_gnueabi
++#-------------------------------------------------------
++
++# Include definitions common to all Linux targets
++include $(CONFIG)/os/CONFIG.Common.linuxCommon
++
++ARCH_CLASS = arm
++
++ifeq ($(BUILD_CLASS),CROSS)
++    GNU_TARGET = arm-xscale-linux-gnueabi
++
++    # prefix of compiler tools
++    CMPLR_SUFFIX =
++    CMPLR_PREFIX = $(addsuffix -,$(GNU_TARGET))
++
++    # Provide a link-time path for shared libraries
++    SHRLIBDIR_LDFLAGS += $(SHRLIB_DEPLIB_DIRS:%=-Wl,-rpath-link,%)
++
++    # Provide a link-time path for products
++    PRODDIR_LDFLAGS += $(PROD_DEPLIB_DIRS:%=-Wl,-rpath-link,%)
++endif
+diff -urN base-3.14.9-original/configure/os/CONFIG.linux-x86.linux-arm_gnueabi base-3.14.9/configure/os/CONFIG.linux-x86.linux-arm_gnueabi
+--- base-3.14.9-original/configure/os/CONFIG.linux-x86.linux-arm_gnueabi	1970-01-01 01:00:00.000000000 +0100
++++ base-3.14.9/configure/os/CONFIG.linux-x86.linux-arm_gnueabi	2009-02-13 09:29:38.000000000 +0000
+@@ -0,0 +1,24 @@
++# CONFIG.linux-x86.linux-arm_gnueabi
++#
++# Definitions for linux-x86 host - linux-arm_gnueabi target builds
++# Sites may override these definitions in CONFIG_SITE.linux-x86.linux-arm_gnueabi
++#-------------------------------------------------------
++
++# Include common gnu compiler definitions
++include $(CONFIG)/CONFIG.gnuCommon
++
++GNU_DIR = /usr
++
++# CROSS_CPPFLAGS=
++# STATIC_BUILD=YES
++# SHARED_LIBRARIES=NO
++
++# Copied from x86.x86
++STATIC_LDFLAGS_YES= -Wl,-Bstatic
++STATIC_LDFLAGS_NO= 
++STATIC_LDLIBS_YES= -Wl,-Bdynamic
++STATIC_LDLIBS_NO= 
++
++SHRLIB_LDFLAGS +=  -shared -fPIC
++LOADABLE_SHRLIB_LDFLAGS = -shared -fPIC
++
+diff -urN base-3.14.9-original/configure/os/CONFIG_SITE.linux-x86.linux-arm_gnueabi base-3.14.9/configure/os/CONFIG_SITE.linux-x86.linux-arm_gnueabi
+--- base-3.14.9-original/configure/os/CONFIG_SITE.linux-x86.linux-arm_gnueabi	1970-01-01 01:00:00.000000000 +0100
++++ base-3.14.9/configure/os/CONFIG_SITE.linux-x86.linux-arm_gnueabi	2009-02-13 09:32:16.000000000 +0000
+@@ -0,0 +1,10 @@
++#  CONFIG_SITE.linux-x86.linux-arm_gnueabi
++#
++# Site specific definitions for linux-x86 host - linux-arm target builds
++#-------------------------------------------------------
++
++# Diamond:
++GNU_DIR = /dls_sw/targetOS/x-tools/gcc-4.3.2-glibc-2.7/arm-xscale-linux-gnueabi
++
++# anj@aps:
++#GNU_DIR = /local/anj/cross-arm/gcc-3.4.5-glibc-2.3.6/arm-linux
