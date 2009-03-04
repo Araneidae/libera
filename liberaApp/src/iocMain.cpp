@@ -735,5 +735,17 @@ int main(int argc, char *argv[])
      * possibility cleanly. */
     TerminateLibera();
     printf("Ioc terminated normally\n");
-    return Ok ? 0 : 1;
+
+    /* There is some unpleasantness happening behind the scenes, almost
+     * certainly inside the EPICS library, causing our shutdown to be untidy
+     * -- can, for example, get the message:
+     *      terminate called without an active exception
+     * which then aborts us.  As this message always occurs *after* main()
+     * returns it's due to some atexit(3) function, almost certainly a static
+     * destructor.  This message comes from
+     *      gcc-4.3.2/libstdc++-v3/libsupc++/vterminate.cc
+     *      
+     * To avoid this nonsense, we just pull the plug here: OS cleanup is good
+     * enough for us, I'm pretty sure. */
+    _exit(Ok ? 0 : 1);
 }
