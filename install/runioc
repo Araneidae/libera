@@ -37,17 +37,19 @@
 #
 #   IocParameter <flag> <value>
 #
-declare -a IOC_PARAMETERS
+IOC_PARAMETERS=
 IocParameter()
 {
-    IOC_PARAMETERS[${#IOC_PARAMETERS[@]}]="$1$2"
+    IOC_PARAMETERS="$IOC_PARAMETERS $1$2"
 }
 
 
 # ----------------------------------------------------------------------------
 
-# Use the ioc home directory as the startup directory.
-cd "$(dirname "$0")/../.."
+# Use the ioc home directory as the startup directory, but remember where we
+# start as our binaries directory.
+BIN_DIR="$(cd "$(dirname "$0")"; pwd)"
+cd "$BIN_DIR/../.."
 
 # Discover whether the /etc/sysconfig directory exists.  On Linux 2.4 (old
 # style installation) we pick up our configurations from /etc/sysconfig, but
@@ -72,7 +74,6 @@ export EPICS_CA_MAX_ARRAY_BYTES=1000000
 export DEVICE="$(hostname)"
 
 PIDFILE=/var/run/ioc.pid
-BIN_DIR=./bin/linux-arm
 
 # Check for arguments
 RESTART_LMTD=0
@@ -95,7 +96,7 @@ EOF
     esac
 done
 # No extra arguments allowed
-if (($# >= OPTIND)); then
+if [ $# -ge $OPTIND ]; then
     echo >&2 'Invalid arguments: try -h for help'
     exit 1
 fi
@@ -139,8 +140,8 @@ IocParameter -f $FREV
 # Now run the IOC.
 echo
 echo 'Starting IOC at' $(date)
-echo "IOC parameters: ${IOC_PARAMETERS[*]}"
-"$BIN_DIR"/ioc "${IOC_PARAMETERS[@]}"
+echo "IOC parameters: $IOC_PARAMETERS"
+"$BIN_DIR"/ioc $IOC_PARAMETERS
 echo 'IOC stopped at' $(date)
 echo
 

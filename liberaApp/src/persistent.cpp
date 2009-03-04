@@ -335,7 +335,6 @@ public:
 private:
     void Thread()
     {
-        pid = getpid();
         StartupOk();
         while (Running())
         {
@@ -354,10 +353,8 @@ private:
         /* Poke the terminate thread to kick it out of its sleep so that we
          * get one last write of the state file.   We reserve SIGUSR2 for
          * side effect free signals! */
-        TEST_(kill, pid, SIGUSR2);
+        Kill(SIGUSR2);
     }
-    
-    int pid;
 };
 
 

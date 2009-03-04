@@ -31,6 +31,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <pthread.h>
+#include <signal.h>
 #include <semaphore.h>
 #include <sys/time.h>
 #include <stdint.h>
@@ -182,6 +183,12 @@ void THREAD::ThreadInit()
      * if we come here without ThreadOk() being called then the thread failed
      * on startup. */
     TEST_(sem_post, &ThreadStatusSemaphore);
+}
+
+
+void THREAD::Kill(int sig)
+{
+    TEST_0(pthread_kill, ThreadId, sig);
 }
 
 

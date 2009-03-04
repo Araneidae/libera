@@ -37,14 +37,14 @@
 LINUX_VERSION="$(uname -r | sed -r 's/(^[^.]*\.[^.]*)\..*/\1/')"
 if [ -d /etc/sysconfig ]; then
     # Old school Libera
-    NEW_LIBERA=0
+    NEW_LIBERA=false
     EXPECT_VERSION=2.4
     CONFIGDIR=/etc/sysconfig
     . /etc/init.d/functions
     
 else
     # Newer Libera
-    NEW_LIBERA=1
+    NEW_LIBERA=true
     EXPECT_VERSION=2.6
     CONFIGDIR=/etc/default
 
@@ -73,7 +73,7 @@ fi
 : "${IL_K_CORR_ADC_LIMIT:?}"        # ADC interlock overflow filter scaling
 : "${IL_MAX_ADC_OVERFLOW_DUR:?}"    # factor and duration limit
 : "${LIBERA_IOC}"           # Path to EPICS IOC
-if ((NEW_LIBERA)); then
+if $NEW_LIBERA; then
     : "${POSTMORTEM_BUFFER:?}"  # Length of PM buffer
 else
     : "${DFA:?}"                # Number of turns per FA point
@@ -81,7 +81,7 @@ fi
 
 case "$1" in
     start)
-        if ((NEW_LIBERA)); then
+        if $NEW_LIBERA; then
             # Health checking needs to go here ...
             :
         fi
@@ -104,7 +104,7 @@ case "$1" in
         # Load the driver with proper parameters.  The parameters depend on
         # which version we're running, though.
         echo -n "Loading Libera driver..."
-        if ((NEW_LIBERA)); then
+        if $NEW_LIBERA; then
             DEV_PARAMS="pmsize=$POSTMORTEM_BUFFER"
         else
             DEV_PARAMS="d=$DECIMATION dfa=$DFA"
@@ -139,9 +139,10 @@ case "$1" in
         # Remove Libera driver.  We need to keep trying, as earlier processes
         # can end up taking quite a long time to go away at this point...
         echo -n "Removing Libera driver..."
-        for ((i = 0; i < 10; i++)); do
+        i=0; while [ $i -lt 10 ]; do
             sleep 0.5
             modprobe -r libera  &&  break
+            i=$((i+1))
         done
         evaluate_retval
 

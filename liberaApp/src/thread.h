@@ -69,6 +69,9 @@ protected:
     /* This can be polled to ensure termination of the thread. */
     bool Running() { return ThreadRunning; }
 
+    /* Sends a signal to this thread. */
+    void Kill(int sig);
+
     
 private:
     static void * StaticThread(void * Context);

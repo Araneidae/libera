@@ -37,7 +37,7 @@
 # Abort on first failure
 set -e
 
-function Error()
+Error()
 {
     echo >&2 "$@"
     exit 1
@@ -78,18 +78,18 @@ LOCATIONS="$(cat "$SOURCE"/install/locations)"
 
 # Parse local installation options
 TARGET=none
-AUTOSTART=0
-STARTNOW=0
-REMOUNT_RW=0
+AUTOSTART=false
+STARTNOW=false
+REMOUNT_RW=false
 while getopts 'ftlaswh' option; do
     case "$option" in
     f)  TARGET=final ;;
     t)  TARGET=test ;;
-    a)  AUTOSTART=1 ;;
+    a)  AUTOSTART=true ;;
     l)  echo 'The -l option is obsolete: use -a'
-        AUTOSTART=1 ;;
-    s)  STARTNOW=1 ;;
-    w)  REMOUNT_RW=1 ;;
+        AUTOSTART=true ;;
+    s)  STARTNOW=true ;;
+    w)  REMOUNT_RW=true ;;
     h)  echo -n 'Usage: libera-install-ioc <options>'
         if [ -n "$LOCATIONS" ]; then echo ' <location>'; else echo; fi
         cat <<'EOF'
@@ -122,7 +122,7 @@ shift $((OPTIND - 1))
 # empty then no location needs to be specified, otherwise the code should be
 # one of these patterns.
 if [ -n "$LOCATIONS" ]; then
-    (($# > 0))  ||  Error "Must specify a location, one of:" $LOCATIONS
+    [ $# -gt 0 ]  ||  Error "Must specify a location, one of:" $LOCATIONS
     LOCATION="$1"
     shift
     # Check the location given is one of the ones we know
@@ -130,14 +130,14 @@ if [ -n "$LOCATIONS" ]; then
         Error "Invalid location $LOCATION: use one of" $LOCATIONS
 fi
 
-(($# != 0))  &&
+[ $# -ne 0 ]  &&
     Error 'Invalid arguments: try -h for help'
 
 
 # Check whether we can write to the filesystem.
 if cat /proc/mounts | grep -q ' / [^ ]* ro '; then
     # Root is mounted read only.  Bail unless remount requested.
-    if ((REMOUNT_RW)); then
+    if $REMOUNT_RW; then
         mount -o rw,remount /  ||
             Error 'Unable to remount rootfs for writing'
         trap 'mount -o ro,remount /' EXIT
@@ -202,7 +202,7 @@ fi
         /^IOC_/! d
         ' "$SOURCE"/install/CONFIG
     # If libera autostart is configured then add the appropriate entry
-    ((AUTOSTART))  &&  echo 'START_EPICS=yes'
+    $AUTOSTART  &&  echo 'START_EPICS=yes'
 ) > $CONFIGDIR/epics_ioc
 
 # Copy the startup scripts
@@ -223,7 +223,7 @@ for rcd in 2.d/S800 3.d/S800 0.d/K100 1.d/K100 6.d/K100; do
     ln -fs ../init.d/libera-driver /etc/rc${rcd}libera-driver
 done
 
-if ((STARTNOW)); then
+if $STARTNOW; then
     /etc/init.d/libera-driver start
-    ((AUTOSTART))  ||  /etc/init.d/epics start
+    $AUTOSTART  ||  /etc/init.d/epics start
 fi
