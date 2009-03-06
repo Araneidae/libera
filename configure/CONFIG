@@ -2,8 +2,31 @@
 
 include $(TOP)/configure/CONFIG_APP
 
-# Cross-compiling for linux-arm
-HOST_ARCH=linux-x86
+# Cross-compiling for linux-arm on linux-x86.
+HOST_ARCH = linux-x86
 
-# Choose the appropriate target architecture here.
-BUILD_ARCHS=linux-arm linux-arm_gnueabi
+# Choose the appropriate target architecture here:
+#
+#   linux-arm  
+#       Typically targets Libera systems with firmware 1.46 to 1.82,
+#       targeting glibc 2.3.2 on Libera.  The recommended build here is to
+#       use gcc 3.4.4 and glibc 2.3.6 -- this toolchain was built using
+#       crosstool.
+#
+#   linux-arm_gnueabi
+#       Targets newer Libera systems using the ARM "embedded" EABI.  At 
+#       Diamond we target glibc 2.7 using gcc 4.3.2 with a toolchain built
+#       using crosstool-ng, however there is no reason not to use this target
+#       with the standard iTech toolchain.
+#
+#   linux-arm_gnueabi-2_3
+#       This is a compatibility target used to target glibc 2.3.6 on Libera
+#       2.00 when using linux-arm_gnueabi to build to target the Diamond
+#       system.  Libera 2.00 also uses EABI, but the older glibc is subtly
+#       incompatible with glibc 2.7 builts.  The toolchain used here was
+#       extracted from
+#           scratchbox-toolchain-arm-linux-cs344-2.3_1.0.4_i386.deb  
+#       downloaded from
+#           http://scratchbox.org/debian/dists/stable/main/binary-i386/
+#
+BUILD_ARCHS = linux-arm linux-arm_gnueabi linux-arm_gnueabi-2_3

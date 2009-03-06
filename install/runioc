@@ -29,6 +29,11 @@
 
 # Startup script for Libera EPICS ioc.
 
+# Pick up the Libera and IOC specific configuration parameters.
+. /etc/init.d/epics-functions
+. $CONFIGDIR/libera
+. $CONFIGDIR/epics_ioc
+
 
 # ----------------------------------------------------------------------------
 # Support routines
@@ -51,27 +56,10 @@ IocParameter()
 BIN_DIR="$(cd "$(dirname "$0")"; pwd)"
 cd "$BIN_DIR/../.."
 
-# Discover whether the /etc/sysconfig directory exists.  On Linux 2.4 (old
-# style installation) we pick up our configurations from /etc/sysconfig, but
-# on 2.6 we use /etc/default.
-if [ -d /etc/sysconfig ]; then
-    CONFIGDIR=/etc/sysconfig
-else
-    CONFIGDIR=/etc/default
-fi
-
-# Read the libera configuration.  We're interested in FREV, HARMONIC,
-# DECIMATION, MCPRESC and NTBT at present.  Do this early to ensure our own
-# definitions don't get overwritten.
-. $CONFIGDIR/libera
-
-# Pick up the IOC specific configuration parameters together with the
-# location of the EPICS files.
-. $CONFIGDIR/epics_ioc
-
 
 export EPICS_CA_MAX_ARRAY_BYTES=1000000
 export DEVICE="$(hostname)"
+
 
 PIDFILE=/var/run/ioc.pid
 
@@ -140,7 +128,7 @@ IocParameter -f $FREV
 # Now run the IOC.
 echo
 echo 'Starting IOC at' $(date)
-echo "IOC parameters: $IOC_PARAMETERS"
+echo "Running: $BIN_DIR/ioc $IOC_PARAMETERS"
 "$BIN_DIR"/ioc $IOC_PARAMETERS
 echo 'IOC stopped at' $(date)
 echo
@@ -149,14 +137,19 @@ echo
 # When we exit make a good effort to clean up any debris.  If we crashed (and
 # were unlucky) we may have left lots of threads behind!
 sleep 0.5
-DEBRIS="$(ps ho pid -C ioc)"
-if [ -n "$DEBRIS" ]; then
-    echo Killing residual ioc processes: $DEBRIS
-    sleep 1
-    kill -9 $DEBRIS
+if [ -x /usr/bin/pkill ]; then
+    pkill -9 "$BIN_DIR"/ioc
+else
+    # No pkill, so do the kill by hand instead.
     DEBRIS="$(ps ho pid -C ioc)"
-    [ -n "$DEBRIS" ]  &&
-        echo Processes not killed: $DEBRIS
+    if [ -n "$DEBRIS" ]; then
+        echo Killing residual ioc processes: $DEBRIS
+        sleep 1
+        kill -9 $DEBRIS
+        DEBRIS="$(ps ho pid -C ioc)"
+        [ -n "$DEBRIS" ]  &&
+            echo Processes not killed: $DEBRIS
+    fi
 fi
 
 # Finally make sure we don't leave the pid file behind!

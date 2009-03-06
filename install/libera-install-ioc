@@ -37,43 +37,12 @@
 # Abort on first failure
 set -e
 
-Error()
-{
-    echo >&2 "$@"
-    exit 1
-}
-
-
-
-# Ensure this isn't run by accident on the development machine.
-[ "$(uname -m)" != armv5tel ]  &&
-    Error This should be run on Libera
-
-# The following version checking code is also present, in a similar form, in
-# libera-driver and similar tests need to be done in epics and runioc.  In
-# each case the goal is to avoid branching the code while both versions of
-# target are supported.
-LINUX_VERSION="$(uname -r | sed -r 's/(^[^.]*\.[^.]*)\..*/\1/')"
-if [ -d /etc/sysconfig ]; then
-    # Old school Libera
-    NEW_LIBERA=0
-    EXPECT_VERSION=2.4
-    CONFIGDIR=/etc/sysconfig
-else
-    # Newer Libera
-    NEW_LIBERA=1
-    EXPECT_VERSION=2.6
-    CONFIGDIR=/etc/default
-fi
-if [ "$EXPECT_VERSION" != "$LINUX_VERSION" ]; then
-    echo Expected Linux version "$EXPECT_VERSION", found "$LINUX_VERSION"
-    exit 1
-fi
-
-
+# Set the ARCHITECTURE and CONFIGDIR variables
 SOURCE="$(cd "$(dirname "$0")"/..; pwd)"
+. "$(dirname "$0")"/architecture
 
 LOCATIONS="$(cat "$SOURCE"/install/locations)"
+
 
 
 # Parse local installation options
@@ -135,12 +104,12 @@ fi
 
 
 # Check whether we can write to the filesystem.
-if cat /proc/mounts | grep -q ' / [^ ]* ro '; then
+if grep -qE ' / [^ ]* ro(,| )' /proc/mounts; then
     # Root is mounted read only.  Bail unless remount requested.
     if $REMOUNT_RW; then
-        mount -o rw,remount /  ||
+        mount -o remount,rw /  ||
             Error 'Unable to remount rootfs for writing'
-        trap 'mount -o ro,remount /' EXIT
+        trap 'mount -o remount,ro /' EXIT
     else
         Error 'Rootfs is mounted read-only.  Try -w option'
     fi
@@ -155,10 +124,11 @@ elif [ -x /etc/init.d/libera ]; then
     # Ensure epics driver isn't running at the moment.
     if [ -e /var/run/ioc.pid ]; then
         /etc/init.d/epics stop
-    fi
-    /etc/init.d/libera stop
+    fi  &&
+    /etc/init.d/libera stop  &&
     mv /etc/init.d/libera /etc/init.d/old-libera
-fi
+fi  ||
+    Error 'Error stopping drivers.  Installation aborted'
 
 
 # If final installation selected then copy over all the run-time files and
@@ -175,9 +145,9 @@ if [ $TARGET == final ]; then
     # is fresh.
     rm -rf "$IOC_TARGET"  
     umask 22  
-    mkdir -p "$IOC_TARGET"  
-    for dir in bin dbd db; do
-        cp -r "$SOURCE/$dir" "$IOC_TARGET"
+    mkdir -p "$IOC_TARGET" "$IOC_TARGET"/bin
+    for dir in dbd db bin/$ARCHITECTURE; do
+        cp -r "$SOURCE/$dir" "$IOC_TARGET/$dir"
     done
 else
     # Compute EPICS and IOC paths relative to this directory.  
@@ -191,7 +161,7 @@ fi
 # Now install the epics_ioc file.
 (
     # Add on the paths required for running the IOC
-    echo "LIBERA_IOC='$IOC_TARGET/bin/linux-arm/runioc'"
+    echo "LIBERA_IOC='$IOC_TARGET/bin/$ARCHITECTURE/runioc'"
     # We want to process three types of lines appropriately:
     #  1. Lines starting $LOCATION_IOC_... are translated to IOC_...
     #  2. Lines starting XX_IOC_... are discarded
@@ -205,9 +175,17 @@ fi
     $AUTOSTART  &&  echo 'START_EPICS=yes'
 ) > $CONFIGDIR/epics_ioc
 
-# Copy the startup scripts
-cp -f "$SOURCE"/install/libera-driver /etc/init.d  
-cp -f "$SOURCE"/install/epics /etc/init.d  
+# Copy over the startup scripts
+for f in epics-functions libera-driver epics; do
+    cp -f "$SOURCE"/install/$f /etc/init.d
+done
+# Add the computed CONFIGDIR onto the end of the epics-functions script
+cat <<EOF >>/etc/init.d/epics-functions
+
+# Libera and EPICS configuration directory
+CONFIGDIR=$CONFIGDIR
+echo Remove this dirty hack; NEW_LIBERA=$NEW_LIBERA
+EOF
 
 
 # Configure autostart as required.  First clear out any existing autostart
@@ -219,8 +197,13 @@ rm -f /etc/init.d/libera-server
 
 rm -f /etc/rc*.d/*libera
 
-for rcd in 2.d/S800 3.d/S800 0.d/K100 1.d/K100 6.d/K100; do
-    ln -fs ../init.d/libera-driver /etc/rc${rcd}libera-driver
+for rcd in rc2.d rc3.d rc.d; do
+    [ -d /etc/$rcd ]  &&
+    ln -fs ../init.d/libera-driver /etc/$rcd/S800libera-driver
+done
+for rcd in rc0.d rc1.d rc6.d; do
+    [ -d /etc/$rcd ]  &&
+    ln -fs ../init.d/libera-driver /etc/$rcd/K100libera-driver
 done
 
 if $STARTNOW; then

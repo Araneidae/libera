@@ -35,8 +35,10 @@ set -e
 # Files copied from install directory
 INSTALL_FILES='
     CONFIG
+    architecture
     epics
     libera-driver
+    epics-functions
     locations
     libera-install-fpga
     libera-install-ioc'
@@ -73,7 +75,10 @@ done
 # This is only intended for testing use.
 cat <<'EOF' >"$TARGET/runioc"
 #!/bin/sh
-"$(dirname "$0")/bin/linux-arm/runioc" "$@"
+cd "$(dirname "$0")"
+SOURCE="$(pwd)"
+. install/architecture
+./bin/$ARCHITECTURE/runioc 
 EOF
 chmod +x "$TARGET/runioc"
 

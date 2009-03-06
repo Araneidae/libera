@@ -30,36 +30,11 @@
 
 # libera - Start/stop Libera (FPGA design, driver & PLL daemon).
 
-# This code is shared between two quite different versions of Libera.
-# Distinguishing which version is installed is the challenge addressed here.
-# For the moment we simply look for the presence of /etc/sysconfig: this is
-# crude, and will need to be revisted...
-LINUX_VERSION="$(uname -r | sed -r 's/(^[^.]*\.[^.]*)\..*/\1/')"
-if [ -d /etc/sysconfig ]; then
-    # Old school Libera
-    NEW_LIBERA=false
-    EXPECT_VERSION=2.4
-    CONFIGDIR=/etc/sysconfig
-    . /etc/init.d/functions
-    
-else
-    # Newer Libera
-    NEW_LIBERA=true
-    EXPECT_VERSION=2.6
-    CONFIGDIR=/etc/default
-
-    evaluate_retval() { echo done.; }
-fi
-if [ "$EXPECT_VERSION" != "$LINUX_VERSION" ]; then
-    echo Expected Linux version "$EXPECT_VERSION", found "$LINUX_VERSION"
-    echo Refusing to start!
-    exit 1
-fi
-
-
 # Pick up the Libera configuration
-. "$CONFIGDIR"/libera
-. "$CONFIGDIR"/epics_ioc
+. /etc/init.d/epics-functions
+. $CONFIGDIR/libera
+. $CONFIGDIR/epics_ioc
+
 
 # Validate the configuration
 : "${DESIGN:?}"             # Path to FPGA design.

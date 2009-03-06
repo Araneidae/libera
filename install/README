@@ -10,13 +10,12 @@ distribute
 epics
     IOC startup script to be installed in /etc/init.d on Libera.
 
-gain.conf
-offsets.conf
-    Replacement gain configuration and gain offset correction files, to be
-    installed in /opt/dsc on Libera.
-
 install-ioc
     Builds local copy of installation in $INSTALL_HOST directory.
+
+libera-driver
+    Replacement startup script for starting Libera firmware and daemons,
+    installed in /etc/init.d on Libera.
 
 libera-install-fpga
     Installs current FPGA on Libera.  Probably belongs in toolkit.
@@ -26,6 +25,9 @@ libera-install-ioc
 
 Makefile
     Hooks into EPICS make process to execute final wrap-up of build process.
+
+offsets.conf
+    Attenuator offsets.
 
 patches/
     Directory containing EPICS specific patches
@@ -40,8 +42,5 @@ README
 runioc
     IOC startup script, to be installed on Libera.
 
-st.cmd
-    Helper file for IOC startup script.
-    
 temp-file-daemon
     Probably obsolete.

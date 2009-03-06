@@ -1,0 +1,86 @@
+# This script inspects /lib and the local bin directory to try and figure out
+# which architecture is the most appropriate match.
+#
+# This script must be called with SOURCE set to point to the root
+# installation directory containing the bin directories.
+
+Error()
+{
+    echo >&2 "$@"
+    exit 1
+}
+
+
+[ "$(uname -m)" = armv5tel ]  ||
+    Error This should be run on Libera
+case "$(uname -r)" in
+    2.4.*)
+echo Remove this dirty hack; NEW_LIBERA=false
+        # This is the original Libera distribution, including firmware
+        # versions up to version 1.46.  This supports the original
+        # linux-arm architecture, and stores its configuration in
+        # /etc/sysconfig.
+        ARCHITECTURE=linux-arm
+        CONFIGDIR=/etc/sysconfig
+        ;;
+    2.6.*)
+echo Remove this dirty hack; NEW_LIBERA=true
+        # Libera distributions from version 1.60 on are based on the 2.6
+        # kernel, but there are several variations at this point.
+        if [ -e /lib/ld-linux.so.3 ]; then
+            # The newest Libera distributions are based on the "Embedded
+            # ABI" (EABI).  At this point we have two possibilities:
+            #   - iTech distribution: old libraries, configuration in
+            #     /etc/default;
+            #   - Diamond distribution: newer libraries, different rootfs
+            #     (including different shell), configuration in
+            #     /etc/libera.
+            # However we don't really need to distinguish -- what really
+            # matters is the library.
+            if [ -e /lib/ld-2.3.6.so ]; then
+                # This looks like an iTech 2.0 Libera.  If we have a
+                # compatibility build we'd better install it.
+                if [ -e "$SOURCE"/bin/linux-arm_gnueabi-2_3 ]; then
+                    # At Diamond we build linux-arm_gnueabi with a newer
+                    # C library.  This results in compatibility problems
+                    # with the elderly 2.3.6 C library installed by
+                    # iTech, so a separate 2.3.6 compatible build is
+                    # supported which we install if present.
+                    ARCHITECTURE=linux-arm_gnueabi-2_3
+                else
+                    # Fall back to the default EABI build.  Maybe it's
+                    # been configured with the right library?
+                    ARCHITECTURE=linux-arm_gnueabi
+                fi
+                CONFIGDIR=/etc/default
+            else
+                # Well, we can't be completely confident in this case --
+                # all we really know is that the C library has been
+                # updated.  Still, it's a safe bet that we can go with
+                # the default architecture
+                ARCHITECTURE=linux-arm_gnueabi
+                # On this target we put our configuration in /etc/libera
+                # if possible.
+                if [ -d /etc/libera ]; then
+                    CONFIGDIR=/etc/libera
+                else
+                    CONFIGDIR=/etc/default
+                fi
+            fi
+        else
+            # This is still the original architecture, used by firmware
+            # versions 1.60 to 1.82.  This uses the old ABI and will work
+            # with the original linux-arm architecture.
+            ARCHITECTURE=linux-arm
+            CONFIGDIR=/etc/default
+        fi
+        ;;
+    *)  Error "Unexpected kernel version $(uname -r)"
+esac
+
+[ -d "$CONFIGDIR" ]  ||
+    Error Configuration directory $CONFIGDIR missing
+[ -d "$SOURCE"/bin/$ARCHITECTURE ]  ||
+    Error Binary directory bin/$ARCHITECTURE missing
+
+

@@ -59,7 +59,7 @@ diff -urN base-3.14.9-original/configure/os/CONFIG.linux-x86.linux-arm_gnueabi b
 diff -urN base-3.14.9-original/configure/os/CONFIG_SITE.linux-x86.linux-arm_gnueabi base-3.14.9/configure/os/CONFIG_SITE.linux-x86.linux-arm_gnueabi
 --- base-3.14.9-original/configure/os/CONFIG_SITE.linux-x86.linux-arm_gnueabi	1970-01-01 01:00:00.000000000 +0100
 +++ base-3.14.9/configure/os/CONFIG_SITE.linux-x86.linux-arm_gnueabi	2009-02-13 09:32:16.000000000 +0000
-@@ -0,0 +1,10 @@
+@@ -0,0 +1,7 @@
 +#  CONFIG_SITE.linux-x86.linux-arm_gnueabi
 +#
 +# Site specific definitions for linux-x86 host - linux-arm target builds
@@ -67,6 +67,3 @@ diff -urN base-3.14.9-original/configure/os/CONFIG_SITE.linux-x86.linux-arm_gnue
 +
 +# Diamond:
 +GNU_DIR = /dls_sw/targetOS/x-tools/gcc-4.3.2-glibc-2.7/arm-xscale-linux-gnueabi
-+
-+# anj@aps:
-+#GNU_DIR = /local/anj/cross-arm/gcc-3.4.5-glibc-2.3.6/arm-linux

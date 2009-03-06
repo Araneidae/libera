@@ -1,0 +1,33 @@
+# This file contains common scripting functions that are intended to be
+# installed on the target system in /etc/init.d
+
+Error()
+{
+    echo >&2 "$@"
+    exit 1
+}
+
+# The following functions were defined in /etc/init.d/functions on Libera on
+# linux 2.4, but don't seem to have equivalents in the more recent
+# distribution, so we define what we need here.
+evaluate_retval()
+{
+    if [ $? = 0 ]; then
+        print_status success
+    else
+        print_status failure
+    fi
+}
+
+: "${COLUMNS:=80}"      # Ensure COLUMNS is set
+print_status()
+{
+    echo -n $'\033['"$((COLUMNS-10))G"
+    echo -n [
+    case "$1" in
+        success)    echo -n $'\033[1;32m  OK  ' ;;
+        failure)    echo -n $'\033[1;31mFAILED' ;;
+    esac
+    echo -n $'\033[0;39m'
+    echo ]
+}
