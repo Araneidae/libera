@@ -35,6 +35,13 @@
 . $CONFIGDIR/libera
 . $CONFIGDIR/epics_ioc
 
+# Figure out the firmware version.  This is quick and dirty for now.
+case $CONFIGDIR in
+    /etc/sysconfig)     NEW_LIBERA=false ;;
+    /etc/default)       NEW_LIBERA=true ;;
+    /etc/libera)        NEW_LIBERA=true ;;
+    *)  Error "Oops!"
+esac
 
 # Validate the configuration
 : "${DESIGN:?}"             # Path to FPGA design.

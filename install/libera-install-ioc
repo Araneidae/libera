@@ -184,7 +184,6 @@ cat <<EOF >>/etc/init.d/epics-functions
 
 # Libera and EPICS configuration directory
 CONFIGDIR=$CONFIGDIR
-echo Remove this dirty hack; NEW_LIBERA=$NEW_LIBERA
 EOF
 
 

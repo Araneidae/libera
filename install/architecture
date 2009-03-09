@@ -3,6 +3,20 @@
 #
 # This script must be called with SOURCE set to point to the root
 # installation directory containing the bin directories.
+#
+# The following environment variables are set by this script:
+#
+#   ARCHITECTURE
+#       Name of EPICS architecture to run on this target, one of:
+#           linux-arm               Original architecture
+#           linux-arm_gnueabi       Libera with EABI installed
+#           linux-arm_gnueabi_2_3   Compatibility EABI library versions
+#
+#   CONFIGDIR
+#       Location of libera and IOC configuration files, one of:
+#           /etc/sysconfig  The original configration file location
+#           /etc/default    The current iTech standard
+#           /etc/libera     The Diamond standard
 
 Error()
 {
@@ -15,7 +29,6 @@ Error()
     Error This should be run on Libera
 case "$(uname -r)" in
     2.4.*)
-echo Remove this dirty hack; NEW_LIBERA=false
         # This is the original Libera distribution, including firmware
         # versions up to version 1.46.  This supports the original
         # linux-arm architecture, and stores its configuration in
@@ -24,7 +37,6 @@ echo Remove this dirty hack; NEW_LIBERA=false
         CONFIGDIR=/etc/sysconfig
         ;;
     2.6.*)
-echo Remove this dirty hack; NEW_LIBERA=true
         # Libera distributions from version 1.60 on are based on the 2.6
         # kernel, but there are several variations at this point.
         if [ -e /lib/ld-linux.so.3 ]; then
@@ -59,9 +71,8 @@ echo Remove this dirty hack; NEW_LIBERA=true
                 # updated.  Still, it's a safe bet that we can go with
                 # the default architecture
                 ARCHITECTURE=linux-arm_gnueabi
-                # On this target we put our configuration in /etc/libera
-                # if possible.
                 if [ -d /etc/libera ]; then
+                    # This is looking awfully like the DLS target.
                     CONFIGDIR=/etc/libera
                 else
                     CONFIGDIR=/etc/default
