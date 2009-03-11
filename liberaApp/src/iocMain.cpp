@@ -746,6 +746,10 @@ int main(int argc, char *argv[])
      *      gcc-4.3.2/libstdc++-v3/libsupc++/vterminate.cc
      *      
      * To avoid this nonsense, we just pull the plug here: OS cleanup is good
-     * enough for us, I'm pretty sure. */
+     * enough for us, I'm pretty sure.
+     *
+     * However: we need to flush any file output we're interested in! */
+    fclose(stdout);
+    fclose(stderr);
     _exit(Ok ? 0 : 1);
 }
