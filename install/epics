@@ -30,8 +30,9 @@
 # Starts or stops EPICS IOC in the background
 # This file should be placed in /etc/init.d/epics
 
-. /etc/init.d/epics-functions
+CONFIGDIR='@@CONFIGDIR@@'
 . $CONFIGDIR/epics_ioc
+. "$LIBERA_IOC"/scripts/epics-functions
 
 
 # Sensible defaults
@@ -45,7 +46,8 @@ case "$1" in
             print_status failure
         else
             # Run as a daemon with all output sent to log file.
-            "$LIBERA_IOC" -n >>"$IOC_LOG" 2>&1 </dev/null &
+            CONFIGDIR=$CONFIGDIR \
+                "$LIBERA_IOC"/scripts/runioc -n >>"$IOC_LOG" 2>&1 </dev/null &
             evaluate_retval
         fi
         ;;

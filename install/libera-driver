@@ -2,7 +2,7 @@
 
 # This file is part of the Libera EPICS Driver,
 # Copyright (C) 2005 Instrumentation Technologies
-# Copyright (C) 2008 Michael Abbott, Diamond Light Source Ltd.
+# Copyright (C) 2008-2009 Michael Abbott, Diamond Light Source Ltd.
 #
 # The Libera EPICS Driver is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as published by
@@ -31,22 +31,21 @@
 # libera - Start/stop Libera (FPGA design, driver & PLL daemon).
 
 # Pick up the Libera configuration
-. /etc/init.d/epics-functions
+CONFIGDIR='@@CONFIGDIR@@'
 . $CONFIGDIR/libera
 . $CONFIGDIR/epics_ioc
+. "$LIBERA_IOC"/scripts/epics-functions
 
-# Figure out the firmware version.  This is quick and dirty for now.
-case $CONFIGDIR in
-    /etc/sysconfig)     NEW_LIBERA=false ;;
-    /etc/default)       NEW_LIBERA=true ;;
-    /etc/libera)        NEW_LIBERA=true ;;
-    *)  Error "Oops!"
+# Figure out the firmware version.
+case $ROOTFS_ARCH in
+    ITECH-v0)   NEW_LIBERA=false ;;
+    *)          NEW_LIBERA=true ;;
 esac
+
 
 # Validate the configuration
 : "${DESIGN:?}"             # Path to FPGA design.
 : "${FLMCDHZ:?}"            # Machine clock frequency in dHz (10^-1 Hz)
-: "${DECIMATION:?}"         # Number of samples per machine revolution
 : "${FREV:?}"               # Machine revolution frequency in Hz
 : "${MCPRESC:?}"            # Machine clocks per machine clock PLL interrupt
 : "${NCLK_ADC:?}"           # Number of times shift enable written(?)
@@ -60,6 +59,11 @@ if $NEW_LIBERA; then
 else
     : "${DFA:?}"                # Number of turns per FA point
 fi
+
+# Read the turn by turn decimation factor directly from the FPGA.
+DECIMATION=$(($("$LIBERA_IOC"/bin/$EPICS_ARCH/monitor -d 0x14000010)))  ||
+    Error Unable to read machine decimation
+    
 
 case "$1" in
     start)
@@ -99,8 +103,8 @@ case "$1" in
 
         # Start the clock PLL daemon from the same directory as the EPICS IOC
         echo -n "Loading clock PLL daemon..."
-        BIN_DIR="$(dirname "$LIBERA_IOC")"
-        "$BIN_DIR"/clockPll -p$MCPRESC -d$DECIMATION -r$HARMONIC
+        "$LIBERA_IOC"/bin/$EPICS_ARCH/clockPll \
+            -p$MCPRESC -d$DECIMATION -r$HARMONIC
         evaluate_retval
 
         # Optionally start the EPICS IOC

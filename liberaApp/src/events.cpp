@@ -96,7 +96,9 @@ int MergeParameters(
 class EVENT_DISPATCHER : public LOCKED_THREAD
 {
 public:
-    EVENT_DISPATCHER() : LOCKED_THREAD("EVENT_DISPATCHER")
+    EVENT_DISPATCHER() :
+        LOCKED_THREAD("EVENT_DISPATCHER"),
+        signal(false)
     {
         /* Initialise the handler and event tables to empty. */
         for (int i = 0; i < EVENT_TABLE_SIZE; i ++)
@@ -163,12 +165,12 @@ public:
                 /* Process the event.  Preliminary processing here (in
                  * EVENT_RECEIVER context), and the rest of the processing
                  * will occur when the event is now dispatched. */
-                Lock();
+                THREAD_LOCK(this);
                 Event.Parameter = MergeParameters(
                     EventId, Event.Occurred, Event.Parameter, EventParameter);
                 Event.Occurred = true;
-                Signal();
-                Unlock();
+                THREAD_UNLOCK();
+                signal.Signal();
                 return;
             }
         }
@@ -189,9 +191,7 @@ private:
         while (Running())
         {
             /* Wait for something to happen. */
-            Lock();
-            Wait();
-            Unlock();
+            signal.Wait();
             
             /* Work through each event in turn, dispatching it.  This is
              * slighly back to front, as the association between events and
@@ -202,11 +202,13 @@ private:
                 if (Event.Valid)
                 {
                     /* Pick up the event and consume it. */
-                    Lock();
-                    bool Occurred = Event.Occurred;
-                    int Parameter = Event.Parameter;
+                    bool Occurred;
+                    int Parameter;
+                    THREAD_LOCK(this);
+                    Occurred = Event.Occurred;
+                    Parameter = Event.Parameter;
                     Event.Occurred = false;
-                    Unlock();
+                    THREAD_UNLOCK();
                     
                     /* Finally dispatch this event to all interested
                      * handlers -- if it actually occurred! */
@@ -225,18 +227,17 @@ private:
     }
 
 
+#ifdef UNSAFE_PTHREAD_CANCEL
     /* We can't rely on the normal pthread_cancel() for thread termination
      * (as it can have the sorry side effect of breaking the Libera driver) 
-     * -- but it is quite sufficient to simply wake the thread up again! */
+     * -- but it is often sufficient to simply wake the thread up again. */
     void OnTerminate()
     {
-        Lock();
-        Signal();
-        Unlock();
+        signal.Signal();
     }
+#endif
 
 
-    
     /* These two hard-wired limits can easily be updated as new events or
      * handlers are added. */
     enum {
@@ -265,6 +266,7 @@ private:
     
     EVENT_TABLE EventTable[EVENT_TABLE_SIZE];
     HANDLER_TABLE HandlerTable[HANDLER_TABLE_SIZE];
+    SEMAPHORE signal;
 };
 
 

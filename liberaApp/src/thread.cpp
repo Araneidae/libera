@@ -52,7 +52,13 @@
 /* We roll our own semaphore class here because of unresolved (and really
  * rather unexpected) problems with sem_t and in particular with
  * sem_timedwait.  The biggest problem is a very mysterious effect where
- * sem_timedwait returns ETIMEDOUT *immediately*!  Very odd indeed... */
+ * sem_timedwait returns ETIMEDOUT *immediately*!  Very odd indeed...
+ *
+ * Turns out there's another good reason for having our own semaphore class:
+ * pthread_cancel.  There's a painful interaction between cancelling a thread
+ * and the handling of mutexes, and (as far as I can tell) pthread_mutex_lock
+ * isn't cancellable.  This means that this semaphore is handy for long term
+ * blocking and signalling. */
 
 SEMAPHORE::SEMAPHORE(bool InitialReady)
 {
@@ -62,32 +68,64 @@ SEMAPHORE::SEMAPHORE(bool InitialReady)
     TEST_0(pthread_mutex_init, &ReadyMutex, NULL);
 }
 
-bool SEMAPHORE::Wait(int Seconds)
+
+/* Some units of time to avoid confusion when counting zeros! */
+#define S_NS    1000000000      // 1s in ns
+#define MS_NS   1000000         // 1ms in ns
+#define MS_S    1000            // 1s in ms
+
+bool SEMAPHORE::WaitFor(int milliseconds)
 {
-    timeval Now;
-    TEST_(gettimeofday, &Now, NULL);
-    timespec Timeout;
-    Timeout.tv_sec  = Now.tv_sec + Seconds;
-    Timeout.tv_nsec = Now.tv_usec * 1000;
+    struct timespec target;
+    if (!TEST_(clock_gettime, CLOCK_REALTIME, &target))
+        return false;
+
+    int seconds = milliseconds / MS_S;
+    milliseconds -= seconds * MS_S;
+    target.tv_sec += seconds;
+    target.tv_nsec += milliseconds * MS_NS;
+    if (target.tv_nsec > S_NS)
+    {
+        target.tv_sec += 1;
+        target.tv_nsec -= S_NS;
+    }
     
-    Lock();
+    return WaitUntil(target);
+}
+
+bool SEMAPHORE::WaitUntil(const struct timespec &target)
+{
     int ReturnCode = 0;
+    THREAD_LOCK(this);
     while (!Ready  &&  ReturnCode == 0)
         ReturnCode = pthread_cond_timedwait(
-            &ReadyCondition, &ReadyMutex, &Timeout);
-    Ready = false;
-    UnLock();
-
+            &ReadyCondition, &ReadyMutex, &target);
+    if (ReturnCode == 0)
+        Ready = false;  // Only consume event if we didn't time out.
+    THREAD_UNLOCK();
     return ReturnCode == 0;
+}
+
+void SEMAPHORE::Wait()
+{
+    THREAD_LOCK(this);
+    bool Ok = true;
+    while (Ok  && !Ready)
+    {
+        Ok = TEST_0(pthread_cond_wait, &ReadyCondition, &ReadyMutex);
+    }
+    if (Ok)
+        Ready = false;
+    THREAD_UNLOCK();
 }
 
 bool SEMAPHORE::Signal()
 {
-    Lock();
     bool OldReady = Ready;
+    THREAD_LOCK(this);
     Ready = true;
     TEST_0(pthread_cond_signal, &ReadyCondition);
-    UnLock();
+    THREAD_UNLOCK();
     return OldReady;
 }
 
@@ -96,9 +134,10 @@ void SEMAPHORE::Lock()
     TEST_0(pthread_mutex_lock, &ReadyMutex);
 }
 
-void SEMAPHORE::UnLock()
+void SEMAPHORE::Unlock(void *arg)
 {
-    TEST_0(pthread_mutex_unlock, &ReadyMutex);
+    SEMAPHORE &self = *(SEMAPHORE *)arg;
+    TEST_0(pthread_mutex_unlock, &self.ReadyMutex);
 }
 
 
@@ -196,52 +235,15 @@ void THREAD::Kill(int sig)
 LOCKED_THREAD::LOCKED_THREAD(const char * Name) :
     THREAD(Name)
 {
-    /* Create the thread synchronisation primitives.  Note that these are
+    /* Create the thread synchronisation mutex.  Note that is are
      * never destroyed because this class (instance) is never destroyed ...
      * because EPICS doesn't support any kind of restart, there's no point in
      * doing this anywhere else! */
-    TEST_0(pthread_cond_init, &Condition, NULL);
     TEST_0(pthread_mutex_init, &Mutex, NULL);
 }
 
-
-/* Some units of time to avoid confusion when counting zeros! */
-#define S_NS    1000000000      // 1s in ns
-#define MS_NS   1000000         // 1ms in ns
-#define MS_S    1000            // 1s in ms
-
-bool LOCKED_THREAD::WaitFor(int milliseconds)
+void LOCKED_THREAD::Unlock(void *arg)
 {
-    struct timespec target;
-    if (!TEST_(clock_gettime, CLOCK_REALTIME, &target))
-        return false;
-
-    int seconds = milliseconds / MS_S;
-    milliseconds -= seconds * MS_S;
-    target.tv_sec += seconds;
-    target.tv_nsec += milliseconds * MS_NS;
-    if (target.tv_nsec > S_NS)
-    {
-        target.tv_sec += 1;
-        target.tv_nsec -= S_NS;
-    }
-    
-    return WaitUntil(target);
-}
-
-
-bool LOCKED_THREAD::WaitUntil(const struct timespec &target)
-{
-    int rc = pthread_cond_timedwait(&Condition, &Mutex, &target);
-    if (rc == 0)
-        return true;
-    else
-    {
-        if (rc != ETIMEDOUT)
-        {
-            errno = rc;
-            perror("pthread_cond_timedwait");
-        }
-        return false;
-    }
+    LOCKED_THREAD &self = *(LOCKED_THREAD *) arg;
+    TEST_0(pthread_mutex_unlock, &self.Mutex);
 }

@@ -254,10 +254,8 @@ static void ReadHealth()
      * half a second) -- in particular, this one step requires all our
      * processing to be done in the sensors thread (rather than the
      * alternative of using an EPICS SCAN thread). */
-    int msp = open("/dev/msp0", O_RDONLY);
-    if (msp == -1)
-        perror("Unable to open MSP device");
-    else
+    int msp;
+    if (TEST_IO(msp, open, "/dev/msp0", O_RDONLY))
     {
         read(msp, SystemVoltages, sizeof(SystemVoltages));
         close(msp);
@@ -316,6 +314,8 @@ static SENSORS_THREAD * SensorsThread = NULL;
     } )
 
 
+#define I2C_DEVICE "/sys/bus/i2c/devices/"
+
 bool InitialiseSensors()
 {
     /* Figure out where to read our fan and temperature sensors: under Linux
@@ -325,9 +325,9 @@ bool InitialiseSensors()
     if (UseSys)
     {
         /* The /sys file system exists.  All our sensors live here. */
-        proc_temp = "/sys/class/i2c-adapter/i2c-0/device/0-0029/temp1_input";
-        proc_fan0 = "/sys/class/i2c-adapter/i2c-0/device/0-004b/fan1_input";
-        proc_fan1 = "/sys/class/i2c-adapter/i2c-0/device/0-0048/fan1_input";
+        proc_temp = I2C_DEVICE "0-0029/temp1_input";
+        proc_fan0 = I2C_DEVICE "0-004b/fan1_input";
+        proc_fan1 = I2C_DEVICE "0-0048/fan1_input";
     }
     else
     {

@@ -147,6 +147,10 @@ static bool status_pipe_overflow = true;
 
 bool InitialiseCommandLoop()
 {
+    /* In case the fifos have been left behind, or some other nonsense is
+     * going on, remove them unconditionally first. */
+    unlink(CLOCK_PLL_COMMAND_FIFO);
+    unlink(CLOCK_PLL_STATUS_FIFO);
     return
         /* Create the command and status FIFOs. */
         TEST_(mkfifo, CLOCK_PLL_COMMAND_FIFO, 0666)  &&

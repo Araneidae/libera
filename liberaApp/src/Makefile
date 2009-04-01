@@ -10,22 +10,30 @@ include $(TOP)/configure/CONFIG
 #USR_CXXFLAGS += -E
 #USR_CXXFLAGS += -g -O0
 
+
 USR_CXXFLAGS += -march=armv5te
-USR_CXXFLAGS += -Werror -Wall -Wextra -Wno-unused-parameter -Wno-trigraphs
+USR_CXXFLAGS += -Werror -Wall -Wno-trigraphs
+
+# Only for the most up to date compiler, enable all the extra options
+USR_CXXFLAGS_linux-arm_gnueabi += -Wextra -Wno-unused-parameter
+# We play some tricks with structures, need this option.
+versions_CXXFLAGS_linux-arm_gnueabi += -Wno-missing-field-initializers
+
+
+USR_CXXFLAGS += -DRAW_REGISTER
 
 # Make sure that we pick up the version from install/CONFIG.
-USR_CXXFLAGS += -DLIBERA_VERSION='"$(shell \
+versions_CXXFLAGS += -DLIBERA_VERSION='"$(shell \
     sed -n '/^VERSION=/{s///;p}' $(TOP)/install/CONFIG)"'
 # Compute a sensible format of build date
-USR_CXXFLAGS += -DBUILD_DATE_TIME='"$(shell date '+%Y-%m-%d %H:%M')"'
-USR_CXXFLAGS += -DRAW_REGISTER
+versions_CXXFLAGS += -DBUILD_DATE_TIME='"$(shell date '+%Y-%m-%d %H:%M')"'
+
 
 # The lines below defeat the -ansi flag: we want to use some gcc specific
 # features (typeof, in particular).
 CONFORM_CFLAGS_STRICT = 
 CONFORM_CXXFLAGS_STRICT = 
 
-# SHARED_LIBRARIES=NO   <--- appears to do nothing
 STATIC_BUILD = YES
 
 
@@ -64,6 +72,7 @@ ioc_SRCS += persistent.cpp      # Persistent configuration settings
 ioc_SRCS += interlock.cpp       # Machine protection interlock
 ioc_SRCS += sensors.cpp         # Machine state sensors
 ioc_SRCS += conditioning.cpp    # Signal conditioning control
+ioc_SRCS += versions.cpp        # Version identification
 
 ioc_SRCS += iocMain.cpp         # Ioc startup and configuration
 
@@ -93,7 +102,7 @@ firstTurn.o: filter-header.h
 	$(PYTHON) $< >$@
 
 
-# Force iocMain to be rebuilt every time so that the build date and time is
+# Force versions to be rebuilt every time so that the build date and time is
 # current. 
-iocMain.o: EMPTY
+versions.o: EMPTY
 EMPTY:

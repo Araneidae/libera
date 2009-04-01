@@ -163,9 +163,10 @@ public:
         if (!EpicsReady)
         {
             Lock();
+            pthread_cleanup_push(UnLock, NULL);
             while (!EpicsReady)
                 TEST_0(pthread_cond_wait, &ReadyCondition, &ReadyMutex);
-            UnLock();
+            pthread_cleanup_pop(true);
         }
     }
     
@@ -181,9 +182,10 @@ private:
             /* Initialisation is finished.  We can now tell all listening
              * threads to go ahead. */
             Lock();
+            pthread_cleanup_push(UnLock, NULL);
             EpicsReady = true;
             TEST_0(pthread_cond_broadcast, &ReadyCondition);
-            UnLock();
+            pthread_cleanup_pop(true);
         }
     }
 
@@ -192,7 +194,7 @@ private:
         TEST_0(pthread_mutex_lock, &ReadyMutex);
     }
 
-    static void UnLock()
+    static void UnLock(void *)
     {
         TEST_0(pthread_mutex_unlock, &ReadyMutex);
     }
@@ -282,7 +284,7 @@ void INTERLOCK::Wait()
      * have become permanently lost then we're dead...
      *    Oddly enough, this message does occasionally appear in the ioc log.
      * No idea why, as yet. */
-    if (!Interlock.Wait(2))
+    if (!Interlock.WaitFor(2000))
         printf("%s timed out waiting for EPICS handshake\n", Name);
 }
 

@@ -90,31 +90,6 @@ private:
 };
 
 
-/* A thread class with locking and event notification already built in. */
-
-class LOCKED_THREAD : public THREAD
-{
-public:
-    LOCKED_THREAD(const char * Name);
-
-protected:
-    void Lock()   { TEST_0(pthread_mutex_lock,   &Mutex); }
-    void Unlock() { TEST_0(pthread_mutex_unlock, &Mutex); }
-    void Signal() { TEST_0(pthread_cond_signal,  &Condition); }
-    void Wait()   { TEST_0(pthread_cond_wait,    &Condition, &Mutex); }
-
-    /* Waits for at least the specified number of milliseconds or until the
-     * specified time before timing out.  Returns true if the wait was
-     * interrupted by a signal, false if a timeout occurred. */
-    bool WaitFor(int milliseconds);
-    bool WaitUntil(const struct timespec &target);
-    
-private:
-    pthread_cond_t Condition;
-    pthread_mutex_t Mutex;
-};
-
-
 /* A class to implement binary semaphores with timeout. */
 
 class SEMAPHORE
@@ -122,9 +97,11 @@ class SEMAPHORE
 public:
     SEMAPHORE(bool InitialReady);
 
-    /* Wait for semaphore to be ready and consumes the ready flag.  Returns
-     * false on a timeout. */
-    bool Wait(int Seconds);
+    /* Unconditional wait. */
+    void Wait();
+    /* Wait for semaphore to be ready and consumes the ready flag. */
+    bool WaitFor(int milliseconds);
+    bool WaitUntil(const struct timespec &target);
 
     /* Signal that semaphore is ready: returns the previous state of the
      * ready flag. */
@@ -132,9 +109,42 @@ public:
     
 private:
     void Lock();
-    void UnLock();
+    static void Unlock(void *arg);
 
     bool Ready;
     pthread_cond_t ReadyCondition;
     pthread_mutex_t ReadyMutex;
 };
+
+
+/* A thread class with mutex locking already built in. */
+
+class LOCKED_THREAD : public THREAD
+{
+public:
+    LOCKED_THREAD(const char * Name);
+
+protected:
+     void Lock()   { TEST_0(pthread_mutex_lock,   &Mutex); }
+     static void Unlock(void *arg);
+    
+private:
+     pthread_mutex_t Mutex;
+};
+
+/* Helper macros for LOCKED_THREAD. */
+#define THREAD_LOCK(self) \
+    (self)->Lock(); \
+    pthread_cleanup_push((self)->Unlock, self)
+#define THREAD_UNLOCK() \
+    pthread_cleanup_pop(true)
+
+
+/* On older revisions of the Libera driver and the pthread library we can't
+ * use pthread_cancel() to close our threads, because it kills the driver!
+ * Fortunately (I hope...) with the new threading library and new kernel
+ * environment that comes with the ARM EABI this problem will have gone away.
+ * We define this symbol to check whether to override OnTerminate. */
+#ifndef __ARM_EABI__
+#define UNSAFE_PTHREAD_CANCEL
+#endif

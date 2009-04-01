@@ -95,8 +95,11 @@ private:
         }
     }
 
+
+#ifdef UNSAFE_PTHREAD_CANCEL
     /* Suppress use of pthread_cancel in this thread: it can cause trouble! */
     void OnTerminate() { }
+#endif
 
 
     /* Computes power and current from the observed S value, the attenuator

@@ -313,7 +313,8 @@ public:
         m_cis_if(exp(-I*f_if)),
         TurnsPerSwitch(TurnsPerSwitch),
         IqData(SAMPLE_SIZE, true),
-        EpicsWritePhaseArray(*this)
+        EpicsWritePhaseArray(*this),
+        signal(false)
     {
         /* Establish defaults for configuration variables before reading
          * their currently configured values. */
@@ -392,11 +393,12 @@ public:
     /* Writes the selected switch sequence. */
     bool LockedWriteSwitches(const SWITCH_SEQUENCE Switches, size_t Length)
     {
-        Lock();
-        bool Ok =
+        bool Ok;
+        THREAD_LOCK(this);
+        Ok =
             WriteSwitchSequence(Switches, Length)  &&
             CommitDscState();
-        Unlock();
+        THREAD_UNLOCK();
         return Ok;
     }
 
@@ -405,14 +407,14 @@ public:
      * configured compensation matrices. */
     void WriteScMode(SC_MODE ScMode)
     {
-        Lock();
+        THREAD_LOCK(this);
         switch (ScMode)
         {
             case SC_MODE_AUTO:
                 /* If we've just enabled auto mode then trigger a round of
                  * processing immediately. */
                 if (!Enabled)
-                    Signal();
+                    signal.Signal();
                 Enabled = true;
                 break;
                 
@@ -440,7 +442,7 @@ public:
                 Enabled = false;
                 break;
         }
-        Unlock();
+        THREAD_UNLOCK();
     }
 
 
@@ -448,19 +450,20 @@ public:
      * trigger an immediate round of processing. */
     bool ScWriteAttenuation(int NewAttenuation)
     {
-        Lock();
+        bool Ok;
+        THREAD_LOCK(this);
         /* The interlock must be temporarily disabled before changing the
          * attenuation. */
         HoldoffInterlock();
-        bool Ok =
+        Ok =
             WriteAttenuation(NewAttenuation)  &&
             CommitDscState();
         if (Ok)
         {
             ResetChannelIIR = true;
-            Signal();
+            signal.Signal();
         }
-        Unlock();
+        THREAD_UNLOCK();
         return Ok;
     }
     
@@ -633,14 +636,14 @@ private:
             PHASE_ARRAY * NewPhaseArray = (PHASE_ARRAY *) array;
             if (new_length == 16 * 4 * 2)
             {
-                Parent.Lock();
+                THREAD_LOCK(&Parent);
                 for (int sw = 0; sw < 16; sw ++)
                     WritePhaseArray(sw, NewPhaseArray[sw]);
                 for (int ix = 0; ix < SwitchSequenceLength; ix ++)
                     AssignArray(Parent.CurrentPhaseArray[ix],
                         NewPhaseArray[SwitchSequence[ix]]);
                 CommitDscState();
-                Parent.Unlock();
+                THREAD_UNLOCK();
             }
             else
                 printf("Incorrect size of phase array %d\n", new_length);
@@ -985,7 +988,7 @@ private:
     
     void Thread()
     {
-        Lock();
+        THREAD_LOCK(this);
         /* Configure the demultiplexing array so that channels are
          * demultiplexed to their corresponding buttons for each switch
          * position. */
@@ -993,7 +996,7 @@ private:
         SetUnityCompensation();
         ResetCurrentCompensation();
         CommitDscState();
-        Unlock();
+        THREAD_UNLOCK();
         
         if (!TEST_IO(DevDd, open, "/dev/libera.dd", O_RDONLY))
             /* Returning early causes error return. */
@@ -1002,18 +1005,15 @@ private:
 
         while(Running())
         {
-            Lock();
-            WaitFor(ConditioningInterval);
-            Unlock();
-            
+            signal.WaitFor(ConditioningInterval);
             Interlock.Wait();
             
-            Lock();
+            THREAD_LOCK(this);
             if (Enabled)
                 ConditioningStatus = ProcessSignalConditioning();
             else
                 ConditioningStatus = SC_OFF;
-            Unlock();
+            THREAD_UNLOCK();
             
             Interlock.Ready();
         }
@@ -1071,8 +1071,6 @@ private:
      * values mean longer time constants. */
     int ChannelIIRFactor;
 
-    INTERLOCK Interlock;
-
     /* This is the array of channel gains after IIR processing.  This is what
      * is written into the FPGA, after conversion to phase array form.
      *    When unity gain mode is selected this matrix is used to record the
@@ -1089,6 +1087,9 @@ private:
     /* Writing to this waveform allows the phase array to be written directly
      * -- obviously for expermentation only! */
     WRITE_PHASE_ARRAY EpicsWritePhaseArray;
+
+    SEMAPHORE signal;
+    INTERLOCK Interlock;
 };
 
 

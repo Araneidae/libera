@@ -32,16 +32,21 @@
 
 set -e
 
-# Files copied from install directory
+# Files needed for installation but not installed on target
 INSTALL_FILES='
     CONFIG
-    architecture
     epics
     libera-driver
-    epics-functions
     locations
     libera-install-fpga
     libera-install-ioc'
+
+# Files needed for the target
+SCRIPT_FILES='
+    architecture
+    epics-functions
+    runioc
+    compute-options'
 
 
 SOURCE="$(cd "$(dirname "$0")"/..; pwd)"  
@@ -71,14 +76,21 @@ for f in $INSTALL_FILES; do
     cp "$SOURCE"/install/$f "$TARGET"/install
 done
 
+# Copy over the scripts
+mkdir -p "$TARGET"/scripts
+for f in $SCRIPT_FILES; do
+    cp "$SOURCE"/install/$f "$TARGET"/scripts
+done
+
+
 # To be friendly create a redirector script to invoke the true runioc script.
 # This is only intended for testing use.
 cat <<'EOF' >"$TARGET/runioc"
 #!/bin/sh
 cd "$(dirname "$0")"
 SOURCE="$(pwd)"
-. install/architecture
-./bin/$ARCHITECTURE/runioc 
+. scripts/architecture
+CONFIGDIR=$CONFIGDIR exec ./scripts/runioc "$@"
 EOF
 chmod +x "$TARGET/runioc"
 

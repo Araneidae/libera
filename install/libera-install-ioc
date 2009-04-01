@@ -37,9 +37,9 @@
 # Abort on first failure
 set -e
 
-# Set the ARCHITECTURE and CONFIGDIR variables
+# Set the EPICS_ARCH and CONFIGDIR variables
 SOURCE="$(cd "$(dirname "$0")"/..; pwd)"
-. "$(dirname "$0")"/architecture
+. "$SOURCE"/scripts/architecture
 
 LOCATIONS="$(cat "$SOURCE"/install/locations)"
 
@@ -146,7 +146,7 @@ if [ $TARGET == final ]; then
     rm -rf "$IOC_TARGET"  
     umask 22  
     mkdir -p "$IOC_TARGET" "$IOC_TARGET"/bin
-    for dir in dbd db bin/$ARCHITECTURE; do
+    for dir in dbd db bin/$EPICS_ARCH scripts; do
         cp -r "$SOURCE/$dir" "$IOC_TARGET/$dir"
     done
 else
@@ -161,7 +161,9 @@ fi
 # Now install the epics_ioc file.
 (
     # Add on the paths required for running the IOC
-    echo "LIBERA_IOC='$IOC_TARGET/bin/$ARCHITECTURE/runioc'"
+    echo "LIBERA_IOC='$IOC_TARGET'"
+    echo "EPICS_ARCH=$EPICS_ARCH"
+    echo "ROOTFS_ARCH=$ROOTFS_ARCH"
     # We want to process three types of lines appropriately:
     #  1. Lines starting $LOCATION_IOC_... are translated to IOC_...
     #  2. Lines starting XX_IOC_... are discarded
@@ -175,16 +177,13 @@ fi
     $AUTOSTART  &&  echo 'START_EPICS=yes'
 ) > $CONFIGDIR/epics_ioc
 
-# Copy over the startup scripts
-for f in epics-functions libera-driver epics; do
-    cp -f "$SOURCE"/install/$f /etc/init.d
+# Copy over the libera-driver and epics startup scripts substituting in the
+# hard-wired CONFIGDIR value we've determined.
+for f in libera-driver epics; do
+    sed s:@@CONFIGDIR@@:"$CONFIGDIR": "$SOURCE"/install/$f \
+        >/etc/init.d/$f
+    chmod +x /etc/init.d/$f
 done
-# Add the computed CONFIGDIR onto the end of the epics-functions script
-cat <<EOF >>/etc/init.d/epics-functions
-
-# Libera and EPICS configuration directory
-CONFIGDIR=$CONFIGDIR
-EOF
 
 
 # Configure autostart as required.  First clear out any existing autostart

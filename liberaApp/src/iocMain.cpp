@@ -1,5 +1,5 @@
 /* This file is part of the Libera EPICS Driver,
- * Copyright (C) 2005-2007  Michael Abbott, Diamond Light Source Ltd.
+ * Copyright (C) 2005-2009  Michael Abbott, Diamond Light Source Ltd.
  *
  * The Libera EPICS Driver is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as published by
@@ -34,7 +34,6 @@
 #include <signal.h>
 #include <semaphore.h>
 #include <string.h>
-#include <sys/wait.h>
 #include <stdint.h>
 
 #include <iocsh.h>
@@ -60,6 +59,7 @@
 #include "conditioning.h"
 #include "waveform.h"
 #include "booster.h"
+#include "versions.h"
 
 #include "fastFeedback.h"
 
@@ -124,9 +124,6 @@ static int S0_SA = 0;
 /* Location of the persistent state file. */
 static const char * StateFileName = NULL;
 
-
-static EPICS_STRING VersionString = LIBERA_VERSION;
-static EPICS_STRING BuildDate = BUILD_DATE_TIME;
 
 
 /* Prints interactive startup message as recommended by GPL. */
@@ -248,6 +245,9 @@ static bool InitialiseLibera()
         /* Ensure the trigger interlock mechanism is working.  This needs to
          * happen before any EPICS communication is attempted. */
         InitialiseTriggers()  &&
+        /* Version PVs.  This needs to be done before hardware startup, as it
+         * can affect the behaviour of hardware. */
+        InitialiseVersions()  &&
         /* Initialise the connections to the Libera device.  This also needs
          * to be done early, as this is used by other initialisation code. */
         InitialiseHardware()  &&
@@ -495,89 +495,6 @@ static bool ProcessOptions(int &argc, char ** &argv)
 
 /*****************************************************************************/
 /*                                                                           */
-/*                        Reboot and Restart Support                         */
-/*                                                                           */
-/*****************************************************************************/
-
-
-/* Fairly generic routine to start a new detached process in a clean
- * environment. */
-
-static void DetachProcess(const char *Process, const char *const argv[])
-{
-    /* We fork twice to avoid leaving "zombie" processes behind.  These are
-     * harmless enough, but annoying.  The double-fork is a simple enough
-     * trick. */
-    pid_t MiddlePid = fork();
-    if (MiddlePid == -1)
-        perror("Unable to fork");
-    else if (MiddlePid == 0)
-    {
-        pid_t NewPid = fork();
-        if (NewPid == -1)
-            perror("Unable to fork");
-        else if (NewPid == 0)
-        {
-            /* This is the new doubly forked process.  We still need to make
-             * an effort to clean up the environment before letting the new
-             * image have it. */
-
-            /* Set a sensible home directory. */
-            chdir("/");
-
-            /* Enable all signals. */
-            sigset_t sigset;
-            sigfillset(&sigset);
-            sigprocmask(SIG_UNBLOCK, &sigset, NULL);
-
-            /* Close all the open file handles.  It's rather annoying: there
-             * seems to be no good way to do this in general.  Fortunately in
-             * our case _SC_OPEN_MAX is managably small. */
-            for (int i = 0; i < sysconf(_SC_OPEN_MAX); i ++)
-                close(i);
-
-            /* Finally we can actually exec the new process... */
-            char * envp[] = { NULL };
-            execve(Process, (char**) argv, envp);
-        }
-        else
-            /* The middle process simply exits without further ceremony.  The
-             * idea here is that this orphans the new process, which means
-             * that the parent process doesn't have to wait() for it, and so
-             * it won't generate a zombie when it exits. */
-            _exit(0);
-    }
-    else
-    {
-        /* Wait for the middle process to finish. */
-        if (waitpid(MiddlePid, NULL, 0) == -1)
-            perror("Error waiting for middle process");
-    }
-}
-
-
-static void DoReboot()
-{
-    const char * Args[] = { "/sbin/reboot", NULL };
-    DetachProcess(Args[0], Args);
-}
-
-
-static void DoRestart()
-{
-    const char * Args[] = { "/etc/init.d/epics", "restart", NULL };
-    DetachProcess(Args[0], Args);
-}
-
-
-static void DoCoreDump()
-{
-    * (char *) 0 = 0;
-}
-
-
-/*****************************************************************************/
-/*                                                                           */
 /*                            IOC Initialisation                             */
 /*                                                                           */
 /*****************************************************************************/
@@ -693,13 +610,6 @@ static bool StartIOC()
 
 int main(int argc, char *argv[])
 {
-    /* A handful of global PVs with no other natural home. */
-    Publish_stringin("VERSION", VersionString);
-    Publish_stringin("BUILD", BuildDate);
-    PUBLISH_ACTION("REBOOT",  DoReboot);
-    PUBLISH_ACTION("RESTART", DoRestart);
-    PUBLISH_ACTION("CORE", DoCoreDump);
-    
     /* Consume any option arguments and start the driver. */
     bool Ok =
         ProcessOptions(argc, argv)  &&
@@ -736,20 +646,31 @@ int main(int argc, char *argv[])
     TerminateLibera();
     printf("Ioc terminated normally\n");
 
+#ifdef __ARM_EABI__
     /* There is some unpleasantness happening behind the scenes, almost
      * certainly inside the EPICS library, causing our shutdown to be untidy
      * -- can, for example, get the message:
+     *      
      *      terminate called without an active exception
+     *
      * which then aborts us.  As this message always occurs *after* main()
      * returns it's due to some atexit(3) function, almost certainly a static
      * destructor.  This message comes from
+     * 
      *      gcc-4.3.2/libstdc++-v3/libsupc++/vterminate.cc
      *      
      * To avoid this nonsense, we just pull the plug here: OS cleanup is good
      * enough for us, I'm pretty sure.
      *
+     * Unfortunately, oh joy, this is system dependent.  On older systems
+     * (possibly linuxthreads based) this causes the IOC to simply lock up on
+     * exit, so we need to do a proper exit.  There doesn't seem to be a
+     * simple test for NPTL threads, but fortunately NPTL was introduced to
+     * Libera at the same time as ARM EABI, so we use this test.
+     *
      * However: we need to flush any file output we're interested in! */
     fclose(stdout);
     fclose(stderr);
     _exit(Ok ? 0 : 1);
+#endif
 }

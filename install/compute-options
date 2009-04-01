@@ -1,0 +1,184 @@
+# Script to generate or update configuration.
+
+# This file is part of the Libera EPICS Driver,
+# Copyright (C) 2009 Michael Abbott, Diamond Light Source Ltd.
+#
+# The Libera EPICS Driver is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# The Libera EPICS Driver is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc., 51
+# Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# Contact:
+#      Dr. Michael Abbott,
+#      Diamond Light Source Ltd,
+#      Diamond House,
+#      Chilton,
+#      Didcot,
+#      Oxfordshire,
+#      OX11 0DE
+#      michael.abbott@diamond.ac.uk
+
+# Reads a word from the FPGA
+#
+#   read_register <register>
+#
+read_register()
+{
+    "$LIBERA_IOC"/bin/$EPICS_ARCH/monitor -d $((0x14000000+$1))
+}
+
+
+# Reads version from specified log file
+#
+#   read_syslog <logfile> <pattern>
+#
+read_syslog()
+{
+    sed -nr '/^.* kernel:( \[[^]]*\])? '"$2"' version (.*) \(.*$/{
+        s//\2/; p;}' "$1" |
+    tail -n1
+}
+
+
+# Tries to read module version.
+#
+#   read_version <module> <pattern> 
+#
+read_version()
+{
+    if [ -e /sys/module/$1/version ]; then
+        cat /sys/module/$1/version
+    else
+        result="$(read_syslog $logfile "$2")"
+        if [ -n "$result" ]; then
+            echo -n "$result"
+        else
+            echo -n "unknown"
+        fi
+    fi
+}
+
+
+if [ -e /var/log/syslog ]; then
+    logfile=/var/log/syslog
+else
+    logfile=/var/log/messages
+fi
+
+
+# Basic target system information.
+export KERNEL_VERSION="$(uname -r)"
+export LIBC_VERSION="$(echo /lib/ld-*.so | sed 's/^.*-//;s/\.so$//')"
+export ABI_VERSION="$(echo /lib/ld-linux.so.* | sed 's/^.*\.so\.//')"
+
+# Try to find something to properly identify the rootfs version.
+case $ROOTFS_ARCH in
+    ITECH-v0)   ROOTFS_VERSION="$(head -n1 /etc/motd)" ;;   # Best we can do
+    ITECH-v*)   ROOTFS_VERSION="$(head -n1 /etc/issue)" ;;  # Looks better
+    DLS-*)      ROOTFS_VERSION="$(cat /etc/version)" ;;     # Best of all
+    *)          ROOTFS_VERSION=unknown ;;                   # Whoops!
+esac
+export ROOTFS_ARCH ROOTFS_VERSION
+
+# Try and figure out what version of driver and firmware we're running.  This
+# is annoyingly tricky.  We have the following places to look:
+#
+#   /sys/module/<device>/version
+#       If this node exists then we're in luck.  Fat chance normally, and
+#       this won't help us with the FPGA.
+#
+#   dpkg -p <component>
+#       This is a pretty good guess, but unfortunately it's not actually to
+#       be relied on -- some of us are too inclined to go via the back door.
+#       In particular, DLS are bad offenders at this (and the DLS
+#       distribution doesn't use dpkg anyway).
+#
+#   grep <component> /var/log/{syslog,messages} | tail -n1
+#       This is more accurate than asking dpkg, but less reliable.  Still,
+#       most of the time it'll be good enough.
+export LIBERA_VERSION="$(read_version libera 'Libera EBPP[^,]*,')"
+export MSP_VERSION="$(read_version msp MSP)"
+
+# For the FPGA we really have a problem, as there are no consistent FPGA
+# identification registers.
+
+# Read the interesting FPGA registers
+export FPGA_COMPILED=$(($(read_register 0x04)))
+export FPGA_BUILD_NO=$(($(read_register 0x08)))
+export FPGA_CUST_ID=$(($(read_register  0x0C)))
+export FPGA_DDC_DEC=$(($(read_register  0x10)))
+export FPGA_FA_DEC=$(($(read_register   0x14)))
+export FPGA_CUSTOMER=$(($(read_register 0x18)))
+export FPGA_ITECH=$(($(read_register    0x1C)))
+
+
+# FPGA feature identification registers.  This is only valid for FPGAs after
+# version 1.46.
+#
+# i-Tech register, address 0x1400001C
+#
+#   Bits    Description
+#   0       Grouping (RIO)
+#   1       Desy Molex
+#   2-3     Gigabit ethernet.  0 => not present, 2 => present, 3 => demo
+#   4-5     DDC filter identification. 0 => standard, 1 => MAF.
+#   6       DLS fast feedback controller
+#   7-22    Reserved for future expansion
+#   23      DLS FPGA identification bit
+#   24-27   Instrument type. 0 => electron, 1 => brilliance
+#   28-31   Instrument ID, must be 0 for EBPM
+#
+# Customer register, address 0x14000018
+# DLS feature register if bit 23 of i-Tech register set
+#
+#   Bits    Description
+#   0-30    Reserved for future expansion
+#   31      Must be 1 for DLS feature identification
+
+# Let's do a bit of guessing at the FPGA version.  In pre-1.60 FPGAs
+# registers 18 and 1C simply mirrored register 10 and 14.  Unfortunately this
+# can go wrong if we're unlucky, so we allow this to be overridden.
+export FPGA_OLD=${FPGA_OLD:-$((
+    FPGA_DDC_DEC == FPGA_CUSTOMER  &&  FPGA_FA_DEC == FPGA_ITECH))}
+if [ $FPGA_OLD = 1 ]; then
+    # If an old FPGA has been recognised, the feature registers are invalid.
+    FPGA_CUSTOMER=0
+    FPGA_ITECH=0
+fi
+
+# If the instrument id is wrong then something is horribly off!
+IID=$(((FPGA_ITECH >> 28) & 0xF))
+[ $IID = 0 ] ||  Error Unexpected FPGA IID=$IID
+
+
+# The DLS FPGA is identified by bit 23 set in the iTech feature register and
+# the top bit set in the customer feature register.
+export OPT_DLS_FPGA=$((
+    (FPGA_ITECH & (1<<23)) != 0  &&  (FPGA_CUSTOMER & (1 << 31)) != 0))
+    
+# Fast feedback is available if DLS FPAG present or iTech FF option selected.
+export OPT_FF=$((OPT_DLS_FPGA  ||  (FPGA_ITECH & (1 << 6)) != 0))
+
+# For normal FPGAs we use the brilliance feature bit.  For old FPGAs we have
+# to inspect the FPGA "build no" register instead.
+export OPT_BR=$((
+    (!FPGA_OLD  &&  (((FPGA_ITECH >> 24) & 0xF) == 1))  ||
+    (FPGA_OLD  &&  (FPGA_BUILD_NO == 0x10))))
+# For FPGAs with brilliance before version 2 we have to invert the
+# attenuators.  Unfortunately this option is very hard to reliably identify,
+# so this is another overridable option.  We work on the simple heuristic
+# that if the Libera driver version is old then we should invert.
+export OPT_BR_INVERT=${OPT_BR_INVERT:-$(
+    [ $FPGA_OLD = 1 -o "${LIBERA_VERSION:0:2}" = 1. ] && echo 1 || echo 0)}
+
+# Weird hard-wired boxcard DDC filter check
+export OPT_MAF=$((((FPGA_ITECH >> 4) & 3) == 1))

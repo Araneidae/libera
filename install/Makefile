@@ -8,9 +8,6 @@ build:
 # of the rest of the project makefile.  We patch up the installation ready
 # for deployment to Libera.
 install: locations
-	for f in $(foreach ARCH, $(BUILD_ARCHS), $(TOP)/bin/$(ARCH)); do \
-            cp runioc $$f; \
-        done
 
 clean:
 	rm -f locations

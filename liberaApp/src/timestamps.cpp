@@ -87,16 +87,18 @@ static bool EnableOpenLoop = false;
 
 static void SendPllCommand(const char * format, ...)
 {
-    FILE * PllCommandFile = fopen(CLOCK_PLL_COMMAND_FIFO, "w");
-    if (PllCommandFile == NULL)
-        perror("Unable to open clockPll command fifo");
-    else
+    int pll;
+    if (TEST_IO(pll, open, CLOCK_PLL_COMMAND_FIFO, O_WRONLY | O_NDELAY))
     {
+        char command[80];
         va_list args;
         va_start(args, format);
-        vfprintf(PllCommandFile, format, args);
-        fprintf(PllCommandFile, "\n");
-        fclose(PllCommandFile);
+        int len = vsnprintf(command, sizeof(command), format, args);
+        strcat(command, "\n");
+        int written;
+        TEST_IO(written, write, pll, command, len+1)  &&
+        TEST_OK(written == len+1);
+        close(pll);
     }
 }
 
@@ -484,7 +486,9 @@ private:
 class SYNCHRONISE_CLOCKS : public LOCKED_THREAD, I_EVENT
 {
 public:
-    SYNCHRONISE_CLOCKS() : LOCKED_THREAD("SYNCHRONISE_CLOCKS")
+    SYNCHRONISE_CLOCKS() :
+        LOCKED_THREAD("SYNCHRONISE_CLOCKS"),
+        signal(false)
     {
         SystemClockSynchronising = false;
         MachineClockSynchronising = false;
@@ -504,16 +508,13 @@ private:
     {
         StartupOk();
 
-        Lock();
         while (Running())
         {
             /* Wait for synchronisation request. */
-            Wait();
+            signal.Wait();
             
             while (SystemClockSynchronising)
             {
-                Unlock();
-                
                 struct timespec NewTime;
                 /* Ensure that if the trigger occurs within the next second
                  * then we will correctly pick up the current time. */
@@ -532,12 +533,8 @@ private:
                  * plenty of time to set up for the next trigger. */
                 unsigned int Delay = 1200000 - Offset / 1000;
                 usleep(Delay);
-
-                Lock();
             }
-
         }
-        Unlock();
     }
 
 
@@ -546,11 +543,12 @@ private:
      * trigger.  We wake up the main thread to do this work for us. */
     bool SynchroniseSystemClock()
     {
-        Lock();
+        THREAD_LOCK(this);
         SystemClockSynchronising = true;
         SendPllCommand("ss%d", SYNC_TRACKING);
-        Signal();
-        Unlock();
+        THREAD_UNLOCK();
+        
+        signal.Signal();
         return true;
     }
 
@@ -562,11 +560,11 @@ private:
      * synchronisation) we need to be part of this thread. */
     bool SynchroniseMachineClock()
     {
-        Lock();
+        THREAD_LOCK(this);
         MachineClockSynchronising = true;
         SendPllCommand("ms%d", SYNC_TRACKING);
         SetMachineClockTime();
-        Unlock();
+        THREAD_UNLOCK();
         return true;
     }
 
@@ -576,7 +574,7 @@ private:
      * is complete. */
     void OnEvent(int)
     {
-        Lock();
+        THREAD_LOCK(this);
         if (MachineClockSynchronising)
         {
             MachineClockSynchronising = false;
@@ -587,13 +585,14 @@ private:
             SystemClockSynchronising = false;
             SendPllCommand("ss%d", SYNC_SYNCHRONISED);
         }
-        Signal();
-        Unlock();
+        THREAD_UNLOCK();
+        signal.Signal();
     }
     
 
     bool MachineClockSynchronising;
     bool SystemClockSynchronising;
+    SEMAPHORE signal;
 };
 
 

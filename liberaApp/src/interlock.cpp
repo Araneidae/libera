@@ -144,8 +144,11 @@ static int InterlockIIR_K = 0;
  * is the slow acquisition update thread. */
 pthread_mutex_t InterlockMutex = PTHREAD_MUTEX_INITIALIZER;
 
-static void Lock()   { TEST_0(pthread_mutex_lock,   &InterlockMutex); }
-static void Unlock() { TEST_0(pthread_mutex_unlock, &InterlockMutex); }
+static void Lock()         { TEST_0(pthread_mutex_lock,   &InterlockMutex); }
+static void Unlock(void *) { TEST_0(pthread_mutex_unlock, &InterlockMutex); }
+
+#define LOCK()      Lock(); pthread_cleanup_push(Unlock, NULL)
+#define UNLOCK()    pthread_cleanup_pop(true)
 
 
 
@@ -224,9 +227,9 @@ static void UpdateInterlockEnable(bool SetEnable)
 
 static void LockedWriteInterlockState()
 {
-    Lock();
+    LOCK();
     WriteInterlockState();
-    Unlock();
+    UNLOCK();
 }
 
 
@@ -236,9 +239,9 @@ static void LockedWriteInterlockState()
 
 static bool LockedUpdateInterlockEnable(bool SetEnable)
 {
-    Lock();
+    LOCK();
     UpdateInterlockEnable(SetEnable);
-    Unlock();
+    UNLOCK();
     return true;
 }
 
@@ -250,7 +253,7 @@ static bool LockedUpdateInterlockEnable(bool SetEnable)
 
 void NotifyInterlockCurrent(int Current)
 {
-    Lock();
+    LOCK();
     
     CurrentCurrent = Current;
     if (InterlockHoldoff > 0)
@@ -262,7 +265,7 @@ void NotifyInterlockCurrent(int Current)
          * state: this will take account of any current on/off effects. */
         UpdateInterlockEnable(MasterInterlockEnable);
 
-    Unlock();
+    UNLOCK();
 }
 
 
@@ -272,7 +275,7 @@ void NotifyInterlockCurrent(int Current)
 
 void HoldoffInterlock()
 {
-    Lock();
+    LOCK();
 
     /* Figure out which holdoff we need. */
     if (MasterInterlockEnable  ||  OverflowEnable)
@@ -285,7 +288,7 @@ void HoldoffInterlock()
         InterlockHoldoff = CurrentHoldoffCount;
     
     WriteInterlockState();
-    Unlock();
+    UNLOCK();
 }
 
 
@@ -294,10 +297,10 @@ void HoldoffInterlock()
 
 bool NotifyInterlockBpmEnable(bool Enabled)
 {
-    Lock();
+    LOCK();
     GlobalBpmEnable = Enabled;
     UpdateInterlockEnable(false);
-    Unlock();
+    UNLOCK();
     return true;
 }
 
@@ -307,11 +310,11 @@ bool NotifyInterlockBpmEnable(bool Enabled)
 
 void NotifyInterlockOffset(int NewOffsetX, int NewOffsetY)
 {
-    Lock();
+    LOCK();
     OffsetX = NewOffsetX;
     OffsetY = NewOffsetY;
     WriteInterlockState();
-    Unlock();
+    UNLOCK();
 }
 
 
