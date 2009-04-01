@@ -3,10 +3,10 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 2324
-y 225
+x 2326
+y 261
 w 392
-h 391
+h 535
 font "helvetica-medium-r-14.0"
 ctlFont "helvetica-medium-r-14.0"
 btnFont "helvetica-bold-r-14.0"
@@ -35,7 +35,7 @@ release 0
 x 8
 y 40
 w 376
-h 312
+h 456
 lineColor index 14
 fill
 fillColor index 4
@@ -48,7 +48,7 @@ major 4
 minor 1
 release 0
 x 296
-y 360
+y 504
 w 88
 h 24
 fgColor index 25
@@ -66,8 +66,8 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 16
-y 48
+x 24
+y 64
 w 54
 h 16
 font "helvetica-medium-r-14.0"
@@ -128,8 +128,8 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 160
-y 48
+x 168
+y 64
 w 168
 h 16
 controlPv "$(device):VE:VERSION"
@@ -150,8 +150,8 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 160
-y 64
+x 168
+y 80
 w 168
 h 16
 controlPv "$(device):VE:BUILD"
@@ -172,8 +172,8 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 16
-y 64
+x 24
+y 80
 w 66
 h 16
 font "helvetica-medium-r-14.0"
@@ -192,8 +192,8 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 160
-y 80
+x 168
+y 96
 w 168
 h 16
 controlPv "$(device):VE:EPICS"
@@ -214,8 +214,8 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 16
-y 80
+x 24
+y 96
 w 97
 h 16
 font "helvetica-medium-r-14.0"
@@ -234,8 +234,8 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 160
-y 96
+x 168
+y 136
 w 168
 h 16
 controlPv "$(device):VE:UNAME"
@@ -256,8 +256,8 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 16
-y 96
+x 24
+y 136
 w 97
 h 16
 font "helvetica-medium-r-14.0"
@@ -276,9 +276,9 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 160
-y 112
-w 168
+x 168
+y 232
+w 200
 h 16
 controlPv "$(device):VE:ROOTFS"
 font "helvetica-medium-r-14.0"
@@ -298,8 +298,8 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 16
-y 112
+x 24
+y 232
 w 95
 h 16
 font "helvetica-medium-r-14.0"
@@ -318,8 +318,8 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 160
-y 128
+x 168
+y 152
 w 168
 h 16
 controlPv "$(device):VE:DRIVER"
@@ -340,8 +340,8 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 16
-y 128
+x 24
+y 152
 w 94
 h 16
 font "helvetica-medium-r-14.0"
@@ -360,8 +360,8 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 160
-y 144
+x 168
+y 168
 w 168
 h 16
 controlPv "$(device):VE:MSP"
@@ -382,8 +382,8 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 16
-y 144
+x 24
+y 168
 w 86
 h 16
 font "helvetica-medium-r-14.0"
@@ -402,11 +402,11 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 160
-y 160
+x 168
+y 184
 w 168
 h 16
-controlPv "$(device):VE:FPGA"
+controlPv "$(device):VE:LIBC"
 font "helvetica-medium-r-14.0"
 fgColor index 14
 bgColor index 4
@@ -424,16 +424,16 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 16
-y 160
-w 95
+x 24
+y 184
+w 87
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
 bgColor index 0
 useDisplayBg
 value {
-  "FPGA version:"
+  "LIBC version:"
 }
 autoSize
 endObjectProperties
@@ -444,8 +444,521 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 160
-y 184
+x 168
+y 272
+w 168
+h 16
+controlPv "$(device):VE:COMPILED"
+format "hex"
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 4
+useDisplayBg
+autoHeight
+limitsFromDb
+nullColor index 0
+useHexPrefix
+newPos
+objType "monitors"
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 24
+y 272
+w 108
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "\"Compiled\" code:"
+}
+autoSize
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 168
+y 288
+w 168
+h 16
+controlPv "$(device):VE:BUILDNO"
+format "hex"
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 4
+useDisplayBg
+autoHeight
+limitsFromDb
+nullColor index 0
+useHexPrefix
+newPos
+objType "monitors"
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 24
+y 288
+w 96
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "\"Build number\":"
+}
+autoSize
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 168
+y 408
+w 128
+h 16
+controlPv "$(device):VE:DLS"
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 4
+useDisplayBg
+autoHeight
+limitsFromDb
+nullColor index 0
+newPos
+objType "monitors"
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 24
+y 408
+w 132
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "DLS FPGA present?"
+}
+autoSize
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 168
+y 424
+w 128
+h 16
+controlPv "$(device):VE:FF"
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 4
+useDisplayBg
+autoHeight
+limitsFromDb
+nullColor index 0
+newPos
+objType "monitors"
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 24
+y 424
+w 81
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "FF enabled?"
+}
+autoSize
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 168
+y 440
+w 128
+h 16
+controlPv "$(device):VE:BR"
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 4
+useDisplayBg
+autoHeight
+limitsFromDb
+nullColor index 0
+newPos
+objType "monitors"
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 24
+y 440
+w 126
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "Brilliance detected?"
+}
+autoSize
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 168
+y 456
+w 128
+h 16
+controlPv "$(device):VE:BRINVERT"
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 4
+useDisplayBg
+autoHeight
+limitsFromDb
+nullColor index 0
+newPos
+objType "monitors"
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 24
+y 456
+w 126
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "BR attens inverted?"
+}
+autoSize
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 168
+y 472
+w 128
+h 16
+controlPv "$(device):VE:MAF"
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 4
+useDisplayBg
+autoHeight
+limitsFromDb
+nullColor index 0
+newPos
+objType "monitors"
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 24
+y 472
+w 124
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "MAF filter present?"
+}
+autoSize
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 16
+y 392
+w 79
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "Option flags:"
+}
+autoSize
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 16
+y 256
+w 104
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "FPGA registers:"
+}
+autoSize
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 168
+y 304
+w 168
+h 16
+controlPv "$(device):VE:CUSTID"
+format "hex"
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 4
+useDisplayBg
+autoHeight
+limitsFromDb
+nullColor index 0
+useHexPrefix
+newPos
+objType "monitors"
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 24
+y 304
+w 82
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "Customer Id:"
+}
+autoSize
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 168
+y 320
+w 168
+h 16
+controlPv "$(device):VE:DDCDEC"
+format "decimal"
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 4
+useDisplayBg
+autoHeight
+limitsFromDb
+nullColor index 0
+newPos
+objType "monitors"
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 24
+y 320
+w 112
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "Samples per turn:"
+}
+autoSize
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 168
+y 336
+w 168
+h 16
+controlPv "$(device):VE:FADEC"
+format "decimal"
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 4
+useDisplayBg
+autoHeight
+limitsFromDb
+nullColor index 0
+useHexPrefix
+newPos
+objType "monitors"
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 24
+y 336
+w 90
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "Turns per FA:"
+}
+autoSize
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 168
+y 352
+w 168
+h 16
+controlPv "$(device):VE:CUSTOMER"
+format "hex"
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 4
+useDisplayBg
+autoHeight
+limitsFromDb
+nullColor index 0
+useHexPrefix
+newPos
+objType "monitors"
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 24
+y 352
+w 113
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "Customer feature:"
+}
+autoSize
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 168
+y 368
 w 168
 h 16
 controlPv "$(device):VE:ITECH"
@@ -468,16 +981,56 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 16
-y 184
-w 112
+x 24
+y 368
+w 92
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
 bgColor index 0
 useDisplayBg
 value {
-  "iTech feature reg:"
+  "i-Tech feature:"
+}
+autoSize
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 16
+y 48
+w 29
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "IOC:"
+}
+autoSize
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 16
+y 120
+w 43
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "Rootfs:"
 }
 autoSize
 endObjectProperties
@@ -488,12 +1041,11 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 160
+x 168
 y 200
 w 168
 h 16
-controlPv "$(device):VE:CUST"
-format "hex"
+controlPv "$(device):VE:ABI"
 font "helvetica-medium-r-14.0"
 fgColor index 14
 bgColor index 4
@@ -501,7 +1053,6 @@ useDisplayBg
 autoHeight
 limitsFromDb
 nullColor index 0
-useHexPrefix
 newPos
 objType "monitors"
 endObjectProperties
@@ -512,16 +1063,16 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 16
+x 24
 y 200
-w 138
+w 80
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
 bgColor index 0
 useDisplayBg
 value {
-  "Customer feature reg:"
+  "ABI version:"
 }
 autoSize
 endObjectProperties
@@ -532,11 +1083,11 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 160
-y 224
-w 128
+x 168
+y 216
+w 168
 h 16
-controlPv "$(device):VE:DLS"
+controlPv "$(device):VE:ARCH"
 font "helvetica-medium-r-14.0"
 fgColor index 14
 bgColor index 4
@@ -554,176 +1105,8 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 16
-y 224
-w 132
-h 16
-font "helvetica-medium-r-14.0"
-fgColor index 14
-bgColor index 0
-useDisplayBg
-value {
-  "DLS FPGA present?"
-}
-autoSize
-endObjectProperties
-
-# (Text Monitor)
-object activeXTextDspClass:noedit
-beginObjectProperties
-major 4
-minor 1
-release 0
-x 160
-y 240
-w 128
-h 16
-controlPv "$(device):VE:FF"
-font "helvetica-medium-r-14.0"
-fgColor index 14
-bgColor index 4
-useDisplayBg
-autoHeight
-limitsFromDb
-nullColor index 0
-newPos
-objType "monitors"
-endObjectProperties
-
-# (Static Text)
-object activeXTextClass
-beginObjectProperties
-major 4
-minor 1
-release 0
-x 16
-y 240
-w 81
-h 16
-font "helvetica-medium-r-14.0"
-fgColor index 14
-bgColor index 0
-useDisplayBg
-value {
-  "FF enabled?"
-}
-autoSize
-endObjectProperties
-
-# (Text Monitor)
-object activeXTextDspClass:noedit
-beginObjectProperties
-major 4
-minor 1
-release 0
-x 160
-y 256
-w 128
-h 16
-controlPv "$(device):VE:BR"
-font "helvetica-medium-r-14.0"
-fgColor index 14
-bgColor index 4
-useDisplayBg
-autoHeight
-limitsFromDb
-nullColor index 0
-newPos
-objType "monitors"
-endObjectProperties
-
-# (Static Text)
-object activeXTextClass
-beginObjectProperties
-major 4
-minor 1
-release 0
-x 16
-y 256
-w 126
-h 16
-font "helvetica-medium-r-14.0"
-fgColor index 14
-bgColor index 0
-useDisplayBg
-value {
-  "Brilliance detected?"
-}
-autoSize
-endObjectProperties
-
-# (Text Monitor)
-object activeXTextDspClass:noedit
-beginObjectProperties
-major 4
-minor 1
-release 0
-x 160
-y 272
-w 128
-h 16
-controlPv "$(device):VE:BRINVERT"
-font "helvetica-medium-r-14.0"
-fgColor index 14
-bgColor index 4
-useDisplayBg
-autoHeight
-limitsFromDb
-nullColor index 0
-newPos
-objType "monitors"
-endObjectProperties
-
-# (Static Text)
-object activeXTextClass
-beginObjectProperties
-major 4
-minor 1
-release 0
-x 16
-y 272
-w 126
-h 16
-font "helvetica-medium-r-14.0"
-fgColor index 14
-bgColor index 0
-useDisplayBg
-value {
-  "BR attens inverted?"
-}
-autoSize
-endObjectProperties
-
-# (Text Monitor)
-object activeXTextDspClass:noedit
-beginObjectProperties
-major 4
-minor 1
-release 0
-x 160
-y 288
-w 128
-h 16
-controlPv "$(device):VE:MAF"
-font "helvetica-medium-r-14.0"
-fgColor index 14
-bgColor index 4
-useDisplayBg
-autoHeight
-limitsFromDb
-nullColor index 0
-newPos
-objType "monitors"
-endObjectProperties
-
-# (Static Text)
-object activeXTextClass
-beginObjectProperties
-major 4
-minor 1
-release 0
-x 16
-y 288
+x 24
+y 216
 w 124
 h 16
 font "helvetica-medium-r-14.0"
@@ -731,7 +1114,7 @@ fgColor index 14
 bgColor index 0
 useDisplayBg
 value {
-  "MAF filter present?"
+  "Rootfs architecture:"
 }
 autoSize
 endObjectProperties
