@@ -112,7 +112,6 @@ static float RevolutionFrequency = 1892629.155;
 /* Fundamental ring parameters.  The defaults are for the Diamond storage
  * ring, but these are always overwritten when called from runioc. */
 static int Harmonic = 936;              // Bunches per revolution
-static int Decimation = 220;            // Samples per revolution
 static int LmtdPrescale = 53382;        // Prescale for lmtd
 
 static int TurnsPerSwitch = 40;
@@ -123,22 +122,6 @@ static int S0_SA = 0;
 
 /* Location of the persistent state file. */
 static const char * StateFileName = NULL;
-
-
-
-/* Prints interactive startup message as recommended by GPL. */
-
-static void StartupMessage()
-{
-    printf(
-"\n"
-"Libera EPICS Driver, Version %s.  Built: %s.\n"
-"Copyright (C) 2005-2007 Michael Abbott, Diamond Light Source.\n"
-"This program comes with ABSOLUTELY NO WARRANTY.  This is free software,\n"
-"and you are welcome to redistribute it under certain conditions.\n"
-"For details see the GPL or the attached file COPYING.\n",
-        VersionString, BuildDate);
-}
 
 
 
@@ -259,7 +242,7 @@ static bool InitialiseLibera()
          * components can make use of it. */
         InitialisePersistentState(StateFileName)  &&
         /* Initialise the signal conditioning hardware interface. */
-        InitialiseSignalConditioning(Harmonic, Decimation, TurnsPerSwitch)  &&
+        InitialiseSignalConditioning(Harmonic, TurnsPerSwitch)  &&
         /* Initialise conversion code.  This needs to be done fairly early as
          * it is used globally. */
         InitialiseConvert()  &&
@@ -273,8 +256,7 @@ static bool InitialiseLibera()
         /* Initialise interlock settings. */
         InitialiseInterlock()  &&
         /* First turn processing is designed for transfer path operation. */
-        InitialiseFirstTurn(
-            Harmonic, Decimation, RevolutionFrequency, S0_FT)  &&
+        InitialiseFirstTurn(Harmonic, RevolutionFrequency, S0_FT)  &&
         /* Turn by turn is designed for long waveform capture at revolution
          * clock frequencies. */
         InitialiseTurnByTurn(LongTurnByTurnLength, TurnByTurnWindowLength)  &&
@@ -289,12 +271,10 @@ static bool InitialiseLibera()
         InitialisePostmortem()  &&
         /* Slow acquisition returns highly filtered positions at 10Hz. */
         InitialiseSlowAcquisition(S0_SA)  &&
-
 #ifdef BUILD_FF_SUPPORT
         /* Initialise the fast feedback interface. */
         InitialiseFastFeedback()  &&
 #endif
-
         /* Background monitoring stuff: fan, temperature, memory, etcetera. */
         InitialiseSensors();
 }
@@ -365,7 +345,6 @@ static bool ParseConfigInt(char *optarg)
         { "FR", FreeRunLength },
         { "BN", DecimatedShortLength },
         { "HA", Harmonic },
-        { "DE", Decimation },
         { "LP", LmtdPrescale },
         { "NT", TurnsPerSwitch },
         { "S0FT", S0_FT },
@@ -440,7 +419,6 @@ static void Usage(const char *IocName)
 "       TW      Length of turn-by-turn readout window\n"
 "       DD      Length of /1024 decimated data buffer\n"
 "       HA      Harmonic: number of bunches per revolution\n"
-"       DE      Decimation: number of samples per revolution\n"
 "       LP      LMTD prescale factor\n"
 "       NT      Turns per switch position\n"
 "       S0FT    S0 power scaling for FT mode\n"
@@ -543,6 +521,8 @@ static bool LoadDatabases()
 
 #define DB_(format, name, value) \
     AddDbParameter(Buffer, Length, (name), (format), (value))
+#define LOAD_RECORDS_(db_file) \
+    TEST_EPICS(dbLoadRecords, (char *) db_file, LiberaMacros)
 
     return
         /* The following list of parameter must match the list of
@@ -556,14 +536,14 @@ static bool LoadDatabases()
         DB_("%d", "MAX_ATTEN",      MaximumAttenuation())  &&
         DB_("%d", "ATTEN_COUNT",    MaximumAttenuation() + 1)  &&
         
-        TEST_EPICS(dbLoadRecords, (char*) "db/libera.db", LiberaMacros)  &&
+        LOAD_RECORDS_("db/libera.db")  &&
 #ifdef BUILD_FF_SUPPORT
-        TEST_EPICS(dbLoadRecords, (char*) "db/fastFeedback.db", LiberaMacros);
-#else
-        true;
+        IF_(FastFeedbackFeature, LOAD_RECORDS_("db/fastFeedback.db"))  &&
 #endif
+        true;
 
 #undef DB_
+#undef LOAD_RECORDS_
 }
 
 static bool SetPrompt()

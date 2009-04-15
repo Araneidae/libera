@@ -48,6 +48,7 @@
 #include "events.h"
 #include "convert.h"
 #include "waveform.h"
+#include "versions.h"
 
 #include "fastFeedback.h"
 
@@ -320,7 +321,8 @@ static bool ArmFFPM(bool NewArmValue)
 
 void OnPMtrigger()
 {
-    ArmFFPMreadback->Write(FA_ControlSpace->ArmFFPM);
+    if (FastFeedbackFeature)
+        ArmFFPMreadback->Write(FA_ControlSpace->ArmFFPM);
 }
 
 static void WriteFFPMlimit()
@@ -339,6 +341,10 @@ static void WriteFFPMlimit()
 
 bool InitialiseFastFeedback()
 {
+    /* If fast feedback was not detected, don't do anything at all. */
+    if (!FastFeedbackFeature)
+        return true;
+    
     if (!MapFastFeedbackMemory())
         return false;
 

@@ -116,7 +116,6 @@ IocParameter -cS0FT= $((IOC_S0_FT))
 IocParameter -cS0SA= $((IOC_S0_SA))
 # Pass through fundamental ring parameters
 IocParameter -cHA= $((HARMONIC))
-IocParameter -cDE= $((DECIMATION))
 IocParameter -cLP= $((MCPRESC))
 IocParameter -cNT= $((NTBT))
 

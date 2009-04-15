@@ -34,17 +34,31 @@
 #include <signal.h>
 #include <string.h>
 #include <sys/wait.h>
+#include <arpa/inet.h>
 
 #include <epicsVersion.h>
 
 #include "test_error.h"
 #include "device.h"
 #include "publish.h"
-// #include "hardware.h"
 
 #include "versions.h"
 
 
+
+
+static EPICS_STRING VersionString = LIBERA_VERSION;
+static EPICS_STRING BuildDate = BUILD_DATE_TIME;
+static EPICS_STRING EpicsVersion = EPICS_VERSION_STRING;
+
+int DecimationFactor;
+bool LiberaBrilliance;
+bool BrillianceInverted;
+bool FastFeedbackFeature;
+bool DlsFpgaFeatures;
+
+static int CustomerId;
+static EPICS_STRING CustomerIdString;
 
 
 
@@ -103,11 +117,8 @@ static void DetachProcess(const char *Process, const char *const argv[])
             _exit(0);
     }
     else
-    {
         /* Wait for the middle process to finish. */
-        if (waitpid(MiddlePid, NULL, 0) == -1)
-            perror("Error waiting for middle process");
-    }
+        TEST_(waitpid, MiddlePid, NULL, 0);
 }
 
 
@@ -131,6 +142,7 @@ static void DoCoreDump()
 }
 
 
+
 /*****************************************************************************/
 /*                                                                           */
 /*                          Version Identification                           */
@@ -143,8 +155,7 @@ struct ENV_MAP
 {
     const char * env_name;
     const char * pv_name;
-    bool (*set)(const T &);
-    T value;
+    T *value;
 };
 
 
@@ -161,18 +172,18 @@ static ENV_MAP<EPICS_STRING> EnvironmentStrings[] = {
 static ENV_MAP<int> EnvironmentInts[] = {
     { "FPGA_COMPILED",  "COMPILED" },
     { "FPGA_BUILD_NO",  "BUILDNO" },
-    { "FPGA_CUST_ID",   "CUSTID" },
-    { "FPGA_DDC_DEC",   "DDCDEC" },
+    { "FPGA_CUST_ID",   "CUSTID",   &CustomerId },
+    { "FPGA_DDC_DEC",   "DDCDEC",   &DecimationFactor },
     { "FPGA_FA_DEC",    "FADEC" },
     { "FPGA_CUSTOMER",  "CUSTOMER" },
     { "FPGA_ITECH",     "ITECH" },
 };
 
 static ENV_MAP<bool> EnvironmentBools[] = {
-    { "OPT_BR",         "BR" },
-    { "OPT_BR_INVERT",  "BRINVERT" },
-    { "OPT_DLS_FPGA",   "DLS" },
-    { "OPT_FF",         "FF" },
+    { "OPT_BR",         "BR",       &LiberaBrilliance },
+    { "OPT_BR_INVERT",  "BRINVERT", &BrillianceInverted },
+    { "OPT_DLS_FPGA",   "DLS",      &DlsFpgaFeatures },
+    { "OPT_FF",         "FF",       &FastFeedbackFeature },
     { "OPT_MAF",        "MAF" },
 };
 
@@ -192,20 +203,14 @@ static bool PublishEnvMap(
             printf("Unable to read environment variable %s\n", map.env_name);
             return false;
         }
-        if (! convert(string, map.value))
+        if (map.value == NULL)
+            map.value = (T *) malloc(sizeof(T));
+        if (! convert(string, *map.value))
         {
             printf("Error converting %s=\"%s\"\n", map.env_name, string);
             return false;
         }
-        if (map.set != NULL)
-        {
-            if (! map.set(map.value))
-            {
-                printf("Error setting %s=\"%s\"\n", map.env_name, string);
-                return false;
-            }
-        }
-        publish(Concat("VE:", map.pv_name), map.value);
+        publish(Concat("VE:", map.pv_name), *map.value);
     }
     return true;
 }
@@ -235,11 +240,6 @@ static bool convert_bi(const char * string, bool &value)
 }
 
 
-EPICS_STRING VersionString = LIBERA_VERSION;
-EPICS_STRING BuildDate = BUILD_DATE_TIME;
-static EPICS_STRING EpicsVersion = EPICS_VERSION_STRING;
-
-
 bool InitialiseVersions(void)
 {
     Publish_stringin("VERSION",     VersionString);
@@ -247,13 +247,38 @@ bool InitialiseVersions(void)
     Publish_stringin("VE:VERSION",  VersionString);
     Publish_stringin("VE:BUILD",    BuildDate);
     Publish_stringin("VE:EPICS",    EpicsVersion);
+    Publish_stringin("VE:CUSTIDSTR", CustomerIdString);
     
-    PUBLISH_ACTION("VE:REBOOT",     DoReboot);
-    PUBLISH_ACTION("VE:RESTART",    DoRestart);
-    PUBLISH_ACTION("VE:CORE",       DoCoreDump);
+    PUBLISH_ACTION("REBOOT",     DoReboot);
+    PUBLISH_ACTION("RESTART",    DoRestart);
+    PUBLISH_ACTION("CORE",       DoCoreDump);
     
-    return
+    bool Ok =
         PUBLISH_ENV_MAP(stringin,   EnvironmentStrings)  &&
         PUBLISH_ENV_MAP(longin,     EnvironmentInts)  &&
         PUBLISH_ENV_MAP(bi,         EnvironmentBools);
+
+    /* Convert the customer id into a string.  For whatever reason, it is
+     * stored in big endian order.  As we are running little endian we can
+     * use a little hack to to turn things around. */
+    * (int *) CustomerIdString = ntohl(CustomerId);
+    CustomerIdString[4] = 0;
+
+    return Ok;
+}
+
+
+
+/* Prints interactive startup message as recommended by GPL. */
+
+void StartupMessage()
+{
+    printf(
+"\n"
+"Libera EPICS Driver, Version %s.  Built: %s.\n"
+"Copyright (C) 2005-2009 Michael Abbott, Diamond Light Source.\n"
+"This program comes with ABSOLUTELY NO WARRANTY.  This is free software,\n"
+"and you are welcome to redistribute it under certain conditions.\n"
+"For details see the GPL or the attached file COPYING.\n",
+        VersionString, BuildDate);
 }

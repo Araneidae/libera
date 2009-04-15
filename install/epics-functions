@@ -58,3 +58,16 @@ print_status()
     echo -n $'\033[0;39m'
     echo ]
 }
+
+
+# Reads an FPGA register
+#
+#   read_register <register>
+#
+read_register()
+{
+    local result
+    result=$("$LIBERA_IOC"/bin/$EPICS_ARCH/monitor -d $((0x14000000+$1)))  ||
+        Error Unable to read FPGA register $1
+    echo -n $((result))
+}

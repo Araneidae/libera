@@ -56,14 +56,8 @@ esac
 : "${LIBERA_IOC}"           # Path to EPICS IOC
 if $NEW_LIBERA; then
     : "${POSTMORTEM_BUFFER:?}"  # Length of PM buffer
-else
-    : "${DFA:?}"                # Number of turns per FA point
 fi
 
-# Read the turn by turn decimation factor directly from the FPGA.
-DECIMATION=$(($("$LIBERA_IOC"/bin/$EPICS_ARCH/monitor -d 0x14000010)))  ||
-    Error Unable to read machine decimation
-    
 
 case "$1" in
     start)
@@ -93,6 +87,7 @@ case "$1" in
         if $NEW_LIBERA; then
             DEV_PARAMS="pmsize=$POSTMORTEM_BUFFER"
         else
+            DFA=$(read_register 0x14)       # Turns per FA from FPGA
             DEV_PARAMS="d=$DECIMATION dfa=$DFA"
         fi
         modprobe libera \
@@ -102,6 +97,7 @@ case "$1" in
         evaluate_retval
 
         # Start the clock PLL daemon from the same directory as the EPICS IOC
+        DECIMATION=$(read_register 0x10)    # Samples per turn from FPGA
         echo -n "Loading clock PLL daemon..."
         "$LIBERA_IOC"/bin/$EPICS_ARCH/clockPll \
             -p$MCPRESC -d$DECIMATION -r$HARMONIC

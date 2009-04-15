@@ -40,6 +40,7 @@
 #include <sys/mman.h>
 #include <stdint.h>
 
+#include "versions.h"
 /* If RAW_REGISTER is defined then raw register access through /dev/mem will
  * be enabled. */
 #include "hardware.h"
@@ -114,10 +115,6 @@ static int DevDd = -1;      /* /dev/libera.dd   Turn by turn data. */
 static int DevMem = -1;     /* /dev/mem         Direct register access. */
 #endif
 
-
-/* Whether the Libera Brilliance option is installed.  This enables
- * completely different handling of attenuators and 16 bit ADC. */
-static bool LiberaBrilliance = false;
 
 /* The ADC nominally returns 16 bits (signed short) through the interface
  * provided here, but there are (at least) two types of ADC available: one
@@ -467,46 +464,6 @@ static int PhaseCompDirty = 0;
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 
-/* Discovers whether this is a Libera Brillance system. */
-
-static bool DiscoverBrilliance()
-{
-    /* Try to read the iTech FPGA feature configuration register to
-     * discover whether this is a Brilliance Libera.  We do the ioctl by hand
-     * here, rather than calling ReadCfgValue(), to avoid generating an error
-     * message if the the requested feature isn't available. */
-    libera_cfg_request_t req;
-    req.idx = LIBERA_CFG_FEATURE_ITECH;
-    if (ioctl(DevCfg, LIBERA_IOC_GET_CFG, &req) == -1)
-    {
-#ifdef RAW_REGISTER
-        /* No ioctl, we must be running old school.  Probe the register
-         * directly instead. */
-        unsigned int BuildNumber;
-        LiberaBrilliance =
-            ReadRawRegister(REGISTER_BUILD_NUMBER, BuildNumber)  &&
-            BuildNumber == 0x10;
-#else
-        
-        /* The feature register isn't present, and we can't probe the
-         * hardware, so we have to assume that this isn't Brilliance. */
-        LiberaBrilliance = false;
-#endif
-    }
-    else
-        LiberaBrilliance = LIBERA_IS_BRILLIANCE(req.val);
-
-    if (LiberaBrilliance)
-        printf("Libera Brilliance detected\n");
-    
-    /* If the LiberaBrilliance flag is set then the ADC is 16 bits, otherwise
-     * we're operating an older Libera with 12 bits.  We actually record and
-     * use the excess bits which need to be handled specially. */
-    AdcExcessBits = 16 - (LiberaBrilliance ? 16 : 12);
-    return true;
-}
-
-
 static bool ReadDscWords(int offset, void *words, int length)
 {
     /* Correct for DSC device base address. */
@@ -559,9 +516,13 @@ static bool WriteAttenuatorState(int Offset)
     {
         /* For libera brilliance there are only four attenuators to set, each
          * using six bits.  We don't use the bottom bit (as 0.5dB steps
-         * aren't that useful), and for some reason the bits are
-         * complemented. */
-        memset(AttenuatorWords, ~(Attenuation << 1), 4);
+         * aren't that useful). */
+        int Atten = Attenuation << 1;
+        /* In early versions of the FPGA the brillance bits were inverted,
+         * but unfortunately in later revisions this was undone. */
+        if (BrillianceInverted)
+            Atten = ~Atten;
+        memset(AttenuatorWords, Atten, 4);
         AttenuatorWords[1] = 0;
     }
     else
@@ -634,12 +595,6 @@ static bool WriteDemuxState(int Offset)
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                     Published DSC Interface Routines.                     */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
-
-bool Brilliance()
-{
-    return LiberaBrilliance;
-}
 
 
 bool WriteAttenuation(int NewAttenuation)
@@ -867,28 +822,14 @@ bool ReadRawRegister(unsigned int Address, unsigned int &Value)
 
 #ifdef RAW_REGISTER
 
-/* Enable DLS FPGA specific extensions according to bits set in the feature
- * register. */
-static bool EnableDlsExtensions(unsigned int Features)
+/* Enable DLS FPGA specific extensions. */
+static void EnableDlsExtensions()
 {
-    printf("Using DLS FPGA: %08x\n", Features);
-    RegisterMaxAdcRaw   = MapRawRegister(REGISTER_MAX_ADC_RAW);
-    RegisterAdcOverflow = MapRawRegister(REGISTER_ADC_OVERFLOW);
-    return true;
-}
-
-
-/* Checks the magic bits to see if the DLS FPGA is loaded. */
-
-static bool CheckDlsExtensions()
-{
-    unsigned int iTechFeatures, DlsFeatures;
-    return
-        ReadRawRegister(REGISTER_ITECH_FEATURE, iTechFeatures)  &&
-        ReadRawRegister(REGISTER_DLS_FEATURE, DlsFeatures)  &&
-        IF_((iTechFeatures & DLS_EXTENSION_BIT) != 0  &&
-            (DlsFeatures & DLS_CORE_EXTENSIONS) != 0,
-            EnableDlsExtensions(DlsFeatures));
+    if (DlsFpgaFeatures)
+    {
+        RegisterMaxAdcRaw   = MapRawRegister(REGISTER_MAX_ADC_RAW);
+        RegisterAdcOverflow = MapRawRegister(REGISTER_ADC_OVERFLOW);
+    }
 }
 
 #endif
@@ -902,9 +843,13 @@ bool InitialiseHardware()
     OsPageMask = OsPageSize - 1;
 #endif
     
+    /* If the LiberaBrilliance flag is set then the ADC is 16 bits, otherwise
+     * we're operating an older Libera with 12 bits.  We actually record and
+     * use the excess bits which need to be handled specially. */
+    AdcExcessBits = 16 - (LiberaBrilliance ? 16 : 12);
+    
     return
-        /* Just open all the Libera devices and check for the presence of the
-         * Brilliance option. */
+        /* Open all the devices we're going to need. */
         TEST_IO(DevCfg,   open, "/dev/libera.cfg",   O_RDWR)  &&
         TEST_IO(DevAdc,   open, "/dev/libera.adc",   O_RDONLY)  &&
         TEST_IO(DevDsc,   open, "/dev/libera.dsc",   O_RDWR | O_SYNC)  &&
@@ -914,7 +859,7 @@ bool InitialiseHardware()
         TEST_IO(DevDd,    open, "/dev/libera.dd",    O_RDONLY)  &&
 #ifdef RAW_REGISTER
         TEST_IO(DevMem,   open, "/dev/mem", O_RDWR | O_SYNC)  &&
-        CheckDlsExtensions()  &&
+        DO_(EnableDlsExtensions())  &&
 #endif
-        DiscoverBrilliance();
+        true;
 }

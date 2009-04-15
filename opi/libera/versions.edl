@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 2326
-y 261
+x 2390
+y 331
 w 392
 h 535
 font "helvetica-medium-r-14.0"
@@ -784,7 +784,7 @@ minor 1
 release 0
 x 168
 y 304
-w 168
+w 104
 h 16
 controlPv "$(device):VE:CUSTID"
 format "hex"
@@ -1117,5 +1117,27 @@ value {
   "Rootfs architecture:"
 }
 autoSize
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 280
+y 304
+w 104
+h 16
+controlPv "$(device):VE:CUSTIDSTR"
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 4
+useDisplayBg
+autoHeight
+limitsFromDb
+nullColor index 0
+newPos
+objType "monitors"
 endObjectProperties
 

@@ -226,14 +226,6 @@ typedef PHASE_ENTRY PHASE_ARRAY[CHANNEL_COUNT];
 typedef int DEMUX_ARRAY[BUTTON_COUNT][CHANNEL_COUNT];
 
 
-/* Returns true iff the "brilliance" option is installed.  Mostly this can be
- * hidden from non-hardware code, but in certain cases different actions need
- * to be taken.
- *     The "brilliance" option consists of a 16-bit ADC with much improved RF
- * handling and a different range of attenuator settings: attenuators in
- * Libera Brilliance cover a much narrower range of values. */
-bool Brilliance();
-
 /* Writes a new attenuation value.  The attenuation will not be updated until
  * CommitDscState() is called. */
 bool WriteAttenuation(int NewAttenuation);

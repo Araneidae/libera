@@ -27,8 +27,13 @@
  */
 
 
-extern EPICS_STRING VersionString;
-extern EPICS_STRING BuildDate;
+/* These globals control the operation of the EPICS driver. */
+extern int DecimationFactor;        // Samples per revolution
+extern bool LiberaBrilliance;       // Brilliance option present
+extern bool BrillianceInverted;     // Invert brilliance attenuators
+extern bool FastFeedbackFeature;    // Fast feedback option detected
+extern bool DlsFpgaFeatures;        // DLS FPGA installed
 
 
 bool InitialiseVersions(void);
+void StartupMessage(void);

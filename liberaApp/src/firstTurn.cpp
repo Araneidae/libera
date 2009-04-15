@@ -50,6 +50,7 @@
 #include "cordic.h"
 #include "conditioning.h"
 #include "booster.h"
+#include "versions.h"
 
 #include "firstTurn.h"
 
@@ -177,7 +178,7 @@ static void CondenseAdcData(
 class FIRST_TURN : I_EVENT
 {
 public:
-    FIRST_TURN(int Harmonic, int Decimation, float RevolutionFrequency) :
+    FIRST_TURN(int Harmonic, float RevolutionFrequency) :
         RawAdc(ADC_LENGTH),
         Adc(SHORT_ADC_LENGTH),
         WaveformXYQS(SHORT_ADC_LENGTH),
@@ -195,13 +196,13 @@ public:
         Offset = 5;
         Length = 31;
 
-        InitialiseRotation(Harmonic, Decimation);
+        InitialiseRotation(Harmonic, DecimationFactor);
 
         /* With a revolution frequency of f_RF and d samples per revolution,
          * the ADC waveform extends over 10^6 * 1024 / (f_RF * d)
          * microseconds.  This is used to annotate waveforms. */
         FillAxis(AxisScale, SHORT_ADC_LENGTH,
-            1e6 * ADC_LENGTH / (RevolutionFrequency * Decimation));
+            1e6 * ADC_LENGTH / (RevolutionFrequency * DecimationFactor));
         
         /* Now initialise the persistence of these and initialise the length
          * state accordingly. */
@@ -554,9 +555,9 @@ private:
 static FIRST_TURN * FirstTurn = NULL;
 
 bool InitialiseFirstTurn(
-    int Harmonic, int Decimation, float RevolutionFrequency, int S0_FT)
+    int Harmonic, float RevolutionFrequency, int S0_FT)
 {
     S_0 = S0_FT;
-    FirstTurn = new FIRST_TURN(Harmonic, Decimation, RevolutionFrequency);
+    FirstTurn = new FIRST_TURN(Harmonic, RevolutionFrequency);
     return true;
 }

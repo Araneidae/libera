@@ -27,68 +27,6 @@
 #      OX11 0DE
 #      michael.abbott@diamond.ac.uk
 
-# Reads a word from the FPGA
-#
-#   read_register <register>
-#
-read_register()
-{
-    "$LIBERA_IOC"/bin/$EPICS_ARCH/monitor -d $((0x14000000+$1))
-}
-
-
-# Reads version from specified log file
-#
-#   read_syslog <logfile> <pattern>
-#
-read_syslog()
-{
-    sed -nr '/^.* kernel:( \[[^]]*\])? '"$2"' version (.*) \(.*$/{
-        s//\2/; p;}' "$1" |
-    tail -n1
-}
-
-
-# Tries to read module version.
-#
-#   read_version <module> <pattern> 
-#
-read_version()
-{
-    if [ -e /sys/module/$1/version ]; then
-        cat /sys/module/$1/version
-    else
-        result="$(read_syslog $logfile "$2")"
-        if [ -n "$result" ]; then
-            echo -n "$result"
-        else
-            echo -n "unknown"
-        fi
-    fi
-}
-
-
-if [ -e /var/log/syslog ]; then
-    logfile=/var/log/syslog
-else
-    logfile=/var/log/messages
-fi
-
-
-# Basic target system information.
-export KERNEL_VERSION="$(uname -r)"
-export LIBC_VERSION="$(echo /lib/ld-*.so | sed 's/^.*-//;s/\.so$//')"
-export ABI_VERSION="$(echo /lib/ld-linux.so.* | sed 's/^.*\.so\.//')"
-
-# Try to find something to properly identify the rootfs version.
-case $ROOTFS_ARCH in
-    ITECH-v0)   ROOTFS_VERSION="$(head -n1 /etc/motd)" ;;   # Best we can do
-    ITECH-v*)   ROOTFS_VERSION="$(head -n1 /etc/issue)" ;;  # Looks better
-    DLS-*)      ROOTFS_VERSION="$(cat /etc/version)" ;;     # Best of all
-    *)          ROOTFS_VERSION=unknown ;;                   # Whoops!
-esac
-export ROOTFS_ARCH ROOTFS_VERSION
-
 # Try and figure out what version of driver and firmware we're running.  This
 # is annoyingly tricky.  We have the following places to look:
 #
@@ -105,6 +43,49 @@ export ROOTFS_ARCH ROOTFS_VERSION
 #   grep <component> /var/log/{syslog,messages} | tail -n1
 #       This is more accurate than asking dpkg, but less reliable.  Still,
 #       most of the time it'll be good enough.
+#
+#   read_version <module> <pattern> 
+#
+read_version()
+{
+    if [ -e /sys/module/$1/version ]; then
+        cat /sys/module/$1/version
+    else
+        local logfile
+        if [ -e /var/log/syslog ]; then
+            logfile=/var/log/syslog
+        else
+            logfile=/var/log/messages
+        fi
+
+        result="$(
+            sed -nr '/^.* kernel:( \[[^]]*\])? '"$2"' version (.*) \(.*$/{
+                s//\2/; p;}' "$logfile" |
+            tail -n1 )"
+        if [ -n "$result" ]; then
+            echo -n "$result"
+        else
+            echo -n "unknown"
+        fi
+    fi
+}
+
+
+
+# Basic target system information.
+export KERNEL_VERSION="$(uname -r)"
+export LIBC_VERSION="$(echo /lib/ld-*.so | sed 's/^.*-//;s/\.so$//')"
+export ABI_VERSION="$(echo /lib/ld-linux.so.* | sed 's/^.*\.so\.//')"
+
+# Try to find something to properly identify the rootfs version.
+case $ROOTFS_ARCH in
+    ITECH-v0)   ROOTFS_VERSION="$(head -n1 /etc/motd)" ;;   # Best we can do
+    ITECH-v*)   ROOTFS_VERSION="$(head -n1 /etc/issue)" ;;  # Looks better
+    DLS-*)      ROOTFS_VERSION="$(cat /etc/version)" ;;     # Best of all
+    *)          ROOTFS_VERSION=unknown ;;                   # Whoops!
+esac
+export ROOTFS_ARCH ROOTFS_VERSION
+
 export LIBERA_VERSION="$(read_version libera 'Libera EBPP[^,]*,')"
 export MSP_VERSION="$(read_version msp MSP)"
 
@@ -112,13 +93,13 @@ export MSP_VERSION="$(read_version msp MSP)"
 # identification registers.
 
 # Read the interesting FPGA registers
-export FPGA_COMPILED=$(($(read_register 0x04)))
-export FPGA_BUILD_NO=$(($(read_register 0x08)))
-export FPGA_CUST_ID=$(($(read_register  0x0C)))
-export FPGA_DDC_DEC=$(($(read_register  0x10)))
-export FPGA_FA_DEC=$(($(read_register   0x14)))
-export FPGA_CUSTOMER=$(($(read_register 0x18)))
-export FPGA_ITECH=$(($(read_register    0x1C)))
+export FPGA_COMPILED=$(read_register 0x04)
+export FPGA_BUILD_NO=$(read_register 0x08)
+export FPGA_CUST_ID=$(read_register  0x0C)
+export FPGA_DDC_DEC=$(read_register  0x10)
+export FPGA_FA_DEC=$(read_register   0x14)
+export FPGA_CUSTOMER=$(read_register 0x18)
+export FPGA_ITECH=$(read_register    0x1C)
 
 
 # FPGA feature identification registers.  This is only valid for FPGAs after
@@ -154,6 +135,11 @@ if [ $FPGA_OLD = 1 ]; then
     FPGA_CUSTOMER=0
     FPGA_ITECH=0
 fi
+
+# Clean up some of our values.  We do this after old FPGA detection, as that
+# needed raw values.
+FPGA_FA_DEC=$((FPGA_FA_DEC & 0xFFFF))
+FPGA_DDC_DEC=$((FPGA_DDC_DEC & 0xFFFF))
 
 # If the instrument id is wrong then something is horribly off!
 IID=$(((FPGA_ITECH >> 28) & 0xF))

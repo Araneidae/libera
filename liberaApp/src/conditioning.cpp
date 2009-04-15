@@ -48,6 +48,7 @@
 #include "trigger.h"
 #include "waveform.h"
 #include "interlock.h"
+#include "versions.h"
 
 #include "conditioning.h"
 
@@ -1155,7 +1156,7 @@ const PERMUTATION & SwitchPermutation()
 
 int MaximumAttenuation()
 {
-    return Brilliance() ? 31 : 62;
+    return LiberaBrilliance ? 31 : 62;
 }
 
 
@@ -1201,14 +1202,13 @@ static void SCdebug(const iocshArgBuf *args)
 static const iocshFuncDef SCdebugFuncDef = { "SCdebug", 0, NULL };
 
 
-bool InitialiseSignalConditioning(
-    int Harmonic, int Decimation, int TurnsPerSwitch)
+bool InitialiseSignalConditioning(int Harmonic, int TurnsPerSwitch)
 {
     iocshRegister(&SCdebugFuncDef, SCdebug);
     
     /* Select the appropriate switches and initialise the demultiplexor
      * array. */
-    if (Brilliance())
+    if (LiberaBrilliance)
     {
         SwitchSequence = BrillianceSwitchSequence;
         SwitchSequenceLength = ARRAY_SIZE(BrillianceSwitchSequence);
@@ -1223,7 +1223,8 @@ bool InitialiseSignalConditioning(
     
     /* Start the conditioning thread.  The intermediate frequency needs to be
      * in radians per sample. */
-    REAL f_if = 2 * M_PI * (REAL) (Harmonic % Decimation) / Decimation;
+    REAL f_if = 2 * M_PI *
+        (REAL) (Harmonic % DecimationFactor) / DecimationFactor;
     ConditioningThread = new CONDITIONING(f_if, TurnsPerSwitch);
     return ConditioningThread->StartThread();
 }

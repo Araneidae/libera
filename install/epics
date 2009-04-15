@@ -38,6 +38,14 @@ CONFIGDIR='@@CONFIGDIR@@'
 # Sensible defaults
 : "${IOC_LOG:=/var/log/ioc}"
 
+# Simple script to add timestamps to log entries
+timestamps()
+{
+    while read -r; do
+        echo "$(date -u +'%F %R:%S')  $REPLY"
+    done
+}
+
 case "$1" in
     start)
         echo -n "Starting EPICS"
@@ -47,8 +55,9 @@ case "$1" in
         else
             # Run as a daemon with all output sent to log file.
             CONFIGDIR=$CONFIGDIR \
-                "$LIBERA_IOC"/scripts/runioc -n >>"$IOC_LOG" 2>&1 </dev/null &
-            evaluate_retval
+                "$LIBERA_IOC"/scripts/runioc -n 2>&1 </dev/null |
+            timestamps >>"$IOC_LOG" 2>&1 &
+            print_status success
         fi
         ;;
 
