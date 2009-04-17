@@ -131,6 +131,22 @@ fi  ||
     Error 'Error stopping drivers.  Installation aborted'
 
 
+# If the target is an old Libera ensure that libstdc++.so.6 is installed: this
+# wasn't part of the standard distribution for 1.46, and is required by this
+# driver.
+if [ "$ROOTFS_ARCH" == ITECH-v0 -a ! -e /lib/libstdc++.so.6 ]; then
+    LIBC_SO="$(echo -n "$SOURCE"/install/libstdc++.so.6.*)"
+    if [ -f "$LIBC_SO" ]; then
+        echo Installing /lib/libstdc++.so.6
+        cp "$LIBC_SO" /lib  &&
+        ln -s "$(basename "$LIBC_SO")" /lib/libstdc++.so.6  ||
+            Error Error installing /lib/libstdc++.so.6
+    else
+        Error Unable to install /lib/libstdc++.so.6, not found.
+    fi
+fi
+
+
 # If final installation selected then copy over all the run-time files and
 # update the configuration file to point to them.
 if [ $TARGET == final ]; then
