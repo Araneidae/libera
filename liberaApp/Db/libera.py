@@ -361,8 +361,8 @@ def SlowAcquisition():
 def Config():
     # The number of attenuators depends on whether we're Electron or
     # Brilliance.  Annoyingly we need to be given this number twice!
-    MAX_ATTEN   = Parameter('MAX_ATTEN')
     ATTEN_COUNT = Parameter('ATTEN_COUNT')
+    MAX_ATTEN = 62
     
     SetChannelName('CF')
 
@@ -416,12 +416,28 @@ def Config():
         ('Automatic', 2),       # Run DSC
         DESC = 'Digital Signal Conditioning')
     
-    # Control attenuation
+    # Control attenuation.  This is now a bit involved:
+    #
+    #   ATTEN:TRUE = ATTEN + ATTEN:DISP + ATTEN:OFFSET[ATTEN + ATTEN:DISP]
+    #
+    # Here ATTEN:DISP is used as a local offset to the attenuator setting --
+    # this is designed to be used with a mix of Liberas, particularly useful
+    # when dealing with a mix of Brilliance and Electron.
+    #    The ATTEN:OFFSET array is used to correct for minor errors between
+    # the selected attenuator value and its true reading.
+    true_atten = aIn('ATTEN:TRUE', 0, MAX_ATTEN,
+        EGU = 'dB',     PREC = 2,   PINI = 'YES',
+        DESC = 'Corrected attenuator setting')
     longOut('ATTEN', 0, MAX_ATTEN, EGU = 'dB',
+        FLNK = true_atten,
         DESC = 'Attenuator setting')
     Waveform('ATTEN:OFFSET_S', address = 'ATTEN:OFFSET',
         length = ATTEN_COUNT,   FTVL = 'FLOAT', EGU = 'dB',
+        FLNK = true_atten,
         DESC = 'Attenuator correction offset')
+    longOut('ATTEN:DISP', -MAX_ATTEN, MAX_ATTEN, EGU = 'dB',
+        FLNK = true_atten,
+        DESC = 'Attenuator displacement')
 
     # Scaling factor for conversion to bunch charge and stored current.
     aOut('ISCALE', 0, 20000, 
@@ -860,8 +876,8 @@ def Versions():
     # Customer Id as a string
     string('CUSTIDSTR', 'FPGA customer id')
 
-    boolin('BR',        'Libera brillance detected')
-    boolin('BRINVERT',  'Brilliance inverted attens')
+    boolin('BR',        'Libera Brillance detected')
+    boolin('OLDBR',     'Old Brilliance attenuators')
     boolin('DLS',       'DLS FGPA')
     boolin('FF',        'Fast Feedback enabled')
     boolin('MAF',       'Boxcard filter present')

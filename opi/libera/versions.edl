@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 2390
-y 331
+x 737
+y 21
 w 392
 h 535
 font "helvetica-medium-r-14.0"
@@ -662,7 +662,7 @@ x 168
 y 456
 w 128
 h 16
-controlPv "$(device):VE:BRINVERT"
+controlPv "$(device):VE:OLDBR"
 font "helvetica-medium-r-14.0"
 fgColor index 14
 bgColor index 4
@@ -682,14 +682,14 @@ minor 1
 release 0
 x 24
 y 456
-w 126
+w 129
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
 bgColor index 0
 useDisplayBg
 value {
-  "BR attens inverted?"
+  "Old BR attenuators?"
 }
 autoSize
 endObjectProperties

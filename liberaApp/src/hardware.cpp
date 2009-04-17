@@ -514,20 +514,19 @@ static bool WriteAttenuatorState(int Offset)
     int AttenuatorWords[2];
     if (LiberaBrilliance)
     {
-        /* For libera brilliance there are only four attenuators to set, each
-         * using six bits.  We don't use the bottom bit (as 0.5dB steps
-         * aren't that useful). */
-        int Atten = Attenuation << 1;
-        /* In early versions of the FPGA the brillance bits were inverted,
-         * but unfortunately in later revisions this was undone. */
-        if (BrillianceInverted)
-            Atten = ~Atten;
+        int Atten = Attenuation;
+        if (OldBrillianceApi)
+            /* In early versions of the Libera Brilliance FPGA the attenuators
+             * were spaced at 0.5dB intervals and the attenuator value was
+             * inverted.  In newer versions this is restored to an interface
+             * rather more similar to that used by Libera Electron. */
+            Atten = ~(Atten << 1);
         memset(AttenuatorWords, Atten, 4);
         AttenuatorWords[1] = 0;
     }
     else
     {
-        /* For normal libera we split the attenuator value evenly across two
+        /* For Libera Electron we split the attenuator value evenly across two
          * attenuators per channel. */
         uint8_t Atten1 = Attenuation / 2;
         uint8_t Atten2 = Attenuation - Atten1;
@@ -597,9 +596,15 @@ static bool WriteDemuxState(int Offset)
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 
+int MaximumAttenuation()
+{
+    return LiberaBrilliance ? 31 : 62;
+}
+
+
 bool WriteAttenuation(int NewAttenuation)
 {
-    if (0 <= NewAttenuation  &&  NewAttenuation <= 62)
+    if (0 <= NewAttenuation  &&  NewAttenuation <= MaximumAttenuation())
     {
         Attenuation = NewAttenuation;
         MARK_DIRTY(Attenuation);

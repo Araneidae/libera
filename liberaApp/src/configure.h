@@ -67,9 +67,6 @@ int ReadCorrectedAttenuation();
 class PMFP;
 int ComputeScaledCurrent(const PMFP & IntensityScale, int Intensity);
 
-/* Updates attenuators to new value.  Takes immediate effect. */
-bool UpdateAttenuation(int NewAttenuation);
-
 
 /* Publishes configuration control PVs to EPICS. */
 bool InitialiseConfigure();

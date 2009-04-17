@@ -226,6 +226,10 @@ typedef PHASE_ENTRY PHASE_ARRAY[CHANNEL_COUNT];
 typedef int DEMUX_ARRAY[BUTTON_COUNT][CHANNEL_COUNT];
 
 
+/* Returns the maximum attenuation value: this is architecture dependent, and
+ * can be 62 or 31 depending on whether Libera Electron or Brilliance is
+ * present. */
+int MaximumAttenuation();
 /* Writes a new attenuation value.  The attenuation will not be updated until
  * CommitDscState() is called. */
 bool WriteAttenuation(int NewAttenuation);

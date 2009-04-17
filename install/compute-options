@@ -27,6 +27,8 @@
 #      OX11 0DE
 #      michael.abbott@diamond.ac.uk
 
+
+
 # Try and figure out what version of driver and firmware we're running.  This
 # is annoyingly tricky.  We have the following places to look:
 #
@@ -70,6 +72,18 @@ read_version()
     fi
 }
 
+
+# Export a variable and set it if not already defined.  Variables defined in
+# this way (rather than by direct assignment) can be overridden in the
+# epics_ioc file.
+#
+#   set_var <variable> <value>
+#
+set_var()
+{
+    eval [ -z \"\$$1\" ]  &&  eval $1=\"\$2\"
+    eval export $1
+}
 
 
 # Basic target system information.
@@ -128,8 +142,8 @@ export FPGA_ITECH=$(read_register    0x1C)
 # Let's do a bit of guessing at the FPGA version.  In pre-1.60 FPGAs
 # registers 18 and 1C simply mirrored register 10 and 14.  Unfortunately this
 # can go wrong if we're unlucky, so we allow this to be overridden.
-export FPGA_OLD=${FPGA_OLD:-$((
-    FPGA_DDC_DEC == FPGA_CUSTOMER  &&  FPGA_FA_DEC == FPGA_ITECH))}
+set_var FPGA_OLD $((
+    FPGA_DDC_DEC == FPGA_CUSTOMER  &&  FPGA_FA_DEC == FPGA_ITECH))
 if [ $FPGA_OLD = 1 ]; then
     # If an old FPGA has been recognised, the feature registers are invalid.
     FPGA_CUSTOMER=0
@@ -148,23 +162,45 @@ IID=$(((FPGA_ITECH >> 28) & 0xF))
 
 # The DLS FPGA is identified by bit 23 set in the iTech feature register and
 # the top bit set in the customer feature register.
-export OPT_DLS_FPGA=$((
+set_var OPT_DLS_FPGA $((
     (FPGA_ITECH & (1<<23)) != 0  &&  (FPGA_CUSTOMER & (1 << 31)) != 0))
     
 # Fast feedback is available if DLS FPAG present or iTech FF option selected.
-export OPT_FF=$((OPT_DLS_FPGA  ||  (FPGA_ITECH & (1 << 6)) != 0))
+set_var OPT_FF $((OPT_DLS_FPGA  ||  (FPGA_ITECH & (1 << 6)) != 0))
 
 # For normal FPGAs we use the brilliance feature bit.  For old FPGAs we have
 # to inspect the FPGA "build no" register instead.
-export OPT_BR=$((
+set_var OPT_BR $((
     (!FPGA_OLD  &&  (((FPGA_ITECH >> 24) & 0xF) == 1))  ||
     (FPGA_OLD  &&  (FPGA_BUILD_NO == 0x10))))
-# For FPGAs with brilliance before version 2 we have to invert the
+# For FPGAs with brilliance before version 2 we have to invert and scale the
 # attenuators.  Unfortunately this option is very hard to reliably identify,
 # so this is another overridable option.  We work on the simple heuristic
-# that if the Libera driver version is old then we should invert.
-export OPT_BR_INVERT=${OPT_BR_INVERT:-$(
-    [ $FPGA_OLD = 1 -o "${LIBERA_VERSION:0:2}" = 1. ] && echo 1 || echo 0)}
+# that if the Libera driver version is old then we should use the old API.
+set_var OPT_OLD_BR $(
+    [ $FPGA_OLD = 1 -o "${LIBERA_VERSION:0:2}" = 1. ]
+    echo $((!$?)))
+# To reduce confusion, only set BR_INVERT if BR set.
+OPT_OLD_BR=$((OPT_OLD_BR  &&  OPT_BR))
 
-# Weird hard-wired boxcard DDC filter check
-export OPT_MAF=$((((FPGA_ITECH >> 4) & 3) == 1))
+# Check for weird hard-wired boxcar DDC filter.
+set_var OPT_MAF $((((FPGA_ITECH >> 4) & 3) == 1))
+
+
+# Now take a look at the temperature sensors.  On Libera Electron we have to
+# disable the RF board temperature sensor, but on Brilliance we want to use
+# it.  This is also a very promising way to detect the presence of
+# Brilliance!
+case $(uname -r) in
+    2.4*)
+        set_var BR_TEMP $(
+            [ -e /proc/sys/dev/sensors/adm1023-i2c-0-18 ]
+            echo $((!$?)))
+        ;;
+    2.6*)
+        set_var BR_TEMP $(
+            [ -e /sys/bus/i2c/devices/0-0018 -a \
+              "$(cat /sys/bus/i2c/devices/0-0018/name)" = adm1023 ]
+            echo $((!$?)))
+        ;;
+esac

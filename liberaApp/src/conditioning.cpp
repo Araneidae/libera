@@ -1154,11 +1154,6 @@ const PERMUTATION & SwitchPermutation()
     return PermutationLookup[ManualSwitch];
 }
 
-int MaximumAttenuation()
-{
-    return LiberaBrilliance ? 31 : 62;
-}
-
 
 
 /*****************************************************************************/

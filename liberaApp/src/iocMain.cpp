@@ -482,7 +482,7 @@ static bool ProcessOptions(int &argc, char ** &argv)
     ( { \
         int __status__ = (command)(args); \
         if (__status__ != 0) \
-            printf(#command "(" #args ") (%s, %d): %s (%d)\n", \
+            printf(#command "(%s) (%s, %d): %s (%d)\n", #args, \
                 __FILE__, __LINE__, ca_message(__status__), __status__); \
         __status__ == 0; \
     } )
@@ -533,7 +533,6 @@ static bool LoadDatabases()
         DB_("%d", "TT_LONG",        LongTurnByTurnLength)  &&
         DB_("%d", "TT_WINDOW",      TurnByTurnWindowLength)  &&
         DB_("%d", "FR_LENGTH",      FreeRunLength)  &&
-        DB_("%d", "MAX_ATTEN",      MaximumAttenuation())  &&
         DB_("%d", "ATTEN_COUNT",    MaximumAttenuation() + 1)  &&
         
         LOAD_RECORDS_("db/libera.db")  &&

@@ -81,10 +81,6 @@ static int SwitchTriggerDelay = 0;
 static int ScState = SC_MODE_FIXED;
 static READBACK<int> * ScReadback = NULL;
 
-/* Selected attenuation.  The default is quite high for safety. */
-static int CurrentAttenuation = 60;
-
-
 /* Current scaling factor.  This is used to program the nominal beam current
  * for an input power of 0dBm, or equivalently, the beam current
  * corresponding to a button current of 4.5mA.
@@ -167,10 +163,25 @@ static void UpdateSwitchTriggerDelay()
 /* Attenuator configuration management. */
 
 
+/* This is the attenuation as selected by the operator.  This needs to be
+ * adjusted by Delta and Offsets[Delta]. */
+static int SelectedAttenuation = 60;
+/* To help with aligning attenuator settings among multiple Liberas, and
+ * particular to help with interoperation with Brilliance we allow the
+ * attenuator setting to be adjusted by the delta factor. */
+static int AttenuatorDelta;
+/* Selected attenuation.  The default is quite high for safety.  This is the
+ * true attenuation after correction by AttenuatorDelta (and clipping), but
+ * not corrected for offset. */
+static int CurrentAttenuation = 60;
+
+
 /* The attenuator value reported by ReadCachedAttenuation() is not strictly
  * accurate, due to minor offsets on attenuator values.  Here we attempt to
  * compensate for these offsets by reading an offset configuration file. */
 static int * AttenuatorOffsets;
+/* This is the corrected attenuation. */
+static int CorrectedAttenuation;
 
 /* This contains a precalculation of K_S * 10^((A-A_0)/20) to ensure that the
  * calculation of ComputeScaledCurrent is efficient. */
@@ -183,9 +194,10 @@ static PMFP AttenuatorScalingFactor;
 class ATTENUATOR_OFFSETS : public I_WAVEFORM
 {
 public:
-    ATTENUATOR_OFFSETS(const char *Name) :
+    ATTENUATOR_OFFSETS(const char *Name, void (*on_update)()) :
         I_WAVEFORM(DBF_FLOAT),
-        AttenuatorCount(MaximumAttenuation() + 1)
+        AttenuatorCount(MaximumAttenuation() + 1),
+        on_update(on_update)
     {
         AttenuatorOffsets = (int *) calloc(AttenuatorCount, sizeof(int));
         memset(AttenuatorOffsets, 0, AttenuatorCount * sizeof(int));
@@ -210,6 +222,7 @@ public:
         new_length = max_length;
         
         PERSISTENT_BASE::MarkDirty();
+        on_update();
         return true;
     }
 
@@ -224,16 +237,8 @@ public:
     
 private:
     const size_t AttenuatorCount;
+    void (*on_update)();
 };
-
-
-/* Returns the current cached attenuator setting. */
-
-int ReadCorrectedAttenuation()
-{
-    return CurrentAttenuation * DB_SCALE +
-        AttenuatorOffsets[CurrentAttenuation];
-}
 
 
 static void UpdateCurrentScale()
@@ -242,18 +247,37 @@ static void UpdateCurrentScale()
 }
 
 
-/* Updates the attenuators and the associated current scaling factors. */
+/* Updates the attenuators and the associated current scaling factors.  This
+ * is called each time any of the attenuation settings changes. */
 
-bool UpdateAttenuation(int NewAttenuation)
+static void UpdateAttenuation()
 {
-    ScWriteAttenuation(NewAttenuation);
+    int MaxAttenuation = MaximumAttenuation();
+    int NewAttenuation = SelectedAttenuation + AttenuatorDelta;
+    if (NewAttenuation < 0)
+        NewAttenuation = 0;
+    if (NewAttenuation > MaxAttenuation)
+        NewAttenuation = MaxAttenuation;
+
     CurrentAttenuation = NewAttenuation;
+    CorrectedAttenuation = CurrentAttenuation * DB_SCALE +
+        AttenuatorOffsets[CurrentAttenuation];
+    ScWriteAttenuation(CurrentAttenuation);
+    
     /* Update the scaling factors. */
-    AttenuatorScalingFactor = PMFP(from_dB, ReadCorrectedAttenuation() - A_0);
+    AttenuatorScalingFactor = PMFP(from_dB, CorrectedAttenuation - A_0);
     UpdateCurrentScale();
-    return true;
 }
 
+
+
+/* Returns the current cached attenuator setting.  This is scaled by DB_SCALE
+ * and represents an estimate of the true attenuator setting. */
+
+int ReadCorrectedAttenuation()
+{
+    return CorrectedAttenuation;
+}
 
 
 /* Converts a raw current (or charge) intensity value into a scaled current
@@ -303,12 +327,15 @@ bool InitialiseConfigure()
      * the attenuators (by calling UpdateAttenuation() above) until the
      * interlock mechanism is ready. */
     PUBLISH_CONFIGURATION(longout, "CF:ATTEN",
-        CurrentAttenuation, UpdateAttenuation);
-    new ATTENUATOR_OFFSETS("CF:ATTEN:OFFSET");
+        SelectedAttenuation, UpdateAttenuation);
+    PUBLISH_CONFIGURATION(longout, "CF:ATTEN:DISP",
+        AttenuatorDelta, UpdateAttenuation);
+    new ATTENUATOR_OFFSETS("CF:ATTEN:OFFSET", UpdateAttenuation);
+    Publish_ai("CF:ATTEN:TRUE", CorrectedAttenuation);
     
     /* Write the initial state to the hardware and initialise everything that
      * needs initialising. */
-    UpdateAttenuation(CurrentAttenuation);
+    UpdateAttenuation();
     UpdateAutoSwitch(AutoSwitchState);
     UpdateManualSwitch();
     UpdateSc(ScState);

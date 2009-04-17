@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 84
-y 104
+x 87
+y 167
 w 473
 h 544
 font "helvetica-medium-r-16.0"
@@ -1246,7 +1246,7 @@ minor 1
 release 0
 x 368
 y 448
-w 80
+w 40
 h 24
 controlPv "$(device):CF:ATTEN_S"
 font "helvetica-medium-r-14.0"
@@ -2148,10 +2148,54 @@ buttonLabel "Atten Offset"
 numPvs 4
 numDsps 1
 displayFileName {
-  0 "libera/waveform.edl"
+  0 "libera/atten_offset.edl"
 }
 symbols {
-  0 "device=$(device),wf=CF:ATTEN:OFFSET_S,xunits=dB,yunits=Offset (dB),title=Attenuation Offsets"
+  0 "device=$(device)"
 }
+endObjectProperties
+
+# (Text Control)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 424
+y 450
+w 32
+h 16
+controlPv "$(device):CF:ATTEN:DISP_S"
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+editable
+autoHeight
+limitsFromDb
+nullColor index 0
+useHexPrefix
+newPos
+objType "controls"
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 412
+y 448
+w 9
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "+"
+}
+autoSize
 endObjectProperties
 

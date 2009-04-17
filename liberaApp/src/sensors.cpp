@@ -314,7 +314,8 @@ static SENSORS_THREAD * SensorsThread = NULL;
     } )
 
 
-#define I2C_DEVICE "/sys/bus/i2c/devices/"
+#define I2C_DEVICE  "/sys/bus/i2c/devices/"
+#define PROC_DEVICE "/proc/sys/dev/sensors/"
 
 bool InitialiseSensors()
 {
@@ -332,9 +333,9 @@ bool InitialiseSensors()
     else
     {
         /* No /sys file system: revert to the older /proc filesystem. */
-        proc_temp = "/proc/sys/dev/sensors/max1617a-i2c-0-29/temp1";
-        proc_fan0 = "/proc/sys/dev/sensors/max6650-i2c-0-4b/fan1";
-        proc_fan1 = "/proc/sys/dev/sensors/max6650-i2c-0-48/fan1";
+        proc_temp = PROC_DEVICE "max1617a-i2c-0-29/temp1";
+        proc_fan0 = PROC_DEVICE "max6650-i2c-0-4b/fan1";
+        proc_fan1 = PROC_DEVICE "max6650-i2c-0-48/fan1";
     }
     
     Publish_longin("SE:TEMP",   SystemTemperature);

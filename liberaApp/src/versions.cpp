@@ -53,7 +53,7 @@ static EPICS_STRING EpicsVersion = EPICS_VERSION_STRING;
 
 int DecimationFactor;
 bool LiberaBrilliance;
-bool BrillianceInverted;
+bool OldBrillianceApi;
 bool FastFeedbackFeature;
 bool DlsFpgaFeatures;
 
@@ -181,7 +181,7 @@ static ENV_MAP<int> EnvironmentInts[] = {
 
 static ENV_MAP<bool> EnvironmentBools[] = {
     { "OPT_BR",         "BR",       &LiberaBrilliance },
-    { "OPT_BR_INVERT",  "BRINVERT", &BrillianceInverted },
+    { "OPT_OLD_BR",     "OLDBR",    &OldBrillianceApi },
     { "OPT_DLS_FPGA",   "DLS",      &DlsFpgaFeatures },
     { "OPT_FF",         "FF",       &FastFeedbackFeature },
     { "OPT_MAF",        "MAF" },
