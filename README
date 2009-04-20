@@ -651,14 +651,159 @@ measured variance on each channel.
 Internal PVs for develoment and diagnostic use.
 
 
-Other (no group):
------------------
+Version Identification (<group> = VE):
+--------------------------------------
 
 `VERSION`::
 Version of this release.
 
 `BUILD`::
-Build time and date of the running IOC.
+Date and time this IOC was compiled.
+
+`EPICS`::
+EPICS version used to build this IOC.
+
+`ABI`::
+ABI identification (3=>EABI).  Newer ARM distributions use the ``Embedded
+Application Binary Interface'' to improve floating point performance.  On
+Libera this update is also associated with a change from the old and somewhat
+buggy ``linuxthreads'' support to using ``NPTL'' (Native POSIX Thread
+Library).
+
+`UNAME`::
+Kernel version (as reported by `uname -r`).
+
+`LIBC`::
+C library version of target system.
+
+`DRIVER`::
+Libera driver version.  Depending on the version of the driver this can be
+surprisingly difficult to discover, and there are circumstances in which
+failure to identify the driver version can cause the EPICS driver to be
+misconfigured.
++
+This problem can arise if `/var/log/messages` or `/var/log/syslog` (depending
+on architecture) has been cleared between loading the Libera driver and
+loading the EPICS driver.   The solution is to load the two drivers together:
+this is normally done by running `/etc/init.d/libera-driver start`.
+
+`MSP`::
+MSP driver version.  The same caveats about identifying the version of this
+driver apply, but there are no consequences if it is not identified correctly.
+
+`ARCH`::
+Architecture identification.  This EPICS driver is designed to work correctly
+on the following distributions:
++
+--
+`ITECH-v0`::
+Libera 1.46 running on the original Libera Linux with 2.4 kernel and
+linuxthreads library.
+
+`ITECH-v1`:: 
+Typically Libera 1.60 to 1.82 running on an updated Libera Linux with a 2.6
+kernel, still using the linuxthreads library and the original ABI.
+
+`ITECH-v2`::
+Libera 2.00 and beyond running on an updated version of the `ITECH-v1`
+architecture: this uses the NPTL library and EABI to provide improved
+performance and stability.
+
+`DLS-v0`, `DLS-v1`::
+A Diamond Light Source generated Linux distribution with a more recent kernel
+and libraries, using NPTL and EABI.  The `-v0` release is used for internal
+testing, `-v1` will be the final working release.
+--
+
+`ROOTFS`::
+This is an identification string used to identify the precise revision of the
+distribution.  Unfortunately the validity of this depends hugely on the value
+of `ARCH`, in particular for `ITECH-v0` there are no reliable identification
+strings!
+
+// `FPGA`::
+// FPGA version
+
+`COMPILED`::
+FPGA ``compiled'' register.  This register was originally intended to be used
+to identify the build date of the FPGA.  Unfortunately this register has been
+froze with the value 0x07D70501, signifying the date 2007-05-01.
+
+`BUILDNO`::
+FPGA build number register.  Similarly, this register was originally intended
+to help identify the FPGA version, but at present it has only ever had two
+values: 1 for Libera Electron, and 0x10 for Libera Brilliance.
+
+`CUSTID`, `CUSTIDSTR`::
+FPGA customer id register.  This identifies the customer for whom the
+installed FPGA was built.
+
+`DDCDEC`::
+Number of samples per machine revolution.  The sample clock runs at
+approximately 110MHz, with the precise value chosen to match the target
+machine and satisfy signal processing constraints.
+
+`FADEC`::
+Turns per FA update.  Typically a fast feedback update occurs every 100us and
+so `DDCDEC`*`FADEC` is approximately 10,000.
+
+`CUSTOMER`::
+Customer feature register.  This is used to identify customer specific FPGA
+features.  If the DLS FPGA is installed the top bit of this register will be
+set, and no other bits are defined at present.
+
+`ITECH`::
+i-Tech feature register.  This is used to identify standard FPGA features as
+defined and maintained by Instrumentation Technologies.  The following fields
+in this register are recognised by the EPICS driver:
++
+--
+[cols="1,1,5,20",options="header",frame="none",grid="none"]
+|=====
+|Bits   |DLS?   |Name               |Description (if used)
+|0      |No     |Grouping           |
+|1      |No     |Desy Molex         |
+|2-3    |No     |Gigabit Ethernet   |
+Not supported by DLS EPICS driver
+|4-5    |Maybe  |DDC filter         |
+0 => Standard DDC filter, 1 => modified boxcar filter (MAF)
+|6      |Yes    |DLS fast feedback  |
+This enables support for the fast feedback controller.
+|7-22   |No     |Reserved           |
+|23     |Yes    |DLS FPGA           |
+If set used to identify DLS FPGA.
+|24-27  |Yes    |Instrument Type    |
+0 => Libera Electron, 1 => Libera Brilliance
+|28-31  |Yes    |Instrument class   |
+Must be 0 for Electron Beam Position Monitor.
+|=====
+--
+
+`BR`::
+Libera Brillance detected
+
+`OLDBR`::
+Old Brilliance attenuators
+
+`DLS`::
+DLS FGPA
+
+`FF`::
+Fast Feedback enabled
+
+`MAF`::
+Boxcard filter present
+
+
+
+Other (no group):
+-----------------
+
+`VERSION`::
+Copy of `VE:VERSION` for compatibility.
+
+`BUILD`::
+Copy of `VE:BUILD` for compatibility.
 
 `REBOOT_S`::
 Processing this record will cause the Libera IOC to reboot.
