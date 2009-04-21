@@ -87,7 +87,7 @@ case "$1" in
         if $NEW_LIBERA; then
             DEV_PARAMS="pmsize=$POSTMORTEM_BUFFER"
         else
-            DFA=$(read_register 0x14)       # Turns per FA from FPGA
+            DFA=$(($(read_register 0x14) & 0xFFFF)) # Turns per FA from FPGA
             DEV_PARAMS="d=$DECIMATION dfa=$DFA"
         fi
         modprobe libera \
