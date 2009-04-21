@@ -83,6 +83,11 @@ def GetActiveEvrs(evrs):
     print 'Checking active EVRs'
     return GetActivePVs(evrs, 'TRIG:MODE')
 
+def GetFeedbackBpms(AllBpms):
+    print 'Checking BPMs for FF support'
+    return GetActivePVs(AllBpms, 'FF:VERSION')
+
+
 
 def GlobalSystemTrigger():
     caput([SR_TRIGGER], 1)
@@ -236,7 +241,7 @@ def RefreshFastFeedback(ActiveBpms):
     #   In SR assign SR1-1 to SR24-7 ids 1 to 168 in sequence
     #   SR21-8 is assigned 169
     #   Arbitrarily assign numbers to LB+BS
-    #   In TS assign ids 1 to 6 in sequence
+    #   In TS assign ids 1 to 7 in sequence
     Bpms, Ids = zip(*[(bpm, id+1)
         for id, bpm in
             list(enumerate(SR_BPMS)) +
@@ -250,13 +255,11 @@ def RefreshFastFeedback(ActiveBpms):
 def RestartFastFeedback(Bpms, triggers):
     print 'Resynchronising Fast Feedback'
     caput(PVs(Bpms, 'FF:STOP_S'), 0)
-#    caput([SR_TRIGGER], 0)
     triggers.Disable()
     Sleep(3)
     print '  Triggering synchronised start'
     caput(PVs(Bpms, 'FF:START_S'), 0)
     Sleep(3)
-#    caput([SR_TRIGGER], 1)
     triggers.Enable()
     Sleep(2)
     nodes = caget(PVs(Bpms, 'FF:BPM_COUNT'))
@@ -341,6 +344,7 @@ def main():
 
     ActiveBpms = GetActiveBpms(AllBpms)
     ActiveEvrs = GetActiveEvrs(AllEvrs)
+    FeedbackBpms = GetFeedbackBpms(ActiveBpms)
     SetActiveBpms = set(ActiveBpms)
     
     if not options.test_only:
@@ -348,7 +352,7 @@ def main():
             SynchroniseSystemClocks(ActiveBpms, ActiveEvrs, SystemTrigger)
         if options.machine:
             SynchroniseMachineClocks(ActiveBpms, MachineTrigger)
-            RefreshFastFeedback(ActiveBpms)
+            RefreshFastFeedback(FeedbackBpms)
 
         if not options.no_test:
             print 'Pausing before test'
@@ -367,7 +371,7 @@ def main():
 
     if options.SyncFF:
         RestartFastFeedback(
-            SetActiveBpms & (set(SR_BPMS) | set(TS_BPMS)),
+            set(FeedbackBpms) & (set(SR_BPMS) | set(TS_BPMS)),
             MachineTrigger)
         
     

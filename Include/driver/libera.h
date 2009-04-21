@@ -1,4 +1,4 @@
-/* $Id: libera.h,v 1.88 2007/11/13 08:04:31 tomazb Exp $ */
+/* $Id: libera.h 2321 2008-11-27 15:54:35Z tomazb $ */
 
 /** \file libera.h */
 /** Public include file for GNU/Linux Libera driver. */
@@ -37,7 +37,10 @@ extern "C" {
 #include <limits.h>
 #endif
 
-
+#ifdef __cplusplus
+#undef  _IOC_TYPECHECK
+#define _IOC_TYPECHECK(t) sizeof(t)
+#endif
 
 /** Libera magic number for ioctl() calls */
 #define LIBERA_IOC_MAGIC    'l'
@@ -62,7 +65,7 @@ typedef long long libera_S64_t;
 typedef unsigned long long libera_U64_t;
 /** Libera 64-bit time storage type. Used for (L)MT & (L)ST */
 typedef unsigned long long libera_hw_time_t; 
-/** Libera timing pair, LMT & LST */    
+/** Libera timing pair, LMT & LST */
 typedef struct 
 {
     libera_hw_time_t lst;  //!< Libera System Time
@@ -75,13 +78,14 @@ typedef struct
     libera_hw_time_t mt;   //!< Machine Time
 } libera_timestamp_t;
 /** Libera High resolution userland timing pair, MT + D & ST */
+#pragma pack(4) // used by generic server on the other side
 typedef struct 
 {
     struct timespec  st;    //!< System Time
     libera_hw_time_t mt;    //!< Machine Time
     unsigned long    phase; //!< LMT phase (0...D-1)
 } libera_HRtimestamp_t;
-
+#pragma pack()
 
 /** Libera event structure */
 typedef struct 
@@ -138,11 +142,15 @@ typedef enum {
 	LIBERA_MODE_SA,			//!< Slow Acquisition mode.
 	LIBERA_MODE_PM,			//!< Post-Mortem mode.
 	LIBERA_MODE_ADC,		//!< ADC-rate buffer mode.
+	LIBERA_MODE_AVERAGE,		//!< calc average value between two triggers
+	LIBERA_MODE_ADC_CW,			//!< ADC-rate buffer mode CW.
+	LIBERA_MODE_ADC_SP,			//!< ADC-rate buffer mode CW.
+	LIBERA_MODE_LAST			//!< last item
 } LIBERA_MODE;
 
 /** Available trigger modes. */
 typedef enum {
-    	LIBERA_TRIGMODE_UNKNOWN = 0,	//!< Unknown trigger mode.
+	LIBERA_TRIGMODE_UNKNOWN = 0,	//!< Unknown trigger mode.
 	LIBERA_TRIGMODE_GET,	        //!< Get trigger mode.
 	LIBERA_TRIGMODE_SET,	        //!< Set trigger mode.
 } LIBERA_TRIGMODE;
@@ -229,8 +237,29 @@ typedef enum {
 } LIBERA_CFG_COMMON;
 
 /** Feature detection using ioctl(CFG_GET, LIBERA_CFG_FEATURE_ITECH) */
-#define LIBERA_IS_BPM(_cfg)        ((_cfg & 0xf0000000) == 0)
-#define LIBERA_IS_BRILLIANCE(_cfg) (LIBERA_IS_BPM(_cfg) && ((_cfg & 0x0f000000) == 0x01000000))
+#define LIBERA_INSTRUMENT_BPM      (0x00)
+#define LIBERA_INSTRUMENT_BBB      (0x01)
+#define LIBERA_INSTRUMENT_HDR      (0x10)
+
+#define LIBERA_TYPE_ELECTRON       (0x00)
+#define LIBERA_TYPE_BRILLIANCE     (0x01)
+
+#define LIBERA_TYPE_BBBQ           (0x00)
+#define LIBERA_TYPE_BBBS           (0x01)
+
+#define LIBERA_INSTRUMENT(_cfg)    ((_cfg & (0xF << 28)) >> 28)
+#define LIBERA_INS_TYPE(_cfg)      ((_cfg & (0xF << 24)) >> 24)
+#define LIBERA_ATOM_SIZE(_cfg)     ((_cfg & (0xF << 20)) >> 20)
+
+#define LIBERA_IS_BPM(_cfg)	   (LIBERA_INSTRUMENT(_cfg) == LIBERA_INSTRUMENT_BPM)
+#define LIBERA_IS_BBB(_cfg)	   (LIBERA_INSTRUMENT(_cfg) == LIBERA_INSTRUMENT_BBB)
+
+#define LIBERA_IS_BRILLIANCE(_cfg) (LIBERA_IS_BPM(_cfg) && LIBERA_INS_TYPE(_cfg) == LIBERA_TYPE_BRILLIANCE)
+
+#define LIBERA_IS_BBBQ(_cfg) (LIBERA_IS_BBB(_cfg) && LIBERA_INS_TYPE(_cfg) == LIBERA_TYPE_BBBQ)
+#define LIBERA_IS_BBBS(_cfg) (LIBERA_IS_BBB(_cfg) && LIBERA_INS_TYPE(_cfg) == LIBERA_TYPE_BBBS)
+
+#define LIBERA_IS_MAF(_cfg) (LIBERA_IS_BPM(_cfg) && ((_cfg & 0x10) == 0x10))
 #define LIBERA_IS_GBETHERNET(_cfg) (LIBERA_IS_BPM(_cfg) && ((_cfg & 8) == 8))
 #define LIBERA_IS_GBE_DEMO(_cfg) (LIBERA_IS_BPM(_cfg) && ((_cfg & 4) == 4))
 #define LIBERA_IS_DESY_MOLEX(_cfg) (LIBERA_IS_BPM(_cfg) && ((_cfg & 2) == 2))
@@ -511,13 +540,24 @@ enum libera_event_ids_t
 typedef enum
 {
     LIBERA_DSC_SET = LIBERA_IOC_DSC,
+    LIBERA_DSC_BCD,
 } libera_dsc_tags_t;
+
+typedef struct
+{
+    int X;
+    int Y;
+} libera_offsets_t;
 
 enum libera_dsc_ids_t
 {    
     LIBERA_DSC_SET_DSC       =  _IOW(LIBERA_DSC_MAGIC,
                                      LIBERA_DSC_SET,
                                      libera_U32_t),
+
+    LIBERA_DSC_BCD_OFFSETS   =  _IOW(LIBERA_DSC_MAGIC,
+                                     LIBERA_DSC_BCD,
+                                     libera_offsets_t),
 };
 
 /* Include family member specifics */
