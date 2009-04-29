@@ -1,0 +1,455 @@
+4 0 1
+beginScreenProperties
+major 4
+minor 0
+release 1
+x 611
+y 155
+w 368
+h 503
+font "helvetica-medium-r-18.0"
+ctlFont "helvetica-medium-r-18.0"
+btnFont "helvetica-medium-r-18.0"
+fgColor index 14
+bgColor index 3
+textColor index 14
+ctlFgColor1 index 14
+ctlFgColor2 index 0
+ctlBgColor1 index 0
+ctlBgColor2 index 14
+topShadowColor index 0
+botShadowColor index 14
+title "Mean Sum"
+showGrid
+snapToGrid
+gridSize 8
+disableScroll
+endScreenProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 0
+y 0
+w 368
+h 32
+font "helvetica-medium-r-18.0"
+fontAlign "center"
+fgColor index 14
+bgColor index 73
+value {
+  "$(device)"
+}
+endObjectProperties
+
+# (X-Y Graph)
+object xyGraphClass
+beginObjectProperties
+major 4
+minor 3
+release 0
+# Geometry
+x 8
+y 40
+w 352
+h 160
+# Appearance
+graphTitle "Mean current between triggers"
+yLabel "mA"
+fgColor index 14
+bgColor index 3
+gridColor index 6
+font "helvetica-medium-r-10.0"
+# Operating Modes
+plotMode "plotLastNPts"
+nPts 250
+# X axis properties
+showXAxis
+xAxisSrc "AutoScale"
+xMax 1
+# Y axis properties
+showYAxis
+yAxisSrc "AutoScale"
+yMin -2
+yMax 2
+yLabelIntervals 6
+yShowLabelGrid
+# Y2 axis properties
+y2AxisSrc "AutoScale"
+y2Max 1
+# Trace Properties
+numTraces 1
+yPv {
+  0 "$(device):MS:MEANI"
+}
+plotColor {
+  0 index 14
+}
+endObjectProperties
+
+# (X-Y Graph)
+object xyGraphClass
+beginObjectProperties
+major 4
+minor 3
+release 0
+# Geometry
+x 8
+y 208
+w 352
+h 160
+# Appearance
+graphTitle "Current delta between triggers"
+yLabel "mA"
+fgColor index 14
+bgColor index 3
+gridColor index 6
+font "helvetica-medium-r-10.0"
+# Operating Modes
+plotMode "plotLastNPts"
+nPts 250
+# X axis properties
+showXAxis
+xAxisSrc "AutoScale"
+xMax 1
+# Y axis properties
+showYAxis
+yAxisSrc "AutoScale"
+yMin -2
+yMax 2
+yLabelIntervals 6
+yShowLabelGrid
+# Y2 axis properties
+y2AxisSrc "AutoScale"
+y2Max 1
+# Trace Properties
+numTraces 1
+yPv {
+  0 "$(device):MS:DELTAI"
+}
+plotColor {
+  0 index 14
+}
+endObjectProperties
+
+# (Exit Button)
+object activeExitButtonClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 296
+y 472
+w 64
+h 24
+fgColor index 25
+bgColor index 3
+topShadowColor index 1
+botShadowColor index 11
+label "EXIT"
+font "helvetica-medium-r-12.0"
+3d
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 128
+y 480
+w 48
+h 16
+controlPv "$(device):MS:COUNT"
+font "helvetica-medium-r-14.0"
+fontAlign "right"
+fgColor index 14
+fgAlarm
+bgColor index 3
+autoHeight
+limitsFromDb
+nullColor index 0
+fastUpdate
+useHexPrefix
+showUnits
+newPos
+objType "monitors"
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 8
+y 480
+w 41
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "Count:"
+}
+autoSize
+endObjectProperties
+
+# (Shell Command)
+object shellCmdClass
+beginObjectProperties
+major 4
+minor 2
+release 0
+x 4
+y 4
+w 24
+h 24
+fgColor index 14
+bgColor index 3
+topShadowColor index 1
+botShadowColor index 11
+font "helvetica-bold-r-14.0"
+buttonLabel "?"
+numCmds 1
+command {
+  0 "libera-help meansum"
+}
+includeHelpIcon
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 128
+y 408
+w 48
+h 16
+controlPv "$(device):MS:MEANS"
+font "helvetica-medium-r-14.0"
+fontAlign "right"
+fgColor index 14
+fgAlarm
+bgColor index 3
+autoHeight
+limitsFromDb
+nullColor index 0
+fastUpdate
+useHexPrefix
+showUnits
+newPos
+objType "monitors"
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 8
+y 408
+w 31
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "Sum:"
+}
+autoSize
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 248
+y 408
+w 48
+h 16
+controlPv "$(device):MS:DELTAS"
+font "helvetica-medium-r-14.0"
+fontAlign "right"
+fgColor index 14
+fgAlarm
+bgColor index 3
+autoHeight
+limitsFromDb
+nullColor index 0
+fastUpdate
+useHexPrefix
+showUnits
+newPos
+objType "monitors"
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 96
+y 384
+w 79
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "Mean Value"
+}
+autoSize
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 264
+y 384
+w 33
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "Delta"
+}
+autoSize
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 248
+y 432
+w 48
+h 16
+controlPv "$(device):MS:DELTAI"
+font "helvetica-medium-r-14.0"
+fontAlign "right"
+fgColor index 14
+fgAlarm
+bgColor index 3
+autoHeight
+limitsFromDb
+nullColor index 0
+fastUpdate
+useHexPrefix
+showUnits
+newPos
+objType "monitors"
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 128
+y 432
+w 48
+h 16
+controlPv "$(device):MS:MEANI"
+font "helvetica-medium-r-14.0"
+fontAlign "right"
+fgColor index 14
+fgAlarm
+bgColor index 3
+autoHeight
+limitsFromDb
+nullColor index 0
+fastUpdate
+useHexPrefix
+showUnits
+newPos
+objType "monitors"
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 8
+y 432
+w 51
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "Current:"
+}
+autoSize
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 128
+y 456
+w 48
+h 16
+controlPv "$(device):MS:MEANP"
+font "helvetica-medium-r-14.0"
+fontAlign "right"
+fgColor index 14
+fgAlarm
+bgColor index 3
+autoHeight
+limitsFromDb
+nullColor index 0
+fastUpdate
+useHexPrefix
+showUnits
+newPos
+objType "monitors"
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 8
+y 456
+w 43
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "Power:"
+}
+autoSize
+endObjectProperties
+

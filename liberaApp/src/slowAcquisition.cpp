@@ -53,15 +53,49 @@
  * absolute power and current computations. */
 static int S_0 = 0;
 
+static int P_0;
+static PMFP S_0_INV;
+
+static void InitialisePowerAndCurrent(int S0_SA)
+{
+    S_0 = S0_SA;                // 20 log_10(S_0) + A_0
+    P_0 = to_dB(S_0) + A_0;     // 1 / S_0
+    S_0_INV = Reciprocal(S_0);
+}
+
+
+/* Computes power and current from the observed S value, the attenuator
+ * setting and the current scaling factor thus:
+ * 
+ *          P = 20 log S + A - P_0
+ *          
+ *          I = K_M * K_A * S
+ *          
+ *                  (A-P_0)/20
+ *          K_A = 10
+ *
+ * Here
+ *          P = Power
+ *          I = Current
+ *          K_M = CurrentScale
+ *
+ *          A = current corrected attenuator reading
+ *          P_0 = fixup offset factor
+ *
+ * The scaling factor K_M is the beam current for 0dBm input power. */
+void PowerAndCurrentFromS(int S, int &Power, int &Current)
+{
+    Power = to_dB(S) + ReadCorrectedAttenuation() - P_0;
+    Current = ComputeScaledCurrent(S_0_INV, S);
+}
+
 
 
 class SLOW_ACQUISITION : public THREAD
 {
 public:
     SLOW_ACQUISITION() :
-        THREAD("SLOW_ACQUISITION"),
-        P_0(to_dB(S_0) + A_0),                  // 20 log_10(S_0) + A_0
-        S_0_INV(Reciprocal(S_0))                // 1 / S_0
+        THREAD("SLOW_ACQUISITION")
     {
         Publish_ABCD("SA", ABCD);
         Publish_XYQS("SA", XYQS);
@@ -88,7 +122,8 @@ private:
                 Interlock.Wait();
                 ABCD = NewABCD;
                 ABCDtoXYQS(&ABCD, &XYQS, 1);
-                UpdatePowerAndCurrent();
+                PowerAndCurrentFromS(XYQS.S, Power, Current);
+                NotifyInterlockCurrent(Current);
                 MaxAdc = ReadMaxAdc();
                 Interlock.Ready();
             }
@@ -102,47 +137,12 @@ private:
 #endif
 
 
-    /* Computes power and current from the observed S value, the attenuator
-     * setting and the current scaling factor thus:
-     * 
-     *          P = 20 log S + A - P_0
-     *          
-     *          I = K_M * K_A * S
-     *          
-     *                  (A-P_0)/20
-     *          K_A = 10
-     *
-     * Here
-     *          P = Power
-     *          I = Current
-     *          K_M = CurrentScale
-     *
-     *          A = current corrected attenuator reading
-     *          P_0 = fixup offset factor
-     *
-     * The scaling factor K_M is the beam current for 0dBm input power. */
-    void UpdatePowerAndCurrent()
-    {
-        Power = to_dB(XYQS.S) + ReadCorrectedAttenuation() - P_0;
-        Current = ComputeScaledCurrent(S_0_INV, XYQS.S);
-
-        /* Communicate the latest current reading to the machine protection
-         * interlock. */
-        NotifyInterlockCurrent(Current);
-    }
-    
-    
     INTERLOCK Interlock;
     ABCD_ROW ABCD;
     XYQS_ROW XYQS;
     int Power;          // Power in dBm * 1e6
     int Current;        // Current in 10*nA
     int MaxAdc;         // Raw MaxADC reading
-    
-    /* Precomputed offset for power calculation: P_0 = A_0 + 20 log_10(S_0). */
-    const int P_0;
-    /* Precomputed scaling factor for current calculation, S_0_INV = 1/S_0. */
-    const PMFP S_0_INV;
 };
 
 
@@ -151,7 +151,7 @@ static SLOW_ACQUISITION * SlowAcquisition = NULL;
 
 bool InitialiseSlowAcquisition(int S0_SA)
 {
-    S_0 = S0_SA;
+    InitialisePowerAndCurrent(S0_SA);
     SlowAcquisition = new SLOW_ACQUISITION();
     return SlowAcquisition->StartThread();
 }

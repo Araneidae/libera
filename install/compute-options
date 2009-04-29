@@ -165,6 +165,35 @@ IID=$(((FPGA_ITECH >> 28) & 0xF))
 set_var OPT_DLS_FPGA $((
     (FPGA_ITECH & (1<<23)) != 0  &&  (FPGA_CUSTOMER & (1 << 31)) != 0))
     
+# Check for newer FPGA by probing the i-Tech MAX_ADC register -- this will
+# read non-zero on a 2.00 and later FPGA.
+set_var ITECH_MAX_ADC $(($(read_register 0x8004) != 0))
+if [ $OPT_DLS_FPGA = 1 ]; then
+    set_var FPGA_2_SUPPORT 0
+else
+    # Alas, the MAX_ADC register seems the only safe probe we have available
+    # for identifying a 2.00+ FPGA.  The FA_NSUMS register (0x1c024) is a
+    # promising alternative ... but it only updates on trigger, so can be zero
+    # on a fresh FPGA.
+    set_var FPGA_2_SUPPORT $ITECH_MAX_ADC
+fi
+
+
+# We now have enough information to make a reasonable estimate of the FPGA
+# version. 
+if [ $OPT_DLS_FPGA = 1 ]; then
+    FF_VER=$(read_register 0x28c00)
+    set_var FPGA_VERSION DLS-$(printf v%d.%x.%d \
+        $((FF_VER >> 12)) $(((FF_VER >> 4) & 0xFF)) $((FF_VER & 0xF)))
+elif [ $FPGA_OLD = 1 ]; then
+    set_var FPGA_VERSION ITECH-v1.46
+elif [ $FPGA_2_SUPPORT = 0 ]; then
+    set_var FPGA_VERSION ITECH-v1.80
+else
+    set_var FPGA_VERSION ITECH-v2.00+
+fi
+
+
 # Fast feedback is available if DLS FPAG present or iTech FF option selected.
 set_var OPT_FF $((OPT_DLS_FPGA  ||  (FPGA_ITECH & (1 << 6)) != 0))
 
@@ -174,14 +203,8 @@ set_var OPT_BR $((
     (!FPGA_OLD  &&  (((FPGA_ITECH >> 24) & 0xF) == 1))  ||
     (FPGA_OLD  &&  (FPGA_BUILD_NO == 0x10))))
 # For FPGAs with brilliance before version 2 we have to invert and scale the
-# attenuators.  Unfortunately this option is very hard to reliably identify,
-# so this is another overridable option.  We work on the simple heuristic
-# that if the Libera driver version is old then we should use the old API.
-set_var OPT_OLD_BR $(
-    [ $FPGA_OLD = 1 -o "${LIBERA_VERSION:0:2}" = 1. ]
-    echo $((!$?)))
-# To reduce confusion, only set BR_INVERT if BR set.
-OPT_OLD_BR=$((OPT_OLD_BR  &&  OPT_BR))
+# attenuators. 
+set_var OPT_OLD_BR $((OPT_BR  &&  FPGA_2_SUPPORT == 0))
 
 # Check for weird hard-wired boxcar DDC filter.
 set_var OPT_MAF $((((FPGA_ITECH >> 4) & 3) == 1))
@@ -191,16 +214,23 @@ set_var OPT_MAF $((((FPGA_ITECH >> 4) & 3) == 1))
 # disable the RF board temperature sensor, but on Brilliance we want to use
 # it.  This is also a very promising way to detect the presence of
 # Brilliance!
-case $(uname -r) in
-    2.4*)
-        set_var BR_TEMP $(
-            [ -e /proc/sys/dev/sensors/adm1023-i2c-0-18 ]
-            echo $((!$?)))
-        ;;
-    2.6*)
-        set_var BR_TEMP $(
-            [ -e /sys/bus/i2c/devices/0-0018 -a \
-              "$(cat /sys/bus/i2c/devices/0-0018/name)" = adm1023 ]
-            echo $((!$?)))
-        ;;
-esac
+set_var BR_TEMP $(
+    if [ -d /sys ]; then
+        [ -e /sys/bus/i2c/devices/0-0018 -a \
+          "$(cat /sys/bus/i2c/devices/0-0018/name)" = adm1023 ]
+    else
+        [ -e /proc/sys/dev/sensors/adm1023-i2c-0-18 ]
+    fi
+    echo $((!$?))
+)
+
+# Compute the target temperature.  This depends both on the selected
+# temperature sensor and on which health daemond we're running (or we could
+# make the health daemond part of Libera).
+if [ $BR_TEMP = 1 ]; then
+    set_var TARGET_TEMP 53
+    set_var ALARM_TEMP  60
+else
+    set_var TARGET_TEMP 43
+    set_var ALARM_TEMP  50
+fi

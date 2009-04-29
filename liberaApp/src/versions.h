@@ -33,6 +33,9 @@ extern bool LiberaBrilliance;       // Brilliance option present
 extern bool OldBrillianceApi;       // Old Brilliance attenuator interface
 extern bool FastFeedbackFeature;    // Fast feedback option detected
 extern bool DlsFpgaFeatures;        // DLS FPGA installed
+extern bool MafFeaturePresent;      // Moving Average turn-by-turn filter
+extern bool ItechMaxAdcPresent;     // i-Tech version of MAX_ADC register
+extern bool Version2FpgaPresent;    // Libera 2.00+ FPGA features present
 
 
 bool InitialiseVersions(void);

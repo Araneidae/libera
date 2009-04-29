@@ -62,6 +62,7 @@ public:
     {
         WindowOffset = 0;
         CaptureOffset = 0;
+        Decimated = false;
         /* Make the default capture length equal to one window. */
         WindowLength = WindowWaveformLength;
         LongWaveform.SetLength(WindowLength);
@@ -90,6 +91,7 @@ public:
         PUBLISH_METHOD_IN(longin,   "TT:CAPTURED", GetCapturedLength);
         Publish_longin("TT:OFFSET", WindowOffset);
         Publish_longout("TT:DELAY", CaptureOffset);
+        Publish_bo("TT:DECIMATION", Decimated);
 
         /* Turn by turn triggering is rather complicated, and needs to occur
          * in two stages.  The idea is that only a single shot of turn by
@@ -115,9 +117,9 @@ public:
         if (Armed)
         {
             Armed = false;
-            /* Capture the full turn-by-turn undecimated waveform of the
-             * requested length. */
-            LongWaveform.Capture(1, CaptureOffset);
+            /* Capture the full turn-by-turn waveform of the requested length
+             * and with specified decimation. */
+            LongWaveform.Capture(Decimated ? 64 : 1, CaptureOffset);
 
             /* Also bring the short waveforms up to date.  Do this before
              * updating the long trigger so that the reader knows there is
@@ -266,6 +268,8 @@ private:
     int WindowLength;
     /* This is the trigger offset. */
     int CaptureOffset;
+    /* Whether to apply decimation reduction on captured waveform. */
+    bool Decimated;
 };
 
 

@@ -260,6 +260,7 @@ static bool ProcessOptions(int argc, char *argv[], MC_PARAMETERS *Params)
         }
     }
     argc -= optind;
+    errno = 0;  // For TEST_OK failure reporting
     return
         TEST_OK(argc == 0)  &&
         TEST_OK(Params->Prescale != 0)  &&

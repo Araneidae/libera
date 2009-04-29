@@ -30,8 +30,34 @@
 /* Libera events handling interface. */
 
 bool InitialiseEventReceiver();
-
 void TerminateEventReceiver();
+
+
+/* Events are processed in the order below.  Note that these numbers are
+ * indexes into an array, and so must be unique and in the appropriate
+ * range. */
+enum PRIORITIES
+{
+    /* PM */
+    PRIORITY_PM,        // Postmortem wins, every time.
+
+    /* INTERLOCK */
+    PRIORITY_IL,        // Interlock
+
+    /* TRIGSET */
+    PRIORITY_SYNC,      // Set clock
+
+    /* TRIGGET */
+    PRIORITY_TICK,      // Tick event notification
+    PRIORITY_MS,        // Mean sums calculation
+    PRIORITY_FT,        // First Turn 
+    PRIORITY_TT,        // Turn-by-turn takes forever but goes early
+    PRIORITY_BN,        // Decimated booster mode
+    PRIORITY_FR,        // Free running mode
+
+    /* This must always come last (and is not a real priority). */
+    HANDLER_TABLE_SIZE
+};
 
 
 /* Libera event registration.  Note that this callback method will be called
@@ -42,29 +68,7 @@ public:
     virtual void OnEvent(int Parameter) = 0;
 };
 
-void RegisterTriggerEvent(I_EVENT &Event, int Priority);
-void RegisterTriggerSetEvent(I_EVENT &Event, int Priority);
-void RegisterPostmortemEvent(I_EVENT &Event, int Priority);
-void RegisterInterlockEvent(I_EVENT &Event, int Priority);
-
-
-
-/* Events are processed in the order below.  Note that these numbers are
- * indexes into an array, and so must be unique and in the appropriate
- * range. */
-
-/* PM */
-#define PRIORITY_PM     0       // Postmortem wins, every time.
-
-/* INTERLOCK */
-#define PRIORITY_IL     1       // Interlock
-
-/* TRIGSET */
-#define PRIORITY_SYNC   2       // Set clock
-
-/* TRIGGET */
-#define PRIORITY_TICK   3       // Tick event notification 
-#define PRIORITY_FT     4       // First Turn 
-#define PRIORITY_TT     5       // Turn-by-turn takes forever but goes early
-#define PRIORITY_BN     6       // Decimated booster mode
-#define PRIORITY_FR     7       // Free running mode
+void RegisterTriggerEvent(I_EVENT &Event, PRIORITIES Priority);
+void RegisterTriggerSetEvent(I_EVENT &Event, PRIORITIES Priority);
+void RegisterPostmortemEvent(I_EVENT &Event, PRIORITIES Priority);
+void RegisterInterlockEvent(I_EVENT &Event, PRIORITIES Priority);

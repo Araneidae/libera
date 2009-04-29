@@ -41,6 +41,7 @@
 #include <stdint.h>
 
 #include "versions.h"
+
 /* If RAW_REGISTER is defined then raw register access through /dev/mem will
  * be enabled. */
 #include "hardware.h"
@@ -50,10 +51,19 @@
 #define REGISTER_BUILD_NUMBER   0x14000008
 #define REGISTER_DLS_FEATURE    0x14000018
 #define REGISTER_ITECH_FEATURE  0x1400001C
-/* This register records the maximum ADC reading since it was last read. */
-#define REGISTER_MAX_ADC_RAW    0x1400C000
+/* Bits 16-27 of this register are used to program a delay on the external
+ * trigger. */
+#define REGISTER_TRIG_DELAY     0x14004038
+/* These two registers record the maximum ADC reading since they were last
+ * read.  Unfortunately the DLS and iTech FPGAs use different registers. */
+#define REGISTER_MAX_ADC_ITECH  0x14008004
+#define REGISTER_MAX_ADC_DLS    0x1400C000
 /* This register is used to set the turn by turn ADC overflow threshold. */
 #define REGISTER_ADC_OVERFLOW   0x1400C004
+/* These registers are used to access the triggered sum average. */
+#define REGISTER_FA_NSUMS       0x1401C024  // Number of samples
+#define REGISTER_FA_SUM_LSW     0x1401C028  // Low 32 bits
+#define REGISTER_FA_SUM_MSW     0x1401C02C  // High 32 bits of sum
 
 /* This bit is set in the ITECH register to enable DLS extensions. */
 #define DLS_EXTENSION_BIT       (1 << 23)
@@ -122,11 +132,9 @@ static int DevMem = -1;     /* /dev/mem         Direct register access. */
  * be corrected. */
 static int AdcExcessBits = 4;
 
-/* Max ADC register read at SA rate. */
+/* Max ADC register read at SA rate.  We preallocate this to avoid
+ * continually mapping the register! */
 static unsigned int * RegisterMaxAdcRaw = NULL;
-/* If we need to write directly to the DLS ADC overflow register, this
- * points to the necessary location. */
-static unsigned int * RegisterAdcOverflow = NULL;
 
 
 
@@ -185,8 +193,8 @@ bool WriteInterlockParameters(
 #ifdef RAW_REGISTER
         /* Finally, if the DLS ADC overflow register is in use, write to that
          * as well: in this case the overflow_limit above is ignored. */
-        IF_(RegisterAdcOverflow != NULL, 
-            DO_(*RegisterAdcOverflow = overflow_limit))  &&
+        IF_(DlsFpgaFeatures,
+            WriteRawRegister(REGISTER_ADC_OVERFLOW, overflow_limit))  &&
 #endif
         true;
 }
@@ -234,6 +242,15 @@ bool GetClockState(bool &LmtdLocked, bool &LstdLocked)
     return Ok;
 }
 
+
+bool WriteExternalTriggerDelay(int Delay)
+{
+    if (0 <= Delay  &&  Delay < 1<<12)
+        return WriteRawRegister(
+            REGISTER_TRIG_DELAY, Delay << 16, 0x0FFF0000);
+    else
+        return false;
+}
 
 
 
@@ -750,6 +767,7 @@ bool WriteInterlockIIR_K(int K)
 }
 
 
+
 #ifdef RAW_REGISTER
 /*****************************************************************************/
 /*                                                                           */
@@ -787,13 +805,16 @@ static void UnmapRawRegister(unsigned int *MappedAddress)
 }
 
 
-bool WriteRawRegister(unsigned int Address, unsigned int Value)
+bool WriteRawRegister(
+    unsigned int Address, unsigned int Value, unsigned int Mask)
 {
     unsigned int * Register = MapRawRegister(Address);
     if (Register == NULL)
         return false;
     else
     {
+        if (Mask != 0xFFFFFFFF)
+            Value = (Value & Mask) | (*Register & ~Mask);
         *Register = Value;
         UnmapRawRegister(Register);
         return true;
@@ -814,8 +835,105 @@ bool ReadRawRegister(unsigned int Address, unsigned int &Value)
     }
 }
 
+#else
+bool WriteRawRegister(
+    unsigned int Address, unsigned int Value, unsigned int Mask)
+{
+    return false;
+}
+
+bool ReadRawRegister(unsigned int Address, unsigned int &Value)
+{
+    return false;
+}
 
 #endif
+
+
+
+/*****************************************************************************/
+/*                                                                           */
+/*                           FPGA 2.00+ Features                             */
+/*                                                                           */
+/*****************************************************************************/
+
+
+static unsigned int * AverageSumRegisters = NULL;
+
+#ifdef RAW_REGISTER
+static bool InitialiseAverageSum()
+{
+    if (Version2FpgaPresent)
+        return TEST_NULL(AverageSumRegisters,
+            MapRawRegister, REGISTER_FA_NSUMS);
+    else
+        return true;
+}
+#endif
+
+
+void GetTriggeredAverageSum(int &Sum, int &Samples)
+{
+    /* We could use the LIBERA_CFG_AVERAGE_SUM configuration call to read
+     * this value, but this is one of the unstable configuration numbers
+     * (changes between 2.00 and 2.02), and also it can be quite instructive
+     * to have the number of samples at the same time.  Thus we read the
+     * hardware directly instead. */
+    if (AverageSumRegisters == NULL)
+    {
+        Sum = 0;
+        Samples = 0;
+    }
+    else
+    {
+        uint32_t u_samples = AverageSumRegisters[0];
+        if (u_samples == 0)
+        {
+            Samples = 0;
+            Sum = 0;
+        }
+        else
+        {
+            uint64_t lsw = AverageSumRegisters[1];
+            uint64_t msw = AverageSumRegisters[2];
+            Sum = (int) (uint32_t) ((lsw + (msw << 32)) / u_samples);
+            Samples = u_samples;
+        }
+    }
+}
+
+
+bool WriteMafSettings(int Offset, int Delay)
+{
+    return false;
+}
+
+
+bool WriteSpikeRemovalSettings(
+    bool Enable, int AverageWindow, int AverageStop,
+    int SpikeStart, int SpikeWindow)
+{
+#ifdef __EBPP_H_2
+    int EnableInt = Enable;
+    return
+        WriteCfgValue(LIBERA_CFG_SR_ENABLE,         EnableInt)  &&
+        WriteCfgValue(LIBERA_CFG_SR_AVERAGE_WINDOW, AverageWindow)  &&
+        WriteCfgValue(LIBERA_CFG_SR_AVERAGING_STOP, AverageStop)  &&
+        WriteCfgValue(LIBERA_CFG_SR_START,          SpikeStart)  &&
+        WriteCfgValue(LIBERA_CFG_SR_WINDOW,         SpikeWindow);
+#else
+    return false;
+#endif
+}
+
+
+bool WritePostmortemTriggering(
+    PM_TRIGGER_MODE Mode, int Xlow, int Xhigh, int Ylow, int Yhigh,
+    int OverflowLimit, int OverflowDuration)
+{
+    return false;
+}
+
 
 
 /*****************************************************************************/
@@ -827,14 +945,19 @@ bool ReadRawRegister(unsigned int Address, unsigned int &Value)
 
 #ifdef RAW_REGISTER
 
-/* Enable DLS FPGA specific extensions. */
-static void EnableDlsExtensions()
+/* At present there are two alternative implementations of continuous max ADC
+ * reading.  We enable access to the appropriate register here. */
+static bool EnableMaxAdc()
 {
     if (DlsFpgaFeatures)
-    {
-        RegisterMaxAdcRaw   = MapRawRegister(REGISTER_MAX_ADC_RAW);
-        RegisterAdcOverflow = MapRawRegister(REGISTER_ADC_OVERFLOW);
-    }
+        return TEST_NULL(RegisterMaxAdcRaw,
+            MapRawRegister, REGISTER_MAX_ADC_DLS);
+    else if (ItechMaxAdcPresent)
+        return TEST_NULL(RegisterMaxAdcRaw,
+            MapRawRegister, REGISTER_MAX_ADC_ITECH);
+    else
+        /* Not enabled, not a problem. */
+        return true;
 }
 
 #endif
@@ -864,7 +987,8 @@ bool InitialiseHardware()
         TEST_IO(DevDd,    open, "/dev/libera.dd",    O_RDONLY)  &&
 #ifdef RAW_REGISTER
         TEST_IO(DevMem,   open, "/dev/mem", O_RDWR | O_SYNC)  &&
-        DO_(EnableDlsExtensions())  &&
+        EnableMaxAdc()  &&
+        InitialiseAverageSum()  &&
 #endif
         true;
 }

@@ -31,106 +31,9 @@ from __future__ import division
 import sys
 from math import *
 
-# It is important to import support before importing iocbuilder, as the
-# support module initialises iocbuilder (and determines which symbols it
-# exports!)
-from support import * 
-from iocbuilder import *
+from common import *
 
 
-
-# ----------------------------------------------------------------------------
-#           Record Generation Support
-# ----------------------------------------------------------------------------
-
-
-# Boilerplate record generation.  Here is where the various types of records
-# that can be generated are defined.
-
-MAX_INT = 2**31 - 1
-MAX_mm  = 10
-MAX_nm  = MAX_mm * 10**6         # 10^7 nm = 10 mm
-MAX_S   = MAX_INT
-KB      = 1024
-MB      = KB*KB
-
-MAX_ADC = 2**15
-
-def RAW_ADC(length):
-    return [
-        Waveform('RAW' + channel, length,
-            DESC = 'Raw ADC for channel %s' % channel,
-            LOPR = -2048, HOPR = 2047)
-        for channel in '1234']
-
-def IQ_wf(length):
-    return [
-        Waveform('WF' + button + axis, length,
-            DESC = '%s quadrature %s for button %s' % (
-                ChannelName(), axis, button),
-            LOPR = -MAX_S, HOPR = MAX_S)
-        for button in 'ABCD' for axis in 'IQ']
-
-def ABCD_wf(length):
-    return [
-        Waveform('WF' + button, length,
-            DESC = '%s amplitude for button %s' % (ChannelName(), button),
-            LOPR = 0, HOPR = MAX_S)
-        for button in 'ABCD']
-
-def ABCD_():
-    return [
-        longIn(button, 0, MAX_S,
-            DESC = '%s button %s intensity' % (ChannelName(), button))
-        for button in 'ABCD']
-
-def XYQS_wf(length, prefix='WF'):
-    return [
-        Waveform(prefix + position, length,
-            DESC = '%s %s position' % (ChannelName(), position),
-            LOPR = -MAX_nm, HOPR = MAX_nm, EGU = 'nm')
-        for position in 'XYQ'] + [
-        Waveform(prefix + 'S', length,
-            DESC = '%s total button intensity' % ChannelName(),
-            LOPR = 0, HOPR = MAX_S)]
-
-def XYQS_(prec, suffix=''):
-    sl = [
-        longIn('S' + suffix, MDEL = -1,
-            DESC = '%s total button intensity' % ChannelName())]
-    return [
-        aIn(position + suffix, -MAX_mm, MAX_mm, 1e-6, 'mm', prec,
-            DESC = '%s %s position' % (ChannelName(), position))
-        for position in 'XYQ'] + sl
-        
-        
-
-def Enable():
-    boolOut('ENABLE', 'Disabled', 'Enabled',
-        DESC = 'Enable %s mode' % ChannelName())
-
-def Trigger(MC, positions, TRIG='TRIG', DONE='DONE'):
-    # If MC is requested then generate MC machine clock records as well.
-    # These return the 64 bit revolution clock as a pair of 32 bit values.
-    if MC:
-        positions = positions + [
-            longIn('MCL', EGU='turns', DESC = 'Revolution clock (low)'),
-            longIn('MCH', EGU='turns', DESC = 'Revolution clock (high)')]
-
-    
-    # The DONE record must be processed after all other triggered records are
-    # processed: this is used as an interlock to synchronise with the Libera
-    # driver.
-    positions.append(
-        Libera.longout(DONE, MDEL = -1, DESC = 'Report trigger done'))
-    trigger = Libera.bi(TRIG, DESC = 'Trigger processing',
-        SCAN = 'I/O Intr',
-        TSE  = -2,          # Ensures that device timestamp is used
-        FLNK = create_fanout(TRIG + 'FAN', *positions))
-    for record in positions:
-        record.TSEL = trigger.TIME
-
-        
 # ----------------------------------------------------------------------------
 #           Libera Data Capture Mode Definitions
 # ----------------------------------------------------------------------------
@@ -326,6 +229,9 @@ def TurnByTurn():
         DESC = 'TT readout offset readback')
     # Trigger capture offset
     longOut('DELAY', DESC = 'Trigger capture offset')
+    # Decimation control
+    boolOut('DECIMATION', '1:1', '1:64',
+        DESC = 'Decimation from turn-by-turn')
 
     Trigger(True, 
         # Raw I and Q values
@@ -443,6 +349,9 @@ def Config():
     aOut('ISCALE', 0, 20000, 
         DESC = 'Input current at 0dBm power',
         EGU  = 'mA', ESLO = 1e-5, PREC = 1)
+
+    # Internal trigger skew
+    longOut('TRIGDLY', 0, (1<<12)-1, DESC = 'Internal trigger delay')
 
     UnsetChannelName()
 
@@ -866,7 +775,7 @@ def Versions():
     string('ROOTFS',    'SBC rootfs distribution')
 
     # These are all FPGA registers
-    longin('COMPILED',  'FPGA \\"compiled\\" register')
+    longin('COMPILED',  r'FPGA \"compiled\" register') # escape in builder!
     longin('BUILDNO',   'FPGA build number register')
     longin('CUSTID',    'FPGA customer id register')
     longin('DDCDEC',    'Libera samples per turn')
@@ -876,11 +785,14 @@ def Versions():
     # Customer Id as a string
     string('CUSTIDSTR', 'FPGA customer id')
 
-    boolin('BR',        'Libera Brillance detected')
+    boolin('BR',        'Libera Brillance FPGA')
+    boolin('BRHW',      'Brilliance hardware detected')
     boolin('OLDBR',     'Old Brilliance attenuators')
     boolin('DLS',       'DLS FGPA')
     boolin('FF',        'Fast Feedback enabled')
     boolin('MAF',       'Boxcard filter present')
+    boolin('ITMAXADC',  'i-Tech MAX ADC register')
+    boolin('FPGA2',     'Libera 2.00+ FPGA features')
 
     UnsetChannelName()
 

@@ -45,6 +45,7 @@
 #include "interlock.h"
 #include "conditioning.h"
 #include "waveform.h"
+#include "versions.h"
 
 #include "configure.h"
 
@@ -88,6 +89,8 @@ static READBACK<int> * ScReadback = NULL;
  * 20A. */
 static int CurrentScale = 100000000;
 
+/* Delay from external trigger in clocks. */
+static int ExternalTriggerDelay = 0;
 
 
 
@@ -292,6 +295,44 @@ int ComputeScaledCurrent(const PMFP & IntensityScale, int Intensity)
 
 /****************************************************************************/
 /*                                                                          */
+/*                          Spike Removal Control                           */
+/*                                                                          */
+/****************************************************************************/
+
+
+static bool EnableSpikeRemoval = true;
+static int SpikeAverageWindow = 8;
+static int SpikeAverageStop = -1;
+static int SpikeStart = -3;
+static int SpikeWindow = 8;
+
+
+static void UpdateSpikeRemoval()
+{
+    WriteSpikeRemovalSettings(
+        EnableSpikeRemoval,
+        SpikeAverageWindow, SpikeAverageStop, SpikeStart, SpikeWindow);
+}
+
+
+#define PUBLISH_SPIKE(record, name, variable) \
+    PUBLISH_CONFIGURATION(record, "CF:SR:" name, variable, UpdateSpikeRemoval)
+static bool InitialiseSpikeRemoval()
+{
+    PUBLISH_SPIKE(bo, "ENABLE", EnableSpikeRemoval);
+    PUBLISH_SPIKE(longout, "AVEWIN",    SpikeAverageWindow);
+    PUBLISH_SPIKE(longout, "AVESTOP",   SpikeAverageStop);
+    PUBLISH_SPIKE(longout, "SPIKEST",   SpikeStart);
+    PUBLISH_SPIKE(longout, "SPIKEWIN",  SpikeWindow);
+    
+    UpdateSpikeRemoval();
+    return true;
+}
+#undef PUBLISH_SPIKE
+
+
+/****************************************************************************/
+/*                                                                          */
 
 void SetBpmEnabled()
 {
@@ -321,6 +362,8 @@ bool InitialiseConfigure()
     ScReadback = PUBLISH_READBACK_CONFIGURATION(mbbi, mbbo, "CF:DSC",
         ScState, UpdateSc);
     PUBLISH_CONFIGURATION(ao, "CF:ISCALE", CurrentScale, UpdateCurrentScale);
+    PUBLISH_CONFIGURATION(longout, "CF:TRIGDLY",
+        ExternalTriggerDelay, WriteExternalTriggerDelay);
 
     /* Note that updating the attenuators is done via the
      * InterlockedUpdateAttenuation() routine: this will not actually update
@@ -341,6 +384,11 @@ bool InitialiseConfigure()
     UpdateSc(ScState);
     UpdateSwitchTrigger();
     UpdateSwitchTriggerDelay();
+    WriteExternalTriggerDelay(ExternalTriggerDelay);
 
-    return true;
+    /* Finally enable the 2.0 specific configuration features. */
+    if (Version2FpgaPresent)
+        return InitialiseSpikeRemoval();
+    else
+        return true;
 }

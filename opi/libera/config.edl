@@ -3,10 +3,10 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 87
-y 167
+x 811
+y 266
 w 473
-h 544
+h 567
 font "helvetica-medium-r-16.0"
 ctlFont "helvetica-medium-r-16.0"
 btnFont "helvetica-medium-r-16.0"
@@ -50,7 +50,7 @@ release 0
 x 240
 y 304
 w 224
-h 200
+h 224
 lineColor index 14
 fill
 fillColor index 4
@@ -65,7 +65,7 @@ release 0
 x 8
 y 352
 w 224
-h 96
+h 120
 lineColor index 14
 fill
 fillColor index 4
@@ -127,7 +127,7 @@ major 4
 minor 1
 release 0
 x 408
-y 512
+y 536
 w 56
 h 22
 fgColor index 25
@@ -872,7 +872,7 @@ beginObjectProperties
 major 4
 minor 0
 release 0
-x 88
+x 112
 y 368
 w 96
 h 22
@@ -891,7 +891,7 @@ beginObjectProperties
 major 4
 minor 0
 release 0
-x 88
+x 112
 y 392
 w 96
 h 22
@@ -950,7 +950,7 @@ beginObjectProperties
 major 4
 minor 0
 release 0
-x 88
+x 112
 y 416
 w 96
 h 22
@@ -1299,7 +1299,7 @@ fontAlign "center"
 fgColor index 1
 bgColor index 10
 value {
-  "Signal Conditioning"
+  "Signal Configuration"
 }
 endObjectProperties
 
@@ -1344,7 +1344,7 @@ major 4
 minor 0
 release 0
 x 8
-y 464
+y 488
 w 224
 h 40
 lineColor index 14
@@ -1359,7 +1359,7 @@ major 4
 minor 1
 release 0
 x 136
-y 480
+y 504
 w 80
 h 20
 controlPv "$(device):CF:ISCALE_S"
@@ -1385,7 +1385,7 @@ major 4
 minor 1
 release 0
 x 16
-y 480
+y 504
 w 107
 h 16
 font "helvetica-medium-r-14.0"
@@ -1405,7 +1405,7 @@ major 4
 minor 1
 release 0
 x 8
-y 456
+y 480
 w 120
 h 16
 font "helvetica-medium-r-12.0"
@@ -1424,7 +1424,7 @@ major 4
 minor 0
 release 0
 x 8
-y 456
+y 480
 w 120
 h 16
 lineColor index 14
@@ -1438,7 +1438,7 @@ major 4
 minor 2
 release 0
 x 328
-y 512
+y 536
 w 72
 h 24
 fgColor index 43
@@ -1571,14 +1571,14 @@ minor 1
 release 0
 x 248
 y 424
-w 87
+w 83
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
 bgColor index 0
 useDisplayBg
 value {
-  "Trigger delay:"
+  "Switch delay:"
 }
 autoSize
 endObjectProperties
@@ -1955,7 +1955,7 @@ major 4
 minor 2
 release 0
 x 360
-y 472
+y 496
 w 96
 h 24
 fgColor index 43
@@ -2136,7 +2136,7 @@ major 4
 minor 2
 release 0
 x 248
-y 472
+y 496
 w 88
 h 24
 fgColor index 43
@@ -2197,5 +2197,156 @@ value {
   "+"
 }
 autoSize
+endObjectProperties
+
+# (Text Control)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 368
+y 472
+w 80
+h 20
+controlPv "$(device):CF:TRIGDLY_S"
+font "helvetica-medium-r-14.0"
+fontAlign "right"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+editable
+autoHeight
+motifWidget
+limitsFromDb
+nullColor index 0
+useHexPrefix
+newPos
+objType "controls"
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 248
+y 472
+w 87
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "Trigger delay:"
+}
+autoSize
+endObjectProperties
+
+# (Group)
+object activeGroupClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 16
+y 440
+w 192
+h 24
+
+beginGroup
+
+# (Menu Button)
+object activeMenuButtonClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 112
+y 440
+w 96
+h 22
+fgColor index 14
+bgColor index 3
+inconsistentColor index 0
+topShadowColor index 1
+botShadowColor index 11
+controlPv "$(device):MS:ENABLE_S"
+font "helvetica-medium-r-14.0"
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 16
+y 448
+w 80
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "Mean Sums:"
+}
+autoSize
+endObjectProperties
+
+endGroup
+
+visPv "$(device):VE:FPGA2"
+visMin "1"
+visMax "2"
+endObjectProperties
+
+# (Group)
+object activeGroupClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 232
+y 536
+w 88
+h 24
+
+beginGroup
+
+# (Related Display)
+object relatedDisplayClass
+beginObjectProperties
+major 4
+minor 2
+release 0
+x 232
+y 536
+w 88
+h 24
+fgColor index 43
+bgColor index 3
+topShadowColor index 1
+botShadowColor index 11
+font "helvetica-bold-r-12.0"
+buttonLabel "FA Spikes"
+numPvs 4
+numDsps 1
+displayFileName {
+  0 "libera/spikes.edl"
+}
+symbols {
+  0 "device=$(device)"
+}
+endObjectProperties
+
+endGroup
+
+visPv "$(device):VE:FPGA2"
+visMin "1"
+visMax "2"
 endObjectProperties
 

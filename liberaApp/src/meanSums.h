@@ -1,5 +1,5 @@
 /* This file is part of the Libera EPICS Driver,
- * Copyright (C) 2005-2007  Michael Abbott, Diamond Light Source Ltd.
+ * Copyright (C) 2009  Michael Abbott, Diamond Light Source Ltd.
  *
  * The Libera EPICS Driver is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as published by
@@ -26,19 +26,6 @@
  *      michael.abbott@diamond.ac.uk
  */
 
-/* Timestamps and synchronisation. */
 
-bool InitialiseTimestamps();
-void TerminateTimestamps();
-
-
-/* This adjusts an event timestamp according to whether the timestamps
- * reported by Libera should be used.  These are based on the "system clock",
- * and can only be relied on if the system clock has been synchronised.
- * Otherwise local system time (which should be synchronised using NTP) will
- * be used. */
-void AdjustTimestamp(LIBERA_TIMESTAMP &Timestamp);
-
-/* If called during trigger processing and after tick triggering has occurred
- * returns the timestamp for the current trigger. */
-void GetTriggerTimestamp(LIBERA_TIMESTAMP &Timestamp);
+/* Mean sums support. */
+bool InitialiseMeanSums();

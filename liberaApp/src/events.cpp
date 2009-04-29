@@ -242,7 +242,6 @@ private:
      * handlers are added. */
     enum {
         EVENT_TABLE_SIZE = 5,   // Number of distinct event ids handled
-        HANDLER_TABLE_SIZE = 10 // Number of different event handlers
     };
     
     /* Table of events by event id: this is used to record the status of each
@@ -324,22 +323,22 @@ static EVENT_RECEIVER * EventReceiver = NULL;
 /*****************************************************************************/
 
 
-void RegisterTriggerEvent(I_EVENT &Event, int Priority)
+void RegisterTriggerEvent(I_EVENT &Event, PRIORITIES Priority)
 {
     EventDispatcher->Register(Event, LIBERA_EVENT_TRIGGET, Priority);
 }
 
-void RegisterTriggerSetEvent(I_EVENT &Event, int Priority)
+void RegisterTriggerSetEvent(I_EVENT &Event, PRIORITIES Priority)
 {
     EventDispatcher->Register(Event, LIBERA_EVENT_TRIGSET, Priority);
 }
 
-void RegisterPostmortemEvent(I_EVENT &Event, int Priority)
+void RegisterPostmortemEvent(I_EVENT &Event, PRIORITIES Priority)
 {
     EventDispatcher->Register(Event, LIBERA_EVENT_PM, Priority);
 }
 
-void RegisterInterlockEvent(I_EVENT &Event, int Priority)
+void RegisterInterlockEvent(I_EVENT &Event, PRIORITIES Priority)
 {
     EventDispatcher->Register(Event, LIBERA_EVENT_INTERLOCK, Priority);
 }

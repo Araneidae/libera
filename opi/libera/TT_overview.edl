@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 144
-y 107
+x 547
+y 109
 w 584
 h 760
 font "helvetica-medium-r-18.0"
@@ -249,8 +249,8 @@ beginObjectProperties
 major 4
 minor 0
 release 0
-x 368
-y 696
+x 224
+y 728
 w 64
 h 24
 fgColor index 14
@@ -272,8 +272,8 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 440
-y 696
+x 296
+y 728
 w 136
 h 24
 controlPv "$(device):TT:READY"
@@ -527,5 +527,44 @@ command {
   0 "libera-help TT_overview"
 }
 includeHelpIcon
+endObjectProperties
+
+# (Menu Button)
+object activeMenuButtonClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 328
+y 688
+w 80
+h 24
+fgColor index 14
+bgColor index 3
+inconsistentColor index 0
+topShadowColor index 1
+botShadowColor index 11
+controlPv "$(device):TT:DECIMATION_S"
+font "helvetica-medium-r-14.0"
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 216
+y 688
+w 74
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "Decimation:"
+}
+autoSize
 endObjectProperties
 

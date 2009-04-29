@@ -11,6 +11,7 @@ include $(TOP)/configure/CONFIG
 # Create and install (or just install) into <top>/db
 # databases, templates, substitutions like this
 DB += libera.db
+DB += libera-2.0.db
 
 ifeq ($(BUILD_FF_SUPPORT),yes)
 DB += fastFeedback.db

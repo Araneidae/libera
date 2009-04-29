@@ -92,8 +92,17 @@ void print_error(const char * Message, const char * FileName, int LineNumber);
     ( { \
         bool __ok__ = (test); \
         if (!__ok__) \
-            { errno = 0; print_error(#test, __FILE__, __LINE__); } \
+            print_error(#test, __FILE__, __LINE__); \
         __ok__; \
+    } )
+
+#define TEST_NULL(var, command, args...) \
+    ( { \
+        var = (command)(args); \
+        if (var == NULL) \
+            print_error(#var " = " #command "(" #args ")", \
+                __FILE__, __LINE__); \
+        var != NULL; \
     } )
 
 

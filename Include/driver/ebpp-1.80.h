@@ -1,4 +1,4 @@
-/* $Id: ebpp.h 2425 2009-02-12 14:58:56Z tomazb $ */
+/* $Id: ebpp.h,v 1.34 2007/11/08 16:46:11 tomazb Exp $ */
 
 /** \file ebpp.h */
 /** Public include file for Libera Electron Beam Position Processor (EBPP). */
@@ -44,23 +44,7 @@ typedef enum {
     LIBERA_CFG_ILK_OVERFLOW_LIMIT,     //!< Interlock overflow limit (ADC count)
     LIBERA_CFG_ILK_OVERFLOW_DUR,  //!< Interlock overflow duration (ADC clock periods)
     LIBERA_CFG_ILK_GAIN_LIMIT, //!< Gain limit (dBm) for gain-dependant interlock
-    LIBERA_CFG_PM_MODE,
-    LIBERA_CFG_PM_XLOW,
-    LIBERA_CFG_PM_XHIGH,
-    LIBERA_CFG_PM_YLOW,
-    LIBERA_CFG_PM_YHIGH,
-    LIBERA_CFG_PM_OVERFLOW_LIMIT,
-    LIBERA_CFG_PM_OVERFLOW_DUR,
-    LIBERA_CFG_SR_ENABLE,
-    LIBERA_CFG_SR_CSPI_ENABLE,
-    LIBERA_CFG_SR_AVERAGING_STOP,
-    LIBERA_CFG_SR_AVERAGE_WINDOW,
-    LIBERA_CFG_SR_START,
-    LIBERA_CFG_SR_WINDOW,
-    LIBERA_CFG_SP_THRESHOLD,
-    LIBERA_CFG_SP_N_BEFORE,
-    LIBERA_CFG_SP_N_AFTER,
-    LIBERA_CFG_CUSTOM_LAST,    // used in init_specific for FPGA initialization
+    LIBERA_CFG_CUSTOM_LAST,
     // TODO: Check with CSPI regarding FIRST/LAST
     LIBERA_CFG_SW,
     LIBERA_CFG_LEVEL,
@@ -68,7 +52,6 @@ typedef enum {
     LIBERA_CFG_DSC,
     LIBERA_CFG_ILKSTATUS,
     LIBERA_CFG_PMOFFSET,
-    LIBERA_CFG_PMDEC,
     LIBERA_CFG_EXTSWITCH,
     LIBERA_CFG_SWDELAY,
     LIBERA_CFG_DFA,
@@ -76,12 +59,7 @@ typedef enum {
     LIBERA_CFG_DDC_MAFLENGTH,
     LIBERA_CFG_DDC_MAFDELAY,
     LIBERA_CFG_TRIGDELAY,
-    LIBERA_CFG_BCD_XOFFSET,
-    LIBERA_CFG_BCD_YOFFSET,
-    LIBERA_CFG_MAX_ADC,
-    LIBERA_CFG_AVERAGE_SUM,
     // Add new parameters before this line.
-    // Add parameters initialized by driver before LIBERA_CFG_CUSTOM_LAST above.
 #define LIBERA_CFG_COEFF   256 // position of coefficients in the param array
 #define LIBERA_CFG_NOTCH_MAX 5 // hardcoded number of coefficients
     LIBERA_CFG_NOTCH1 = LIBERA_CFG_COEFF,  // start of FIR coefficients

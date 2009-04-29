@@ -30,3 +30,7 @@
 /* Slow acquisition support. */
 bool InitialiseSlowAcquisition(int S0_SA);
 void TerminateSlowAcquisition();
+
+
+/* Intensity to power and current conversion. */
+void PowerAndCurrentFromS(int S, int &Power, int &Current);

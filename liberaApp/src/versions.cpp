@@ -34,7 +34,6 @@
 #include <signal.h>
 #include <string.h>
 #include <sys/wait.h>
-#include <arpa/inet.h>
 
 #include <epicsVersion.h>
 
@@ -56,6 +55,9 @@ bool LiberaBrilliance;
 bool OldBrillianceApi;
 bool FastFeedbackFeature;
 bool DlsFpgaFeatures;
+bool MafFeaturePresent;
+bool ItechMaxAdcPresent;
+bool Version2FpgaPresent;
 
 static int CustomerId;
 static EPICS_STRING CustomerIdString;
@@ -167,6 +169,7 @@ static ENV_MAP<EPICS_STRING> EnvironmentStrings[] = {
     { "MSP_VERSION",    "MSP" },
     { "ROOTFS_ARCH",    "ARCH" },
     { "ROOTFS_VERSION", "ROOTFS" },
+    { "FPGA_VERSION",   "FPGA" },
 };
 
 static ENV_MAP<int> EnvironmentInts[] = {
@@ -181,10 +184,13 @@ static ENV_MAP<int> EnvironmentInts[] = {
 
 static ENV_MAP<bool> EnvironmentBools[] = {
     { "OPT_BR",         "BR",       &LiberaBrilliance },
+    { "BR_TEMP",        "BRHW" },
     { "OPT_OLD_BR",     "OLDBR",    &OldBrillianceApi },
     { "OPT_DLS_FPGA",   "DLS",      &DlsFpgaFeatures },
     { "OPT_FF",         "FF",       &FastFeedbackFeature },
-    { "OPT_MAF",        "MAF" },
+    { "OPT_MAF",        "MAF",      &MafFeaturePresent },
+    { "ITECH_MAX_ADC",  "ITMAXADC", &ItechMaxAdcPresent },
+    { "FPGA_2_SUPPORT", "FPGA2",    &Version2FpgaPresent },
 };
 
 
@@ -240,6 +246,21 @@ static bool convert_bi(const char * string, bool &value)
 }
 
 
+/* Converts the customer ID to a string.  For whatever reason, it is stored
+ * in big endian order, so we need to reverse it.  Also we skip any leading
+ * bytes if necessary. */
+static void IdToString(int Id, char *string)
+{
+#define ID_CHAR(i)     (Id >> (24 - 8 * (i)))
+    int i = 0;
+    while (i < 4  &&  ID_CHAR(i) == 0)
+        i ++;
+    for ( ; i < 4; i ++)
+        *string++ = ID_CHAR(i);
+#undef ID_CHAR
+}
+
+
 bool InitialiseVersions(void)
 {
     Publish_stringin("VERSION",     VersionString);
@@ -249,20 +270,16 @@ bool InitialiseVersions(void)
     Publish_stringin("VE:EPICS",    EpicsVersion);
     Publish_stringin("VE:CUSTIDSTR", CustomerIdString);
     
-    PUBLISH_ACTION("REBOOT",     DoReboot);
-    PUBLISH_ACTION("RESTART",    DoRestart);
-    PUBLISH_ACTION("CORE",       DoCoreDump);
+    PUBLISH_ACTION("REBOOT",        DoReboot);
+    PUBLISH_ACTION("RESTART",       DoRestart);
+    PUBLISH_ACTION("CORE",          DoCoreDump);
     
     bool Ok =
         PUBLISH_ENV_MAP(stringin,   EnvironmentStrings)  &&
         PUBLISH_ENV_MAP(longin,     EnvironmentInts)  &&
         PUBLISH_ENV_MAP(bi,         EnvironmentBools);
 
-    /* Convert the customer id into a string.  For whatever reason, it is
-     * stored in big endian order.  As we are running little endian we can
-     * use a little hack to to turn things around. */
-    * (int *) CustomerIdString = ntohl(CustomerId);
-    CustomerIdString[4] = 0;
+    IdToString(CustomerId, CustomerIdString);
 
     return Ok;
 }

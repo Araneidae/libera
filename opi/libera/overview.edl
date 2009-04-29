@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 1926
-y 42
+x 1931
+y 21
 w 296
 h 401
 font "helvetica-medium-r-14.0"
@@ -182,7 +182,7 @@ major 4
 minor 2
 release 0
 x 8
-y 304
+y 272
 w 88
 h 24
 fgColor index 43
@@ -439,32 +439,6 @@ numPvs 4
 numDsps 1
 displayFileName {
   0 "libera/BO_overview.edl"
-}
-symbols {
-  0 "device=$(device)"
-}
-endObjectProperties
-
-# (Related Display)
-object relatedDisplayClass
-beginObjectProperties
-major 4
-minor 2
-release 0
-x 8
-y 272
-w 88
-h 24
-fgColor index 43
-bgColor index 3
-topShadowColor index 1
-botShadowColor index 11
-font "helvetica-bold-r-12.0"
-buttonLabel "ADC"
-numPvs 4
-numDsps 1
-displayFileName {
-  0 "libera/ADC_overview.edl"
 }
 symbols {
   0 "device=$(device)"
@@ -856,58 +830,6 @@ beginObjectProperties
 major 4
 minor 2
 release 0
-x 200
-y 336
-w 88
-h 24
-fgColor index 43
-bgColor index 3
-topShadowColor index 1
-botShadowColor index 11
-font "helvetica-bold-r-12.0"
-buttonLabel "Postmortem"
-numPvs 4
-numDsps 1
-displayFileName {
-  0 "libera/PM_overview.edl"
-}
-symbols {
-  0 "device=$(device)"
-}
-endObjectProperties
-
-# (Related Display)
-object relatedDisplayClass
-beginObjectProperties
-major 4
-minor 2
-release 0
-x 200
-y 304
-w 88
-h 24
-fgColor index 43
-bgColor index 3
-topShadowColor index 1
-botShadowColor index 11
-font "helvetica-bold-r-12.0"
-buttonLabel "Fast Fb"
-numPvs 4
-numDsps 1
-displayFileName {
-  0 "libera/FF_overview.edl"
-}
-symbols {
-  0 "device=$(device)"
-}
-endObjectProperties
-
-# (Related Display)
-object relatedDisplayClass
-beginObjectProperties
-major 4
-minor 2
-release 0
 x 88
 y 96
 w 192
@@ -1184,5 +1106,123 @@ value {
   "Test"
 }
 autoSize
+endObjectProperties
+
+# (Related Display)
+object relatedDisplayClass
+beginObjectProperties
+major 4
+minor 2
+release 0
+x 200
+y 336
+w 88
+h 24
+fgColor index 43
+bgColor index 3
+topShadowColor index 1
+botShadowColor index 11
+font "helvetica-bold-r-12.0"
+buttonLabel "Postmortem"
+numPvs 4
+numDsps 1
+displayFileName {
+  0 "libera/PM_overview.edl"
+}
+symbols {
+  0 "device=$(device)"
+}
+endObjectProperties
+
+# (Group)
+object activeGroupClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 200
+y 304
+w 88
+h 24
+
+beginGroup
+
+# (Related Display)
+object relatedDisplayClass
+beginObjectProperties
+major 4
+minor 2
+release 0
+x 200
+y 304
+w 88
+h 24
+fgColor index 43
+bgColor index 3
+topShadowColor index 1
+botShadowColor index 11
+font "helvetica-bold-r-12.0"
+buttonLabel "Fast Fb"
+numPvs 4
+numDsps 1
+displayFileName {
+  0 "libera/FF_overview.edl"
+}
+symbols {
+  0 "device=$(device)"
+}
+endObjectProperties
+
+endGroup
+
+visPv "$(device):VE:FF"
+visMin "1"
+visMax "2"
+endObjectProperties
+
+# (Group)
+object activeGroupClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 8
+y 304
+w 88
+h 24
+
+beginGroup
+
+# (Related Display)
+object relatedDisplayClass
+beginObjectProperties
+major 4
+minor 2
+release 0
+x 8
+y 304
+w 88
+h 24
+fgColor index 43
+bgColor index 3
+topShadowColor index 1
+botShadowColor index 11
+font "helvetica-bold-r-12.0"
+buttonLabel "Mean Sum"
+numPvs 4
+numDsps 1
+displayFileName {
+  0 "libera/meansum.edl"
+}
+symbols {
+  0 "device=$(device)"
+}
+endObjectProperties
+
+endGroup
+
+visPv "$(device):VE:FPGA2"
+visMin "1"
+visMax "2"
 endObjectProperties
 

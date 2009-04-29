@@ -393,7 +393,9 @@ static CLOCK_PLL_MONITOR * PllMonitorThread = NULL;
 
 
 /* Publish a ticking record to publish the fact that trigger has been
- * processed, together with timing information for this trigger. */
+ * processed, together with timing information for this trigger.
+ *
+ * Also makes the trigger timestamp globally available. */
 
 class TICK_TRIGGER : I_EVENT
 {
@@ -413,6 +415,12 @@ public:
         
         RegisterTriggerEvent(*this, PRIORITY_TICK);
     }
+
+    void GetTriggerTimestamp(LIBERA_TIMESTAMP &Timestamp_)
+    {
+        Timestamp_ = Timestamp;
+    }
+    
 private:
 
     void FormatTimeString(struct timespec st, EPICS_STRING &String)
@@ -440,7 +448,6 @@ private:
         
         /* The only way to get a timestamp from this trigger is to read some
          * triggered data.  Read the least possible amount right now! */
-        LIBERA_TIMESTAMP Timestamp;
         LIBERA_ROW OneRow;
         ReadWaveform(1, 1, &OneRow, Timestamp);
 
@@ -461,6 +468,7 @@ private:
         Interlock.Ready(Timestamp);
     }
 
+    LIBERA_TIMESTAMP Timestamp;
     INTERLOCK Interlock;
     EPICS_STRING NtpTimeString;
     EPICS_STRING SystemTimeString;
@@ -598,7 +606,7 @@ private:
 
 
 static SYNCHRONISE_CLOCKS * SynchroniseThread = NULL;
-
+static TICK_TRIGGER * TickTrigger = NULL;
 
 
 bool InitialiseTimestamps()
@@ -615,7 +623,7 @@ bool InitialiseTimestamps()
     /* Open loop direct DAC control. */
     PUBLISH_FUNCTION_OUT(bo, "CK:OPEN_LOOP",  EnableOpenLoop, UpdatePllState);
     
-    new TICK_TRIGGER();
+    TickTrigger = new TICK_TRIGGER();
     
     SynchroniseThread = new SYNCHRONISE_CLOCKS;
     if (!SynchroniseThread->StartThread())
@@ -648,4 +656,9 @@ void AdjustTimestamp(LIBERA_TIMESTAMP &Timestamp)
      * reported Libera system clock. */
     if (!(UseSystemTime && PllMonitorThread->IsSystemClockSynchronised()))
         TEST_(clock_gettime, CLOCK_REALTIME, & Timestamp.st);
+}
+
+void GetTriggerTimestamp(LIBERA_TIMESTAMP &Timestamp)
+{
+    TickTrigger->GetTriggerTimestamp(Timestamp);
 }

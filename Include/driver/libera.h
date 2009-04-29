@@ -1,4 +1,4 @@
-/* $Id: libera.h 2321 2008-11-27 15:54:35Z tomazb $ */
+/* $Id: libera.h 2454 2009-03-04 14:47:44Z tomaz.beltram $ */
 
 /** \file libera.h */
 /** Public include file for GNU/Linux Libera driver. */
@@ -138,13 +138,14 @@ typedef enum
 // TOOD: Possibly remove from the driver
 typedef enum {
 	LIBERA_MODE_UNKNOWN = 0,	//!< Libera mode unknown or not set.
-	LIBERA_MODE_DD,			//!< Data-on-demand mode.
-	LIBERA_MODE_SA,			//!< Slow Acquisition mode.
-	LIBERA_MODE_PM,			//!< Post-Mortem mode.
-	LIBERA_MODE_ADC,		//!< ADC-rate buffer mode.
+	LIBERA_MODE_DD,				//!< Data-on-demand mode.
+	LIBERA_MODE_SA,				//!< Slow Acquisition mode.
+	LIBERA_MODE_PM,				//!< Post-Mortem mode.
+	LIBERA_MODE_ADC,			//!< ADC-rate buffer mode.
 	LIBERA_MODE_AVERAGE,		//!< calc average value between two triggers
 	LIBERA_MODE_ADC_CW,			//!< ADC-rate buffer mode CW.
-	LIBERA_MODE_ADC_SP,			//!< ADC-rate buffer mode CW.
+	LIBERA_MODE_ADC_SP,			//!< ADC-rate buffer mode SP.
+	LIBERA_MODE_ADC_SP_ROT,		//!< ADC-rate buffer mode SP w/ -45deg rotation.
 	LIBERA_MODE_LAST			//!< last item
 } LIBERA_MODE;
 
@@ -259,7 +260,8 @@ typedef enum {
 #define LIBERA_IS_BBBQ(_cfg) (LIBERA_IS_BBB(_cfg) && LIBERA_INS_TYPE(_cfg) == LIBERA_TYPE_BBBQ)
 #define LIBERA_IS_BBBS(_cfg) (LIBERA_IS_BBB(_cfg) && LIBERA_INS_TYPE(_cfg) == LIBERA_TYPE_BBBS)
 
-#define LIBERA_IS_MAF(_cfg) (LIBERA_IS_BPM(_cfg) && ((_cfg & 0x10) == 0x10))
+#define LIBERA_IS_DCC(_cfg) (LIBERA_IS_BPM(_cfg) && ((_cfg & 0xc0) == 0x40))
+#define LIBERA_IS_MAF(_cfg) (LIBERA_IS_BPM(_cfg) && ((_cfg & 0x30) == 0x10))
 #define LIBERA_IS_GBETHERNET(_cfg) (LIBERA_IS_BPM(_cfg) && ((_cfg & 8) == 8))
 #define LIBERA_IS_GBE_DEMO(_cfg) (LIBERA_IS_BPM(_cfg) && ((_cfg & 4) == 4))
 #define LIBERA_IS_DESY_MOLEX(_cfg) (LIBERA_IS_BPM(_cfg) && ((_cfg & 2) == 2))
@@ -506,7 +508,7 @@ enum libera_event_ids_t
     LIBERA_EVENT_GET_FIFOLEN_MC    = _IOWR(LIBERA_EVENT_MAGIC,
                                            LIBERA_EVENT_FIFOLEN_MC,
                                            libera_U32_t),
-    
+
     /* All DEBUG IDs have to be declared at the bottom of enum! */
 #ifdef DEBUG
     LIBERA_EVENT_GET_TRIGGER_BLOCKED = _IOR(LIBERA_EVENT_MAGIC,

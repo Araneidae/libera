@@ -72,6 +72,7 @@ ioc_SRCS += persistent.cpp      # Persistent configuration settings
 ioc_SRCS += interlock.cpp       # Machine protection interlock
 ioc_SRCS += sensors.cpp         # Machine state sensors
 ioc_SRCS += conditioning.cpp    # Signal conditioning control
+ioc_SRCS += meanSums.cpp        # Trigger to trigger mean intensity
 ioc_SRCS += versions.cpp        # Version identification
 
 ioc_SRCS += iocMain.cpp         # Ioc startup and configuration

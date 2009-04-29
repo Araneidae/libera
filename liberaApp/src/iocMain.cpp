@@ -59,6 +59,7 @@
 #include "conditioning.h"
 #include "waveform.h"
 #include "booster.h"
+#include "meanSums.h"
 #include "versions.h"
 
 #include "fastFeedback.h"
@@ -271,6 +272,8 @@ static bool InitialiseLibera()
         InitialisePostmortem()  &&
         /* Slow acquisition returns highly filtered positions at 10Hz. */
         InitialiseSlowAcquisition(S0_SA)  &&
+        /* Mean sums, only enabled if FPGA 2 features present. */
+        IF_(Version2FpgaPresent, InitialiseMeanSums())  &&
 #ifdef BUILD_FF_SUPPORT
         /* Initialise the fast feedback interface. */
         InitialiseFastFeedback()  &&
@@ -536,6 +539,7 @@ static bool LoadDatabases()
         DB_("%d", "ATTEN_COUNT",    MaximumAttenuation() + 1)  &&
         
         LOAD_RECORDS_("db/libera.db")  &&
+        IF_(Version2FpgaPresent, LOAD_RECORDS_("db/libera-2.0.db"))  &&
 #ifdef BUILD_FF_SUPPORT
         IF_(FastFeedbackFeature, LOAD_RECORDS_("db/fastFeedback.db"))  &&
 #endif
