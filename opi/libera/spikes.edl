@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 379
-y 279
+x 380
+y 300
 w 224
 h 199
 font "helvetica-medium-r-8.0"
@@ -308,5 +308,31 @@ value {
   "Spike Start:"
 }
 autoSize
+endObjectProperties
+
+# (Related Display)
+object relatedDisplayClass
+beginObjectProperties
+major 4
+minor 2
+release 0
+x 16
+y 168
+w 88
+h 24
+fgColor index 43
+bgColor index 3
+topShadowColor index 1
+botShadowColor index 11
+font "helvetica-bold-r-12.0"
+buttonLabel "Debug"
+numPvs 4
+numDsps 1
+displayFileName {
+  0 "libera/SR_debug.edl"
+}
+symbols {
+  0 "device=$(device)"
+}
 endObjectProperties
 

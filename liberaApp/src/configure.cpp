@@ -307,6 +307,30 @@ static int SpikeStart = -3;
 static int SpikeWindow = 8;
 
 
+class SPIKE_DEBUG : public I_WAVEFORM
+{
+public:
+    SPIKE_DEBUG(const char * Name) :
+        I_WAVEFORM(DBF_LONG)
+    {
+        Publish_waveform(Name, *this);
+    }
+
+    bool process(
+        void *array, size_t max_length, size_t &new_length)
+    {
+        if (max_length >= SPIKE_DEBUG_BUFLEN)
+        {
+            int * Buffer = (int *) array;
+            new_length = SPIKE_DEBUG_BUFLEN;
+            return ReadSpikeRemovalBuffer(Buffer);
+        }
+        else
+            return false;
+    }
+};
+
+
 static void UpdateSpikeRemoval()
 {
     WriteSpikeRemovalSettings(
@@ -324,11 +348,14 @@ static bool InitialiseSpikeRemoval()
     PUBLISH_SPIKE(longout, "AVESTOP",   SpikeAverageStop);
     PUBLISH_SPIKE(longout, "SPIKEST",   SpikeStart);
     PUBLISH_SPIKE(longout, "SPIKEWIN",  SpikeWindow);
+
+    new SPIKE_DEBUG("CF:SR:DEBUGWF");
     
     UpdateSpikeRemoval();
     return true;
 }
 #undef PUBLISH_SPIKE
+
 
 
 /****************************************************************************/

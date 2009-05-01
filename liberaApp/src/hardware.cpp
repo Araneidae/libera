@@ -836,6 +836,15 @@ bool ReadRawRegister(unsigned int Address, unsigned int &Value)
 }
 
 #else
+static unsigned int * MapRawRegister(unsigned int Address)
+{
+    errno = 0;
+    print_error("Cannot map registers into memory", __FILE__, __LINE__);
+    return NULL;
+}
+
+static void UnmapRawRegister(unsigned int *MappedAddress) { }
+
 bool WriteRawRegister(
     unsigned int Address, unsigned int Value, unsigned int Mask)
 {
@@ -925,6 +934,28 @@ bool WriteSpikeRemovalSettings(
     return false;
 #endif
 }
+
+
+bool ReadSpikeRemovalBuffer(int Buffer[SPIKE_DEBUG_BUFLEN])
+{
+    unsigned int * FA_area;
+    if (TEST_NULL(FA_area, MapRawRegister, 0x1401C000))
+    {
+        /* Enable spike capture and wait for some waveforms to be captured.
+         * If switching is enabled the buffer will be filled within a few
+         * microseconds, even on the largest of machines.  So we sleep a
+         * little and disable capture before reading out. */
+        FA_area[0x11] = 1;
+        usleep(1000);
+        FA_area[0x11] = 0;
+        memcpy(Buffer, FA_area + 0x200, SPIKE_DEBUG_BUFLEN * sizeof(int));
+        UnmapRawRegister(FA_area);
+        return true;
+    }
+    else
+        return false;
+}
+
 
 
 bool WritePostmortemTriggering(

@@ -314,11 +314,16 @@ bool WriteSpikeRemovalSettings(
     bool Enable, int AverageWindow, int AverageStop,
     int SpikeStart, int SpikeWindow);
 
+/* Read spike removal debug buffer. */
+#define SPIKE_DEBUG_BUFLEN  128
+bool ReadSpikeRemovalBuffer(int Buffer[SPIKE_DEBUG_BUFLEN]);
+
 /* Postmortem triggering control. */
 enum PM_TRIGGER_MODE { PM_EXTERNAL, PM_INTERLOCK, PM_SETTINGS };
 bool WritePostmortemTriggering(
     PM_TRIGGER_MODE Mode, int Xlow, int Xhigh, int Ylow, int Yhigh,
     int OverflowLimit, int OverflowDuration);
+
 
 
 /* Pick up the generic helper test macros. */

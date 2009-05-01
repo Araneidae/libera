@@ -51,6 +51,8 @@ def MeanSum():
 
     
 def SpikeRemoval():
+    SPIKE_DEBUG_BUFLEN = 128
+    
     SetChannelName('CF')
     boolOut('SR:ENABLE', 'Disabled', 'Enabled',
         DESC = 'Enable FA spike removal')
@@ -62,6 +64,10 @@ def SpikeRemoval():
         DESC = 'Start of spike window')
     longOut('SR:SPIKEWIN',
         DESC = 'Length of spike window')
+
+    debugwf = Waveform('SR:DEBUGWF', SPIKE_DEBUG_BUFLEN,
+        DESC = 'Spike removal debug data')
+    
     UnsetChannelName()
     
 
