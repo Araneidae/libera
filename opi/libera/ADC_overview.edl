@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 344
-y 193
+x 345
+y 214
 w 588
 h 696
 font "helvetica-medium-r-18.0"
@@ -241,14 +241,14 @@ minor 1
 release 0
 x 8
 y 664
-w 142
+w 92
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
 bgColor index 0
 useDisplayBg
 value {
-  "X/Y in sample window:"
+  "X/Y in window:"
 }
 autoSize
 endObjectProperties
@@ -259,7 +259,7 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 184
+x 144
 y 664
 w 48
 h 16
@@ -285,7 +285,7 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 272
+x 232
 y 664
 w 48
 h 16
@@ -311,7 +311,7 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 160
+x 120
 y 664
 w 10
 h 16
@@ -331,7 +331,7 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 248
+x 208
 y 664
 w 9
 h 16
@@ -344,7 +344,6 @@ value {
 }
 autoSize
 endObjectProperties
-
 
 # (Shell Command)
 object shellCmdClass
@@ -368,3 +367,27 @@ command {
 }
 includeHelpIcon
 endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 312
+y 664
+w 115
+h 21
+font "helvetica-bold-r-18.0"
+fgColor index 21
+bgColor index 0
+useDisplayBg
+visPv "$(device):CF:AUTOSW_S"
+visMin "1"
+visMax "2"
+value {
+  "Switches On!"
+}
+autoSize
+endObjectProperties
+

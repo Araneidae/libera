@@ -3,10 +3,10 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 432
-y 150
+x 628
+y 37
 w 368
-h 572
+h 577
 font "helvetica-medium-r-18.0"
 ctlFont "helvetica-medium-r-18.0"
 btnFont "helvetica-medium-r-18.0"
@@ -276,5 +276,28 @@ displayFileName {
 symbols {
   0 "device=$(device)"
 }
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 8
+y 544
+w 115
+h 21
+font "helvetica-bold-r-18.0"
+fgColor index 21
+bgColor index 0
+useDisplayBg
+visPv "$(device):CF:AUTOSW_S"
+visMin "1"
+visMax "2"
+value {
+  "Switches On!"
+}
+autoSize
 endObjectProperties
 

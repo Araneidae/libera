@@ -980,12 +980,12 @@ bool WritePostmortemTriggering(
  * reading.  We enable access to the appropriate register here. */
 static bool EnableMaxAdc()
 {
-    if (DlsFpgaFeatures)
-        return TEST_NULL(RegisterMaxAdcRaw,
-            MapRawRegister, REGISTER_MAX_ADC_DLS);
-    else if (ItechMaxAdcPresent)
+    if (ItechMaxAdcPresent)
         return TEST_NULL(RegisterMaxAdcRaw,
             MapRawRegister, REGISTER_MAX_ADC_ITECH);
+    else if (DlsFpgaFeatures)
+        return TEST_NULL(RegisterMaxAdcRaw,
+            MapRawRegister, REGISTER_MAX_ADC_DLS);
     else
         /* Not enabled, not a problem. */
         return true;

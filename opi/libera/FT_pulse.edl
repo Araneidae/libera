@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 182
-y 302
+x 183
+y 323
 w 488
 h 504
 font "helvetica-medium-r-18.0"
@@ -800,7 +800,6 @@ value {
 autoSize
 endObjectProperties
 
-
 # (Shell Command)
 object shellCmdClass
 beginObjectProperties
@@ -823,3 +822,27 @@ command {
 }
 includeHelpIcon
 endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 344
+y 440
+w 115
+h 21
+font "helvetica-bold-r-18.0"
+fgColor index 21
+bgColor index 0
+useDisplayBg
+visPv "$(device):CF:AUTOSW_S"
+visMin "1"
+visMax "2"
+value {
+  "Switches On!"
+}
+autoSize
+endObjectProperties
+

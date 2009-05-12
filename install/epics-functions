@@ -71,3 +71,14 @@ read_register()
         Error Unable to read FPGA register $1
     echo -n $((result))
 }
+
+
+# Writes an FPGA register
+#
+#   write_register <register> <value>
+#
+write_register()
+{
+    "$LIBERA_IOC"/bin/$EPICS_ARCH/monitor -W $((0x14000000+$1)) $2  ||
+        Error Unable to write $2 to FPGA register $1
+}
