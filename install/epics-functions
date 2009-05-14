@@ -67,7 +67,7 @@ print_status()
 read_register()
 {
     local result
-    result=$("$LIBERA_IOC"/bin/$EPICS_ARCH/monitor -d $((0x14000000+$1)))  ||
+    result="$("$LIBERA_IOC"/bin/$EPICS_ARCH/monitor -d $((0x14000000+$1)))"  ||
         Error Unable to read FPGA register $1
     echo -n $((result))
 }

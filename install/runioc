@@ -119,6 +119,9 @@ IocParameter -cHA= $((HARMONIC))
 IocParameter -cLP= $((MCPRESC))
 IocParameter -cNT= $((NTBT))
 
+# If requested, disable NTP monitoring.
+[ "$IOC_MONITOR_NTP" = 0 ]  &&  IocParameter -N
+
 # Where the IOC should write its pid file
 IocParameter -p "$PIDFILE"
 # Revolution frequency (used to compute time axis for BN mode)

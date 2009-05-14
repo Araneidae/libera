@@ -124,6 +124,9 @@ static int S0_SA = 0;
 /* Location of the persistent state file. */
 static const char * StateFileName = NULL;
 
+/* NTP monitoring can be turned off at startup. */
+static bool MonitorNtp = true;
+
 
 
 /* We take any of the four traditional shutdown signals (HUP, INT, QUIT or
@@ -279,7 +282,7 @@ static bool InitialiseLibera()
         InitialiseFastFeedback()  &&
 #endif
         /* Background monitoring stuff: fan, temperature, memory, etcetera. */
-        InitialiseSensors();
+        InitialiseSensors(MonitorNtp);
 }
 
 
@@ -429,6 +432,7 @@ static void Usage(const char *IocName)
 "    -f <f_mc>          Machine revolution frequency\n"
 "    -s <state-file>    Read and record persistent state in <state-file>\n"
 "    -d <device>        Name of device for database\n"
+"    -N                 Disable NTP status monitoring\n"
 "\n"
 "Note: This IOC application should normally be run from within runioc.\n",
         IocName);
@@ -445,17 +449,17 @@ static bool ProcessOptions(int &argc, char ** &argv)
     bool Ok = true;
     while (Ok)
     {
-        switch (getopt(argc, argv, "+hvp:nc:f:s:d:"))
+        switch (getopt(argc, argv, "+hvp:nc:f:s:d:N"))
         {
             case 'h':   Usage(argv[0]);                 return false;
             case 'v':   StartupMessage();               return false;
             case 'p':   Ok = WritePid(optarg);          break;
             case 'n':   SetNonInteractive();            break;
             case 'c':   Ok = ParseConfigInt(optarg);    break;
-            case 'f':   Ok = ParseFloat(
-                            optarg, RevolutionFrequency);  break;
+            case 'f':   Ok = ParseFloat(optarg, RevolutionFrequency);  break;
             case 's':   StateFileName = optarg;         break;
             case 'd':   DeviceName = optarg;            break;
+            case 'N':   MonitorNtp = false;             break;
             case '?':
             default:
                 printf("Try `%s -h` for usage\n", argv[0]);

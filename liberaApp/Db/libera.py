@@ -641,8 +641,23 @@ def Clock():
     mc_health = ClockStatus('MC', 'Machine')
     sc_health = ClockStatus('SC', 'System')
     sc_health = []  # For the time being don't monitor SC health
+
+    global ntp_health   # Needed for triggering with sensor records
+    ntp_health = mbbIn('NTPSTAT',
+        ('Not monitored', 0, 'NO_ALARM'),
+        ('No NTP',      1,  'MAJOR'),       # No NTP server
+        ('Rejected',    2,  'MAJOR'),       # Sel = 0   Rejected (RFC-1305)
+        ('False Tick',  3,  'MINOR'),       #       1   Passed sanity checks
+        ('Excess',      4,  'MINOR'),       #       2   Passed correctness
+        ('Outlyer',     5,  'MINOR'),       #       3   Passed candidate
+        ('Candidate',   6,  'MINOR'),       #       4   Passed outlyer
+        ('Selected',    7,  'NO_ALARM'),    #       5   Current source but far
+        ('Sys Peer',    8,  'NO_ALARM'),    #       6   Current source and ok
+        ('PPS Peer',    9,  'NO_ALARM'),    #       7   Reserved
+        DESC = 'Status of NTP server')
+    
     clock_health = AggregateSeverity('HEALTH', 'Clock status',
-        map(CP, mc_health + sc_health + [tick]))
+        map(CP, mc_health + sc_health + [ntp_health, tick]))
 
     UnsetChannelName()
 
@@ -697,6 +712,7 @@ ExtraHealthRecords = []
 
 def Sensors():
     SetChannelName('SE')
+    enable = Enable(ZSV  = 'MAJOR', OSV  = 'NO_ALARM')
 
     temp = longIn('TEMP', 20, 60, 'deg C',
         DESC = 'Internal Libera temperature',
@@ -731,9 +747,10 @@ def Sensors():
     # record.  Only the alarm status of this record is meaningful.
     alarmsensors = fans + [temp, memfree, ramfs, cpu, voltage_health]
     health = AggregateSeverity('HEALTH', 'Aggregated health',
-        alarmsensors + ExtraHealthRecords)
+        alarmsensors + ExtraHealthRecords + [enable])
     
-    Trigger(False, alarmsensors + voltages + [uptime, epicsup, health])
+    Trigger(False, alarmsensors + voltages +
+        [uptime, epicsup, health, ntp_health])
             
     UnsetChannelName()
 

@@ -605,6 +605,13 @@ private:
 
 
 
+/*****************************************************************************/
+/*                                                                           */
+/*                           Clock Initialisation                            */
+/*                                                                           */
+/*****************************************************************************/
+
+
 static SYNCHRONISE_CLOCKS * SynchroniseThread = NULL;
 static TICK_TRIGGER * TickTrigger = NULL;
 

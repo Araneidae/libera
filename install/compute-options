@@ -170,8 +170,9 @@ set_var OPT_DLS_FPGA $((
     (FPGA_ITECH & (1<<23)) != 0  &&  (FPGA_CUSTOMER & (1 << 31)) != 0))
     
 # Check for newer FPGA by probing the i-Tech MAX_ADC register -- this will
-# read non-zero on a 2.00 and later FPGA.
-set_var ITECH_MAX_ADC $(($(read_register 0x8004) != 0))
+# read non-zero on a 2.00 and later FPGA.  On earlier FPGAs this aliases to
+# the IRQ status, but fortunately it's enough to ignore the bottom bit.
+set_var ITECH_MAX_ADC $((($(read_register 0x8004) & ~1) != 0))
 if [ $OPT_DLS_FPGA = 1 ]; then
     set_var FPGA_2_SUPPORT $(((FPGA_CUSTOMER & 1) != 0))
 else
@@ -237,6 +238,11 @@ set_var BR_TEMP $(
     fi
     echo $((!$?))
 )
+# If we're not detected a brilliance RF board then turn the temperature
+# sensor into low power mode, if we can.
+[ $BR_TEMP = 0 ] && [ -e /sys/bus/i2c/devices/0-0018/low_power ]  &&
+    echo 1 >/sys/bus/i2c/devices/0-0018/low_power
+
 
 # Compute the target temperature.  This depends both on the selected
 # temperature sensor and on which health daemond we're running (or we could

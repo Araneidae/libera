@@ -28,5 +28,5 @@
 
 /* Interface to sensor implementions. */
 
-bool InitialiseSensors();
+bool InitialiseSensors(bool MonitorNtp);
 void TerminateSensors();

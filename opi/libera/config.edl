@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 811
-y 266
+x 812
+y 287
 w 473
 h 567
 font "helvetica-medium-r-16.0"
@@ -65,7 +65,7 @@ release 0
 x 8
 y 352
 w 224
-h 120
+h 144
 lineColor index 14
 fill
 fillColor index 4
@@ -1344,7 +1344,7 @@ major 4
 minor 0
 release 0
 x 8
-y 488
+y 512
 w 224
 h 40
 lineColor index 14
@@ -1359,7 +1359,7 @@ major 4
 minor 1
 release 0
 x 136
-y 504
+y 528
 w 80
 h 20
 controlPv "$(device):CF:ISCALE_S"
@@ -1385,7 +1385,7 @@ major 4
 minor 1
 release 0
 x 16
-y 504
+y 528
 w 107
 h 16
 font "helvetica-medium-r-14.0"
@@ -1405,7 +1405,7 @@ major 4
 minor 1
 release 0
 x 8
-y 480
+y 504
 w 120
 h 16
 font "helvetica-medium-r-12.0"
@@ -1424,7 +1424,7 @@ major 4
 minor 0
 release 0
 x 8
-y 480
+y 504
 w 120
 h 16
 lineColor index 14
@@ -2310,9 +2310,9 @@ beginObjectProperties
 major 4
 minor 0
 release 0
-x 232
+x 240
 y 536
-w 88
+w 80
 h 24
 
 beginGroup
@@ -2323,9 +2323,9 @@ beginObjectProperties
 major 4
 minor 2
 release 0
-x 232
+x 240
 y 536
-w 88
+w 80
 h 24
 fgColor index 43
 bgColor index 3
@@ -2348,5 +2348,45 @@ endGroup
 visPv "$(device):VE:FPGA2"
 visMin "1"
 visMax "2"
+endObjectProperties
+
+# (Menu Button)
+object activeMenuButtonClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 112
+y 464
+w 96
+h 22
+fgColor index 14
+fgAlarm
+bgColor index 3
+inconsistentColor index 0
+topShadowColor index 1
+botShadowColor index 11
+controlPv "$(device):SE:ENABLE_S"
+font "helvetica-medium-r-14.0"
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 16
+y 472
+w 57
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "Sensors:"
+}
+autoSize
 endObjectProperties
 

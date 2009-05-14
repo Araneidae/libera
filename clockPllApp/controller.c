@@ -252,10 +252,6 @@ static void SetDAC(CONTROLLER *Controller, int dac)
         dac = 0xFFFF;
     Controller->Dac = dac;
     Controller->SetDAC(Controller->Dac);
-
-    /* Once the DAC has been set we're ready to fill out a complete report to
-     * any interested parties. */
-    ReportState(Controller);
 }
 
 
@@ -283,6 +279,7 @@ int run_FF(CONTROLLER *Controller, const void *Context)
          * proportional controller on phase error). */
         SetDAC(Controller,
             Controller->Dac + Params->FK * Controller->FrequencyError);
+        ReportState(Controller);
 
         /* Return once the target frequency is reached. */
         if (abs(Controller->FrequencyError) <= 1)
@@ -342,6 +339,7 @@ int run_PI(CONTROLLER *Controller, const void *Context)
             tI -= Controller->PhaseError;
 
         SetDAC(Controller, target_dac);
+        ReportState(Controller);
         
         if (abs(Controller->PhaseError) > Params->MaximumPhaseError)
             /* If the phase error grows too large give up trying to hold the
@@ -410,6 +408,7 @@ int run_IIR(CONTROLLER *Controller, const void *Context)
         /* The output is generated as an offset from the nominal DAC entry on
          * entry. */
         SetDAC(Controller, nominal_dac + (int) round(this_output));
+        ReportState(Controller);
 
         /* During normal operation this filter holds the phase strictly with
          * +-1 sample clock.  If the error grows larger than this then hand
@@ -457,14 +456,13 @@ static void run_get_clock(CONTROLLER *Controller)
 static void run_open_loop(CONTROLLER *Controller)
 {
     int PreviousStage = Controller->CurrentStage;
+    /* Advance a stage on entry. */
     Controller->CurrentStage = Controller->StageCount + 1;
     while (Controller->OpenLoop  &&
            UpdateClock(Controller, true,
                 Controller->PhaseLocked ? PHASE_LOCK_WIDE : PHASE_UNLOCKED))
-        /* Calling SetDAC() will both ensure that any background updates to
-         * the controller's DAC are actually written out and a suitable state
-         * report is generated. */
-        SetDAC(Controller, Controller->Dac);
+        ReportState(Controller);
+    /* Drop back a stage on exit. */
     Controller->CurrentStage = PreviousStage;
 }
 
@@ -666,7 +664,8 @@ void ControllerCommand(CONTROLLER *Controller, char *Command)
         case 'p':   SetPhaseOffset(Controller, arg);            break;
         case 's':   SetSynchronisation(Controller, arg);        break;
         case 'c':   Controller->OpenLoop = arg;                 break;
-        case 'd':   Controller->Dac = arg;                      break;
+        case 'd':   if (Controller->OpenLoop)
+                        SetDAC(Controller, arg);                break;
         case 'v':   Controller->Verbose = arg;                  break;
         case 'i':   Controller->StatusReportInterval = arg;     break;
 

@@ -31,13 +31,15 @@
 
 set -e
 
+: "${BUILD_ARCHS:?Need to specify a build architecture}"
+
 VERSION=4.2.2p3
 # Name of tgz file containing NTP distribution
 TAR_FILE=ntp-$VERSION.tar.gz
 # Name of NTP directory extracted from distribution
 NTP_DIR=ntp-$VERSION
 # Location on host system of NTP distribution
-TAR_DIR=/scratch/incoming
+TAR_DIR=/dls_sw/prod/targetOS/tar-files/
 
 cd "$(dirname "$0")"
 HERE="$(pwd)"
@@ -47,15 +49,28 @@ INSTALL_DIR="$HERE/install"
 # makefile, which certainly knows!
 GNU_DIR="$(
     cd "$HERE/../.."
-    make -pn 2>/dev/null |
+    make -pn BUILD_ARCHS="$BUILD_ARCHS" 2>/dev/null |
     sed -n '/^GNU_DIR = /{s///;p;q;}')"
 export PATH="$PATH:$GNU_DIR/bin"
+
+GNU_TARGET="$(
+    cd "$HERE/../.."
+    make -pn BUILD_ARCHS="$BUILD_ARCHS" 2>/dev/null |
+    sed -n '/^GNU_TARGET = /{s///;p;q;}')"
+
+echo GNU_DIR="$GNU_DIR"
+echo GNU_TARGET="$GNU_TARGET"
+
+if [ -z "$GNU_DIR" -o -z "$GNU_TARGET" ]; then
+    echo Couldn\'t set up environment
+    exit 1
+fi
 
 # Build everything
 rm -rf "$BUILD_DIR"  &&
 tar xzf "$TAR_DIR/$TAR_FILE"  &&
 cd "$NTP_DIR"  &&
-./configure --host=arm-linux --disable-all-clocks --disable-parse-clocks  &&
+./configure --host=$GNU_TARGET --disable-all-clocks --disable-parse-clocks  &&
 make  || {
     echo Error building ntpd >&2
     exit 1

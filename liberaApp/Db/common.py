@@ -103,9 +103,9 @@ def XYQS_(prec, suffix=''):
         
         
 
-def Enable():
-    boolOut('ENABLE', 'Disabled', 'Enabled',
-        DESC = 'Enable %s mode' % ChannelName())
+def Enable(**fields):
+    return boolOut('ENABLE', 'Disabled', 'Enabled',
+        DESC = 'Enable %s mode' % ChannelName(), **fields)
 
 def Trigger(MC, positions, TRIG='TRIG', DONE='DONE'):
     # If MC is requested then generate MC machine clock records as well.
