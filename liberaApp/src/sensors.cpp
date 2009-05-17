@@ -68,17 +68,6 @@ static int Uptime;      // Machine uptime in seconds
 static int CpuUsage;    // % CPU usage over the last sample interval
 static int EpicsUp;     // EPICS run time in seconds
 
-enum {
-    NTP_NOT_MONITORED,  // Monitoring disabled (or not yet happened)
-    NTP_NO_NTP,         // No NTP server running locally
-    NTP_NO_SYNC,        // NTP running but not synchronised
-    NTP_OK,             // NTP running ok.
-};
-static int NTP_status = NTP_NOT_MONITORED;
-static int NTP_stratum = 16;    // 16 means unreachable/invalid server
-static EPICS_STRING NTP_server;
-static bool MonitorNtp; // Can be disabled
-
 /* Sensors can be disabled for particularly quiet operation. */
 static bool EnableSensors = true;
 
@@ -288,7 +277,20 @@ static void ReadHealth()
 /*****************************************************************************/
 
 
-/* NTP/SNTP message packed (except for NTP control messages).  See RFC 1305
+enum {
+    NTP_NOT_MONITORED,  // Monitoring disabled (or not yet happened)
+    NTP_NO_NTP,         // No NTP server running locally
+    NTP_NO_SYNC,        // NTP running but not synchronised
+    NTP_OK,             // NTP running ok.
+};
+static int NTP_status = NTP_NOT_MONITORED;
+static int NTP_stratum = 16;    // 16 means unreachable/invalid server
+static EPICS_STRING NTP_server;
+static bool MonitorNtp; // Can be disabled
+
+
+
+/* NTP/SNTP message packet (except for NTP control messages).  See RFC 1305
  * for NTP and RFC 2030 for SNTP.
  *    Note that as this packet goes over the wire, it is necessary to use
  * hton or ntoh transformations on all the fields. */
@@ -349,6 +351,7 @@ static bool UdpExchange(
             TEST_(connect, sock,
                 (const struct sockaddr *) &ntp_server, sizeof(ntp_server))  &&
             TEST_IO(sent, send, sock, tx_buffer, tx_length, 0)  &&
+            TEST_OK(sent == tx_length)  &&
             TEST_IO(sel, select, sock+1, &rx_ready, NULL, NULL, &timeout)  &&
             /* Fail if select timed out. */
             sel > 0  &&
@@ -371,19 +374,16 @@ static bool SNTP_exchange(
     const char * address, time_t timeout_ms, ntp_pkt *result)
 {
     /* Might as well use the result packet for our transmit.  For a simple
-     * ntpdate style request we can just set the whole packet to zero (except
+     * SNTP status request we can just set the whole packet to zero (except
      * for the mode byte). */
     memset(result, 0, sizeof(ntp_pkt));
     result->li_vn_mode = (0 << 6) | (3 << 3) | (3 << 0);
     size_t rx = sizeof(ntp_pkt);
-    if (UdpExchange(address, 123, timeout_ms, result, rx, result, &rx))
-    {
-        /* Simple validation: expected length and mode is 4 (server
-         * response code). */
-        return rx == sizeof(ntp_pkt)  &&  (result->li_vn_mode & 7) == 4;
-    }
-    else
-        return false;
+    return
+        UdpExchange(address, 123, timeout_ms, result, rx, result, &rx))  &&
+        /* Simple validation. */
+        rx == sizeof(ntp_pkt)  &&       // Complete packet received
+        (result->li_vn_mode & 7) == 4;  // Response is server mode response
 }
 
 

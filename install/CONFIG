@@ -84,8 +84,8 @@ IOC_S0_SA=99400000
 IOC_S0_FT=2342000
 
 
-# By default the IOC monitors the local NTP daemon (through the RFC 1305
-# appendix B interface) and aggregates its status into the clock health PV.
-# If however, NFS is not installed, or the NTP daemon does not provide this
-# interface, this can be disabled by setting this variable to 0.
+# By default the IOC monitors the local NTP daemon (through the SNTP RFC 2030
+# interface) and aggregates its status into the clock health PV.  If however,
+# NFS is not installed, or the NTP daemon does not provide this interface,
+# this can be disabled by setting this variable to 0.
 IOC_MONITOR_NTP=1
