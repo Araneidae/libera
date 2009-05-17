@@ -642,19 +642,21 @@ def Clock():
     sc_health = ClockStatus('SC', 'System')
     sc_health = []  # For the time being don't monitor SC health
 
-    global ntp_health   # Needed for triggering with sensor records
+    # The following list must match the corresponding enum in sensors.cpp
     ntp_health = mbbIn('NTPSTAT',
-        ('Not monitored', 0, 'NO_ALARM'),
-        ('No NTP',      1,  'MAJOR'),       # No NTP server
-        ('Rejected',    2,  'MAJOR'),       # Sel = 0   Rejected (RFC-1305)
-        ('False Tick',  3,  'MINOR'),       #       1   Passed sanity checks
-        ('Excess',      4,  'MINOR'),       #       2   Passed correctness
-        ('Outlyer',     5,  'MINOR'),       #       3   Passed candidate
-        ('Candidate',   6,  'MINOR'),       #       4   Passed outlyer
-        ('Selected',    7,  'NO_ALARM'),    #       5   Current source but far
-        ('Sys Peer',    8,  'NO_ALARM'),    #       6   Current source and ok
-        ('PPS Peer',    9,  'NO_ALARM'),    #       7   Reserved
+        ('Not monitored',   0,  'NO_ALARM'),    # Monitoring disabled
+        ('No NTP server',   1,  'MAJOR'),       # Local NTP server not found
+        ('No Sync',         2,  'MINOR'),       # NTP server not synchronised
+        ('Synchronised',    3,  'NO_ALARM'),    # Synchronised to remote server
         DESC = 'Status of NTP server')
+    global ntp_monitors                 # Needed for sensor record triggering
+    ntp_monitors = [ntp_health,
+        longIn('STRATUM',
+            LOW  = 0,   LSV  = 'MAJOR',         # Probably does not occur now
+            HIGH = 16,  HSV  = 'MAJOR',         # Unspecified stratum
+            DESC = 'NTP stratum level'),
+        stringIn('SERVER', DESC = 'Synchronised NTP server')]
+
     
     clock_health = AggregateSeverity('HEALTH', 'Clock status',
         map(CP, mc_health + sc_health + [ntp_health, tick]))
@@ -749,8 +751,8 @@ def Sensors():
     health = AggregateSeverity('HEALTH', 'Aggregated health',
         alarmsensors + ExtraHealthRecords + [enable])
     
-    Trigger(False, alarmsensors + voltages +
-        [uptime, epicsup, health, ntp_health])
+    Trigger(False, alarmsensors + voltages + ntp_monitors +
+        [uptime, epicsup, health])
             
     UnsetChannelName()
 

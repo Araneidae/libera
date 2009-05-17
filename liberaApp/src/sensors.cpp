@@ -68,7 +68,15 @@ static int Uptime;      // Machine uptime in seconds
 static int CpuUsage;    // % CPU usage over the last sample interval
 static int EpicsUp;     // EPICS run time in seconds
 
-static int NtpStatus;   // Status of local NTP client
+enum {
+    NTP_NOT_MONITORED,  // Monitoring disabled (or not yet happened)
+    NTP_NO_NTP,         // No NTP server running locally
+    NTP_NO_SYNC,        // NTP running but not synchronised
+    NTP_OK,             // NTP running ok.
+};
+static int NTP_status = NTP_NOT_MONITORED;
+static int NTP_stratum = 16;    // 16 means unreachable/invalid server
+static EPICS_STRING NTP_server;
 static bool MonitorNtp; // Can be disabled
 
 /* Sensors can be disabled for particularly quiet operation. */
@@ -280,9 +288,35 @@ static void ReadHealth()
 /*****************************************************************************/
 
 
+/* NTP/SNTP message packed (except for NTP control messages).  See RFC 1305
+ * for NTP and RFC 2030 for SNTP.
+ *    Note that as this packet goes over the wire, it is necessary to use
+ * hton or ntoh transformations on all the fields. */
+
+struct ntp_pkt {
+    /* Bits 0-2: "mode" or message type:
+     *           3 => client request, 4 => server response
+     *           6 => NTP control message (different packet format)
+     * Bits 3-5: NTP version number (can use 3 or 4 here)
+     * Bits 6-7: Leap indicator and alarm indication (3 => unsynchronised). */
+    uint8_t li_vn_mode;     // LI[7-6]:VN[5-3]:MODE[2-0]
+    uint8_t stratum;        // Stratum level of clock
+    int8_t ppoll;           // log_2(poll interval) in seconds
+    int8_t precision;       // log_2(clock precision) in seconds
+    int32_t rootdelay;      // 2^16 * Delay to reference in seconds
+    int32_t rootdispersion; // 2^16 * Root dispersion in seconds
+    int32_t refid;          // IP address of reference source (stratum > 1)
+    uint64_t reftime;       // Time clock was last set (2^32*seconds in epoch)
+    uint64_t org;           // Time this response left server
+    uint64_t rec;           // Time this request received by server
+    uint64_t xmt;           // Time this request left the client
+};
+
+
 /* This routine sends a single UDP message to the specified address and port,
  * and waits until timeout for a reply.  If a reply of some sort was received
- * this is returned with success.
+ * this is returned with success.  Normal failure to receive a reply is
+ * silent, as this is operationally normal and reported elsewhere.
  *     The timeout is in milliseconds, and cannot be more than 999. */
 
 static bool UdpExchange(
@@ -330,61 +364,65 @@ static bool UdpExchange(
 }
 
 
+/* Simply sends an SNTP packet to the given server, waits for a response or
+ * timeout, and does simple validation of the response. */
 
-/* This uses the NTP status command to read the list of association status
- * words from our local ntp client.  If no response within 100ms, or a
- * malformed response is returned, we fail. */
-
-static bool ReadNtpAssociations(uint16_t *status_array, size_t *count)
+static bool SNTP_exchange(
+    const char * address, time_t timeout_ms, ntp_pkt *result)
 {
-    /* NTP read status command: see RFC-1305, appendix B.  We send a status
-     * command which will, if successful, return a list of association id,
-     * status word pairs.  We simply return the status words. */
-    static const char status_command[] = {
-        0x1e, 0x01, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 
-        0x00, 0x00, 0x00, 0x00, 
-    };
-
-    char buffer[512];
-    memcpy(buffer, status_command, sizeof(status_command));
-    size_t rx = sizeof(buffer);
-    if (UdpExchange("127.0.0.1", 123, 100,
-            buffer, sizeof(status_command), buffer, &rx)  &&  rx >= 12)
+    /* Might as well use the result packet for our transmit.  For a simple
+     * ntpdate style request we can just set the whole packet to zero (except
+     * for the mode byte). */
+    memset(result, 0, sizeof(ntp_pkt));
+    result->li_vn_mode = (0 << 6) | (3 << 3) | (3 << 0);
+    size_t rx = sizeof(ntp_pkt);
+    if (UdpExchange(address, 123, timeout_ms, result, rx, result, &rx))
     {
-        size_t data_count = htons(*(uint16_t *)(buffer + 10));
-        if (TEST_OK(data_count + 12 == rx  &&  (data_count & 3) == 0))
-        {
-            *count = data_count / 4;
-            uint16_t * data_area = (uint16_t *)(buffer + 12);
-            for (size_t i = 0; i < *count; i++)
-                status_array[i] = htons(data_area[2*i + 1]);
-            return true;
-        }
+        /* Simple validation: expected length and mode is 4 (server
+         * response code). */
+        return rx == sizeof(ntp_pkt)  &&  (result->li_vn_mode & 7) == 4;
     }
-    return false;
+    else
+        return false;
+}
+
+
+/* For high stratum values the refid is the IP address of the reference
+ * server, for stratum values 0 and 1 the refid is a four character string. */
+
+static void refid_to_string(int stratum, int refid, EPICS_STRING string)
+{
+#define ID_BYTE(i) ((refid >> (8*(i))) & 0xFF)
+    if (stratum > 1)
+        snprintf(NTP_server, sizeof(NTP_server),
+            "%d.%d.%d.%d", ID_BYTE(0), ID_BYTE(1), ID_BYTE(2), ID_BYTE(3));
+    else
+    {
+        memcpy(string, &refid, sizeof(refid));
+        string[4] = 0;
+    }
+#undef ID_BYTE
 }
 
 
 static void ProcessNtpHealth()
 {
-    static const int MAX_ASSOCIATIONS = 64;     // Arbitrary limit
-    uint16_t StatusArray[MAX_ASSOCIATIONS];
-    size_t Count = MAX_ASSOCIATIONS;
-
-    NtpStatus = 1;
-    if (ReadNtpAssociations(StatusArray, &Count))
+    ntp_pkt pkt;
+    if (SNTP_exchange("127.0.0.1", 100, &pkt))
     {
-        for (size_t i = 0; i < Count; i ++)
-        {
-            /* We'll choose the highest Peer Selection status as the overall
-             * status of NTPD as an NTP client. */
-            int Selection = (StatusArray[i] >> 8) & 7;
-            if (Selection + 2 > NtpStatus)
-                NtpStatus = Selection + 2;
-        }
+        int LI = (pkt.li_vn_mode >> 6) & 3;
+        NTP_status = LI == 3 ? NTP_NO_SYNC : NTP_OK;
+        NTP_stratum = pkt.stratum == 0 ? 16 : pkt.stratum;
+        refid_to_string(pkt.stratum, pkt.refid, NTP_server);
+    }
+    else
+    {
+        NTP_status = NTP_NO_NTP;
+        NTP_stratum = 16;
+        strcpy(NTP_server, "no server");
     }
 }
+
 
 
 
@@ -488,9 +526,11 @@ bool InitialiseSensors(bool _MonitorNtp)
 
     Publish_bo("SE:ENABLE",  EnableSensors);
 
-    /* Although this is processed here as a sensor, it is aggregated as part
-     * of the clock subsystem. */
-    Publish_mbbi("CK:NTPSTAT", NtpStatus);
+    /* Although these are processed here as sensors, these fields are
+     * aggregated as part of the clock subsystem. */
+    Publish_mbbi("CK:NTPSTAT", NTP_status);
+    Publish_longin("CK:STRATUM", NTP_stratum);
+    Publish_stringin("CK:SERVER", NTP_server);
 
     InitialiseUptime();
 
