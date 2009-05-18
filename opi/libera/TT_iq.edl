@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 646
-y 121
+x 466
+y 22
 w 584
 h 840
 font "helvetica-medium-r-18.0"
@@ -247,7 +247,6 @@ plotColor {
 }
 endObjectProperties
 
-
 # (Shell Command)
 object shellCmdClass
 beginObjectProperties
@@ -270,3 +269,30 @@ command {
 }
 includeHelpIcon
 endObjectProperties
+
+# (Related Display)
+object relatedDisplayClass
+beginObjectProperties
+major 4
+minor 2
+release 0
+x 448
+y 4
+w 64
+h 22
+fgColor index 43
+bgColor index 3
+topShadowColor index 1
+botShadowColor index 11
+font "helvetica-bold-r-12.0"
+buttonLabel "ABCD"
+numPvs 4
+numDsps 1
+displayFileName {
+  0 "libera/TT_abcd.edl"
+}
+symbols {
+  0 "device=$(device),mode=$(mode)"
+}
+endObjectProperties
+

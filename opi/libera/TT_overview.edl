@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 547
-y 109
+x 555
+y 27
 w 584
 h 760
 font "helvetica-medium-r-18.0"
@@ -566,5 +566,31 @@ value {
   "Decimation:"
 }
 autoSize
+endObjectProperties
+
+# (Related Display)
+object relatedDisplayClass
+beginObjectProperties
+major 4
+minor 2
+release 0
+x 440
+y 704
+w 64
+h 22
+fgColor index 43
+bgColor index 3
+topShadowColor index 1
+botShadowColor index 11
+font "helvetica-bold-r-12.0"
+buttonLabel "ABCD"
+numPvs 4
+numDsps 1
+displayFileName {
+  0 "libera/TT_abcd.edl"
+}
+symbols {
+  0 "device=$(device),mode=TT"
+}
 endObjectProperties
 
