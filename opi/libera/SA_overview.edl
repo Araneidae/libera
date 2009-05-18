@@ -3,10 +3,10 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 559
-y 22
-w 368
-h 582
+x 560
+y 43
+w 537
+h 745
 font "helvetica-medium-r-18.0"
 ctlFont "helvetica-medium-r-18.0"
 btnFont "helvetica-medium-r-18.0"
@@ -34,7 +34,7 @@ minor 1
 release 0
 x 0
 y 0
-w 368
+w 536
 h 32
 font "helvetica-medium-r-18.0"
 fontAlign "center"
@@ -54,7 +54,7 @@ release 0
 # Geometry
 x 8
 y 40
-w 352
+w 520
 h 160
 # Appearance
 graphTitle "X"
@@ -99,7 +99,7 @@ release 0
 # Geometry
 x 8
 y 208
-w 352
+w 520
 h 160
 # Appearance
 graphTitle "Y"
@@ -144,7 +144,7 @@ release 0
 # Geometry
 x 8
 y 376
-w 352
+w 520
 h 160
 # Appearance
 graphTitle "Beam Current"
@@ -190,8 +190,8 @@ beginObjectProperties
 major 4
 minor 2
 release 0
-x 224
-y 544
+x 392
+y 712
 w 64
 h 24
 fgColor index 43
@@ -216,8 +216,8 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 296
-y 544
+x 464
+y 712
 w 64
 h 24
 fgColor index 25
@@ -235,8 +235,8 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 80
-y 552
+x 248
+y 720
 w 48
 h 16
 controlPv "$(device):SA:MAXADC"
@@ -261,8 +261,8 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 8
-y 552
+x 176
+y 720
 w 66
 h 16
 font "helvetica-medium-r-14.0"
@@ -281,8 +281,8 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 144
-y 552
+x 312
+y 720
 w 56
 h 16
 controlPv "$(device):SA:MAXADC_PC"
@@ -307,8 +307,8 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 136
-y 552
+x 304
+y 720
 w 4
 h 16
 font "helvetica-medium-r-14.0"
@@ -320,7 +320,6 @@ value {
 }
 autoSize
 endObjectProperties
-
 
 # (Shell Command)
 object shellCmdClass
@@ -344,3 +343,56 @@ command {
 }
 includeHelpIcon
 endObjectProperties
+
+# (X-Y Graph)
+object xyGraphClass
+beginObjectProperties
+major 4
+minor 3
+release 0
+# Geometry
+x 8
+y 544
+w 520
+h 160
+# Appearance
+graphTitle "Relative button skew"
+yLabel "Q"
+fgColor index 14
+bgColor index 3
+gridColor index 6
+font "helvetica-medium-r-10.0"
+# Operating Modes
+plotMode "plotLastNPts"
+nPts 250
+# X axis properties
+showXAxis
+xAxisSrc "AutoScale"
+xMax 1
+# Y axis properties
+showYAxis
+yAxisSrc "AutoScale"
+yMax 1
+yLabelIntervals 4
+yShowLabelGrid
+yAxisFormat "g"
+yAxisPrecision 2
+# Y2 axis properties
+y2AxisSrc "AutoScale"
+y2Max 1
+# Trace Properties
+numTraces 1
+yPv {
+  0 "$(device):SA:Q"
+}
+xSigned {
+  0 2818219
+}
+ySigned {
+  0 7274679
+}
+plotColor {
+  0 index 14
+}
+endObjectProperties
+
