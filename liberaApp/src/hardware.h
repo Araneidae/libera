@@ -188,8 +188,7 @@ bool WriteInterlockParameters(
 
 
 /* Sets calibration paramters for calculating (X,Y) from (A,B,C,D). */
-bool WriteCalibrationSettings(
-    int Kx, int Ky, int Kq, int Xoffset, int Yoffset);
+bool WriteCalibrationSettings(int Kx, int Ky, int Xoffset, int Yoffset);
 
 
 

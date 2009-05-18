@@ -281,7 +281,9 @@ def Config():
     boolOut('DIAG', 'Vertical', 'Diagonal', DESC = 'Button orientation')
     aOut('KX', 0, 32,   EGU  = 'mm', DESC = 'X scaling')
     aOut('KY', 0, 32,   EGU  = 'mm', DESC = 'Y scaling')
-    aOut('KQ', 0, 32,   EGU  = 'mm', DESC = 'Q scaling')
+
+    # Scaling has no meaning for Q, but the zero point is worth defining
+    aOut('Q_0', -1, 1,  ESLO = 1e-8, PREC = 4, DESC = 'Q offset')
 
     # BPM origin control.  We support three separate displacements:
     #   1.  Beam Based Alignment offset.

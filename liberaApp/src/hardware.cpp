@@ -200,8 +200,7 @@ bool WriteInterlockParameters(
 }
 
 
-bool WriteCalibrationSettings(
-    int Kx, int Ky, int Kq, int Xoffset, int Yoffset)
+bool WriteCalibrationSettings(int Kx, int Ky, int Xoffset, int Yoffset)
 {
     return
         WriteCfgValue(LIBERA_CFG_KX, Kx)  &&

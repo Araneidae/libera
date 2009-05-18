@@ -53,15 +53,16 @@
 /* The following global parameters are used to control the calculation of
  * electron beam position from button signal level readout. */
 
+#define K_SCALE 1000000
+
 /* Scaling factors.  These convert relative intensities into electron beam
  * positions and are in units of distance.  The scaling factor is determined
  * by the geometry of the button or stripline assembly.
  *     These values are in units of nm and cannot be set larger than 32mm
  * without causing numerical overflow later on in the processing chain! */
 
-static int K_X = 10000000;    // 10mm: largely reasonable defaults
-static int K_Y = 10000000;
-static int K_Q = 10000000;
+static int K_X = 10 * K_SCALE;  // 10mm: largely reasonable defaults
+static int K_Y = 10 * K_SCALE;  
 
 /* Electron beam zero point offsets.  These are used to adjust the nominal
  * zero point returned.  These are stored in nm.
@@ -77,6 +78,8 @@ static int K_Q = 10000000;
  * accordingly. */
 static int X_0 = 0;
 static int Y_0 = 0;
+
+static int Q_0 = 0;
 
 static int BBA_X = 0;
 static int BBA_Y = 0;
@@ -234,9 +237,7 @@ void ABCDtoXYQS(const ABCD_ROW *ABCD, XYQS_ROW *XYQS, int Count)
         int InvS = Reciprocal(S, shift);
         shift = 60 - shift;
         /* Compute X and Y according to the currently selected detector
-         * orientation.  There seem to be no particularly meaningful
-         * computation of Q in vertical orientation, so we use the diagonal
-         * orientation computation for this factor. */
+         * orientation. */
         if (Diagonal)
         {
             xyqs.X = DeltaToPosition(K_X, A - B - C + D, InvS, shift) - X_0;
@@ -247,7 +248,11 @@ void ABCDtoXYQS(const ABCD_ROW *ABCD, XYQS_ROW *XYQS, int Count)
             xyqs.X = (DeltaToPosition(K_X, D - B, InvS, shift) << 1) - X_0;
             xyqs.Y = (DeltaToPosition(K_Y, A - C, InvS, shift) << 1) - Y_0;
         }
-        xyqs.Q = DeltaToPosition(K_Q, A - B + C - D, InvS, shift);
+        /* We scale Q up quite a bit more so that we have access to as much
+         * information as possible: the values can be quite small,
+         * particulary after Q_0 correction. */
+        xyqs.Q = DeltaToPosition(
+            100 * K_SCALE, A - B + C - D, InvS, shift) - Q_0;
         xyqs.S = S;
     }
 }
@@ -276,7 +281,7 @@ static void UpdateCalibration()
 {
     X_0 = BBA_X + BCD_X + GOLDEN_X;
     Y_0 = BBA_Y + BCD_Y + GOLDEN_Y;
-    WriteCalibrationSettings(K_X, K_Y, K_Q, X_0, Y_0);
+    WriteCalibrationSettings(K_X, K_Y, X_0, Y_0);
     NotifyInterlockOffset(GOLDEN_X, GOLDEN_Y);
 }
 
@@ -294,7 +299,8 @@ bool InitialiseConvert()
 
     PUBLISH_CALIBRATION("CF:KX", K_X);
     PUBLISH_CALIBRATION("CF:KY", K_Y);
-    PUBLISH_CALIBRATION("CF:KQ", K_Q);
+    
+    PUBLISH_CONFIGURATION(ao, "CF:Q_0", Q_0, NULL_ACTION);
 
     /* Position offset control.  This is decomposed into three parts: BBA,
      * BCD and GOLDEN as follows:

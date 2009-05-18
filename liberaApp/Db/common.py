@@ -93,13 +93,15 @@ def XYQS_wf(length, prefix='WF'):
             LOPR = 0, HOPR = MAX_S)]
 
 def XYQS_(prec, suffix=''):
-    sl = [
-        longIn('S' + suffix, MDEL = -1,
-            DESC = '%s total button intensity' % ChannelName())]
+    channel = ChannelName()
     return [
         aIn(position + suffix, -MAX_mm, MAX_mm, 1e-6, 'mm', prec,
-            DESC = '%s %s position' % (ChannelName(), position))
-        for position in 'XYQ'] + sl
+            DESC = '%s %s position' % (channel, position))
+        for position in 'XY'] + [
+        aIn('Q' + suffix, -1, 1, 1e-8, '', prec,
+            DESC = '%s relative skew' % channel),
+        longIn('S' + suffix, MDEL = -1,
+            DESC = '%s total button intensity' % channel)]
         
         
 

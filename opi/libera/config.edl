@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 812
-y 287
+x 813
+y 308
 w 473
 h 567
 font "helvetica-medium-r-16.0"
@@ -258,14 +258,14 @@ minor 1
 release 0
 x 16
 y 88
-w 24
+w 22
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
 bgColor index 0
 useDisplayBg
 value {
-  "KQ:"
+  "Q0:"
 }
 autoSize
 endObjectProperties
@@ -279,8 +279,8 @@ release 0
 x 48
 y 88
 w 64
-h 24
-controlPv "$(device):CF:KQ_S"
+h 20
+controlPv "$(device):CF:Q_0_S"
 font "helvetica-medium-r-14.0"
 fontAlign "right"
 fgColor index 14

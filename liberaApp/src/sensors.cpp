@@ -380,7 +380,7 @@ static bool SNTP_exchange(
     result->li_vn_mode = (0 << 6) | (3 << 3) | (3 << 0);
     size_t rx = sizeof(ntp_pkt);
     return
-        UdpExchange(address, 123, timeout_ms, result, rx, result, &rx))  &&
+        UdpExchange(address, 123, timeout_ms, result, rx, result, &rx)  &&
         /* Simple validation. */
         rx == sizeof(ntp_pkt)  &&       // Complete packet received
         (result->li_vn_mode & 7) == 4;  // Response is server mode response
