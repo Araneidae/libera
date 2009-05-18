@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 348
-y 107
+x 349
+y 128
 w 409
 h 686
 font "helvetica-medium-r-18.0"
@@ -201,7 +201,7 @@ minor 1
 release 0
 x 64
 y 368
-w 10
+w 9
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -246,7 +246,7 @@ minor 1
 release 0
 x 216
 y 368
-w 4
+w 5
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -348,7 +348,7 @@ minor 1
 release 0
 x 8
 y 632
-w 10
+w 11
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 27
@@ -438,7 +438,7 @@ minor 1
 release 0
 x 144
 y 632
-w 10
+w 9
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 18
@@ -513,10 +513,9 @@ font "helvetica-bold-r-12.0"
 buttonLabel "Strip"
 numCmds 1
 command {
-  0 "buttons.py $(device)"
+  0 "strip_tool.py SA:%s ABCD 0.01 0.1 $(device)"
 }
 endObjectProperties
-
 
 # (Shell Command)
 object shellCmdClass
@@ -540,3 +539,4 @@ command {
 }
 includeHelpIcon
 endObjectProperties
+

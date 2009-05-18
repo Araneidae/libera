@@ -1,10 +1,10 @@
 #!/bin/sh
 
-EDM="$(
-    which edm 2>/dev/null ||
-    echo /home/epics/R3.14.8.2/extensions/bin/linux-x86/edm )"
+cd "$(dirname "$(readlink -fn "$0")")"
 
-cd "$(dirname "$0")"
-export EPICS_CA_MAX_ARRAY_BYTES=1000000
+which edm 2>/dev/null  ||
+    PATH=/dls_sw/epics/R3.14.8.2/extensions/bin/linux-x86/:"$PATH"
 PATH="$(pwd)"/scripts:"$PATH"
-$EDM -x -eolc launcher.edl &
+
+export EPICS_CA_MAX_ARRAY_BYTES=1000000
+edm -x -eolc launcher.edl &
