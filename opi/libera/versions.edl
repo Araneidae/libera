@@ -3,10 +3,10 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 450
-y 43
+x 451
+y 64
 w 392
-h 558
+h 584
 font "helvetica-medium-r-14.0"
 ctlFont "helvetica-medium-r-14.0"
 btnFont "helvetica-bold-r-14.0"
@@ -35,7 +35,7 @@ release 0
 x 8
 y 40
 w 376
-h 480
+h 504
 lineColor index 14
 fill
 fillColor index 4
@@ -48,7 +48,7 @@ major 4
 minor 1
 release 0
 x 296
-y 528
+y 552
 w 88
 h 24
 fgColor index 25
@@ -235,7 +235,7 @@ major 4
 minor 1
 release 0
 x 168
-y 136
+y 168
 w 168
 h 16
 controlPv "$(device):VE:UNAME"
@@ -257,7 +257,7 @@ major 4
 minor 1
 release 0
 x 24
-y 136
+y 168
 w 97
 h 16
 font "helvetica-medium-r-14.0"
@@ -277,7 +277,7 @@ major 4
 minor 1
 release 0
 x 168
-y 232
+y 264
 w 200
 h 16
 controlPv "$(device):VE:ROOTFS"
@@ -299,7 +299,7 @@ major 4
 minor 1
 release 0
 x 24
-y 232
+y 264
 w 95
 h 16
 font "helvetica-medium-r-14.0"
@@ -319,7 +319,7 @@ major 4
 minor 1
 release 0
 x 168
-y 152
+y 184
 w 168
 h 16
 controlPv "$(device):VE:DRIVER"
@@ -341,7 +341,7 @@ major 4
 minor 1
 release 0
 x 24
-y 152
+y 184
 w 136
 h 16
 font "helvetica-medium-r-14.0"
@@ -361,7 +361,7 @@ major 4
 minor 1
 release 0
 x 168
-y 168
+y 200
 w 168
 h 16
 controlPv "$(device):VE:MSP"
@@ -383,7 +383,7 @@ major 4
 minor 1
 release 0
 x 24
-y 168
+y 200
 w 86
 h 16
 font "helvetica-medium-r-14.0"
@@ -403,7 +403,7 @@ major 4
 minor 1
 release 0
 x 168
-y 184
+y 216
 w 168
 h 16
 controlPv "$(device):VE:LIBC"
@@ -425,7 +425,7 @@ major 4
 minor 1
 release 0
 x 24
-y 184
+y 216
 w 87
 h 16
 font "helvetica-medium-r-14.0"
@@ -445,7 +445,7 @@ major 4
 minor 1
 release 0
 x 168
-y 288
+y 320
 w 168
 h 16
 controlPv "$(device):VE:COMPILED"
@@ -469,7 +469,7 @@ major 4
 minor 1
 release 0
 x 24
-y 288
+y 320
 w 108
 h 16
 font "helvetica-medium-r-14.0"
@@ -489,7 +489,7 @@ major 4
 minor 1
 release 0
 x 168
-y 304
+y 336
 w 168
 h 16
 controlPv "$(device):VE:BUILDNO"
@@ -513,7 +513,7 @@ major 4
 minor 1
 release 0
 x 24
-y 304
+y 336
 w 96
 h 16
 font "helvetica-medium-r-14.0"
@@ -533,7 +533,7 @@ major 4
 minor 1
 release 0
 x 160
-y 424
+y 456
 w 32
 h 16
 controlPv "$(device):VE:DLS"
@@ -555,7 +555,7 @@ major 4
 minor 1
 release 0
 x 24
-y 424
+y 456
 w 79
 h 16
 font "helvetica-medium-r-14.0"
@@ -575,7 +575,7 @@ major 4
 minor 1
 release 0
 x 160
-y 440
+y 472
 w 32
 h 16
 controlPv "$(device):VE:FF"
@@ -597,7 +597,7 @@ major 4
 minor 1
 release 0
 x 24
-y 440
+y 472
 w 81
 h 16
 font "helvetica-medium-r-14.0"
@@ -617,7 +617,7 @@ major 4
 minor 1
 release 0
 x 160
-y 456
+y 488
 w 32
 h 16
 controlPv "$(device):VE:BR"
@@ -639,7 +639,7 @@ major 4
 minor 1
 release 0
 x 24
-y 456
+y 488
 w 110
 h 16
 font "helvetica-medium-r-14.0"
@@ -659,7 +659,7 @@ major 4
 minor 1
 release 0
 x 160
-y 472
+y 504
 w 32
 h 16
 controlPv "$(device):VE:OLDBR"
@@ -681,7 +681,7 @@ major 4
 minor 1
 release 0
 x 24
-y 472
+y 504
 w 96
 h 16
 font "helvetica-medium-r-14.0"
@@ -701,7 +701,7 @@ major 4
 minor 1
 release 0
 x 160
-y 488
+y 520
 w 32
 h 16
 controlPv "$(device):VE:MAF"
@@ -723,7 +723,7 @@ major 4
 minor 1
 release 0
 x 24
-y 488
+y 520
 w 71
 h 16
 font "helvetica-medium-r-14.0"
@@ -743,7 +743,7 @@ major 4
 minor 1
 release 0
 x 16
-y 408
+y 440
 w 79
 h 16
 font "helvetica-medium-r-14.0"
@@ -763,7 +763,7 @@ major 4
 minor 1
 release 0
 x 16
-y 256
+y 288
 w 104
 h 16
 font "helvetica-medium-r-14.0"
@@ -783,7 +783,7 @@ major 4
 minor 1
 release 0
 x 168
-y 320
+y 352
 w 104
 h 16
 controlPv "$(device):VE:CUSTID"
@@ -807,7 +807,7 @@ major 4
 minor 1
 release 0
 x 24
-y 320
+y 352
 w 82
 h 16
 font "helvetica-medium-r-14.0"
@@ -827,7 +827,7 @@ major 4
 minor 1
 release 0
 x 168
-y 336
+y 368
 w 168
 h 16
 controlPv "$(device):VE:DDCDEC"
@@ -850,7 +850,7 @@ major 4
 minor 1
 release 0
 x 24
-y 336
+y 368
 w 112
 h 16
 font "helvetica-medium-r-14.0"
@@ -870,7 +870,7 @@ major 4
 minor 1
 release 0
 x 168
-y 352
+y 384
 w 168
 h 16
 controlPv "$(device):VE:FADEC"
@@ -894,7 +894,7 @@ major 4
 minor 1
 release 0
 x 24
-y 352
+y 384
 w 90
 h 16
 font "helvetica-medium-r-14.0"
@@ -914,7 +914,7 @@ major 4
 minor 1
 release 0
 x 168
-y 368
+y 400
 w 168
 h 16
 controlPv "$(device):VE:CUSTOMER"
@@ -938,7 +938,7 @@ major 4
 minor 1
 release 0
 x 24
-y 368
+y 400
 w 113
 h 16
 font "helvetica-medium-r-14.0"
@@ -958,7 +958,7 @@ major 4
 minor 1
 release 0
 x 168
-y 384
+y 416
 w 168
 h 16
 controlPv "$(device):VE:ITECH"
@@ -982,7 +982,7 @@ major 4
 minor 1
 release 0
 x 24
-y 384
+y 416
 w 92
 h 16
 font "helvetica-medium-r-14.0"
@@ -1022,7 +1022,7 @@ major 4
 minor 1
 release 0
 x 16
-y 120
+y 152
 w 43
 h 16
 font "helvetica-medium-r-14.0"
@@ -1042,7 +1042,7 @@ major 4
 minor 1
 release 0
 x 168
-y 200
+y 232
 w 168
 h 16
 controlPv "$(device):VE:ABI"
@@ -1064,7 +1064,7 @@ major 4
 minor 1
 release 0
 x 24
-y 200
+y 232
 w 80
 h 16
 font "helvetica-medium-r-14.0"
@@ -1084,7 +1084,7 @@ major 4
 minor 1
 release 0
 x 168
-y 216
+y 248
 w 168
 h 16
 controlPv "$(device):VE:ARCH"
@@ -1106,7 +1106,7 @@ major 4
 minor 1
 release 0
 x 24
-y 216
+y 248
 w 124
 h 16
 font "helvetica-medium-r-14.0"
@@ -1126,7 +1126,7 @@ major 4
 minor 1
 release 0
 x 280
-y 320
+y 352
 w 104
 h 16
 controlPv "$(device):VE:CUSTIDSTR"
@@ -1148,7 +1148,7 @@ major 4
 minor 1
 release 0
 x 168
-y 272
+y 304
 w 168
 h 16
 controlPv "$(device):VE:FPGA"
@@ -1172,7 +1172,7 @@ major 4
 minor 1
 release 0
 x 24
-y 272
+y 304
 w 95
 h 16
 font "helvetica-medium-r-14.0"
@@ -1192,7 +1192,7 @@ major 4
 minor 1
 release 0
 x 344
-y 456
+y 488
 w 32
 h 16
 controlPv "$(device):VE:BRHW"
@@ -1214,7 +1214,7 @@ major 4
 minor 1
 release 0
 x 208
-y 456
+y 488
 w 121
 h 16
 font "helvetica-medium-r-14.0"
@@ -1234,7 +1234,7 @@ major 4
 minor 1
 release 0
 x 344
-y 424
+y 456
 w 32
 h 16
 controlPv "$(device):VE:FPGA2"
@@ -1256,7 +1256,7 @@ major 4
 minor 1
 release 0
 x 208
-y 424
+y 456
 w 127
 h 16
 font "helvetica-medium-r-14.0"
@@ -1265,6 +1265,90 @@ bgColor index 0
 useDisplayBg
 value {
   "V2 FPGA features?"
+}
+autoSize
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 168
+y 112
+w 168
+h 16
+controlPv "$(device):VE:COMPILER"
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 4
+useDisplayBg
+autoHeight
+limitsFromDb
+nullColor index 0
+newPos
+objType "monitors"
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 24
+y 112
+w 111
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "Compiler version:"
+}
+autoSize
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 168
+y 128
+w 168
+h 16
+controlPv "$(device):VE:LIBRARY"
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 4
+useDisplayBg
+autoHeight
+limitsFromDb
+nullColor index 0
+newPos
+objType "monitors"
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 24
+y 128
+w 88
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "Linked library:"
 }
 autoSize
 endObjectProperties

@@ -193,7 +193,7 @@ if [ $OPT_FF = 1 ]; then
     write_register 0x2a000 1
     write_register 0x2a000 0
     FF_VER=$(read_register 0x28c00)
-    set_var FF_VERSION $(printf v%d.%x.%d \
+    set_var FF_VERSION $(printf v%d.%02x.%d \
         $((FF_VER >> 12)) $(((FF_VER >> 4) & 0xFF)) $((FF_VER & 0xF)))
 else
     set_var FF_VERSION No-FF

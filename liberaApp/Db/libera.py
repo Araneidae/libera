@@ -784,6 +784,8 @@ def Versions():
     string('VERSION',   'Libera EPICS driver version')
     string('BUILD',     'EPICS driver build date')
     string('EPICS',     'EPICS version')
+    string('COMPILER',  'Compiler version')
+    string('LIBRARY',   'Linked library version')
 
     # These are extracted from environment variables
     string('ABI',       'ABI identification (3=>EABI)')

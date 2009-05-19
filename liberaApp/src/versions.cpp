@@ -34,6 +34,7 @@
 #include <signal.h>
 #include <string.h>
 #include <sys/wait.h>
+#include <limits.h>
 
 #include <epicsVersion.h>
 
@@ -61,6 +62,8 @@ bool Version2FpgaPresent;
 
 static int CustomerId;
 static EPICS_STRING CustomerIdString;
+static EPICS_STRING CompilerVersion;
+static EPICS_STRING LibraryVersion;
 
 
 
@@ -261,14 +264,38 @@ static void IdToString(int Id, char *string)
 }
 
 
+
+
 bool InitialiseVersions(void)
 {
+    /* This code here which tries to work out which versions of the compiler
+     * and library we're being compiled with uses the very helpful pages at
+     *      http://predef.sourceforge.net
+     * We do our best to figure out values to assign our version strings.
+     * Unfortunately, the identification strings are compiler specific, so
+     * here we can only support the compilers and libraries we know about. */
+    snprintf(CompilerVersion, sizeof(EPICS_STRING),
+#if defined(__GNUC__)
+        "gcc %d.%d.%d", __GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
+#else
+        "unknown compiler");
+#endif
+    snprintf(LibraryVersion, sizeof(EPICS_STRING),
+#if defined(__GLIBC__)
+        "glibc %d.%d", __GLIBC__, __GLIBC_MINOR__);
+#else
+        "unknown library");
+#endif
+    
     Publish_stringin("VERSION",     VersionString);
     Publish_stringin("BUILD",       BuildDate);
+    
     Publish_stringin("VE:VERSION",  VersionString);
     Publish_stringin("VE:BUILD",    BuildDate);
     Publish_stringin("VE:EPICS",    EpicsVersion);
     Publish_stringin("VE:CUSTIDSTR", CustomerIdString);
+    Publish_stringin("VE:COMPILER", CompilerVersion);
+    Publish_stringin("VE:LIBRARY",  LibraryVersion);
     
     PUBLISH_ACTION("REBOOT",        DoReboot);
     PUBLISH_ACTION("RESTART",       DoRestart);
@@ -278,7 +305,7 @@ bool InitialiseVersions(void)
         PUBLISH_ENV_MAP(stringin,   EnvironmentStrings)  &&
         PUBLISH_ENV_MAP(longin,     EnvironmentInts)  &&
         PUBLISH_ENV_MAP(bi,         EnvironmentBools);
-
+    /* Must do this after the above so that CustomerId is initialised. */
     IdToString(CustomerId, CustomerIdString);
 
     return Ok;
@@ -293,9 +320,11 @@ void StartupMessage()
     printf(
 "\n"
 "Libera EPICS Driver, Version %s.  Built: %s.\n"
+"Compiled with %s, linked with %s\n"
+"\n"
 "Copyright (C) 2005-2009 Michael Abbott, Diamond Light Source.\n"
 "This program comes with ABSOLUTELY NO WARRANTY.  This is free software,\n"
 "and you are welcome to redistribute it under certain conditions.\n"
 "For details see the GPL or the attached file COPYING.\n",
-        VersionString, BuildDate);
+        VersionString, BuildDate, CompilerVersion, LibraryVersion);
 }
