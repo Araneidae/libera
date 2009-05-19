@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 2900
-y 876
+x 191
+y 64
 w 295
 h 117
 font "helvetica-medium-r-18.0"
@@ -81,11 +81,11 @@ x 144
 y 84
 w 72
 h 24
-fgColor index 14
+fgColor index 43
 bgColor index 3
 topShadowColor index 0
 botShadowColor index 14
-font "helvetica-medium-r-14.0"
+font "helvetica-bold-r-12.0"
 buttonLabel "IOC"
 numPvs 4
 numDsps 1
@@ -873,20 +873,52 @@ beginObjectProperties
 major 4
 minor 2
 release 0
-x 224
+x 256
 y 48
-w 64
+w 32
 h 24
-fgColor index 14
+fgColor index 43
 bgColor index 3
 topShadowColor index 0
 botShadowColor index 14
-font "helvetica-medium-r-14.0"
+font "helvetica-bold-r-12.0"
 buttonLabel "Lab"
 numPvs 4
 numDsps 1
 displayFileName {
   0 "lab_control.edl"
+}
+endObjectProperties
+
+# (Related Display)
+object relatedDisplayClass
+beginObjectProperties
+major 4
+minor 2
+release 0
+x 224
+y 48
+w 32
+h 24
+fgColor index 43
+bgColor index 3
+topShadowColor index 0
+botShadowColor index 14
+font "helvetica-bold-r-12.0"
+buttonLabel "Ext"
+numPvs 4
+numDsps 1
+displayFileName {
+  0 "launcher_extended.edl"
+}
+closeAction {
+  0 1
+}
+setPosition {
+  0 "parentWindow"
+}
+closeDisplay {
+  0 1
 }
 endObjectProperties
 
