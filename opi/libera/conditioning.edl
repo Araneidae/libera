@@ -3,10 +3,10 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 486
-y 108
+x 487
+y 129
 w 480
-h 311
+h 348
 font "helvetica-medium-r-16.0"
 ctlFont "helvetica-medium-r-16.0"
 btnFont "helvetica-medium-r-16.0"
@@ -35,7 +35,7 @@ release 0
 x 224
 y 48
 w 248
-h 120
+h 160
 lineColor index 14
 fill
 fillColor index 4
@@ -50,7 +50,7 @@ release 0
 x 8
 y 48
 w 208
-h 120
+h 160
 lineColor index 14
 fill
 fillColor index 4
@@ -63,7 +63,7 @@ major 4
 minor 0
 release 0
 x 8
-y 184
+y 224
 w 464
 h 88
 lineColor index 14
@@ -78,7 +78,7 @@ major 4
 minor 1
 release 0
 x 416
-y 280
+y 320
 w 56
 h 22
 fgColor index 25
@@ -273,7 +273,7 @@ major 4
 minor 1
 release 0
 x 104
-y 200
+y 240
 w 72
 h 16
 controlPv "$(device):SC:C1PHASE"
@@ -298,7 +298,7 @@ major 4
 minor 1
 release 0
 x 104
-y 224
+y 264
 w 72
 h 16
 controlPv "$(device):SC:C1MAG"
@@ -324,7 +324,7 @@ major 4
 minor 1
 release 0
 x 192
-y 224
+y 264
 w 72
 h 16
 controlPv "$(device):SC:C2MAG"
@@ -350,7 +350,7 @@ major 4
 minor 1
 release 0
 x 192
-y 200
+y 240
 w 72
 h 16
 controlPv "$(device):SC:C2PHASE"
@@ -375,7 +375,7 @@ major 4
 minor 1
 release 0
 x 280
-y 224
+y 264
 w 72
 h 16
 controlPv "$(device):SC:C3MAG"
@@ -401,7 +401,7 @@ major 4
 minor 1
 release 0
 x 280
-y 200
+y 240
 w 72
 h 16
 controlPv "$(device):SC:C3PHASE"
@@ -426,7 +426,7 @@ major 4
 minor 1
 release 0
 x 368
-y 224
+y 264
 w 72
 h 16
 controlPv "$(device):SC:C4MAG"
@@ -452,7 +452,7 @@ major 4
 minor 1
 release 0
 x 368
-y 200
+y 240
 w 72
 h 16
 controlPv "$(device):SC:C4PHASE"
@@ -542,7 +542,7 @@ major 4
 minor 1
 release 0
 x 16
-y 200
+y 240
 w 79
 h 16
 font "helvetica-medium-r-14.0"
@@ -562,7 +562,7 @@ major 4
 minor 1
 release 0
 x 16
-y 224
+y 264
 w 71
 h 16
 font "helvetica-medium-r-14.0"
@@ -627,8 +627,8 @@ beginObjectProperties
 major 4
 minor 2
 release 0
-x 312
-y 280
+x 368
+y 176
 w 96
 h 24
 fgColor index 43
@@ -654,7 +654,7 @@ major 4
 minor 1
 release 0
 x 8
-y 176
+y 216
 w 120
 h 16
 font "helvetica-medium-r-12.0"
@@ -673,7 +673,7 @@ major 4
 minor 0
 release 0
 x 8
-y 176
+y 216
 w 120
 h 16
 lineColor index 14
@@ -891,7 +891,7 @@ major 4
 minor 1
 release 0
 x 104
-y 248
+y 288
 w 72
 h 16
 controlPv "$(device):SC:C1VAR"
@@ -917,7 +917,7 @@ major 4
 minor 1
 release 0
 x 192
-y 248
+y 288
 w 72
 h 16
 controlPv "$(device):SC:C2VAR"
@@ -943,7 +943,7 @@ major 4
 minor 1
 release 0
 x 280
-y 248
+y 288
 w 72
 h 16
 controlPv "$(device):SC:C3VAR"
@@ -969,7 +969,7 @@ major 4
 minor 1
 release 0
 x 368
-y 248
+y 288
 w 72
 h 16
 controlPv "$(device):SC:C4VAR"
@@ -995,7 +995,7 @@ major 4
 minor 1
 release 0
 x 16
-y 248
+y 288
 w 62
 h 16
 font "helvetica-medium-r-14.0"
@@ -1014,8 +1014,8 @@ beginObjectProperties
 major 4
 minor 2
 release 0
-x 216
-y 280
+x 320
+y 320
 w 88
 h 24
 fgColor index 25
@@ -1051,5 +1051,91 @@ command {
   0 "libera-help conditioning"
 }
 includeHelpIcon
+endObjectProperties
+
+# (Menu Button)
+object activeMenuButtonClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 96
+y 160
+w 112
+h 22
+fgColor index 14
+fgAlarm
+bgColor index 3
+inconsistentColor index 0
+topShadowColor index 1
+botShadowColor index 11
+controlPv "$(device):SC:TRIGGERED_S"
+font "helvetica-medium-r-14.0"
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 16
+y 160
+w 68
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "Triggering:"
+}
+autoSize
+endObjectProperties
+
+# (Text Control)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 120
+y 184
+w 80
+h 20
+controlPv "$(device):SC:TRIGDELAY_S"
+font "helvetica-medium-r-14.0"
+fontAlign "right"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+editable
+autoHeight
+motifWidget
+limitsFromDb
+nullColor index 0
+useHexPrefix
+newPos
+objType "controls"
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 16
+y 184
+w 39
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "Delay:"
+}
+autoSize
 endObjectProperties
 

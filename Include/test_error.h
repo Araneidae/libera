@@ -110,7 +110,7 @@ void print_error(const char * Message, const char * FileName, int LineNumber);
  * expression that's slightly more sensible looking than ?: in context. */
 #define DO_(action)                     ({action; true;})
 #define IF_(test, iftrue)               ((test) ? (iftrue) : true)
-#define IF_ELSE(text, iftrue, iffalse)  ((test) ? (iftrue) : (iffalse))
+#define IF_ELSE(test, iftrue, iffalse)  ((test) ? (iftrue) : (iffalse))
 
 
 

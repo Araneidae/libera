@@ -49,6 +49,7 @@
 #include "waveform.h"
 #include "interlock.h"
 #include "versions.h"
+#include "events.h"
 
 #include "conditioning.h"
 
@@ -303,7 +304,7 @@ static bool SwitchMarker(const LIBERA_ROW *Data, size_t Length, size_t &Marker)
  *
  */
 
-class CONDITIONING : public LOCKED_THREAD
+class CONDITIONING : public LOCKED_THREAD, I_EVENT
 {
 public:
     CONDITIONING(REAL f_if, int TurnsPerSwitch) :
@@ -315,13 +316,16 @@ public:
         TurnsPerSwitch(TurnsPerSwitch),
         IqData(SAMPLE_SIZE, true),
         EpicsWritePhaseArray(*this),
-        signal(false)
+        signal(false),
+        trigger(false)
     {
         /* Establish defaults for configuration variables before reading
          * their currently configured values. */
         MaximumDeviationThreshold = aiValue(2.);    // Default = 2%
         ChannelIIRFactor = aiValue(0.1);
         ConditioningInterval = 5000;                // 5 s
+        TriggeredOperation = false;
+        TriggeredDelay = 0;
 
         /* Initialise state. */
         ConditioningStatus = SC_OFF;
@@ -333,9 +337,15 @@ public:
         Persistent("SC:MAXDEV",   MaximumDeviationThreshold);
         Persistent("SC:CIIR",     ChannelIIRFactor);
         Persistent("SC:INTERVAL", ConditioningInterval);
+        Persistent("SC:TRIGGERED", TriggeredOperation);
+        Persistent("SC:TRIGDELAY", TriggeredDelay);
+        
         Publish_ao("SC:MAXDEV",   MaximumDeviationThreshold);
         Publish_ao("SC:CIIR",     ChannelIIRFactor);
         Publish_ao("SC:INTERVAL", ConditioningInterval);
+        PUBLISH_METHOD_OUT(bo, "SC:TRIGGERED",
+            SetTriggeredOperation, TriggeredOperation);
+        Publish_longout("SC:TRIGDELAY", TriggeredDelay);
 
         /* General conditioning status PV.  The alarm state of this can
          * usefully be integrated into the overall system health. */
@@ -372,6 +382,7 @@ public:
         }
 
         Interlock.Publish("SC");
+        RegisterTriggerEvent(*this, PRIORITY_SC);
     }
 
 
@@ -470,6 +481,8 @@ public:
     
     
 private:
+    CONDITIONING();
+    
     /* The following basic datatypes are used for processing.  We distinguish
      * the two arrays BUTTONS and CHANNELS as an important discipline for
      * keeping track, though in fact one is just a permutation of the other. */
@@ -668,9 +681,14 @@ private:
         int TargetLength = Length * sizeof(LIBERA_ROW);
         int Read;
         return
-            /* Seeking to SEEK_ST:0 is handled specially by the driver:
-             * instead, it seeks to the end of the current waveform. */
-            TEST_IO(Read, lseek, DevDd, 0, SEEK_SET)  &&    // SEEK_ST
+            /* The seek we make depends on the triggering mode: if triggered
+             * operation was selected then seek to the selected trigger point,
+             * otherwise seek to the end of the current waveform.  Seeking to
+             * SEEK_ST:0 is handled specially by the driver as a seek to the
+             * end of the current waveform. */
+            IF_ELSE(TriggeredOperation,
+                TEST_(lseek, DevDd, TriggeredDelay, SEEK_END),  // SEEK_TR
+                TEST_(lseek, DevDd, 0, SEEK_SET))  &&           // SEEK_ST
             TEST_IO(Read, read, DevDd, Data, TargetLength)  &&
             TEST_OK(Read == TargetLength);
     }
@@ -1007,6 +1025,13 @@ private:
         while(Running())
         {
             signal.WaitFor(ConditioningInterval);
+            /* This step is rather delicate, and there is a risk of a race
+             * condition.  However, if TriggeredOperation makes a transition
+             * to false then there should be a guarantee that trigger becomes
+             * signalled, and that's all we care about here. */
+            if (TriggeredOperation)
+                trigger.Wait();
+
             Interlock.Wait();
             
             THREAD_LOCK(this);
@@ -1020,6 +1045,23 @@ private:
         }
     }
 
+    
+    void OnEvent(int)
+    {
+        trigger.Signal();
+    }
+
+    bool SetTriggeredOperation(bool triggered)
+    {
+        THREAD_LOCK(this);
+        /* If we're now no longer triggered, make sure we release anybody
+         * waiting for the trigger! */
+        if (! triggered)
+            trigger.Signal();
+        TriggeredOperation = triggered;
+        THREAD_UNLOCK();
+        return true;
+    }
 
 
     /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -1044,6 +1086,10 @@ private:
     /* This controls (in milliseconds) the interval between conditioning
      * rounds. */
     int ConditioningInterval;
+    /* Whether conditioning should be triggered or free running. */
+    bool TriggeredOperation;
+    /* Offset from trigger if triggered operation selected. */
+    int TriggeredDelay;
 
     /* Reports status of the conditioning thread to EPICS.  The value is
      * drawn from SC_STATE. */
@@ -1090,6 +1136,7 @@ private:
     WRITE_PHASE_ARRAY EpicsWritePhaseArray;
 
     SEMAPHORE signal;
+    SEMAPHORE trigger;
     INTERLOCK Interlock;
 };
 

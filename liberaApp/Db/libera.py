@@ -464,6 +464,10 @@ def Conditioning():
     aOut('INTERVAL', 0, 100,
         ESLO = 1e-3, PREC = 1, EGU  = 's',
         DESC = 'Conditioning interval')
+    boolOut('TRIGGERED', 'Free Run', 'Triggered',
+        DESC = 'Triggered or free running')
+    longOut('TRIGDELAY',
+        DESC = 'Conditioning trigger delay')
 
     # Available for external direct control of the conditioning matrix.
     Waveform('SETCOMP_S', 16*4*2, DESC = 'Low level compensation cntrl')

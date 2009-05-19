@@ -52,8 +52,9 @@ enum PRIORITIES
     PRIORITY_MS,        // Mean sums calculation
     PRIORITY_FT,        // First Turn 
     PRIORITY_TT,        // Turn-by-turn takes forever but goes early
-    PRIORITY_BN,        // Decimated booster mode
     PRIORITY_FR,        // Free running mode
+    PRIORITY_SC,        // Signal conditioning
+    PRIORITY_BN,        // Decimated booster mode
 
     /* This must always come last (and is not a real priority). */
     HANDLER_TABLE_SIZE
