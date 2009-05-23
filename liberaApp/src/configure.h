@@ -1,5 +1,5 @@
 /* This file is part of the Libera EPICS Driver,
- * Copyright (C) 2007  Michael Abbott, Diamond Light Source Ltd.
+ * Copyright (C) 2009  Michael Abbott, Diamond Light Source Ltd.
  *
  * The Libera EPICS Driver is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as published by
