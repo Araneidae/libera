@@ -175,17 +175,17 @@ static bool InitialiseSignals()
     DoNothingHandler.sa_flags = 0;
     return
         /* Block all signals during AtExit() signal processing. */
-        TEST_(sigfillset, &AtExitHandler.sa_mask)  &&
+        TEST_IO(sigfillset(&AtExitHandler.sa_mask))  &&
         /* Catch all the usual culprits: HUP, INT, QUIT and TERM. */
-        TEST_(sigaction, SIGHUP,  &AtExitHandler, NULL)  &&
-        TEST_(sigaction, SIGINT,  &AtExitHandler, NULL)  &&
-        TEST_(sigaction, SIGQUIT, &AtExitHandler, NULL)  &&
-        TEST_(sigaction, SIGTERM, &AtExitHandler, NULL)  &&
+        TEST_IO(sigaction(SIGHUP,  &AtExitHandler, NULL))  &&
+        TEST_IO(sigaction(SIGINT,  &AtExitHandler, NULL))  &&
+        TEST_IO(sigaction(SIGQUIT, &AtExitHandler, NULL))  &&
+        TEST_IO(sigaction(SIGTERM, &AtExitHandler, NULL))  &&
 
         /* Configure SIGUSR2 to do nothing: we can then use this generally
          * without side effects. */
-        TEST_(sigfillset, &DoNothingHandler.sa_mask)  &&
-        TEST_(sigaction, SIGUSR2, &DoNothingHandler, NULL);
+        TEST_IO(sigfillset(&DoNothingHandler.sa_mask))  &&
+        TEST_IO(sigaction(SIGUSR2, &DoNothingHandler, NULL));
 }
 
 
@@ -316,7 +316,7 @@ static bool WritePid(const char * FileName)
 {
     FILE * output;
     return
-        TEST_NULL(output, fopen, FileName, "w")  &&
+        TEST_NULL(output = fopen(FileName, "w"))  &&
         DO_(
             /* Lazy error checking here.  Really should check that there
              * aren't any errors in any of the following. */
@@ -480,11 +480,11 @@ static bool ProcessOptions(int &argc, char ** &argv)
 /*****************************************************************************/
 
 
-#define TEST_EPICS(command, args...) \
+#define TEST_EPICS(expr) \
     ( { \
-        int __status__ = (command)(args); \
+        int __status__ = (expr); \
         if (__status__ != 0) \
-            printf(#command "(%s) (%s, %d): %s (%d)\n", #args, \
+            printf("%s (%s, %d): %s (%d)\n", #expr, \
                 __FILE__, __LINE__, ca_message(__status__), __status__); \
         __status__ == 0; \
     } )
@@ -524,7 +524,7 @@ static bool LoadDatabases()
 #define DB_(format, name, value) \
     AddDbParameter(Buffer, Length, (name), (format), (value))
 #define LOAD_RECORDS_(db_file) \
-    TEST_EPICS(dbLoadRecords, (char *) db_file, LiberaMacros)
+    TEST_EPICS(dbLoadRecords((char *) db_file, LiberaMacros))
 
     return
         /* The following list of parameter must match the list of
@@ -579,10 +579,10 @@ static bool StartIOC()
 {
     return
         SetPrompt()  &&
-        TEST_EPICS(dbLoadDatabase, (char *) "dbd/ioc.dbd", NULL, NULL)  &&
-        TEST_EPICS(ioc_registerRecordDeviceDriver, pdbbase)  &&
+        TEST_EPICS(dbLoadDatabase((char *) "dbd/ioc.dbd", NULL, NULL))  &&
+        TEST_EPICS(ioc_registerRecordDeviceDriver(pdbbase))  &&
         LoadDatabases()  &&
-        TEST_EPICS(iocInit);
+        TEST_EPICS(iocInit());
 }
 
 
@@ -601,7 +601,7 @@ int main(int argc, char *argv[])
     /* Consume any remaining script arguments by running them through the IOC
      * shell. */
     for (; Ok  &&  argc > 0; argc--)
-        Ok = TEST_EPICS(iocsh, *argv++);
+        Ok = TEST_EPICS(iocsh(*argv++));
 
     /* Run the entire IOC with a live IOC shell, or just block with the IOC
      * running in the background. */
@@ -610,7 +610,7 @@ int main(int argc, char *argv[])
         StartupMessage();
         if (RunIocShell)
             /* Run an interactive shell. */
-            Ok = TEST_EPICS(iocsh, NULL);
+            Ok = TEST_EPICS(iocsh(NULL));
         else
         {
             /* Wait for the shutdown request. */

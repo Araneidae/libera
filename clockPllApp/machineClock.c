@@ -86,7 +86,7 @@ static bool GetMachineTime(libera_hw_time_t * MachineTime)
 
 static void SetMachineClockDAC(int dac)
 {
-    TEST_(ioctl, event_fd, LIBERA_EVENT_SET_DAC_A, dac);
+    TEST_IO(ioctl(event_fd, LIBERA_EVENT_SET_DAC_A, dac));
 }
 
 
@@ -95,9 +95,9 @@ static void NotifyMachineClockDriver(
 {
     unsigned long fmc_set = (unsigned long) (100 * Frequency);
     unsigned int Locked = PhaseLocked;
-    TEST_(ioctl, event_fd, LIBERA_EVENT_SET_FLMC,  &fmc_set);
-    TEST_(ioctl, event_fd, LIBERA_EVENT_SET_MCPHI, &Phase);
-    TEST_(ioctl, event_fd, LIBERA_EVENT_SET_MCPLL, &Locked);
+    TEST_IO(ioctl(event_fd, LIBERA_EVENT_SET_FLMC,  &fmc_set));
+    TEST_IO(ioctl(event_fd, LIBERA_EVENT_SET_MCPHI, &Phase));
+    TEST_IO(ioctl(event_fd, LIBERA_EVENT_SET_MCPLL, &Locked));
 }
 
 
@@ -252,7 +252,7 @@ bool SetNcoFrequency(int nco_offset)
             ((double) harmonic * mc_presc) /
                 ((double) MC_Controller.prescale + nco_offset) -
             harmonic / ddc_decimation));
-    return TEST_(ioctl, event_fd, LIBERA_EVENT_SET_NCO, &nco);
+    return TEST_IO(ioctl(event_fd, LIBERA_EVENT_SET_NCO, &nco));
 }
 
 
@@ -273,10 +273,11 @@ bool InitialiseMachineClock(MC_PARAMETERS *Params)
     unsigned int init_locked = false;    
     return 
         /* Enable machine clock trigger events. */
-        TEST_(ioctl, event_fd, LIBERA_EVENT_ENABLE_MC_TRIG, TRIGGER_BIT(6))  &&
+        TEST_IO(ioctl(event_fd,
+            LIBERA_EVENT_ENABLE_MC_TRIG, TRIGGER_BIT(6)))  &&
         /* Program the NCO to the selected machine clock frequency. */
         SetNcoFrequency(0)  &&
         /* Initially report the machine clock as unlocked.*/
-        TEST_(ioctl, event_fd, LIBERA_EVENT_SET_MCPLL, &init_locked)  &&
+        TEST_IO(ioctl(event_fd, LIBERA_EVENT_SET_MCPLL, &init_locked))  &&
         spawn_controller(&MC_Controller);
 }

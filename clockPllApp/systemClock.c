@@ -61,7 +61,7 @@ static bool GetSystemTime(libera_hw_time_t * SystemTime)
 
 static void SetSystemClockDAC(int dac)
 {
-    TEST_(ioctl, event_fd, LIBERA_EVENT_SET_DAC_B, dac);
+    TEST_IO(ioctl(event_fd, LIBERA_EVENT_SET_DAC_B, dac));
 }
 
 
@@ -69,8 +69,8 @@ static void NotifySystemClockDriver(
     libera_hw_time_t Frequency, libera_hw_time_t Phase, bool PhaseLocked)
 {
     unsigned int Locked = PhaseLocked;
-    TEST_(ioctl, event_fd, LIBERA_EVENT_SET_SCPHI, &Phase);
-    TEST_(ioctl, event_fd, LIBERA_EVENT_SET_SCPLL, &Locked);
+    TEST_IO(ioctl(event_fd, LIBERA_EVENT_SET_SCPHI, &Phase));
+    TEST_IO(ioctl(event_fd, LIBERA_EVENT_SET_SCPLL, &Locked));
 }
 
 
@@ -138,8 +138,9 @@ bool InitialiseSystemClock()
     unsigned int init_locked = false;
     return 
         /* Enable machine clock trigger events. */
-        TEST_(ioctl, event_fd, LIBERA_EVENT_ENABLE_SC_TRIG, TRIGGER_BIT(5))  &&
+        TEST_IO(ioctl(event_fd,
+            LIBERA_EVENT_ENABLE_SC_TRIG, TRIGGER_BIT(5)))  &&
         /* Initially report the machine clock as unlocked.*/
-        TEST_(ioctl, event_fd, LIBERA_EVENT_SET_SCPLL, &init_locked)  &&
+        TEST_IO(ioctl(event_fd, LIBERA_EVENT_SET_SCPLL, &init_locked))  &&
         spawn_controller(&SC_Controller);
 }

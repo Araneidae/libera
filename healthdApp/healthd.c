@@ -253,7 +253,8 @@ static void DispatchCommand(const char * Command)
 static void * RunCommandLoop(void * context)
 {
     FILE * CommandPipe;
-    while (TEST_NULL(CommandPipe, fopen, HEALTHD_COMMAND_FIFO, "r"))
+    while (TEST_NULL(
+        CommandPipe = fopen(HEALTHD_COMMAND_FIFO, "r")))
     {
         char Command[80];
         while (fgets(Command, sizeof(Command), CommandPipe) != NULL)
@@ -271,8 +272,8 @@ static bool InitialiseCommandLoop(void)
     unlink(HEALTHD_COMMAND_FIFO);       // In case it's there
     pthread_t ThreadId;
     return
-        TEST_(mkfifo, HEALTHD_COMMAND_FIFO, 0666)  &&
-        TEST_0(pthread_create, &ThreadId, NULL, RunCommandLoop, NULL);
+        TEST_IO(mkfifo(HEALTHD_COMMAND_FIFO, 0666))  &&
+        TEST_0(pthread_create(&ThreadId, NULL, RunCommandLoop, NULL));
 }
 
 
@@ -297,7 +298,7 @@ bool ReadTemperature(int *temp)
 {
     FILE * input;
     const char * temp_sensor = use_rf_sensor ? sensor_temp0 : sensor_temp1;
-    bool Ok = TEST_NULL(input, fopen, temp_sensor, "r");
+    bool Ok = TEST_NULL(input = fopen(temp_sensor, "r"));
     if (Ok)
     {
         Ok = TEST_OK(fscanf(input, UseSys ? "%d" : "%*d\t%*d\t%d", temp) == 1);
@@ -314,7 +315,7 @@ bool WriteDevice(const char * device, const char * format, ...)
 bool WriteDevice(const char * device, const char * format, ...)
 {
     FILE * output;
-    bool Ok = TEST_NULL(output, fopen, device, "w");
+    bool Ok = TEST_NULL(output = fopen(device, "w"));
     if (Ok)
     {
         va_list args;
@@ -397,7 +398,7 @@ static void PressPanicButton(int temp)
     else
     {
         log_message(LOG_ERR, "Invoking command: %s", panic_action);
-        TEST_(system, panic_action);
+        TEST_IO(system(panic_action));
     }
     ExitHandler(0);
 }
@@ -537,17 +538,17 @@ bool InitialiseExitHandler(void)
     char Pid[32];
     bool Ok =
         /* Block all signals during AtExit() signal processing. */
-        TEST_(sigfillset, &AtExitHandler.sa_mask)  &&
+        TEST_IO(sigfillset(&AtExitHandler.sa_mask))  &&
         /* Catch all the usual culprits: HUP, INT, QUIT and TERM. */
-        TEST_(sigaction, SIGHUP,  &AtExitHandler, NULL)  &&
-        TEST_(sigaction, SIGINT,  &AtExitHandler, NULL)  &&
-        TEST_(sigaction, SIGQUIT, &AtExitHandler, NULL)  &&
-        TEST_(sigaction, SIGTERM, &AtExitHandler, NULL)  &&
+        TEST_IO(sigaction(SIGHUP,  &AtExitHandler, NULL))  &&
+        TEST_IO(sigaction(SIGINT,  &AtExitHandler, NULL))  &&
+        TEST_IO(sigaction(SIGQUIT, &AtExitHandler, NULL))  &&
+        TEST_IO(sigaction(SIGTERM, &AtExitHandler, NULL))  &&
         
         /* Try to create a new PID file.  If it already exists then we'll
          * fail without any further fuss. */
-        TEST_IO(PidFile,
-            open, HEALTHD_PID_FILE, O_WRONLY | O_CREAT | O_EXCL, 0644);
+        TEST_IO(PidFile = open(
+            HEALTHD_PID_FILE, O_WRONLY | O_CREAT | O_EXCL, 0644));
 
     if (Ok)
     {
@@ -556,10 +557,10 @@ bool InitialiseExitHandler(void)
          * actually compute the PID, as the daemon() call will change our
          * process id! */
         if(daemon_mode)
-            Ok = TEST_(daemon, false, false);
+            Ok = TEST_IO(daemon(false, false));
 
         sprintf(Pid, "%d", getpid());
-        Ok = Ok  &&  TEST_(write, PidFile, Pid, strlen(Pid));
+        Ok = Ok  &&  TEST_IO(write(PidFile, Pid, strlen(Pid)));
         close(PidFile);
     }
     return Ok;

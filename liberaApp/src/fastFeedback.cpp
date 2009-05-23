@@ -179,16 +179,16 @@ static bool MapFastFeedbackMemory()
     const int PageSize = getpagesize();         // 0x1000
     const int PageMask = PageSize - 1;          // 0x0FFF
     bool Ok = 
-        TEST_IO(DevMem, open, "/dev/mem", O_RDWR | O_SYNC)  &&
-        TEST_IO(FF_AddressSpaceMem, 
-            mmap, 0, PageSize, PROT_READ | PROT_WRITE, MAP_SHARED,
-            DevMem, FF_BASE_ADDRESS & ~PageMask)  &&
-        TEST_IO(FF_ControlSpaceMem, 
-            mmap, 0, PageSize, PROT_READ | PROT_WRITE, MAP_SHARED,
-            DevMem, FF_CONTROL_ADDRESS & ~PageMask)  &&
-        TEST_IO(FA_ControlSpaceMem, 
-            mmap, 0, PageSize, PROT_READ | PROT_WRITE, MAP_SHARED,
-            DevMem, FA_BASE_ADDRESS & ~PageMask);
+        TEST_IO(DevMem = open("/dev/mem", O_RDWR | O_SYNC))  &&
+        TEST_IO(FF_AddressSpaceMem = mmap(
+            0, PageSize, PROT_READ | PROT_WRITE, MAP_SHARED,
+            DevMem, FF_BASE_ADDRESS & ~PageMask))  &&
+        TEST_IO(FF_ControlSpaceMem = mmap(
+            0, PageSize, PROT_READ | PROT_WRITE, MAP_SHARED,
+            DevMem, FF_CONTROL_ADDRESS & ~PageMask))  &&
+        TEST_IO(FA_ControlSpaceMem = mmap(
+            0, PageSize, PROT_READ | PROT_WRITE, MAP_SHARED,
+            DevMem, FA_BASE_ADDRESS & ~PageMask));
     if (Ok)
     {
         ConfigSpace = (FF_CONFIG_SPACE *)

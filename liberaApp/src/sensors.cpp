@@ -101,7 +101,7 @@ static bool ParseFile(
     const char * Filename, int Count, const char * Format, ...)
 {
     FILE * input;
-    bool Ok = TEST_NULL(input, fopen, Filename, "r");
+    bool Ok = TEST_NULL(input = fopen(Filename, "r"));
     if (Ok)
     {
         va_list args;
@@ -221,7 +221,7 @@ static bool ReadMeminfoLine(FILE *MemInfo, const char *Prefix, int &Result)
 static void ProcessFreeMemory()
 {
     FILE * MemInfo;
-    if (TEST_NULL(MemInfo, fopen, "/proc/meminfo", "r"))
+    if (TEST_NULL(MemInfo = fopen("/proc/meminfo", "r")))
     {
         int Free, Cached;
         if (ReadMeminfoLine(MemInfo, "MemFree:", Free)  &&
@@ -269,7 +269,7 @@ static void ReadHealth()
      * processing to be done in the sensors thread (rather than the
      * alternative of using an EPICS SCAN thread). */
     int msp;
-    if (TEST_IO(msp, open, "/dev/msp0", O_RDONLY))
+    if (TEST_IO(msp = open("/dev/msp0", O_RDONLY)))
     {
         read(msp, SystemVoltages, sizeof(SystemVoltages));
         close(msp);
@@ -342,7 +342,7 @@ static bool UdpExchange(
 
     int sock;
     ssize_t rx = 0;
-    bool Ok = TEST_IO(sock, socket, AF_INET, SOCK_DGRAM, 0); 
+    bool Ok = TEST_IO(sock = socket(AF_INET, SOCK_DGRAM, 0));
     if (Ok)
     {
         size_t sent;
@@ -356,18 +356,18 @@ static bool UdpExchange(
             
         int sel;
         Ok =
-            TEST_(connect, sock,
-                (const struct sockaddr *) &ntp_server, sizeof(ntp_server))  &&
-            TEST_IO(sent, send, sock, tx_buffer, tx_length, 0)  &&
+            TEST_IO(connect(sock,
+                (const struct sockaddr *) &ntp_server, sizeof(ntp_server)))  &&
+            TEST_IO(sent = send(sock, tx_buffer, tx_length, 0))  &&
             TEST_OK(sent == tx_length)  &&
-            TEST_IO(sel, select, sock+1, &rx_ready, NULL, NULL, &timeout)  &&
+            TEST_IO(sel = select(sock+1, &rx_ready, NULL, NULL, &timeout))  &&
             /* Fail if select timed out. */
             sel > 0  &&
             /* Read can fail, and we don't actually want to log this. */
             DO_(rx = recv(sock, rx_buffer, *rx_length, 0))  &&
             rx != -1;
         
-        TEST_(close, sock);
+        TEST_IO(close(sock));
     }
     
     *rx_length = Ok ? rx : 0;
@@ -489,7 +489,7 @@ static void SetEnableSensors()
 {
     /* Ensure the state of the health daemon is in step. */
     FILE * fifo;
-    if (TEST_NULL(fifo, fopen, HEALTHD_COMMAND_FIFO, "w"))
+    if (TEST_NULL(fifo = fopen(HEALTHD_COMMAND_FIFO, "w")))
     {
         fprintf(fifo, EnableSensors ? "ON\n" : "OFF\n");
         fclose(fifo);

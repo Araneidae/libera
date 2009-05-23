@@ -111,7 +111,7 @@ static void WriteStateFile()
             WritePersistentState(Backup);
         fclose(Backup);
         if (Ok)
-            TEST_(rename, BackupFileName, StateFileName);
+            TEST_IO(rename(BackupFileName, StateFileName));
     }
 }
 

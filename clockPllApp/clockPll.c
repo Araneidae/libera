@@ -153,15 +153,15 @@ bool InitialiseCommandLoop()
     unlink(CLOCK_PLL_STATUS_FIFO);
     return
         /* Create the command and status FIFOs. */
-        TEST_(mkfifo, CLOCK_PLL_COMMAND_FIFO, 0666)  &&
-        TEST_(mkfifo, CLOCK_PLL_STATUS_FIFO,  0666)  &&
+        TEST_IO(mkfifo(CLOCK_PLL_COMMAND_FIFO, 0666))  &&
+        TEST_IO(mkfifo(CLOCK_PLL_STATUS_FIFO,  0666))  &&
         /* Open the status FIFO right away.  We do this now so that the
          * machine and system clock threads can write freely.
          *    The fifo is opened read-only first before opening write only as
          * a special hack !!!??? why??? */
-        TEST_(open, CLOCK_PLL_STATUS_FIFO, O_RDONLY | O_NONBLOCK)  &&
-        TEST_IO(status_pipe,
-            open, CLOCK_PLL_STATUS_FIFO, O_WRONLY | O_NONBLOCK);
+        TEST_IO(open(CLOCK_PLL_STATUS_FIFO, O_RDONLY | O_NONBLOCK))  &&
+        TEST_IO(status_pipe = open(
+            CLOCK_PLL_STATUS_FIFO, O_WRONLY | O_NONBLOCK));
 }
 
 
@@ -194,7 +194,7 @@ void DispatchCommand(char *Command)
 bool RunCommandLoop()
 {
     FILE * CommandPipe;
-    while (TEST_NULL(CommandPipe, fopen, CLOCK_PLL_COMMAND_FIFO, "r"))
+    while (TEST_NULL(CommandPipe = fopen(CLOCK_PLL_COMMAND_FIFO, "r")))
     {
         char Command[80];
         while (fgets(Command, sizeof(Command), CommandPipe) != NULL)
@@ -220,13 +220,13 @@ void WriteStatus(const char *Format, ...)
      * in fact this is not to be relied on, so we write under a lock.  The
      * story is here: http://lwn.net/Articles/180387/ and the referenced
      * patch is not in the current Kernel. */
-    TEST_0(pthread_mutex_lock, &status_mutex);
+    TEST_0(pthread_mutex_lock(&status_mutex));
     if (status_pipe_overflow)
         /* The x command is interpreted as loss of connection by the client. */
         write(status_pipe, "x\n", 2);
     int written = write(status_pipe, Message, strlen(Message));
     status_pipe_overflow = (size_t) written != strlen(Message);
-    TEST_0(pthread_mutex_unlock, &status_mutex);
+    TEST_0(pthread_mutex_unlock(&status_mutex));
 }
 
 
@@ -295,27 +295,27 @@ bool InitialiseExitHandler()
     char Pid[32];
     return
         /* Block all signals during AtExit() signal processing. */
-        TEST_(sigfillset, &AtExitHandler.sa_mask)  &&
+        TEST_IO(sigfillset(&AtExitHandler.sa_mask))  &&
         /* Catch all the usual culprits: HUP, INT, QUIT and TERM. */
-        TEST_(sigaction, SIGHUP,  &AtExitHandler, NULL)  &&
-        TEST_(sigaction, SIGINT,  &AtExitHandler, NULL)  &&
-        TEST_(sigaction, SIGQUIT, &AtExitHandler, NULL)  &&
-        TEST_(sigaction, SIGTERM, &AtExitHandler, NULL)  &&
+        TEST_IO(sigaction(SIGHUP,  &AtExitHandler, NULL))  &&
+        TEST_IO(sigaction(SIGINT,  &AtExitHandler, NULL))  &&
+        TEST_IO(sigaction(SIGQUIT, &AtExitHandler, NULL))  &&
+        TEST_IO(sigaction(SIGTERM, &AtExitHandler, NULL))  &&
         
         /* Try to create a new PID file.  If it already exists then we'll
          * fail without any further fuss. */
-        TEST_IO(PidFile,
-            open, CLOCK_PLL_PID_FILE, O_WRONLY | O_CREAT | O_EXCL, 0644)  &&
+        TEST_IO(PidFile = open(
+            CLOCK_PLL_PID_FILE, O_WRONLY | O_CREAT | O_EXCL, 0644))  &&
 
         /* At this point we push ourself into the background if required.
          * This needs to be done after testing for the PID file but before we
          * actually compute the PID, as the daemon() call will change our
          * process id! */
-        (! daemon_mode  ||  TEST_(daemon, false, false))  &&
+        (! daemon_mode  ||  TEST_IO(daemon(false, false)))  &&
 
         sprintf(Pid, "%d", getpid())  &&
-        TEST_(write, PidFile, Pid, strlen(Pid))  &&
-        TEST_(close, PidFile);
+        TEST_IO(write(PidFile, Pid, strlen(Pid)))  &&
+        TEST_IO(close(PidFile));
 }
 
 
@@ -333,7 +333,7 @@ int main(int argc, char *argv[])
 
     /* Finally spawn the PLL threads before running the command loop. */
     Ok =
-        TEST_IO(event_fd, open, "/dev/libera.event", O_RDONLY)  &&
+        TEST_IO(event_fd = open("/dev/libera.event", O_RDONLY))  &&
         /* Need to initialise the status loop resources before spawning the
          * threads, as they'll be using our resources. */
         InitialiseCommandLoop()  &&

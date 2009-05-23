@@ -75,7 +75,7 @@ void TRIGGER::Ready(const struct timespec *NewTimestamp)
     /* If we've been given a timestamp then use that, otherwise fetch the
      * current time as our timestamp. */
     if (NewTimestamp == NULL)
-        TEST_(clock_gettime, CLOCK_REALTIME, & Timestamp);
+        TEST_IO(clock_gettime(CLOCK_REALTIME, & Timestamp));
     else
         Timestamp = *NewTimestamp;
 
@@ -147,8 +147,8 @@ public:
     {
         /* Initialise our internal resources. */
         EpicsReady = false;
-        TEST_0(pthread_cond_init, &ReadyCondition, NULL);
-        TEST_0(pthread_mutex_init, &ReadyMutex, NULL);
+        TEST_0(pthread_cond_init(&ReadyCondition, NULL));
+        TEST_0(pthread_mutex_init(&ReadyMutex, NULL));
         /* Register with the EPICS initialisation process so that we will be
          * informed when initialisation is complete. */
         return initHookRegister(EpicsReadyInitHook) == 0;
@@ -165,7 +165,7 @@ public:
             Lock();
             pthread_cleanup_push(UnLock, NULL);
             while (!EpicsReady)
-                TEST_0(pthread_cond_wait, &ReadyCondition, &ReadyMutex);
+                TEST_0(pthread_cond_wait(&ReadyCondition, &ReadyMutex));
             pthread_cleanup_pop(true);
         }
     }
@@ -184,19 +184,19 @@ private:
             Lock();
             pthread_cleanup_push(UnLock, NULL);
             EpicsReady = true;
-            TEST_0(pthread_cond_broadcast, &ReadyCondition);
+            TEST_0(pthread_cond_broadcast(&ReadyCondition));
             pthread_cleanup_pop(true);
         }
     }
 
     static void Lock()
     {
-        TEST_0(pthread_mutex_lock, &ReadyMutex);
+        TEST_0(pthread_mutex_lock(&ReadyMutex));
     }
 
     static void UnLock(void *)
     {
-        TEST_0(pthread_mutex_unlock, &ReadyMutex);
+        TEST_0(pthread_mutex_unlock(&ReadyMutex));
     }
 
     static bool EpicsReady;

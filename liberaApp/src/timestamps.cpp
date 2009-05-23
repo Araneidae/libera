@@ -88,7 +88,7 @@ static bool EnableOpenLoop = false;
 static void SendPllCommand(const char * format, ...)
 {
     int pll;
-    if (TEST_IO(pll, open, CLOCK_PLL_COMMAND_FIFO, O_WRONLY | O_NDELAY))
+    if (TEST_IO(pll = open(CLOCK_PLL_COMMAND_FIFO, O_WRONLY | O_NDELAY)))
     {
         char command[80];
         va_list args;
@@ -96,7 +96,7 @@ static void SendPllCommand(const char * format, ...)
         int len = vsnprintf(command, sizeof(command), format, args);
         strcat(command, "\n");
         int written;
-        TEST_IO(written, write, pll, command, len+1)  &&
+        TEST_IO(written = write(pll, command, len+1))  &&
         TEST_OK(written == len+1);
         close(pll);
     }
@@ -183,13 +183,12 @@ public:
             bool Ok =
                 /* Wait for input to arrive with specified timeout in
                  * milliseconds. */
-                TEST_IO(Read, poll, &FileFd, 1, Timeout)  &&
+                TEST_IO(Read = poll(&FileFd, 1, Timeout))  &&
                 /* Check that the file is readable; if not, timed out. */
                 Read == 1  &&
                 /* Try to read the incoming data. */
-                TEST_IO(Read,
-                    read, FileFd.fd,
-                    Buffer + InPointer, BufferLength - InPointer);
+                TEST_IO(Read = read(
+                    FileFd.fd, Buffer + InPointer, BufferLength - InPointer));
             if (!Ok)
                 return false;
             else if (Read == 0)
@@ -454,7 +453,7 @@ private:
         /* Format the two versions of the time into the approriate fields. */
         FormatTimeString(Timestamp.st, SystemTimeString);
         struct timespec NtpTime;
-        TEST_(clock_gettime, CLOCK_REALTIME, &NtpTime);
+        TEST_IO(clock_gettime(CLOCK_REALTIME, &NtpTime));
         FormatTimeString(NtpTime, NtpTimeString);
 
         MissedEventCount = MissedEvents;
@@ -526,7 +525,7 @@ private:
                 struct timespec NewTime;
                 /* Ensure that if the trigger occurs within the next second
                  * then we will correctly pick up the current time. */
-                TEST_(clock_gettime, CLOCK_REALTIME, & NewTime);
+                TEST_IO(clock_gettime(CLOCK_REALTIME, &NewTime));
                 long Offset = NewTime.tv_nsec;
 
                 /* The trigger will occur on the second, so program the clock
@@ -662,7 +661,7 @@ void AdjustTimestamp(LIBERA_TIMESTAMP &Timestamp)
      * is currently synchronised, use current NTP time instead of the
      * reported Libera system clock. */
     if (!(UseSystemTime && PllMonitorThread->IsSystemClockSynchronised()))
-        TEST_(clock_gettime, CLOCK_REALTIME, & Timestamp.st);
+        TEST_IO(clock_gettime(CLOCK_REALTIME, &Timestamp.st));
 }
 
 void GetTriggerTimestamp(LIBERA_TIMESTAMP &Timestamp)

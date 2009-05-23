@@ -64,8 +64,8 @@ SEMAPHORE::SEMAPHORE(bool InitialReady)
 {
     /* Initialise our internal resources. */
     Ready = InitialReady;
-    TEST_0(pthread_cond_init, &ReadyCondition, NULL);
-    TEST_0(pthread_mutex_init, &ReadyMutex, NULL);
+    TEST_0(pthread_cond_init(&ReadyCondition, NULL));
+    TEST_0(pthread_mutex_init(&ReadyMutex, NULL));
 }
 
 
@@ -77,7 +77,7 @@ SEMAPHORE::SEMAPHORE(bool InitialReady)
 bool SEMAPHORE::WaitFor(int milliseconds)
 {
     struct timespec target;
-    if (!TEST_(clock_gettime, CLOCK_REALTIME, &target))
+    if (!TEST_IO(clock_gettime(CLOCK_REALTIME, &target)))
         return false;
 
     int seconds = milliseconds / MS_S;
@@ -112,7 +112,7 @@ void SEMAPHORE::Wait()
     bool Ok = true;
     while (Ok  && !Ready)
     {
-        Ok = TEST_0(pthread_cond_wait, &ReadyCondition, &ReadyMutex);
+        Ok = TEST_0(pthread_cond_wait(&ReadyCondition, &ReadyMutex));
     }
     if (Ok)
         Ready = false;
@@ -124,20 +124,20 @@ bool SEMAPHORE::Signal()
     bool OldReady = Ready;
     THREAD_LOCK(this);
     Ready = true;
-    TEST_0(pthread_cond_signal, &ReadyCondition);
+    TEST_0(pthread_cond_signal(&ReadyCondition));
     THREAD_UNLOCK();
     return OldReady;
 }
 
 void SEMAPHORE::Lock()
 {
-    TEST_0(pthread_mutex_lock, &ReadyMutex);
+    TEST_0(pthread_mutex_lock(&ReadyMutex));
 }
 
 void SEMAPHORE::Unlock(void *arg)
 {
     SEMAPHORE &self = *(SEMAPHORE *)arg;
-    TEST_0(pthread_mutex_unlock, &self.ReadyMutex);
+    TEST_0(pthread_mutex_unlock(&self.ReadyMutex));
 }
 
 
@@ -153,7 +153,7 @@ void SEMAPHORE::Unlock(void *arg)
 THREAD::THREAD(const char * Name) :
     Name(Name)
 {
-    TEST_(sem_init, &ThreadStatusSemaphore, 0, 0);
+    TEST_IO(sem_init(&ThreadStatusSemaphore, 0, 0));
 }
 
 
@@ -165,8 +165,8 @@ bool THREAD::StartThread()
     ThreadRunning = true;
     ThreadOkFlag = false;
     /* Start the thread and then wait for it to report back. */
-    if (TEST_0(pthread_create, &ThreadId, NULL, StaticThread, this))
-        TEST_(sem_wait, &ThreadStatusSemaphore);
+    if (TEST_0(pthread_create(&ThreadId, NULL, StaticThread, this)))
+        TEST_IO(sem_wait(&ThreadStatusSemaphore));
     /* At this point we know that the thread is only running if StartupOk()
      * was called, so ThreadOkFlag is a good proxy for the thread's state. */
     return ThreadOkFlag;
@@ -180,7 +180,7 @@ void THREAD::Terminate()
         ThreadRunning = false;
         OnTerminate();
         /* Wait for the thread to finish (hope we don't get stuck here!) */
-        TEST_0(pthread_join, ThreadId, NULL);
+        TEST_0(pthread_join(ThreadId, NULL));
         /* Call any post shutdown processing: poor man's pthread_cancel
          * hooks! */
         ThreadShutdown();
@@ -191,7 +191,7 @@ void THREAD::Terminate()
 void THREAD::OnTerminate()
 {
     /* The default terminate action is to cancel the thread directly. */
-    TEST_0(pthread_cancel, ThreadId);
+    TEST_0(pthread_cancel(ThreadId));
 }
 
 
@@ -200,7 +200,7 @@ void THREAD::OnTerminate()
 void THREAD::StartupOk()
 {
     ThreadOkFlag = true;
-    TEST_(sem_post, &ThreadStatusSemaphore);
+    TEST_IO(sem_post(&ThreadStatusSemaphore));
 }
 
 
@@ -221,13 +221,13 @@ void THREAD::ThreadInit()
     /* On thread termination ensure the thread status condition is signalled:
      * if we come here without ThreadOk() being called then the thread failed
      * on startup. */
-    TEST_(sem_post, &ThreadStatusSemaphore);
+    TEST_IO(sem_post(&ThreadStatusSemaphore));
 }
 
 
 void THREAD::Kill(int sig)
 {
-    TEST_0(pthread_kill, ThreadId, sig);
+    TEST_0(pthread_kill(ThreadId, sig));
 }
 
 
@@ -239,11 +239,11 @@ LOCKED_THREAD::LOCKED_THREAD(const char * Name) :
      * never destroyed because this class (instance) is never destroyed ...
      * because EPICS doesn't support any kind of restart, there's no point in
      * doing this anywhere else! */
-    TEST_0(pthread_mutex_init, &Mutex, NULL);
+    TEST_0(pthread_mutex_init(&Mutex, NULL));
 }
 
 void LOCKED_THREAD::Unlock(void *arg)
 {
     LOCKED_THREAD &self = *(LOCKED_THREAD *) arg;
-    TEST_0(pthread_mutex_unlock, &self.Mutex);
+    TEST_0(pthread_mutex_unlock(&self.Mutex));
 }

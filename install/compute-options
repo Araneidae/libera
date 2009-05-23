@@ -229,7 +229,7 @@ set_var OPT_MAF $((((FPGA_ITECH >> 4) & 3) == 1))
 # disable the RF board temperature sensor, but on Brilliance we want to use
 # it.  This is also a very promising way to detect the presence of
 # Brilliance!
-set_var BR_TEMP $(detect_brillance; echo $((!$?)))
+set_var BR_TEMP $(detect_brilliance; echo $((!$?)))
 # If we've not detected a brilliance RF board then turn the temperature
 # sensor into low power mode, if we can.
 [ $BR_TEMP = 0 -a -e /sys/bus/i2c/devices/0-0018/low_power ]  &&

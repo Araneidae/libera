@@ -125,7 +125,7 @@ public:
     LOCKED_THREAD(const char * Name);
 
 protected:
-     void Lock()   { TEST_0(pthread_mutex_lock,   &Mutex); }
+     void Lock()   { TEST_0(pthread_mutex_lock(&Mutex)); }
      static void Unlock(void *arg);
     
 private:

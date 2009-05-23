@@ -123,7 +123,7 @@ static void DetachProcess(const char *Process, const char *const argv[])
     }
     else
         /* Wait for the middle process to finish. */
-        TEST_(waitpid, MiddlePid, NULL, 0);
+        TEST_IO(waitpid(MiddlePid, NULL, 0));
 }
 
 

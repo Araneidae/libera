@@ -45,78 +45,60 @@ void print_error(const char * Message, const char * FileName, int LineNumber);
  * There are three main cases, depending on how the return value is
  * interpreted:
  *
- *  TEST_IO(result, function, arguments)
- *      Computes
+ *  TEST_IO(expression)
+ *      Computes expression, typically of the form
  *          result = function(arguments)
- *      and reports an error message if result == -1.
+ *      and reports an error message if the result is -1.
  *  
- *  TEST_NULL(result, function, arguments)
- *      Computes
- *          result = function(arguments)
- *      and reports an error message if result == NULL.
+ *  TEST_NULL(expression)
+ *      Reports an error message if expression is NULL.
  *  
- *  TEST_(function, arguments)
- *      Computes
- *          function(arguments)
- *      and reports an error message if the function returns -1.
+ *  TEST_0(expression)
+ *      Computes expression and reports an error message if the expressionnn
+ *      is non zero.  This is designed for use with the pthread_ family of
+ *      functions, and the expression is assigned to errno if non zero.
  *  
- *  TEST_0(function, arguments)
- *      Computes
- *          function(arguments)
- *      and reports an error message if the function returns any non-zero
- *      value.  This is designed for use with the pthread_ family of
- *      functions, and the returned value is assigned to errno if non zero.
+ *  TEST_OK(expression)
+ *      Reports an error message if the expression is false.
+ */
+
+
+/* Building block for the four helper macros listed above, parameterised by
+ * test to perform on expression.
  *
- * The following is slightly different in purpose.
- *  
- *  TEST_OK(test)
- *      Evaluates test as a boolean and prints an error message if it
- *      evaluates to false. */
+ * The natural way to write this is:
+ * 
+ *  #define TEST_(COND, expr) \
+ *      (unlikely(!COND(expr)) ? \
+ *          print_error(#expr, __FILE__, __LINE__), false : true)
+ *
+ * Unfortunately this version makes the compiler very noisy when the result
+ * of TEST_(...) is ignored, so we go for this quieter implementation
+ * instead: */
 
-#define TEST_IO(var, command, args...) \
+#define TEST_(COND, expr) \
     ( { \
-        var = (command)(args); \
-        if (unlikely((int) var == -1)) \
-            print_error(#var " = " #command "(" #args ")", \
-                __FILE__, __LINE__); \
-        (int) var != -1; \
-    } )
-
-#define TEST_NULL(var, command, args...) \
-    ( { \
-        var = (command)(args); \
-        if (unlikely(var == NULL)) \
-            print_error(#var " = " #command "(" #args ")", \
-                __FILE__, __LINE__); \
-        var != NULL; \
-    } )
-
-#define TEST_(command, args...) \
-    ( { \
-        bool __ok__ = (command)(args) != -1; \
+        bool __ok__ = COND(expr); \
         if (unlikely(!__ok__)) \
-            print_error(#command "(" #args ")", __FILE__, __LINE__); \
+            print_error(#expr, __FILE__, __LINE__); \
         __ok__; \
     } )
 
-#define TEST_0(command, args...) \
+#define COND_IO(expr)       ((int) (expr) != -1)
+#define COND_NULL(expr)     ((expr) != NULL)
+#define COND_OK(expr)       ((bool) (expr))
+#define COND_0(expr) \
     ( { \
-        int __rc__ = (command)(args); \
+        int __rc__ = (expr); \
         if (unlikely(__rc__ != 0)) \
-        { \
             errno = __rc__; \
-            print_error(#command "(" #args ")", __FILE__, __LINE__); \
-        } \
         __rc__ == 0; \
     } )
 
-#define TEST_OK(test) \
-    ( { \
-        bool __ok__ = (test); \
-        if (unlikely(!__ok__)) \
-            print_error(#test, __FILE__, __LINE__); \
-        __ok__; \
-    } )
+#define TEST_IO(expr)       TEST_(COND_IO,   expr)
+#define TEST_NULL(expr)     TEST_(COND_NULL, expr)
+#define TEST_OK(expr)       TEST_(COND_OK,   expr)
+#define TEST_0(expr)        TEST_(COND_0,    expr)
 
 
 /* These two macros facilitate using the macros above by creating if

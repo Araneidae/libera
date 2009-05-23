@@ -98,9 +98,9 @@ static void DropSynchronisation(CONTROLLER *Controller, const char * Reason)
 
 static bool GetClock(CONTROLLER *Controller)
 {
-    TEST_0(pthread_mutex_unlock, &Controller->Interlock);
+    TEST_0(pthread_mutex_unlock(&Controller->Interlock));
     Controller->ClockOk = Controller->GetClock(&Controller->Clock);
-    TEST_0(pthread_mutex_lock, &Controller->Interlock);
+    TEST_0(pthread_mutex_lock(&Controller->Interlock));
     return Controller->ClockOk;
 }
 
@@ -499,7 +499,7 @@ static void* run_controller(void *Context)
      * while it is reading the clock.  This is easy, requires no subtle
      * analysis, and simply works.
      *    So here we start things off by capturing the lock. */
-    TEST_0(pthread_mutex_lock, &Controller->Interlock);
+    TEST_0(pthread_mutex_lock(&Controller->Interlock));
     
     while (true)
     {
@@ -656,7 +656,7 @@ static void WriteToController(CONTROLLER *Controller, char *Command)
 
 void ControllerCommand(CONTROLLER *Controller, char *Command)
 {
-    TEST_0(pthread_mutex_lock, &Controller->Interlock);
+    TEST_0(pthread_mutex_lock(&Controller->Interlock));
     int arg = atoi(Command + 1);
     switch (Command[0])
     {
@@ -673,7 +673,7 @@ void ControllerCommand(CONTROLLER *Controller, char *Command)
         default:
             log_message(LOG_ERR, "Unknown command \"%s\"", Command);
     }
-    TEST_0(pthread_mutex_unlock, &Controller->Interlock);
+    TEST_0(pthread_mutex_unlock(&Controller->Interlock));
 }
 
 
@@ -682,7 +682,7 @@ void ControllerCommand(CONTROLLER *Controller, char *Command)
 
 bool spawn_controller(CONTROLLER *Controller)
 {
-    TEST_0(pthread_mutex_init, &Controller->Interlock, NULL);
+    TEST_0(pthread_mutex_init(&Controller->Interlock, NULL));
 
     /* Start the DAC in the middle of its range on startup. */
     Controller->Dac = 0x8000;
@@ -703,5 +703,5 @@ bool spawn_controller(CONTROLLER *Controller)
     Controller->FrequencyError = 0;
 
     pthread_t ThreadId;
-    return TEST_0(pthread_create, &ThreadId, NULL, run_controller, Controller);
+    return TEST_0(pthread_create(&ThreadId, NULL, run_controller, Controller));
 }

@@ -687,9 +687,9 @@ private:
              * SEEK_ST:0 is handled specially by the driver as a seek to the
              * end of the current waveform. */
             IF_ELSE(TriggeredOperation,
-                TEST_(lseek, DevDd, TriggeredDelay, SEEK_END),  // SEEK_TR
-                TEST_(lseek, DevDd, 0, SEEK_SET))  &&           // SEEK_ST
-            TEST_IO(Read, read, DevDd, Data, TargetLength)  &&
+                TEST_IO(lseek(DevDd, TriggeredDelay, SEEK_END)),  // SEEK_TR
+                TEST_IO(lseek(DevDd, 0, SEEK_SET)))  &&           // SEEK_ST
+            TEST_IO(Read = read(DevDd, Data, TargetLength))  &&
             TEST_OK(Read == TargetLength);
     }
 
@@ -1017,7 +1017,7 @@ private:
         CommitDscState();
         THREAD_UNLOCK();
         
-        if (!TEST_IO(DevDd, open, "/dev/libera.dd", O_RDONLY))
+        if (!TEST_IO(DevDd = open("/dev/libera.dd", O_RDONLY)))
             /* Returning early causes error return. */
             return;
         StartupOk();

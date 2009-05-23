@@ -152,7 +152,7 @@ static bool ReadCfgValue(int Index, int &Result)
 {
     libera_cfg_request_t Request;
     Request.idx = Index;
-    bool Ok = TEST_(ioctl, DevCfg, LIBERA_IOC_GET_CFG, &Request);
+    bool Ok = TEST_IO(ioctl(DevCfg, LIBERA_IOC_GET_CFG, &Request));
     if (Ok)
         Result = Request.val;
     return Ok;
@@ -163,7 +163,7 @@ static bool WriteCfgValue(int Index, int Value)
     libera_cfg_request_t Request;
     Request.idx = Index;
     Request.val = Value;
-    return TEST_(ioctl, DevCfg, LIBERA_IOC_SET_CFG, &Request);
+    return TEST_IO(ioctl(DevCfg, LIBERA_IOC_SET_CFG, &Request));
 }
 
 
@@ -215,7 +215,7 @@ bool SetMachineClockTime()
     libera_HRtimestamp_t Timestamp;
     Timestamp.mt = 0;
     Timestamp.phase = 0;
-    return TEST_(ioctl, DevEvent, LIBERA_EVENT_SET_MT, &Timestamp);
+    return TEST_IO(ioctl(DevEvent, LIBERA_EVENT_SET_MT, &Timestamp));
 }
 
 
@@ -223,7 +223,7 @@ bool SetSystemClockTime(const struct timespec & NewTime)
 {
     libera_HRtimestamp_t Timestamp;
     Timestamp.st = NewTime;
-    return TEST_(ioctl, DevEvent, LIBERA_EVENT_SET_ST, &Timestamp);
+    return TEST_IO(ioctl(DevEvent, LIBERA_EVENT_SET_ST, &Timestamp));
 }
 
 
@@ -274,10 +274,10 @@ size_t ReadWaveform(
     const int ReadSize = sizeof(LIBERA_ROW) * WaveformLength;
     int Read;
     bool Ok =
-        TEST_(ioctl, DevDd, LIBERA_IOC_SET_DEC, &Decimation)  &&
-        TEST_(lseek, DevDd, Offset, LIBERA_SEEK_TR)  &&
-        TEST_IO(Read, read, DevDd, Data, ReadSize) &&
-        TEST_(ioctl, DevDd, LIBERA_IOC_GET_DD_TSTAMP, &Timestamp);
+        TEST_IO(ioctl(DevDd, LIBERA_IOC_SET_DEC, &Decimation))  &&
+        TEST_IO(lseek(DevDd, Offset, LIBERA_SEEK_TR))  &&
+        TEST_IO(Read = read(DevDd, Data, ReadSize)) &&
+        TEST_IO(ioctl(DevDd, LIBERA_IOC_GET_DD_TSTAMP, &Timestamp));
 
     return Ok ? Read / sizeof(LIBERA_ROW) : 0;
 }
@@ -292,9 +292,9 @@ size_t ReadPostmortem(
         /* Very odd design in the driver: the postmortem waveform isn't
          * actually read until we do this ioctl!  This really isn't terribly
          * sensible, but never mind, that's how it works at the moment... */
-        TEST_(ioctl, DevEvent, LIBERA_EVENT_ACQ_PM)  &&
-        TEST_IO(Read, read, DevPm, Data, ReadSize)  &&
-        TEST_(ioctl, DevPm, LIBERA_IOC_GET_PM_TSTAMP, &Timestamp);
+        TEST_IO(ioctl(DevEvent, LIBERA_EVENT_ACQ_PM))  &&
+        TEST_IO(Read = read(DevPm, Data, ReadSize))  &&
+        TEST_IO(ioctl(DevPm, LIBERA_IOC_GET_PM_TSTAMP, &Timestamp));
     
     return Ok  &&  Read != -1  ?  Read / sizeof(LIBERA_ROW)  :  0;
 }
@@ -304,7 +304,7 @@ bool ReadAdcWaveform(ADC_DATA &Data)
 {
     size_t Read;
     bool Ok =
-        TEST_IO(Read, read, DevAdc, Data, sizeof(ADC_DATA))  &&
+        TEST_IO(Read = read(DevAdc, Data, sizeof(ADC_DATA)))  &&
         TEST_OK(Read == sizeof(ADC_DATA));
     if (Ok  &&  AdcExcessBits > 0)
     {
@@ -324,7 +324,7 @@ bool ReadSlowAcquisition(ABCD_ROW &ButtonData, XYQS_ROW &PositionData)
     libera_atom_sa_t Result;
     int Read;
     bool Ok =
-        TEST_IO(Read, read, DevSa, &Result, sizeof(libera_atom_sa_t))  &&
+        TEST_IO(Read = read(DevSa, &Result, sizeof(libera_atom_sa_t)))  &&
         TEST_OK(Read == sizeof(libera_atom_sa_t));
     if (Ok)
     {
@@ -353,7 +353,7 @@ int ReadMaxAdc()
 
 bool SetEventMask(int EventMask)
 {
-    return TEST_(ioctl, DevEvent, LIBERA_EVENT_SET_MASK, &EventMask);
+    return TEST_IO(ioctl(DevEvent, LIBERA_EVENT_SET_MASK, &EventMask));
 }
 
 
@@ -486,8 +486,8 @@ static bool ReadDscWords(int offset, void *words, int length)
     offset -= DSC_DEVICE_OFFSET;
     int Read;
     return 
-        TEST_(lseek, DevDsc, offset, SEEK_SET)  &&
-        TEST_IO(Read, read, DevDsc, words, length)  &&
+        TEST_IO(lseek(DevDsc, offset, SEEK_SET))  &&
+        TEST_IO(Read = read(DevDsc, words, length))  &&
         TEST_OK(Read == length);
 }
 
@@ -501,8 +501,8 @@ static bool WriteDscWords(int offset, void *words, int length)
     offset -= DSC_DEVICE_OFFSET;
     int Written;
     return
-        TEST_(lseek, DevDsc, offset, SEEK_SET)  &&
-        TEST_IO(Written, write, DevDsc, words, length) &&
+        TEST_IO(lseek(DevDsc, offset, SEEK_SET))  &&
+        TEST_IO(Written = write(DevDsc, words, length)) &&
         TEST_OK(Written == length);
 }
 
@@ -872,8 +872,8 @@ static unsigned int * AverageSumRegisters = NULL;
 static bool InitialiseAverageSum()
 {
     if (Version2FpgaPresent)
-        return TEST_NULL(AverageSumRegisters,
-            MapRawRegister, REGISTER_FA_NSUMS);
+        return TEST_NULL(
+            AverageSumRegisters = MapRawRegister(REGISTER_FA_NSUMS));
     else
         return true;
 }
@@ -938,7 +938,7 @@ bool WriteSpikeRemovalSettings(
 bool ReadSpikeRemovalBuffer(int Buffer[SPIKE_DEBUG_BUFLEN])
 {
     unsigned int * FA_area;
-    if (TEST_NULL(FA_area, MapRawRegister, 0x1401C000))
+    if (TEST_NULL(FA_area = MapRawRegister(0x1401C000)))
     {
         /* Enable spike capture and wait for some waveforms to be captured.
          * If switching is enabled the buffer will be filled within a few
@@ -980,11 +980,11 @@ bool WritePostmortemTriggering(
 static bool EnableMaxAdc()
 {
     if (ItechMaxAdcPresent)
-        return TEST_NULL(RegisterMaxAdcRaw,
-            MapRawRegister, REGISTER_MAX_ADC_ITECH);
+        return TEST_NULL(
+            RegisterMaxAdcRaw = MapRawRegister(REGISTER_MAX_ADC_ITECH));
     else if (DlsFpgaFeatures)
-        return TEST_NULL(RegisterMaxAdcRaw,
-            MapRawRegister, REGISTER_MAX_ADC_DLS);
+        return TEST_NULL(
+            RegisterMaxAdcRaw = MapRawRegister(REGISTER_MAX_ADC_DLS));
     else
         /* Not enabled, not a problem. */
         return true;
@@ -1008,15 +1008,15 @@ bool InitialiseHardware()
     
     return
         /* Open all the devices we're going to need. */
-        TEST_IO(DevCfg,   open, "/dev/libera.cfg",   O_RDWR)  &&
-        TEST_IO(DevAdc,   open, "/dev/libera.adc",   O_RDONLY)  &&
-        TEST_IO(DevDsc,   open, "/dev/libera.dsc",   O_RDWR | O_SYNC)  &&
-        TEST_IO(DevEvent, open, "/dev/libera.event", O_RDWR)  &&
-        TEST_IO(DevPm,    open, "/dev/libera.pm",    O_RDONLY)  &&
-        TEST_IO(DevSa,    open, "/dev/libera.sa",    O_RDONLY)  &&
-        TEST_IO(DevDd,    open, "/dev/libera.dd",    O_RDONLY)  &&
+        TEST_IO(DevCfg   = open("/dev/libera.cfg",   O_RDWR))  &&
+        TEST_IO(DevAdc   = open("/dev/libera.adc",   O_RDONLY))  &&
+        TEST_IO(DevDsc   = open("/dev/libera.dsc",   O_RDWR | O_SYNC))  &&
+        TEST_IO(DevEvent = open("/dev/libera.event", O_RDWR))  &&
+        TEST_IO(DevPm    = open("/dev/libera.pm",    O_RDONLY))  &&
+        TEST_IO(DevSa    = open("/dev/libera.sa",    O_RDONLY))  &&
+        TEST_IO(DevDd    = open("/dev/libera.dd",    O_RDONLY))  &&
 #ifdef RAW_REGISTER
-        TEST_IO(DevMem,   open, "/dev/mem", O_RDWR | O_SYNC)  &&
+        TEST_IO(DevMem   = open("/dev/mem", O_RDWR | O_SYNC))  &&
         EnableMaxAdc()  &&
         InitialiseAverageSum()  &&
 #endif

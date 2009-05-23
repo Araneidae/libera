@@ -144,8 +144,8 @@ static int InterlockIIR_K = 0;
  * is the slow acquisition update thread. */
 pthread_mutex_t InterlockMutex = PTHREAD_MUTEX_INITIALIZER;
 
-static void Lock()         { TEST_0(pthread_mutex_lock,   &InterlockMutex); }
-static void Unlock(void *) { TEST_0(pthread_mutex_unlock, &InterlockMutex); }
+static void Lock()         { TEST_0(pthread_mutex_lock(&InterlockMutex)); }
+static void Unlock(void *) { TEST_0(pthread_mutex_unlock(&InterlockMutex)); }
 
 #define LOCK()      Lock(); pthread_cleanup_push(Unlock, NULL)
 #define UNLOCK()    pthread_cleanup_pop(true)
