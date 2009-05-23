@@ -314,22 +314,17 @@ static void TerminateLibera()
 
 static bool WritePid(const char * FileName)
 {
-    FILE * output = fopen(FileName, "w");
-    if (output == NULL)
-    {
-        perror("Can't open PID file");
-        return false;
-    }
-    else
-    {
-        /* Lazy error checking here.  Really should check that there aren't
-         * any errors in any of the following. */
-        fprintf(output, "%d", getpid());
-        fclose(output);
-        /* Remember PID filename so we can remove it on exit. */
-        PidFileName = FileName;
-        return true;
-    }
+    FILE * output;
+    return
+        TEST_NULL(output, fopen, FileName, "w")  &&
+        DO_(
+            /* Lazy error checking here.  Really should check that there
+             * aren't any errors in any of the following. */
+            fprintf(output, "%d", getpid());
+            fclose(output);
+            /* Remember PID filename so we can remove it on exit. */
+            PidFileName = FileName;
+        );
 }
 
 
@@ -462,7 +457,7 @@ static bool ProcessOptions(int &argc, char ** &argv)
             case 'N':   MonitorNtp = false;             break;
             case '?':
             default:
-                printf("Try `%s -h` for usage\n", argv[0]);
+                fprintf(stderr, "Try `%s -h` for usage\n", argv[0]);
                 return false;
             case -1:
                 /* All arguments read successfuly.  Consume them and return

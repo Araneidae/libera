@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 191
-y 64
+x 2903
+y 867
 w 295
 h 117
 font "helvetica-medium-r-18.0"
@@ -913,9 +913,6 @@ displayFileName {
 }
 closeAction {
   0 1
-}
-setPosition {
-  0 "parentWindow"
 }
 closeDisplay {
   0 1

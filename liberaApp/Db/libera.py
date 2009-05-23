@@ -722,15 +722,28 @@ def Sensors():
     SetChannelName('SE')
     enable = Enable(ZSV  = 'MAJOR', OSV  = 'NO_ALARM')
 
-    temp = longIn('TEMP', 20, 60, 'deg C',
-        DESC = 'Internal Libera temperature',
-        HIGH = 45,      HSV  = 'MINOR',
-        HIHI = 50,      HHSV = 'MAJOR',
-        LOLO = 0,       LLSV = 'MINOR')
-    fans = [longIn('FAN%d' % i, 0, 6000, 'RPM',
-        DESC = 'Fan %d speed' % i,
-        LOW  = 4000,    LSV  = 'MINOR',
-        LOLO = 1000,    LLSV = 'MAJOR') for i in (1, 2)]
+    temp_monitors = [
+        longIn('TEMP_RF', 40, 70, 'deg C',
+            DESC = 'RF board temperature',
+            HIGH = 55,      HSV  = 'MINOR',
+            HIHI = 60,      HHSV = 'MAJOR'),
+        longIn('TEMP_MB', 30, 60, 'deg C',
+            DESC = 'Motherboard temperature',
+            HIGH = 45,      HSV  = 'MINOR',
+            HIHI = 50,      HHSV = 'MAJOR')]
+    for i in (1, 2):
+        fan_speed = longIn('FAN%d' % i, 0, 6000, 'RPM',
+            DESC = 'Fan %d speed' % i)
+        fan_set = longIn('FAN%d_SET' % i, 0, 6000, 'RPM',
+            DESC = 'Fan %d set speed' % i)
+        fan_err = records.calc('FAN%d_ERR' % i,
+            DESC = 'Fan %d speed error' % i,
+            CALC = 'A-B',   INPA = fan_speed,   INPB = fan_set,
+            EGU  = 'RPM',
+            LOLO = -1000,   LLSV = 'MAJOR', LOW  = -500,    LSV  = 'MINOR',
+            HIGH = 500,     HSV  = 'MINOR', HIHI = 1000,    HHSV = 'MAJOR')
+        temp_monitors.extend([fan_speed, fan_set, fan_err])
+    
     memfree = aIn('FREE', 0, 64, 1./MB, 'MB', 2,
         DESC = 'Free memory',
         LOW  = 16,      LSV  = 'MINOR',
@@ -753,17 +766,20 @@ def Sensors():
 
     # Aggregate all the alarm generating records into a single "health"
     # record.  Only the alarm status of this record is meaningful.
-    alarmsensors = fans + [temp, memfree, ramfs, cpu, voltage_health]
-    health = AggregateSeverity('HEALTH', 'Aggregated health',
-        alarmsensors + ExtraHealthRecords + [enable])
+    alarmsensors = [memfree, ramfs, cpu, voltage_health]
+    temp_health = AggregateSeverity(
+        'TEMPMON', 'Temperature monitoring', temp_monitors + [enable])
+    all_health = AggregateSeverity('HEALTH', 'Aggregated health',
+        alarmsensors + ExtraHealthRecords + [temp_health])
     
-    Trigger(False, alarmsensors + voltages + ntp_monitors +
-        [uptime, epicsup, health])
+    Trigger(False,
+        temp_monitors + alarmsensors + voltages + ntp_monitors +
+        [uptime, epicsup, temp_health, all_health])
             
     UnsetChannelName()
 
     # Mirror the health record for backwards compatibility.
-    records.bi('HEALTH', INP = MS(CP(health)))
+    records.bi('HEALTH', INP = MS(CP(all_health)))
 
 
 def Versions():

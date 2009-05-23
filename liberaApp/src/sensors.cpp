@@ -47,6 +47,8 @@
 #include "hardware.h"
 #include "thread.h"
 #include "trigger.h"
+#include "versions.h"
+#include "healthd.h"
 
 #include "sensors.h"
 
@@ -58,8 +60,9 @@
 
 /* Sensor variables. */
 
-static int SystemTemperature;
+static int RfTemperature, MbTemperature;
 static int FanSpeeds[2];
+static int FanSetSpeeds[2];
 static int SystemVoltages[8];
 
 static int MemoryFree;  // Nominal memory free (free + cached - ramfs)
@@ -79,9 +82,12 @@ static double EpicsStarted;
 
 /* The paths to the fan and temperature sensors need to be determined at
  * startup. */
-static const char *proc_temp;
-static const char *proc_fan0;
+static const char *proc_temp_rf;    // RF board temperature
+static const char *proc_temp_mb;    // Motherboard temperature
+static const char *proc_fan0;       // Fan measured speeds
 static const char *proc_fan1;
+static const char *proc_fan0_set;   // Fan programmed speeds
+static const char *proc_fan1_set;
 /* This records whether we're reading from /sys or /proc. */
 static bool UseSys;
 
@@ -94,21 +100,13 @@ static bool ParseFile(
 static bool ParseFile(
     const char * Filename, int Count, const char * Format, ...)
 {
-    bool Ok = false;
-    FILE * input = fopen(Filename, "r");
-    if (input == NULL)
-    {
-        char Message[80];
-        snprintf(Message, sizeof(Message), "Unable to open file %s", Filename);
-        perror(Message);
-    }
-    else
+    FILE * input;
+    bool Ok = TEST_NULL(input, fopen, Filename, "r");
+    if (Ok)
     {
         va_list args;
         va_start(args, Format);
-        Ok = vfscanf(input, Format, args) == Count;
-        if (!Ok)
-            printf("Error parsing %s\n", Filename);
+        Ok = TEST_OK(vfscanf(input, Format, args) == Count);
         fclose(input);
     }
     return Ok;
@@ -222,10 +220,8 @@ static bool ReadMeminfoLine(FILE *MemInfo, const char *Prefix, int &Result)
 
 static void ProcessFreeMemory()
 {
-    FILE * MemInfo = fopen("/proc/meminfo", "r");
-    if (MemInfo == NULL)
-        perror("Unable to open /proc/meminfo");
-    else
+    FILE * MemInfo;
+    if (TEST_NULL(MemInfo, fopen, "/proc/meminfo", "r"))
     {
         int Free, Cached;
         if (ReadMeminfoLine(MemInfo, "MemFree:", Free)  &&
@@ -239,21 +235,33 @@ static void ProcessFreeMemory()
 }
 
 
+static void ReadTemperature(const char * sensor, int *result)
+{
+    /* Annoyingly the format of the temperature readout depends on which
+     * system version we're using! */
+    ParseFile(sensor, 1,
+        UseSys ? "%d" : "%*d\t%*d\t%d", result);
+    if (UseSys)
+        *result /= 1000;
+}
+
+
 
 /* The following reads the key system health parameters directly from the
  * appropriate devices and proc/sys files. */
 
 static void ReadHealth()
 {
-    /* Annoyingly the format of the temperature readout depends on which
-     * system version we're using! */
-    ParseFile(proc_temp, 1,
-        UseSys ? "%d" : "%*d\t%*d\t%d", &SystemTemperature);
-    if (UseSys)
-        SystemTemperature /= 1000;
+    if (LiberaBrilliance)
+        /* Only read the RF sensor if we're running Brilliance, as otherwise
+         * it's disabled as it disturbs the position measurement too much. */
+        ReadTemperature(proc_temp_rf, &RfTemperature);
+    ReadTemperature(proc_temp_mb, &MbTemperature);
 
-    ParseFile(proc_fan0, 1, "%d", &FanSpeeds[0]);
-    ParseFile(proc_fan1, 1, "%d", &FanSpeeds[1]);
+    ParseFile(proc_fan0,     1, "%d", &FanSpeeds[0]);
+    ParseFile(proc_fan1,     1, "%d", &FanSpeeds[1]);
+    ParseFile(proc_fan0_set, 1, "%d", &FanSetSpeeds[0]);
+    ParseFile(proc_fan1_set, 1, "%d", &FanSetSpeeds[1]);
 
     /* The system voltages are read directly from the msp device in binary
      * format.  This particular step takes a surprisingly long time (about
@@ -477,13 +485,25 @@ private:
 static SENSORS_THREAD * SensorsThread = NULL;
 
 
+static void SetEnableSensors()
+{
+    /* Ensure the state of the health daemon is in step. */
+    FILE * fifo;
+    if (TEST_NULL(fifo, fopen, HEALTHD_COMMAND_FIFO, "w"))
+    {
+        fprintf(fifo, EnableSensors ? "ON\n" : "OFF\n");
+        fclose(fifo);
+    }
+}
+
+
 #define PUBLISH_BLOCK(Type, BaseName, Array) \
     ( { \
         for (unsigned int i = 0; i < ARRAY_SIZE(Array); i ++) \
         { \
-            char Number[10]; \
-            sprintf(Number, "%d", i+1); \
-            Publish_##Type(Concat(BaseName, Number), Array[i]); \
+            char * Name = (char *) malloc(strlen(BaseName) + 5); \
+            sprintf(Name, BaseName, i + 1); \
+            Publish_##Type(Name, Array[i]); \
         } \
     } )
 
@@ -502,21 +522,37 @@ bool InitialiseSensors(bool _MonitorNtp)
     if (UseSys)
     {
         /* The /sys file system exists.  All our sensors live here. */
-        proc_temp = I2C_DEVICE "0-0029/temp1_input";
-        proc_fan0 = I2C_DEVICE "0-004b/fan1_input";
-        proc_fan1 = I2C_DEVICE "0-0048/fan1_input";
+        proc_temp_rf  = I2C_DEVICE "0-0018/temp1_input";
+        proc_temp_mb  = I2C_DEVICE "0-0029/temp1_input";
+        proc_fan0     = I2C_DEVICE "0-004b/fan1_input";
+        proc_fan1     = I2C_DEVICE "0-0048/fan1_input";
+        /* The fan speed control is different depending on the kernel
+         * version, alas.  We try for the newer version first, dropping back
+         * to the older version if not found. */
+        proc_fan0_set = I2C_DEVICE "0-004b/fan1_target";
+        proc_fan1_set = I2C_DEVICE "0-0048/fan1_target";
+        if (access(proc_fan0_set, F_OK) != 0)
+        {
+            proc_fan0_set = I2C_DEVICE "0-004b/speed";
+            proc_fan1_set = I2C_DEVICE "0-0048/speed";
+        }
     }
     else
     {
         /* No /sys file system: revert to the older /proc filesystem. */
-        proc_temp = PROC_DEVICE "max1617a-i2c-0-29/temp1";
-        proc_fan0 = PROC_DEVICE "max6650-i2c-0-4b/fan1";
-        proc_fan1 = PROC_DEVICE "max6650-i2c-0-48/fan1";
+        proc_temp_rf  = PROC_DEVICE "adm1023-i2c-0-18/temp1";
+        proc_temp_mb  = PROC_DEVICE "max1617a-i2c-0-29/temp1";
+        proc_fan0     = PROC_DEVICE "max6650-i2c-0-4b/fan1";
+        proc_fan1     = PROC_DEVICE "max6650-i2c-0-48/fan1";
+        proc_fan0_set = PROC_DEVICE "max6650-i2c-0-4b/speed";
+        proc_fan1_set = PROC_DEVICE "max6650-i2c-0-48/speed";
     }
     
-    Publish_longin("SE:TEMP",   SystemTemperature);
-    PUBLISH_BLOCK(longin, "SE:FAN",  FanSpeeds);
-    PUBLISH_BLOCK(ai,     "SE:VOLT", SystemVoltages);
+    Publish_longin("SE:TEMP_RF",   RfTemperature);
+    Publish_longin("SE:TEMP_MB",   MbTemperature);
+    PUBLISH_BLOCK(longin, "SE:FAN%d",     FanSpeeds);
+    PUBLISH_BLOCK(longin, "SE:FAN%d_SET", FanSetSpeeds);
+    PUBLISH_BLOCK(ai,     "SE:VOLT%d",    SystemVoltages);
 
     Publish_ai("SE:FREE",    MemoryFree);
     Publish_ai("SE:RAMFS",   RamfsUsage);
@@ -524,7 +560,7 @@ bool InitialiseSensors(bool _MonitorNtp)
     Publish_ai("SE:EPICSUP", EpicsUp);
     Publish_ai("SE:CPU",     CpuUsage);
 
-    Publish_bo("SE:ENABLE",  EnableSensors);
+    PUBLISH_FUNCTION_OUT(bo, "SE:ENABLE", EnableSensors, SetEnableSensors);
 
     /* Although these are processed here as sensors, these fields are
      * aggregated as part of the clock subsystem. */
@@ -533,6 +569,7 @@ bool InitialiseSensors(bool _MonitorNtp)
     Publish_stringin("CK:SERVER", NTP_server);
 
     InitialiseUptime();
+    SetEnableSensors();
 
     SensorsThread = new SENSORS_THREAD();
     return SensorsThread->StartThread();

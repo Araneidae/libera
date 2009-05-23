@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 813
-y 308
+x 814
+y 326
 w 473
 h 567
 font "helvetica-medium-r-16.0"
@@ -65,7 +65,7 @@ release 0
 x 8
 y 352
 w 224
-h 144
+h 120
 lineColor index 14
 fill
 fillColor index 4
@@ -853,7 +853,7 @@ major 4
 minor 1
 release 0
 x 16
-y 376
+y 372
 w 66
 h 16
 font "helvetica-medium-r-14.0"
@@ -911,7 +911,7 @@ major 4
 minor 1
 release 0
 x 16
-y 400
+y 396
 w 62
 h 16
 font "helvetica-medium-r-14.0"
@@ -931,7 +931,7 @@ major 4
 minor 1
 release 0
 x 16
-y 424
+y 420
 w 49
 h 16
 font "helvetica-medium-r-14.0"
@@ -1344,7 +1344,7 @@ major 4
 minor 0
 release 0
 x 8
-y 512
+y 488
 w 224
 h 40
 lineColor index 14
@@ -1359,7 +1359,7 @@ major 4
 minor 1
 release 0
 x 136
-y 528
+y 504
 w 80
 h 20
 controlPv "$(device):CF:ISCALE_S"
@@ -1385,7 +1385,7 @@ major 4
 minor 1
 release 0
 x 16
-y 528
+y 504
 w 107
 h 16
 font "helvetica-medium-r-14.0"
@@ -1405,7 +1405,7 @@ major 4
 minor 1
 release 0
 x 8
-y 504
+y 480
 w 120
 h 16
 font "helvetica-medium-r-12.0"
@@ -1424,7 +1424,7 @@ major 4
 minor 0
 release 0
 x 8
-y 504
+y 480
 w 120
 h 16
 lineColor index 14
@@ -2251,65 +2251,6 @@ beginObjectProperties
 major 4
 minor 0
 release 0
-x 16
-y 440
-w 192
-h 24
-
-beginGroup
-
-# (Menu Button)
-object activeMenuButtonClass
-beginObjectProperties
-major 4
-minor 0
-release 0
-x 112
-y 440
-w 96
-h 22
-fgColor index 14
-bgColor index 3
-inconsistentColor index 0
-topShadowColor index 1
-botShadowColor index 11
-controlPv "$(device):MS:ENABLE_S"
-font "helvetica-medium-r-14.0"
-endObjectProperties
-
-# (Static Text)
-object activeXTextClass
-beginObjectProperties
-major 4
-minor 1
-release 0
-x 16
-y 448
-w 80
-h 16
-font "helvetica-medium-r-14.0"
-fgColor index 14
-bgColor index 0
-useDisplayBg
-value {
-  "Mean Sums:"
-}
-autoSize
-endObjectProperties
-
-endGroup
-
-visPv "$(device):VE:FPGA2"
-visMin "1"
-visMax "2"
-endObjectProperties
-
-# (Group)
-object activeGroupClass
-beginObjectProperties
-major 4
-minor 0
-release 0
 x 240
 y 536
 w 80
@@ -2350,6 +2291,19 @@ visMin "1"
 visMax "2"
 endObjectProperties
 
+# (Group)
+object activeGroupClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 16
+y 440
+w 192
+h 22
+
+beginGroup
+
 # (Menu Button)
 object activeMenuButtonClass
 beginObjectProperties
@@ -2357,16 +2311,15 @@ major 4
 minor 0
 release 0
 x 112
-y 464
+y 440
 w 96
 h 22
 fgColor index 14
-fgAlarm
 bgColor index 3
 inconsistentColor index 0
 topShadowColor index 1
 botShadowColor index 11
-controlPv "$(device):SE:ENABLE_S"
+controlPv "$(device):MS:ENABLE_S"
 font "helvetica-medium-r-14.0"
 endObjectProperties
 
@@ -2377,16 +2330,23 @@ major 4
 minor 1
 release 0
 x 16
-y 472
-w 57
+y 444
+w 80
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
 bgColor index 0
 useDisplayBg
 value {
-  "Sensors:"
+  "Mean Sums:"
 }
 autoSize
+endObjectProperties
+
+endGroup
+
+visPv "$(display):VE:FPGA2"
+visMin "1"
+visMax "2"
 endObjectProperties
 

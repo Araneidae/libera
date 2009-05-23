@@ -3,10 +3,10 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 2102
-y 184
+x 2548
+y 761
 w 650
-h 241
+h 232
 font "helvetica-medium-r-18.0"
 ctlFont "helvetica-medium-r-18.0"
 btnFont "helvetica-medium-r-18.0"
@@ -33,7 +33,7 @@ major 4
 minor 1
 release 0
 x 8
-y 16
+y 8
 w 27
 h 14
 font "helvetica-medium-r-12.0"
@@ -53,7 +53,7 @@ major 4
 minor 1
 release 0
 x 152
-y 208
+y 200
 w 200
 h 24
 controlPv "LOC\\ioc-name=s:"
@@ -78,7 +78,7 @@ major 4
 minor 2
 release 0
 x 360
-y 208
+y 200
 w 64
 h 24
 fgColor index 43
@@ -104,7 +104,7 @@ major 4
 minor 1
 release 0
 x 16
-y 216
+y 208
 w 126
 h 16
 font "helvetica-medium-r-14.0"
@@ -166,7 +166,7 @@ major 4
 minor 1
 release 0
 x 16
-y 40
+y 32
 w 16
 h 16
 font "helvetica-medium-r-14.0"
@@ -186,7 +186,7 @@ major 4
 minor 1
 release 0
 x 16
-y 64
+y 56
 w 16
 h 16
 font "helvetica-medium-r-14.0"
@@ -206,7 +206,7 @@ major 4
 minor 1
 release 0
 x 16
-y 88
+y 80
 w 16
 h 16
 font "helvetica-medium-r-14.0"
@@ -226,7 +226,7 @@ major 4
 minor 1
 release 0
 x 16
-y 112
+y 104
 w 16
 h 16
 font "helvetica-medium-r-14.0"
@@ -246,7 +246,7 @@ major 4
 minor 1
 release 0
 x 16
-y 136
+y 128
 w 16
 h 16
 font "helvetica-medium-r-14.0"
@@ -266,7 +266,7 @@ major 4
 minor 1
 release 0
 x 16
-y 160
+y 152
 w 16
 h 16
 font "helvetica-medium-r-14.0"
@@ -286,7 +286,7 @@ major 4
 minor 1
 release 0
 x 16
-y 184
+y 176
 w 16
 h 16
 font "helvetica-medium-r-14.0"
@@ -306,7 +306,7 @@ major 4
 minor 2
 release 0
 x 432
-y 208
+y 200
 w 64
 h 24
 fgColor index 25
@@ -328,7 +328,7 @@ major 4
 minor 2
 release 0
 x 576
-y 208
+y 200
 w 64
 h 24
 fgColor index 43
@@ -354,7 +354,7 @@ major 4
 minor 0
 release 0
 x 48
-y 184
+y 176
 w 16
 h 16
 
@@ -367,7 +367,7 @@ major 4
 minor 2
 release 0
 x 48
-y 184
+y 176
 w 16
 h 16
 fgColor index 14
@@ -394,7 +394,7 @@ major 4
 minor 0
 release 0
 x 48
-y 184
+y 176
 w 8
 h 16
 lineColor index 19
@@ -411,7 +411,7 @@ major 4
 minor 0
 release 0
 x 56
-y 184
+y 176
 w 8
 h 16
 lineColor index 19
@@ -428,7 +428,7 @@ major 4
 minor 0
 release 0
 x 48
-y 184
+y 176
 w 16
 h 3
 lineColor index 19
@@ -449,7 +449,7 @@ major 4
 minor 0
 release 0
 x 48
-y 160
+y 152
 w 16
 h 16
 
@@ -462,7 +462,7 @@ major 4
 minor 2
 release 0
 x 48
-y 160
+y 152
 w 16
 h 16
 fgColor index 14
@@ -489,7 +489,7 @@ major 4
 minor 0
 release 0
 x 48
-y 163
+y 155
 w 8
 h 13
 lineColor index 19
@@ -506,7 +506,7 @@ major 4
 minor 0
 release 0
 x 48
-y 160
+y 152
 w 16
 h 3
 lineColor index 19
@@ -523,7 +523,7 @@ major 4
 minor 0
 release 0
 x 56
-y 163
+y 155
 w 8
 h 13
 lineColor index 19
@@ -544,7 +544,7 @@ major 4
 minor 0
 release 0
 x 48
-y 136
+y 128
 w 16
 h 16
 
@@ -557,7 +557,7 @@ major 4
 minor 2
 release 0
 x 48
-y 136
+y 128
 w 16
 h 16
 fgColor index 14
@@ -584,7 +584,7 @@ major 4
 minor 0
 release 0
 x 48
-y 139
+y 131
 w 8
 h 13
 lineColor index 19
@@ -601,7 +601,7 @@ major 4
 minor 0
 release 0
 x 48
-y 136
+y 128
 w 16
 h 3
 lineColor index 19
@@ -618,7 +618,7 @@ major 4
 minor 0
 release 0
 x 56
-y 139
+y 131
 w 8
 h 13
 lineColor index 19
@@ -639,7 +639,7 @@ major 4
 minor 0
 release 0
 x 48
-y 112
+y 104
 w 16
 h 16
 
@@ -652,7 +652,7 @@ major 4
 minor 2
 release 0
 x 48
-y 112
+y 104
 w 16
 h 16
 fgColor index 14
@@ -679,7 +679,7 @@ major 4
 minor 0
 release 0
 x 48
-y 115
+y 107
 w 8
 h 13
 lineColor index 19
@@ -696,7 +696,7 @@ major 4
 minor 0
 release 0
 x 48
-y 112
+y 104
 w 16
 h 3
 lineColor index 19
@@ -713,7 +713,7 @@ major 4
 minor 0
 release 0
 x 56
-y 115
+y 107
 w 8
 h 13
 lineColor index 19
@@ -734,7 +734,7 @@ major 4
 minor 0
 release 0
 x 48
-y 88
+y 80
 w 16
 h 16
 
@@ -747,7 +747,7 @@ major 4
 minor 2
 release 0
 x 48
-y 88
+y 80
 w 16
 h 16
 fgColor index 14
@@ -774,7 +774,7 @@ major 4
 minor 0
 release 0
 x 48
-y 91
+y 83
 w 8
 h 13
 lineColor index 19
@@ -791,7 +791,7 @@ major 4
 minor 0
 release 0
 x 48
-y 88
+y 80
 w 16
 h 3
 lineColor index 19
@@ -808,7 +808,7 @@ major 4
 minor 0
 release 0
 x 56
-y 91
+y 83
 w 8
 h 13
 lineColor index 19
@@ -829,7 +829,7 @@ major 4
 minor 0
 release 0
 x 48
-y 64
+y 56
 w 16
 h 16
 
@@ -842,7 +842,7 @@ major 4
 minor 2
 release 0
 x 48
-y 64
+y 56
 w 16
 h 16
 fgColor index 14
@@ -869,7 +869,7 @@ major 4
 minor 0
 release 0
 x 48
-y 67
+y 59
 w 8
 h 13
 lineColor index 19
@@ -886,7 +886,7 @@ major 4
 minor 0
 release 0
 x 48
-y 64
+y 56
 w 16
 h 3
 lineColor index 19
@@ -903,7 +903,7 @@ major 4
 minor 0
 release 0
 x 56
-y 67
+y 59
 w 8
 h 13
 lineColor index 19
@@ -924,7 +924,7 @@ major 4
 minor 0
 release 0
 x 48
-y 40
+y 32
 w 16
 h 16
 
@@ -937,7 +937,7 @@ major 4
 minor 2
 release 0
 x 48
-y 40
+y 32
 w 16
 h 16
 fgColor index 14
@@ -964,7 +964,7 @@ major 4
 minor 0
 release 0
 x 48
-y 43
+y 35
 w 8
 h 13
 lineColor index 19
@@ -981,7 +981,7 @@ major 4
 minor 0
 release 0
 x 48
-y 40
+y 32
 w 16
 h 3
 lineColor index 19
@@ -998,7 +998,7 @@ major 4
 minor 0
 release 0
 x 56
-y 43
+y 35
 w 8
 h 13
 lineColor index 19
@@ -1019,7 +1019,7 @@ major 4
 minor 1
 release 0
 x 80
-y 40
+y 32
 w 72
 h 16
 controlPv "TS-DI-EBPM-01:VE:VERSION"
@@ -1041,7 +1041,7 @@ major 4
 minor 1
 release 0
 x 160
-y 40
+y 32
 w 144
 h 16
 controlPv "TS-DI-EBPM-01:VE:UNAME"
@@ -1063,7 +1063,7 @@ major 4
 minor 1
 release 0
 x 496
-y 40
+y 32
 w 80
 h 16
 controlPv "TS-DI-EBPM-01:VE:FPGA"
@@ -1087,7 +1087,7 @@ major 4
 minor 1
 release 0
 x 584
-y 40
+y 32
 w 32
 h 16
 controlPv "TS-DI-EBPM-01:VE:BR"
@@ -1108,8 +1108,8 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 328
-y 40
+x 320
+y 32
 w 72
 h 16
 controlPv "TS-DI-EBPM-01:VE:DRIVER"
@@ -1131,7 +1131,7 @@ major 4
 minor 1
 release 0
 x 416
-y 40
+y 32
 w 72
 h 16
 controlPv "TS-DI-EBPM-01:VE:ARCH"
@@ -1153,7 +1153,7 @@ major 4
 minor 1
 release 0
 x 80
-y 16
+y 8
 w 22
 h 14
 font "helvetica-medium-r-12.0"
@@ -1173,7 +1173,7 @@ major 4
 minor 1
 release 0
 x 160
-y 16
+y 8
 w 36
 h 14
 font "helvetica-medium-r-12.0"
@@ -1192,8 +1192,8 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 328
-y 16
+x 320
+y 8
 w 34
 h 14
 font "helvetica-medium-r-12.0"
@@ -1213,7 +1213,7 @@ major 4
 minor 1
 release 0
 x 416
-y 16
+y 8
 w 30
 h 14
 font "helvetica-medium-r-12.0"
@@ -1233,7 +1233,7 @@ major 4
 minor 1
 release 0
 x 496
-y 16
+y 8
 w 34
 h 14
 font "helvetica-medium-r-12.0"
@@ -1253,7 +1253,7 @@ major 4
 minor 1
 release 0
 x 584
-y 16
+y 8
 w 52
 h 14
 font "helvetica-medium-r-12.0"
@@ -1273,7 +1273,7 @@ major 4
 minor 1
 release 0
 x 584
-y 64
+y 56
 w 32
 h 16
 controlPv "TS-DI-EBPM-02:VE:BR"
@@ -1295,7 +1295,7 @@ major 4
 minor 1
 release 0
 x 496
-y 64
+y 56
 w 80
 h 16
 controlPv "TS-DI-EBPM-02:VE:FPGA"
@@ -1319,7 +1319,7 @@ major 4
 minor 1
 release 0
 x 416
-y 64
+y 56
 w 72
 h 16
 controlPv "TS-DI-EBPM-02:VE:ARCH"
@@ -1340,8 +1340,8 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 328
-y 64
+x 320
+y 56
 w 72
 h 16
 controlPv "TS-DI-EBPM-02:VE:DRIVER"
@@ -1363,7 +1363,7 @@ major 4
 minor 1
 release 0
 x 160
-y 64
+y 56
 w 144
 h 16
 controlPv "TS-DI-EBPM-02:VE:UNAME"
@@ -1385,7 +1385,7 @@ major 4
 minor 1
 release 0
 x 80
-y 64
+y 56
 w 72
 h 16
 controlPv "TS-DI-EBPM-02:VE:VERSION"
@@ -1407,7 +1407,7 @@ major 4
 minor 1
 release 0
 x 584
-y 88
+y 80
 w 32
 h 16
 controlPv "TS-DI-EBPM-03:VE:BR"
@@ -1429,7 +1429,7 @@ major 4
 minor 1
 release 0
 x 496
-y 88
+y 80
 w 80
 h 16
 controlPv "TS-DI-EBPM-03:VE:FPGA"
@@ -1453,7 +1453,7 @@ major 4
 minor 1
 release 0
 x 416
-y 88
+y 80
 w 72
 h 16
 controlPv "TS-DI-EBPM-03:VE:ARCH"
@@ -1474,8 +1474,8 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 328
-y 88
+x 320
+y 80
 w 72
 h 16
 controlPv "TS-DI-EBPM-03:VE:DRIVER"
@@ -1497,7 +1497,7 @@ major 4
 minor 1
 release 0
 x 160
-y 88
+y 80
 w 144
 h 16
 controlPv "TS-DI-EBPM-03:VE:UNAME"
@@ -1519,7 +1519,7 @@ major 4
 minor 1
 release 0
 x 80
-y 88
+y 80
 w 72
 h 16
 controlPv "TS-DI-EBPM-03:VE:VERSION"
@@ -1541,7 +1541,7 @@ major 4
 minor 1
 release 0
 x 584
-y 112
+y 104
 w 32
 h 16
 controlPv "TS-DI-EBPM-04:VE:BR"
@@ -1563,7 +1563,7 @@ major 4
 minor 1
 release 0
 x 496
-y 112
+y 104
 w 80
 h 16
 controlPv "TS-DI-EBPM-04:VE:FPGA"
@@ -1587,7 +1587,7 @@ major 4
 minor 1
 release 0
 x 416
-y 112
+y 104
 w 72
 h 16
 controlPv "TS-DI-EBPM-04:VE:ARCH"
@@ -1608,8 +1608,8 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 328
-y 112
+x 320
+y 104
 w 72
 h 16
 controlPv "TS-DI-EBPM-04:VE:DRIVER"
@@ -1631,7 +1631,7 @@ major 4
 minor 1
 release 0
 x 160
-y 112
+y 104
 w 144
 h 16
 controlPv "TS-DI-EBPM-04:VE:UNAME"
@@ -1653,7 +1653,7 @@ major 4
 minor 1
 release 0
 x 80
-y 112
+y 104
 w 72
 h 16
 controlPv "TS-DI-EBPM-04:VE:VERSION"
@@ -1675,7 +1675,7 @@ major 4
 minor 1
 release 0
 x 584
-y 136
+y 128
 w 32
 h 16
 controlPv "TS-DI-EBPM-05:VE:BR"
@@ -1697,7 +1697,7 @@ major 4
 minor 1
 release 0
 x 496
-y 136
+y 128
 w 80
 h 16
 controlPv "TS-DI-EBPM-05:VE:FPGA"
@@ -1721,7 +1721,7 @@ major 4
 minor 1
 release 0
 x 416
-y 136
+y 128
 w 72
 h 16
 controlPv "TS-DI-EBPM-05:VE:ARCH"
@@ -1742,8 +1742,8 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 328
-y 136
+x 320
+y 128
 w 72
 h 16
 controlPv "TS-DI-EBPM-05:VE:DRIVER"
@@ -1765,7 +1765,7 @@ major 4
 minor 1
 release 0
 x 160
-y 136
+y 128
 w 144
 h 16
 controlPv "TS-DI-EBPM-05:VE:UNAME"
@@ -1787,7 +1787,7 @@ major 4
 minor 1
 release 0
 x 80
-y 136
+y 128
 w 72
 h 16
 controlPv "TS-DI-EBPM-05:VE:VERSION"
@@ -1809,7 +1809,7 @@ major 4
 minor 1
 release 0
 x 584
-y 160
+y 152
 w 32
 h 16
 controlPv "TS-DI-EBPM-06:VE:BR"
@@ -1831,7 +1831,7 @@ major 4
 minor 1
 release 0
 x 496
-y 160
+y 152
 w 80
 h 16
 controlPv "TS-DI-EBPM-06:VE:FPGA"
@@ -1855,7 +1855,7 @@ major 4
 minor 1
 release 0
 x 416
-y 160
+y 152
 w 72
 h 16
 controlPv "TS-DI-EBPM-06:VE:ARCH"
@@ -1876,8 +1876,8 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 328
-y 160
+x 320
+y 152
 w 72
 h 16
 controlPv "TS-DI-EBPM-06:VE:DRIVER"
@@ -1899,7 +1899,7 @@ major 4
 minor 1
 release 0
 x 160
-y 160
+y 152
 w 144
 h 16
 controlPv "TS-DI-EBPM-06:VE:UNAME"
@@ -1921,7 +1921,7 @@ major 4
 minor 1
 release 0
 x 80
-y 160
+y 152
 w 72
 h 16
 controlPv "TS-DI-EBPM-06:VE:VERSION"
@@ -1943,7 +1943,7 @@ major 4
 minor 1
 release 0
 x 584
-y 184
+y 176
 w 32
 h 16
 controlPv "TS-DI-EBPM-07:VE:BR"
@@ -1965,7 +1965,7 @@ major 4
 minor 1
 release 0
 x 496
-y 184
+y 176
 w 80
 h 16
 controlPv "TS-DI-EBPM-07:VE:FPGA"
@@ -1989,7 +1989,7 @@ major 4
 minor 1
 release 0
 x 416
-y 184
+y 176
 w 72
 h 16
 controlPv "TS-DI-EBPM-07:VE:ARCH"
@@ -2010,8 +2010,8 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 328
-y 184
+x 320
+y 176
 w 72
 h 16
 controlPv "TS-DI-EBPM-07:VE:DRIVER"
@@ -2033,7 +2033,7 @@ major 4
 minor 1
 release 0
 x 160
-y 184
+y 176
 w 144
 h 16
 controlPv "TS-DI-EBPM-07:VE:UNAME"
@@ -2055,7 +2055,7 @@ major 4
 minor 1
 release 0
 x 80
-y 184
+y 176
 w 72
 h 16
 controlPv "TS-DI-EBPM-07:VE:VERSION"
@@ -2077,7 +2077,7 @@ major 4
 minor 2
 release 0
 x 504
-y 208
+y 200
 w 64
 h 24
 fgColor index 43
@@ -2093,9 +2093,6 @@ displayFileName {
 }
 closeAction {
   0 1
-}
-setPosition {
-  0 "parentWindow"
 }
 closeDisplay {
   0 1

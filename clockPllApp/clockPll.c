@@ -193,20 +193,16 @@ void DispatchCommand(char *Command)
 
 bool RunCommandLoop()
 {
-    while (true)
+    FILE * CommandPipe;
+    while (TEST_NULL(CommandPipe, fopen, CLOCK_PLL_COMMAND_FIFO, "r"))
     {
-        FILE * CommandPipe = fopen(CLOCK_PLL_COMMAND_FIFO, "r");
-        if (TEST_OK(CommandPipe != NULL))
-        {
-            char Command[80];
-            while (fgets(Command, sizeof(Command), CommandPipe) != NULL)
-                DispatchCommand(Command);
-            fclose(CommandPipe);
-        }
-        else
-            /* Oops.  This really shouldn't have happened. */
-            return false;
+        char Command[80];
+        while (fgets(Command, sizeof(Command), CommandPipe) != NULL)
+            DispatchCommand(Command);
+        fclose(CommandPipe);
     }
+    /* Oops.  This really shouldn't have happened. */
+    return false;
 }
 
 

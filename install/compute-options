@@ -229,28 +229,8 @@ set_var OPT_MAF $((((FPGA_ITECH >> 4) & 3) == 1))
 # disable the RF board temperature sensor, but on Brilliance we want to use
 # it.  This is also a very promising way to detect the presence of
 # Brilliance!
-set_var BR_TEMP $(
-    if [ -d /sys ]; then
-        [ -e /sys/bus/i2c/devices/0-0018 ] && \
-        [ "$(cat /sys/bus/i2c/devices/0-0018/name)" = adm1023 ]
-    else
-        [ -e /proc/sys/dev/sensors/adm1023-i2c-0-18 ]
-    fi
-    echo $((!$?))
-)
-# If we're not detected a brilliance RF board then turn the temperature
+set_var BR_TEMP $(detect_brillance; echo $((!$?)))
+# If we've not detected a brilliance RF board then turn the temperature
 # sensor into low power mode, if we can.
-[ $BR_TEMP = 0 ] && [ -e /sys/bus/i2c/devices/0-0018/low_power ]  &&
+[ $BR_TEMP = 0 -a -e /sys/bus/i2c/devices/0-0018/low_power ]  &&
     echo 1 >/sys/bus/i2c/devices/0-0018/low_power
-
-
-# Compute the target temperature.  This depends both on the selected
-# temperature sensor and on which health daemond we're running (or we could
-# make the health daemond part of Libera).
-if [ $BR_TEMP = 1 ]; then
-    set_var TARGET_TEMP 53
-    set_var ALARM_TEMP  60
-else
-    set_var TARGET_TEMP 43
-    set_var ALARM_TEMP  50
-fi

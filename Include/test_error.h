@@ -31,6 +31,11 @@
 
 void print_error(const char * Message, const char * FileName, int LineNumber);
 
+
+/* Macro derived from the kernel to tell the compiler that x is quite
+ * unlikely to be true. */
+#define unlikely(x)   __builtin_expect((x), 0)
+
 /* Helper macros for OS calls: in all cases the call is wrapped by a macro
  * which converts the return code into a boolean value.  If the call fails
  * then an automatically generated error message (including filename and line
@@ -40,10 +45,15 @@ void print_error(const char * Message, const char * FileName, int LineNumber);
  * There are three main cases, depending on how the return value is
  * interpreted:
  *
- *  TEST_IO(Result, function, arguments)
+ *  TEST_IO(result, function, arguments)
  *      Computes
- *          Result = function(arguments)
- *      and reports an error message if Result == -1.
+ *          result = function(arguments)
+ *      and reports an error message if result == -1.
+ *  
+ *  TEST_NULL(result, function, arguments)
+ *      Computes
+ *          result = function(arguments)
+ *      and reports an error message if result == NULL.
  *  
  *  TEST_(function, arguments)
  *      Computes
@@ -55,7 +65,7 @@ void print_error(const char * Message, const char * FileName, int LineNumber);
  *          function(arguments)
  *      and reports an error message if the function returns any non-zero
  *      value.  This is designed for use with the pthread_ family of
- *      functions, and the returned value is assigned to errno.
+ *      functions, and the returned value is assigned to errno if non zero.
  *
  * The following is slightly different in purpose.
  *  
@@ -66,48 +76,51 @@ void print_error(const char * Message, const char * FileName, int LineNumber);
 #define TEST_IO(var, command, args...) \
     ( { \
         var = (command)(args); \
-        if ((int) var == -1) \
+        if (unlikely((int) var == -1)) \
             print_error(#var " = " #command "(" #args ")", \
                 __FILE__, __LINE__); \
         (int) var != -1; \
     } )
 
+#define TEST_NULL(var, command, args...) \
+    ( { \
+        var = (command)(args); \
+        if (unlikely(var == NULL)) \
+            print_error(#var " = " #command "(" #args ")", \
+                __FILE__, __LINE__); \
+        var != NULL; \
+    } )
+
 #define TEST_(command, args...) \
     ( { \
         bool __ok__ = (command)(args) != -1; \
-        if (!__ok__) \
+        if (unlikely(!__ok__)) \
             print_error(#command "(" #args ")", __FILE__, __LINE__); \
         __ok__; \
     } )
 
 #define TEST_0(command, args...) \
     ( { \
-        errno = (command)(args); \
-        if (errno != 0) \
+        int __rc__ = (command)(args); \
+        if (unlikely(__rc__ != 0)) \
+        { \
+            errno = __rc__; \
             print_error(#command "(" #args ")", __FILE__, __LINE__); \
-        errno == 0; \
+        } \
+        __rc__ == 0; \
     } )
 
 #define TEST_OK(test) \
     ( { \
         bool __ok__ = (test); \
-        if (!__ok__) \
+        if (unlikely(!__ok__)) \
             print_error(#test, __FILE__, __LINE__); \
         __ok__; \
     } )
 
-#define TEST_NULL(var, command, args...) \
-    ( { \
-        var = (command)(args); \
-        if (var == NULL) \
-            print_error(#var " = " #command "(" #args ")", \
-                __FILE__, __LINE__); \
-        var != NULL; \
-    } )
 
-
-/* These two macros facilitates using the macros above by creating an if
- * expression that's slightly more sensible looking than ?: in context. */
+/* These two macros facilitate using the macros above by creating if
+ * expressions that're slightly more sensible looking than ?: in context. */
 #define DO_(action)                     ({action; true;})
 #define IF_(test, iftrue)               ((test) ? (iftrue) : true)
 #define IF_ELSE(test, iftrue, iffalse)  ((test) ? (iftrue) : (iffalse))
