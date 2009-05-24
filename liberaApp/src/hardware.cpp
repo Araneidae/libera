@@ -921,7 +921,7 @@ bool WriteSpikeRemovalSettings(
     bool Enable, int AverageWindow, int AverageStop,
     int SpikeStart, int SpikeWindow)
 {
-#ifdef __EBPP_H_2
+#if defined(__EBPP_H_2)
     int EnableInt = Enable;
     return
         WriteCfgValue(LIBERA_CFG_SR_ENABLE,         EnableInt)  &&
@@ -929,8 +929,24 @@ bool WriteSpikeRemovalSettings(
         WriteCfgValue(LIBERA_CFG_SR_AVERAGING_STOP, AverageStop)  &&
         WriteCfgValue(LIBERA_CFG_SR_START,          SpikeStart)  &&
         WriteCfgValue(LIBERA_CFG_SR_WINDOW,         SpikeWindow);
+    
+#elif defined(RAW_REGISTER)
+    /* No driver support, so write directly to the hardware instead.
+     * Probably shouldn't bother with driver support in the first place... */
+    unsigned int * FA_area;
+    if (!TEST_NULL(FA_area = MapRawRegister(0x1401C000)))
+        return false;
+
+    /* Sort out these horrid numbers: see libera_kernel.h. */
+    FA_area[0x0C] = Enable;
+    FA_area[0x0D] = AverageStop;
+    FA_area[0x0E] = AverageWindow;
+    FA_area[0x0F] = SpikeStart;
+    FA_area[0x10] = SpikeWindow;
+    UnmapRawRegister(FA_area);
+    return true;
 #else
-    return false;
+    return TEST_OK(false);
 #endif
 }
 
@@ -938,21 +954,19 @@ bool WriteSpikeRemovalSettings(
 bool ReadSpikeRemovalBuffer(int Buffer[SPIKE_DEBUG_BUFLEN])
 {
     unsigned int * FA_area;
-    if (TEST_NULL(FA_area = MapRawRegister(0x1401C000)))
-    {
-        /* Enable spike capture and wait for some waveforms to be captured.
-         * If switching is enabled the buffer will be filled within a few
-         * microseconds, even on the largest of machines.  So we sleep a
-         * little and disable capture before reading out. */
-        FA_area[0x11] = 1;
-        usleep(1000);
-        FA_area[0x11] = 0;
-        memcpy(Buffer, FA_area + 0x200, SPIKE_DEBUG_BUFLEN * sizeof(int));
-        UnmapRawRegister(FA_area);
-        return true;
-    }
-    else
+    if (!TEST_NULL(FA_area = MapRawRegister(0x1401C000)))
         return false;
+
+    /* Enable spike capture and wait for some waveforms to be captured.
+     * If switching is enabled the buffer will be filled within a few
+     * microseconds, even on the largest of machines.  So we sleep a
+     * little and disable capture before reading out. */
+    FA_area[0x11] = 1;
+    usleep(1000);
+    FA_area[0x11] = 0;
+    memcpy(Buffer, FA_area + 0x200, SPIKE_DEBUG_BUFLEN * sizeof(int));
+    UnmapRawRegister(FA_area);
+    return true;
 }
 
 
