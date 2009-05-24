@@ -147,30 +147,44 @@ void IQtoABCD(const IQ_ROW *IQ, ABCD_ROW *ABCD, int Count)
 
 
 
-/* Computes K * M / S without loss of precision.  We use
- * our knowledge of the arguments to do this work as efficiently as possible.
- *
- * Firstly we know that InvS = 2^(60-shift)/S and that S < 2^(31-shift).
- * However, we also know that |M| <= S (this is a simple consequence of S
- * being a sum of non-negative values and M being a sum of differences), so
- * in particular also |M| < 2^(31-shift) and so we can safely get rid of the
- * shift in InvS by giving it to M!
- *
- * We have now transformed K * M / S to 2^(60-shift) * K * M * InvS and then
- * to 2^60 * K * (2^-shift * M) * InvS.  Note finally that the scaling
- * constant K can be safely bounded by 2^27 ~~ 128mm and so we can
- * with excellent efficiency compute
- *
- *                 K * M    -64     4        shift
- *      Position = ----- = 2    * (2  K) * (2      M) * InvS
- *                   S
+/* Computes K * M / S without loss of precision.  We use our knowledge of the
+ * arguments to do this work as efficiently as possible.  The algorithm
+ * computes:
  * 
- * In fact we gain slightly more head-room on K by computing K*InvS as an
- * *unsigned* multiply: an upper bound on K of over 250mm seems ample! */
+ *      position = K M / S
+ *
+ *                  shift
+ *               = 2      InvS K M      (case 1 below)
+ *
+ *                  a+b-64
+ *               = 2       InvS K M     (assuming no overflow: 2, 3 below)
+ *
+ *                  -32    -32   a              b
+ *               = 2    (2     (2  K * InvS) * 2  M)
+ *
+ * (inner multiplication unsigned, outer mixed unsigned/signed) so that:
+ *
+ *   1.  a + b - 64 = shift
+ *   2.  2^a K < 2^32
+ *   3.  |2^b M| < 2^31
+ *
+ * From construction of (InvS, shift) we know:
+ *
+ *   4.  InvS = 2^shift / S
+ *   5.  2^31 <= InvS < 2^32
+ *
+ * From (4, 5) we can infer that S <= 2^(shift-31), from construction we know
+ * that |M| <= S, and in practice we can safely assume |M| < S, so by setting
+ * b = 62-shift we get
+ *
+ *      | 62-shift  |    62-shift       62-shift  shift-31    31
+ *      |2         M| < 2         S <= 2         2         = 2   ,
+ *
+ * and so a = shift+64-b = 2 gives us plenty of headroom for K. */
 
 static int DeltaToPosition(int K, int M, int InvS, int shift)
 {
-    return MulSS(MulUU(K << 4, InvS), M << shift);
+    return MulUS(MulUU(K << 2, InvS), M << (62 - shift));
 }
 
 
@@ -223,19 +237,10 @@ void ABCDtoXYQS(const ABCD_ROW *ABCD, XYQS_ROW *XYQS, int Count)
          * precomputing as much as possible.
          *    Start by precomputing 1/S, or more precisely, a scaled version
          * of 1/S.  (InvS,shift) = Reciprocal(S) returns InvS=2^shift/S,
-         * where shift derives from a bit normalisation count on S.  Indeed,
-         * we know that shift = 61-n where n is the normalisation count, so
-         *      2^31 <= 2^n * S < 2^32.
-         * From the observation above we know that n >= 1, and it is
-         * convenient for the subsequent call to DeltaToPosition to adjust
-         * things so that
-         *
-         *      InvS = 2^(60-shift) / S
-         *      2^(30-shift) <= S < 2^(31-shift)
-         */
+         * where shift derives from a bit normalisation count on S so that
+         * 2^31 <= InvS < 2^32. */
         int shift = 0;
         int InvS = Reciprocal(S, shift);
-        shift = 60 - shift;
         /* Compute X and Y according to the currently selected detector
          * orientation. */
         if (Diagonal)

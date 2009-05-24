@@ -37,13 +37,9 @@
  */
 
 
-/* Returns the number of leading zeros in an integer. */
-inline unsigned int CLZ(unsigned int x) 
-{
-    unsigned int result; 
-    __asm__("clz     %0, %1" : "=r"(result) : "r"(x)); 
-    return result; 
-}
+/* Returns the number of leading zeros in an integer.  On the v5 ARM this
+ * generates a single clz instruction. */
+#define CLZ(x)  ((unsigned int) __builtin_clz(x))
 
 
 /* Returns 2^-32 * x * y, signed or unsigned.  This is particularly convenient
@@ -123,13 +119,28 @@ inline unsigned int MulUUshift(unsigned int x, unsigned int y, int &shift)
 unsigned int Denormalise(unsigned int x, int shift);
 
 
-
-/* Returns 2^s / X together with shift factor s, where s arises from a
- * normalisation factor applied to X so that the value returned is in the
- * range 2^29 to 2^30.  The value for s lies in the range 29 to 61, and
- * indeed s = 61-n where 2^31 <= 2^n X < 2^32.
- *    The shift is accumulated to assist with extended expressions. */
+/* Returns (Y, s) such that:
+ *
+ *               s
+ *  1.  X * Y = 2    (to approximately 31 bits of precision)
+ *
+ *       31         32
+ *  2.  2   <= Y < 2   .
+ *
+ * From this the following further facts follow:
+ *
+ *           s
+ *      Y = 2  / X
+ *
+ *       s-32         s-31
+ *      2     < X <= 2
+ *
+ *      32 <= s <= 63.
+ *
+ * The value assigned to shift is accumulated by s to assist with extended
+ * expressions. */
 unsigned int Reciprocal(unsigned int X, int &shift);
+
 
 
 /* Fast fixed point computation of logarithm base 2 with about 20 bits of
