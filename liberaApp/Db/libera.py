@@ -796,7 +796,6 @@ def Versions():
     
     boolOut('REBOOT',  'Reboot',  DESC = 'Reboot Libera IOC')
     boolOut('RESTART', 'Restart', DESC = 'Restart EPICS driver')
-    boolOut('CORE', 'Core dump',  DESC = 'Force core dump!')
     
     SetChannelName('VE')
 

@@ -141,12 +141,6 @@ static void DoRestart()
 }
 
 
-static void DoCoreDump()
-{
-    * (char *) 0 = 0;
-}
-
-
 
 /*****************************************************************************/
 /*                                                                           */
@@ -299,7 +293,6 @@ bool InitialiseVersions(void)
     
     PUBLISH_ACTION("REBOOT",        DoReboot);
     PUBLISH_ACTION("RESTART",       DoRestart);
-    PUBLISH_ACTION("CORE",          DoCoreDump);
     
     bool Ok =
         PUBLISH_ENV_MAP(stringin,   EnvironmentStrings)  &&
