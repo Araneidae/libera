@@ -36,13 +36,12 @@
 #include "numeric-lookup.h"
 
 
-/* Computes (2^s/D, s) with 30 or 31 bits of precision (the bottom couple of
- * bits are a little tricky to get right and certainly aren't worth the
- * trouble).  The result is scaled so that it lies in the range 2^31..2^32-1,
- * ensuring the maximum available precision.
+/* Computes (2^s/D, s) with 31 bits of precision (the bottom bit is tricky to
+ * get right and isn't worth the trouble).  The result is scaled so that it
+ * lies in the range 2^31..2^32-1, ensuring the maximum available precision.
  *    The processing cost of this algorithm is one table lookup (using a 256
  * byte table, so the cache impact should be small) and four 32x32->64 bit
- * multiplies. */
+ * multiplies.  This routine takes around 180ns. */
 
 unsigned int Reciprocal(unsigned int D, int &shift)
 {
@@ -65,17 +64,7 @@ unsigned int Reciprocal(unsigned int D, int &shift)
         /* Get our first 8 significant bits by table lookup.  We use a nice
          * small table to ensure a small cache footprint (256 bytes). */
         unsigned int A = (D >> 23) & 0xff;
-#ifdef __arm__
-        /* It turns out that doing a byte fetch here is slower than doing a
-         * full word fetch!  Here we take advantage of a curious quirk of ARM
-         * addressing: a longword fetch from a non-aligned address returns the
-         * word rotated so the addressed byte is in the bottom 8 bits! */
-        unsigned int L = * (int *) & DivideLookup[A];
-#else
-#error "Gosh: a non ARM target!  Are you sure you've tested this?"
-        unsigned int L = DivideLookup[A];
-#endif
-        unsigned int X = 0x80000000 | (L << 23);
+        unsigned int X = 0x80000000 | (DivideLookup[A] << 23);
 
         /* The calculation below is rather tricky.  Essentially we are
          * applying two rounds of Newton-Raphson to solve the equation
@@ -110,8 +99,15 @@ unsigned int Reciprocal(unsigned int D, int &shift)
          *
          * Sweet, eh? */
         X = MulUU(X, -MulUU(D, X)) << 1;
-        X = MulUU(X, -MulUU(D, X)) << 1;
-        return X;
+        /* It would be good enough to repeat the above step once more:
+         *
+         *  return MulUU(X, -MulUU(D, X)) << 1;
+         *
+         * but if so, we lose the very bottom bit, which perturbs the accuracy
+         * of the penultimate bit, so we write it out more fully.  Recovering
+         * the very last bit is somewhat harder... */
+        uint64_t XL = (uint64_t) X * (uint64_t) - MulUU(D, X);
+        return (unsigned int) (XL >> 31);
     }
 }
 

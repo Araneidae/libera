@@ -344,8 +344,10 @@ def main():
 
     ActiveBpms = GetActiveBpms(AllBpms)
     ActiveEvrs = GetActiveEvrs(AllEvrs)
-    FeedbackBpms = GetFeedbackBpms(ActiveBpms)
     SetActiveBpms = set(ActiveBpms)
+
+    FeedbackBpms = GetFeedbackBpms(
+        SetActiveBpms & (set(SR_BPMS) | set(TS_BPMS)))
     
     if not options.test_only:
         if options.system:
@@ -370,13 +372,8 @@ def main():
                 ActiveEvrs, SystemTrigger)
 
     if options.SyncFF:
-        RestartFastFeedback(
-            set(FeedbackBpms) & (set(SR_BPMS) | set(TS_BPMS)),
-            MachineTrigger)
+        RestartFastFeedback(FeedbackBpms, MachineTrigger)
         
     
-
 if __name__ == '__main__':
     main()
-    
-
