@@ -137,6 +137,10 @@ unsigned int Denormalise(unsigned int x, int shift);
  *
  *      32 <= s <= 63.
  *
+ * If X is zero then Y=0, s=31 is returned: this is an accident of
+ * implementation of little significance, it's up to the caller not to pass
+ * X=0.
+ *
  * The value assigned to shift is accumulated by s to assist with extended
  * expressions. */
 unsigned int Reciprocal(unsigned int X, int &shift);

@@ -29,6 +29,7 @@
 /* High efficiency numeric support routines. */
 
 #include <limits.h>
+#include <stdint.h>
 
 #include "test_error.h"
 #include "numeric.h"
@@ -36,12 +37,53 @@
 #include "numeric-lookup.h"
 
 
-/* Computes (2^s/D, s) with 31 bits of precision (the bottom bit is tricky to
- * get right and isn't worth the trouble).  The result is scaled so that it
- * lies in the range 2^31..2^32-1, ensuring the maximum available precision.
- *    The processing cost of this algorithm is one table lookup (using a 256
- * byte table, so the cache impact should be small) and four 32x32->64 bit
- * multiplies.  This routine takes around 180ns. */
+/* This symbol can be set to squeeze the last reluctant bit of precision out
+ * of the Reciprocal routine below.  Setting this option costs an extra 30%
+ * of execution time, bumping the time on Libera from 137ns to 179ns per
+ * call.  As time is more important that one last bit of precision, I've not
+ * set this here.
+ *    Tests on random data show the following bounds on the error in the
+ * divisor:
+ *                          Error magnitude     Residual error      Time
+ *      LAST_BIT not set    -1.000  +1.077      -0.500  +0.577      137ns
+ *      LAST_BIT set        -0.500  +0.615      -0.000  +0.115      179ns
+ *
+ * The residual error takes into accound the need to round to the very last
+ * bit (so +-0,5 of error is unavoidable).  The residual error of 0.115 here
+ * corresponds to more than 35 bits of precision before rounding. */
+// #define LAST_BIT
+
+
+/* Computes (2^s/D, s) with 31 or 32 bits of precision (see discussion above
+ * about LAST_BIT).  The result is scaled so that it lies in the range
+ * 2^31..2^32-1, ensuring the maximum available precision.
+ *    The processing cost of this algorithm is one table lookup using a 256
+ * byte table, so the cache impact should be small, and four 32x32->64 bit
+ * multiplies (or five if LAST_BIT is set).  This routine takes around 140ns
+ * (or 180ns if LAST_BIT is set).
+ * 
+ * The algorithm uses two rounds of Newton-Raphson to solve the equation
+ *
+ *      1/x - D = 0
+ *
+ * This, rather fortunately, has the Newton-Raphson step
+ *
+ *      x' = x(2 - xD)
+ *
+ * which we can do with two multiplies per step.  To see that this works,
+ * write x = (1+e)/D, where e represents the error.  Then
+ *
+ *      x' = (1/D)(1+e)(2 - (1+e)) = (1/D)(1+e)(1-e)
+ *
+ *                2
+ *           1 - e
+ *         = ------ ,
+ *             D
+ *
+ * in other words the error is squared at each stage.  We use a small table
+ * lookup to give us a worst initial error somewhat better than one part in
+ * 2^-8, and so two rounds are enough to reduce the error to less than one bit
+ * (if we're careful enough we get 35 bits before rounding at the end). */
 
 unsigned int Reciprocal(unsigned int D, int &shift)
 {
@@ -66,40 +108,24 @@ unsigned int Reciprocal(unsigned int D, int &shift)
         unsigned int A = (D >> 23) & 0xff;
         unsigned int X = 0x80000000 | (DivideLookup[A] << 23);
 
-        /* The calculation below is rather tricky.  Essentially we are
-         * applying two rounds of Newton-Raphson to solve the equation
+        /* We repeat the calculation x' = x * (2 - D * x), working in fixed
+         * point with X = 2^63 x; this means we really want to calculate
          *
-         *      1/x - D = 0
+         *            -63       64
+         *      X' = 2    X * (2   - D * X) .
          *
-         * This, rather fortunately, has the Newton-Raphson step
+         * We can use a nice scaling trick to avoid representing that
+         * troublesome 2^64 value: recall that (2-Dx) = (1-e), with |e| << 1.
+         * This means that
          *
-         *      x' = x(2 - xD)
+         *       64             64
+         *      2   - D * X = (2   - 1) & - (D * X) ,
          *
-         * which we can do with two multiplies per step.  The initial estimate
-         * above gives us a worst error of one part in 2^-8, and as it's easy
-         * to see that this process squares the error, two rounds are enough
-         * to reduce the error to one bit.
-         *
-         * Tricky scaling allows us to perform the subtraction on an invisible
-         * bit: we work with X = 2^63 x ~~ 2^63 / D, and recall that
-         * MulUU(A,B) returns 2^-32 A B, then:
-         *
-         *      2 MulUU(X, -MulUU(D, X)) = 2 2^-32 X * - 2^-32 D X
-         *          = 2 2^-32 2^63 x * - 2^-32 2^63 D x
-         *          = 2^32 x * - 2^31 D x
-         *
-         *  At this point we'll inject some magic: we know that
-         *      2^32 - 2^31 D x = 2^31 (2 - D x)
-         *  is very close to 2^31 (as x is close to 1/D), and so it doesn't
-         *  matter that 2^32 isn't really there, and we can continue:
-         *
-         *          = 2^32 x * 2^31 (2-Dx)
-         *          = 2^63 x'
-         *          = X' .
-         *
-         * Sweet, eh? */
+         * which makes for a nice optimisation.  We can then use two rounds of
+         * MulUU(A,B) = 2^-32 A * B, leaving us one bit shift short: */
         X = MulUU(X, -MulUU(D, X)) << 1;
-        /* It would be good enough to repeat the above step once more:
+#ifndef LAST_BIT
+        /* It would be almost good enough to repeat the above step once more:
          *
          *  return MulUU(X, -MulUU(D, X)) << 1;
          *
@@ -107,7 +133,15 @@ unsigned int Reciprocal(unsigned int D, int &shift)
          * of the penultimate bit, so we write it out more fully.  Recovering
          * the very last bit is somewhat harder... */
         uint64_t XL = (uint64_t) X * (uint64_t) - MulUU(D, X);
-        return (unsigned int) (XL >> 31);
+#else
+        /* If we're determined, we can squeeze out the last bit of precision
+         * (well, we're still shy a residual eighth of a bit, too bad!) using
+         * 64 bit arithmetic for the final stages. */
+        uint64_t E = - ((uint64_t) D * X);  // Compute (2 - D*x)
+        uint64_t XL = (uint64_t) X * (E >> 32) + MulUU(X, (uint32_t) E);
+        XL += 0x40000000;   // Bias the final error to middle of last bit.
+#endif
+        return (uint32_t) (XL >> 31);
     }
 }
 
