@@ -81,49 +81,53 @@ static void DetachProcess(const char *Process, const char *const argv[])
 {
     /* We fork twice to avoid leaving "zombie" processes behind.  These are
      * harmless enough, but annoying.  The double-fork is a simple enough
-     * trick. */
-    pid_t MiddlePid = fork();
-    if (MiddlePid == -1)
-        perror("Unable to fork");
-    else if (MiddlePid == 0)
+     * trick if a bit clunky. */
+    pid_t MiddlePid;
+    if (TEST_IO(MiddlePid = fork()))
     {
-        pid_t NewPid = fork();
-        if (NewPid == -1)
-            perror("Unable to fork");
-        else if (NewPid == 0)
+        if (MiddlePid == 0)
         {
-            /* This is the new doubly forked process.  We still need to make
-             * an effort to clean up the environment before letting the new
-             * image have it. */
+            pid_t NewPid;
+            if (TEST_IO(NewPid = fork()))
+            {
+                if (NewPid == 0)
+                {
+                    /* This is the new doubly forked process.  We still need
+                     * to make an effort to clean up the environment before
+                     * letting the new image have it. */
 
-            /* Set a sensible home directory. */
-            chdir("/");
+                    /* Set a sensible home directory. */
+                    chdir("/");
 
-            /* Enable all signals. */
-            sigset_t sigset;
-            sigfillset(&sigset);
-            sigprocmask(SIG_UNBLOCK, &sigset, NULL);
+                    /* Enable all signals. */
+                    sigset_t sigset;
+                    sigfillset(&sigset);
+                    sigprocmask(SIG_UNBLOCK, &sigset, NULL);
 
-            /* Close all the open file handles.  It's rather annoying: there
-             * seems to be no good way to do this in general.  Fortunately in
-             * our case _SC_OPEN_MAX is managably small. */
-            for (int i = 0; i < sysconf(_SC_OPEN_MAX); i ++)
-                close(i);
+                    /* Close all the open file handles.  It's rather annoying:
+                     * there seems to be no good way to do this in general.
+                     * Fortunately in our case _SC_OPEN_MAX is manageably
+                     * small. */
+                    for (int i = 0; i < sysconf(_SC_OPEN_MAX); i ++)
+                        close(i);
 
-            /* Finally we can actually exec the new process... */
-            char * envp[] = { NULL };
-            execve(Process, (char**) argv, envp);
+                    /* Finally we can actually exec the new process... */
+                    char * envp[] = { NULL };
+                    execve(Process, (char**) argv, envp);
+                }
+                else
+                    /* The middle process simply exits without further
+                     * ceremony.  The idea here is that this orphans the new
+                     * process, which means that the parent process doesn't
+                     * have to wait() for it, and so it won't generate a
+                     * zombie when it exits. */
+                    _exit(0);
+            }
         }
         else
-            /* The middle process simply exits without further ceremony.  The
-             * idea here is that this orphans the new process, which means
-             * that the parent process doesn't have to wait() for it, and so
-             * it won't generate a zombie when it exits. */
-            _exit(0);
+            /* Wait for the middle process to finish. */
+            TEST_IO(waitpid(MiddlePid, NULL, 0));
     }
-    else
-        /* Wait for the middle process to finish. */
-        TEST_IO(waitpid(MiddlePid, NULL, 0));
 }
 
 

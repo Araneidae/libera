@@ -92,6 +92,9 @@ static const char *proc_fan1_set;
 static bool UseSys;
 
 
+static char ** RamFileSystems;      // List of file systems to scan for files
+
+
 /* Helper routine for using scanf to parse a file. */
 
 static bool ParseFile(
@@ -142,41 +145,58 @@ static void InitialiseUptime()
 }
 
 
+static bool InitialiseRamfsUsage()
+{
+    const char * string;
+    bool Ok = TEST_NULL(string = getenv("TEMP_FS_LIST"));
+    if (Ok)
+    {
+        char * ramfs_list = (char *) malloc(strlen(string) + 1);
+        strcpy(ramfs_list, string);
+
+        /* Split the string up and count the number of entries. */
+        int ramfs_count = 1;
+        for (char * ramfs = strchr(ramfs_list, ' '); ramfs != NULL;
+             ramfs = strchr(ramfs, ' '))
+        {
+            *ramfs++ = '\0';
+            ramfs_count += 1;
+        }
+
+        /* Assemble the final list of file systems for fts_... to scan. */
+        RamFileSystems = (char **) malloc((ramfs_count + 1) * sizeof(char *));
+        for (int i = 0; i < ramfs_count; i ++)
+        {
+            RamFileSystems[i] = ramfs_list;
+            ramfs_list += strlen(ramfs_list) + 1;
+        }
+        RamFileSystems[ramfs_count] = NULL;
+    }
+    return Ok;
+}
+
 /* This discovers how many bytes of space are being consumed by the ramfs:
  * this needs to be subtracted from the "cached" space.
  *
  * We do this by walking all of the file systems mounted as ramfs -- the
- * actual set of mount points is hard-wired here. */
+ * actual set of mount points must be set in TEMP_FS_LIST. */
 
 static int FindRamfsUsage()
 {
-    /* The following mount points all contain ram file systems. */
-    static const char * const RamFileSystems[] =
+    FTS * fts;
+    if (TEST_NULL(fts = fts_open(
+            RamFileSystems, FTS_PHYSICAL | FTS_XDEV, NULL)))
     {
-        "/var/log",
-        "/var/lock",
-        "/var/run",
-        "/tmp",
-        NULL
-    };
-
-    FTS * fts = fts_open(
-        (char**) RamFileSystems, FTS_PHYSICAL | FTS_XDEV, NULL);
-    if (fts == NULL)
-    {
-        perror("Unable to open ram file systems");
-        return 0;
+        int total = 0;
+        FTSENT *ftsent;
+        while (ftsent = fts_read(fts),  ftsent != NULL)
+            if (ftsent->fts_info != FTS_D)
+                total += ftsent->fts_statp->st_size;
+        fts_close(fts);
+        return total;
     }
-
-    int total = 0;
-    FTSENT *ftsent;
-    while (ftsent = fts_read(fts),  ftsent != NULL)
-        if (ftsent->fts_info != FTS_D)
-            total += ftsent->fts_statp->st_size;
-
-    fts_close(fts);
-        
-    return total;
+    else
+        return 0;
 }
 
 
@@ -572,7 +592,9 @@ bool InitialiseSensors(bool _MonitorNtp)
     SetEnableSensors();
 
     SensorsThread = new SENSORS_THREAD();
-    return SensorsThread->StartThread();
+    return
+        InitialiseRamfsUsage()  &&
+        SensorsThread->StartThread();
 }
 
 

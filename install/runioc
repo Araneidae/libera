@@ -133,6 +133,12 @@ IocParameter -f $FREV
 # Interpret the environment and configuration.
 . "$LIBERA_IOC"/scripts/compute-options
 
+# Discover the list of temporary filesystems we need to keep an eye on.  We
+# use echo to strip the list of excess characters.
+export TEMP_FS_LIST="$(echo -n $(
+    mount |
+    sed -rn '/.* on ([^ ]*) type (tmpfs|ramfs) .*/{s//\1/;p;}'))"
+
 
 # Finally run the IOC.
 echo
