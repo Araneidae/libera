@@ -214,6 +214,10 @@ waveform using the specified `OFFSET` and `LENGTH`.
 Just as for `FR:DELAY_S`, allows the delay from trigger to sampled data
 to be configured.
 
+`DECIMATION_S`::
+This can be set to ``1:1'' or ``1:64'' -- in the latter case FPGA decimated
+data will be captured at one point per 64 turns.
+
 The following protocol should be used when using this group of records.
 First the record must be armed, and then the trigger should be waited for.
 Segments should then be read by writing the offset and waiting for it to
@@ -259,7 +263,7 @@ If set to Disabled then `BN` processing will not occur.
 
 `AXIS`, `AXISS`::
 Waveforms used to label position graphs.  These are constant ramping
-waveforms.
+waveforms in units of milliseconds.
 
 Note that if `BN` processing is enabled then care should be taken to ensure
 that 1024*`IOC_BN_LENGTH` divided by machine revolution frequency is no longer
@@ -394,12 +398,14 @@ Note that the fast feedback data stream is not affected by this and
 assumes the "Diagonal" orientation: this also applies to interlock
 checking.
 
-`KX_S`, `KY_S`, `KQ_S`::
+`KX_S`, `KY_S`::
 Scaling factors in mm.  These are determined by the physical geometry
 of the button or stripline pickups.  At Diamond typical values are
 17mm for the transfer path striplines and 10.6mm and 11mm (horizontal
-and vertical) for the booster buttons.  The `KQ` setting can safely be
-ignored.
+and vertical) for the booster buttons.  
+
+`Q_0_S`::
+Q_0
 
 `BBA_X_S`, `BBA_Y_S`, `BCD_X_S`, `BCD_Y_S`, `GOLDEN_X_S`, `GOLDEN_Y_S`::
 Offsets on the position reported by the BPM are divided into three
@@ -581,26 +587,55 @@ bits are used as EPICS integers are signed).
 Both NTP and system clock time for the last trigger formatted as UTC
 strings in ISO 8601 date and time formats.
 
+`NTPSTAT`, `STRATUM`, `SERVER`::
+These three PVs monitor the status of the NTP client running on Libera.
+`NTPSTAT` can be one of the following values:
++
+--
+``Not monitored''::  
+NTP monitoring has been disabled
+``No NTP server''::  
+We don't appear to be running an NTP client at all
+``No Sync'':: 
+The local NTP client isn't synchronised to an NTP server.  (This can mean that
+synchronisation is in progress, this can take up to 20 minutes.)
+``Synchronised'':: 
+Libera is correctly synchronised to an NTP server.
+--
++
+`STRATUM` records the distance of Libera (in server hops) from the NTP
+synchronisation source (16 means not synchronised), and `SERVER` identifies
+the NTP server to which we are synchronised.
 
 
 Sensors (<group> = SE):
 -----------------------
 
-`TEMP`::
-Internal temperature of Libera system.  This should normally be
-maintained below approximately 45 degrees centigrade.
+`TEMP_MB`, `TEMP_RF`::
+Internal Libera temperatures.  `TEMP_MB` measures the Libera motherboard
+temperature.  If the Brilliance RF board is installed then `TEMP_RF` measures
+the RF board temperature, otherwise it will read zero.  These temperatures
+should be maintained at a stable level by the health daemon.
 
-`FAN1`, `FAN2`::
-Internal fan speeds, normally running at around 4000-5000 RPM.
+`FAN<fan>`, `FAN<fan>_SET`, `FAN<fan>_ERR`::
+Internal fan speeds, normally running between 3000 and 5000 RPM, for <fan> = 1
+or 2.  `FAN<fan>_SET` is the set speed for each fan (as set by the health
+daemon) and `FAN<fan>_ERR` is the tracking error between the actual and set
+fan speeds -- an excessive tracking error can be a sign of a failed fan, and
+contributes to the overall health status.
 
 `FREE`, `RAMFS`::
 `FREE` records free memory available, while `RAMFS` records how much
 memory is currently allocated in temporary files.  `RAMFS` should be
-monitored to ensure that log files (in /var/log) don't consume all
+monitored to ensure that log files (in `/var/log`) don't consume all
 available memory.
 
 `CPU`::
 CPU usage as a percentage.
+
+`TEMPMON`::
+Aggregates the alarm status of the temperature sensors and the fan monitoring.
+This will indicate an alarm status if `ENABLE_S` is set to ``Disabled''.
 
 `HEALTH`::
 Aggregates the alarm status of all of the above sensors.  Only the
@@ -618,6 +653,14 @@ reported through the PVs `VOLT1` to `VOLT8`.  Voltages outside 5 or 10
 percent are reported with minor and major severity EPICS alarms
 respectively, and `VHEALTH` aggregates the state of all voltages (except
 for `VOLT2` which is unused).
+
+`ENABLE_S`::
+It is possible to disable system health monitoring if necessary when
+performing very low noise level studies (the internal I2C bus can generate
+observable noise on the RF board).  This mode of operation is not
+intended for normal operation: *DO NOT OPERATE LIBERA IN THIS MODE FOR
+EXTENDED PERIODS.*  The health daemon is also disabled when sensors are
+disabled.
 
 
 Signal Conditioning (<group> = SC):
@@ -649,6 +692,13 @@ measured variance on each channel.
 
 `IQDIGEST`, `WF`<iq>, `SETCOMP_S`, `COMP`, `LASTCOMP`::
 Internal PVs for develoment and diagnostic use.
+
+`TRIGGERED_S`, `TRIGDELAY_S`::
+If required the data captured for signal conditioning can be synchronised to
+the external trigger (in which case `TRIGDELAY_S` determines the delay between
+the trigger point and the captured data).  With triggering not enabled data is
+captured as soon as `INTERVAL_S` has expired, when enabled conditioning will
+then wait for the next trigger.
 
 
 Version Identification (<group> = VE):
@@ -792,7 +842,7 @@ DLS FGPA
 Fast Feedback enabled
 
 `MAF`::
-Boxcard filter present
+Boxcar filter present
 
 
 
