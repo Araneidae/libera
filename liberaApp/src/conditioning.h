@@ -54,7 +54,10 @@ typedef unsigned int PERMUTATION[4];
  * statically set switch position.  If automatic switches are currently
  * selected then the value returned is not meaningful. */
 const PERMUTATION & SwitchPermutation();
+/* Returns the length of IQ buffers captured by signal conditioning. */
+int ConditioningIQlength();
 
 
-bool InitialiseSignalConditioning(int Harmonic, int TurnsPerSwitch);
+bool InitialiseSignalConditioning(
+    int Harmonic, int TurnsPerSwitch, int SwitchCycles);
 void TerminateSignalConditioning();

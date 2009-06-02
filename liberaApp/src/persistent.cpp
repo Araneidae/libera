@@ -49,6 +49,8 @@ static const char * StateFileName = NULL;
 static PERSISTENT_BASE * PersistentList = NULL;
 static bool PersistentDirty = false;
 
+static bool RemountRootfs;
+
 
 /* Checks whether any persistent variables have changed since they were
  * loaded or last written. */
@@ -95,24 +97,27 @@ bool WritePersistentState(FILE *File)
 #define BACKUP ".backup"
 static void WriteStateFile()
 {
+    if (RemountRootfs)
+        system("mount -o remount,rw /");
+    
     char BackupFileName[strlen(StateFileName) + strlen(BACKUP) + 1];
     strcpy(BackupFileName, StateFileName);
     strcat(BackupFileName, BACKUP);
-    FILE * Backup = fopen(BackupFileName, "w");
-    if (Backup == NULL)
-        printf("Unable to write to state file \"%s\"\n", BackupFileName);
-    else
+    FILE * Backup;
+    if (TEST_NULL(Backup = fopen(BackupFileName, "w")))
     {
         char TimeBuffer[80];
         time_t Now = time(NULL);
         bool Ok =
-            fprintf(Backup, "# Written: %s",
-                ctime_r(&Now, TimeBuffer)) > 0  &&
+            fprintf(Backup, "# Written: %s", ctime_r(&Now, TimeBuffer)) > 0  &&
             WritePersistentState(Backup);
         fclose(Backup);
         if (Ok)
             TEST_IO(rename(BackupFileName, StateFileName));
     }
+    
+    if (RemountRootfs)
+        system("mount -o remount,ro /");
 }
 
 
@@ -361,8 +366,9 @@ private:
 static TIMER_THREAD * TimerThread = NULL;
 
 
-bool InitialisePersistentState(const char * FileName)
+bool InitialisePersistentState(const char * FileName, bool _Remount)
 {
+    RemountRootfs = _Remount;
     StateFileName = FileName;
     if (StateFileName == NULL)
         /* Allow operation with no state file. */

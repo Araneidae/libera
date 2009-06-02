@@ -116,7 +116,6 @@ static const PERMUTATION BrillancePermutationLookup[] =
 
 /* Some magic numbers to be configurable real soon now. */
 #define SWITCH_HOLDOFF  6
-#define SAMPLE_SIZE     2048
 #define PRESCALE        8
 
 #define AI_SCALE        1e6
@@ -307,14 +306,15 @@ static bool SwitchMarker(const LIBERA_ROW *Data, size_t Length, size_t &Marker)
 class CONDITIONING : public LOCKED_THREAD, I_EVENT
 {
 public:
-    CONDITIONING(REAL f_if, int TurnsPerSwitch) :
+    CONDITIONING(REAL f_if, int TurnsPerSwitch, int SampleSize) :
         LOCKED_THREAD("Conditioning"),
         
         cotan_if(1.0/tan(f_if)),
         cosec_if(1.0/sin(f_if)),
         m_cis_if(exp(-I*f_if)),
         TurnsPerSwitch(TurnsPerSwitch),
-        IqData(SAMPLE_SIZE, true),
+        SampleSize(SampleSize),
+        IqData(SampleSize, true),
         EpicsWritePhaseArray(*this),
         signal(false),
         trigger(false)
@@ -478,6 +478,8 @@ public:
         THREAD_UNLOCK();
         return Ok;
     }
+
+    int GetSampleSize() { return SampleSize; }
     
     
 private:
@@ -713,7 +715,7 @@ private:
         const size_t SampleLength = TurnsPerSwitch * SwitchSequenceLength;
         size_t Marker = 0;
         int Samples = 0;
-        while(SwitchMarker(Data, SAMPLE_SIZE - SampleLength, Marker))
+        while(SwitchMarker(Data, SampleSize - SampleLength, Marker))
         {
             Samples += TurnsPerSwitch - SWITCH_HOLDOFF;
             /* Work through each of the switch positions, pushing both the
@@ -974,7 +976,7 @@ private:
          * effect at the time it was captured. */
         AssignArray(OldPhaseArray, CurrentPhaseArray);
         LIBERA_ROW * Waveform = (LIBERA_ROW *) IqData.Waveform();
-        if (!ReadWaveform(Waveform, SAMPLE_SIZE))
+        if (!ReadWaveform(Waveform, SampleSize))
             return SC_NO_DATA;
 
         /* Capture one waveform and extract the raw switch/button matrix. */
@@ -1076,6 +1078,7 @@ private:
     const complex m_cis_if; // -exp(i * IF)
 
     const int TurnsPerSwitch;
+    const int SampleSize;   // Number of samples actually captured
 
     /* Device handle used to read raw IQ waveforms.  Needs to be abstracted
      * into hardware.h at some point. */
@@ -1202,6 +1205,12 @@ const PERMUTATION & SwitchPermutation()
 }
 
 
+int ConditioningIQlength()
+{
+    return ConditioningThread->GetSampleSize();
+}
+
+
 
 /*****************************************************************************/
 /*                                                                           */
@@ -1244,7 +1253,8 @@ static void SCdebug(const iocshArgBuf *args)
 static const iocshFuncDef SCdebugFuncDef = { "SCdebug", 0, NULL };
 
 
-bool InitialiseSignalConditioning(int Harmonic, int TurnsPerSwitch)
+bool InitialiseSignalConditioning(
+    int Harmonic, int TurnsPerSwitch, int SwitchCycles)
 {
     iocshRegister(&SCdebugFuncDef, SCdebug);
     
@@ -1267,7 +1277,9 @@ bool InitialiseSignalConditioning(int Harmonic, int TurnsPerSwitch)
      * in radians per sample. */
     REAL f_if = 2 * M_PI *
         (REAL) (Harmonic % DecimationFactor) / DecimationFactor;
-    ConditioningThread = new CONDITIONING(f_if, TurnsPerSwitch);
+    ConditioningThread = new CONDITIONING(
+        f_if, TurnsPerSwitch,
+        (SwitchCycles + 1) * SwitchSequenceLength * TurnsPerSwitch);
     return ConditioningThread->StartThread();
 }
 

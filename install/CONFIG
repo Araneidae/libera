@@ -34,6 +34,10 @@ IOC_LOG=/var/log/ioc
 
 # Location where the IOC will look for its persistent state.  
 IOC_STATE_PATH=/opt/state
+# Set this to 1 to enable remounting the rootfs every time the state file is
+# written.  This is really not a great idea, by the way -- it would be *much*
+# better to have a writable file system mounted over /opt/state.
+IOC_REMOUNT_ROOTFS=0
 
 # Length of Booster ramp to be monitored in units of 1024 turn-by-turn
 # samples.  Different ramp lengths are appropriate in the storage ring and
@@ -41,6 +45,13 @@ IOC_STATE_PATH=/opt/state
 # between triggers.
 BR_IOC_BN_LENGTH=190
 SR_IOC_BN_LENGTH=60
+
+# This determines how long a buffer will be used by signal conditioning:
+# multiply this by 8*NTBT (in the libera file on the IOC) to get the total
+# number of turns that will be sampled.  This should be set to at least 2,
+# and too large a value can be unhelpful.
+BR_IOC_SC_LENGTH=3
+SR_IOC_SC_LENGTH=6
 
 # Maximum number of points to be captured in a single long turn-by-turn
 # waveform.  This will consume 32 bytes per point, so don't set it too long!
@@ -79,7 +90,7 @@ IOC_FR_LENGTH=2048
 # Note that there is little point in striving for much more than two
 # significant figures in these values, and the same settings should serve for
 # all Liberas with the same filter chain configuration.  Changing the
-# configured DDC filters will change these values.
+# configured DDC filters will change the SA value.
 IOC_S0_SA=99400000
 IOC_S0_FT=2342000
 
@@ -89,3 +100,13 @@ IOC_S0_FT=2342000
 # NFS is not installed, or the NTP daemon does not provide this interface,
 # this can be disabled by setting this variable to 0.
 IOC_MONITOR_NTP=1
+
+# The health daemon manages either the RF board (if Brilliance deteced) or
+# motherboard temperature at the appropriate setting configured below.  Alarm
+# temperatures are set at 5 and 10 degrees above these values.
+IOC_TEMP_MB=42
+IOC_TEMP_RF=48
+# Specifies program or script to run on temperature overflow.
+IOC_HEALTHD_PANIC=
+# Extra health daemon options can be specified by setting this variable.
+IOC_HEALTHD_OPTS=

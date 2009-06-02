@@ -118,5 +118,5 @@ void PersistentWaveform(const char * Name, T *Waveform, size_t Length)
 }
 
 
-bool InitialisePersistentState(const char * StateFileName);
+bool InitialisePersistentState(const char * StateFileName, bool RemountRootfs);
 void TerminatePersistentState();

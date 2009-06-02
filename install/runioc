@@ -112,15 +112,21 @@ IocParameter -cBN= $((IOC_BN_LENGTH))
 IocParameter -cTT= $((IOC_TT_LENGTH))
 IocParameter -cTW= $((IOC_TT_WINDOW))
 IocParameter -cFR= $((IOC_FR_LENGTH))
+IocParameter -cSC= $((IOC_SC_LENGTH))
 IocParameter -cS0FT= $((IOC_S0_FT))
 IocParameter -cS0SA= $((IOC_S0_SA))
 # Pass through fundamental ring parameters
 IocParameter -cHA= $((HARMONIC))
 IocParameter -cLP= $((MCPRESC))
 IocParameter -cNT= $((NTBT))
+# Temperature monitoring parameters
+IocParameter -cMB= $((IOC_TEMP_MB))
+IocParameter -cRF= $((IOC_TEMP_RF))
 
 # If requested, disable NTP monitoring.
 [ "$IOC_MONITOR_NTP" = 0 ]  &&  IocParameter -N
+# If requested, enable rootfs remount on state file writing.
+[ "$IOC_REMOUNT_ROOTFS" = 1 ]  &&  IocParameter -M
 
 # Where the IOC should write its pid file
 IocParameter -p "$PIDFILE"
@@ -134,7 +140,7 @@ IocParameter -f $FREV
 . "$LIBERA_IOC"/scripts/compute-options
 
 # Discover the list of temporary filesystems we need to keep an eye on.  We
-# use echo to strip the list of excess characters.
+# use echo to create a space separated list.
 export TEMP_FS_LIST="$(echo -n $(
     mount |
     sed -rn '/.* on ([^ ]*) type (tmpfs|ramfs) .*/{s//\1/;p;}'))"
@@ -157,20 +163,23 @@ echo
 
 
 # When we exit make a good effort to clean up any debris.  If we crashed (and
-# were unlucky) we may have left lots of threads behind!
-sleep 0.5
-if [ -x /usr/bin/pkill ]; then
-    pkill -9 "$BIN_DIR"/ioc
-else
-    # No pkill, so do the kill by hand instead.
-    DEBRIS="$(ps ho pid -C ioc)"
-    if [ -n "$DEBRIS" ]; then
-        echo Killing residual ioc processes: $DEBRIS
-        sleep 1
-        kill -9 $DEBRIS
+# were unlucky) we may have left lots of threads behind!  Fortunately we
+# don't have to mess with this nonsense on newer architectures.
+if [ "$ROOTFS_ARCH" = ITECH-v0 -o "$ROOTFS_ARCH" = ITECH-v1 ]; then
+    sleep 0.5
+    if [ -x /usr/bin/pkill ]; then
+        pkill -9 "$BIN_DIR"/ioc
+    else
+        # No pkill, so do the kill by hand instead.
         DEBRIS="$(ps ho pid -C ioc)"
-        [ -n "$DEBRIS" ]  &&
-            echo Processes not killed: $DEBRIS
+        if [ -n "$DEBRIS" ]; then
+            echo Killing residual ioc processes: $DEBRIS
+            sleep 1
+            kill -9 $DEBRIS
+            DEBRIS="$(ps ho pid -C ioc)"
+            [ -n "$DEBRIS" ]  &&
+                echo Processes not killed: $DEBRIS
+        fi
     fi
 fi
 

@@ -105,6 +105,8 @@ static int TurnByTurnWindowLength = 16384;
 static int FreeRunLength = 2048;
 /* Length of 1024 decimated buffer. */
 static int DecimatedShortLength = 190;
+/* Number of switch cycles to use in SC operation. */
+static int ConditioningSwitchCycles = 8;
 
 /* Synchrotron revolution frequency.  Used for labelling decimated data.
  * This default frequency is the Diamond booster frequency. */
@@ -123,9 +125,15 @@ static int S0_SA = 0;
 
 /* Location of the persistent state file. */
 static const char * StateFileName = NULL;
+/* Whether to remount the rootfs when writing the persistent state. */
+static bool RemountRootfs = false;
 
 /* NTP monitoring can be turned off at startup. */
 static bool MonitorNtp = true;
+
+/* Target temperatures, only used for setting db limits on startup. */
+static int TargetTempMB = 42;
+static int TargetTempRF = 48;
 
 
 
@@ -244,9 +252,10 @@ static bool InitialiseLibera()
 
         /* Initialise the persistent state system early on so that other
          * components can make use of it. */
-        InitialisePersistentState(StateFileName)  &&
+        InitialisePersistentState(StateFileName, RemountRootfs)  &&
         /* Initialise the signal conditioning hardware interface. */
-        InitialiseSignalConditioning(Harmonic, TurnsPerSwitch)  &&
+        InitialiseSignalConditioning(
+            Harmonic, TurnsPerSwitch, ConditioningSwitchCycles)  &&
         /* Initialise conversion code.  This needs to be done fairly early as
          * it is used globally. */
         InitialiseConvert()  &&
@@ -345,11 +354,14 @@ static bool ParseConfigInt(char *optarg)
         { "TW", TurnByTurnWindowLength },
         { "FR", FreeRunLength },
         { "BN", DecimatedShortLength },
+        { "SC", ConditioningSwitchCycles },
         { "HA", Harmonic },
         { "LP", LmtdPrescale },
         { "NT", TurnsPerSwitch },
         { "S0FT", S0_FT },
         { "S0SA", S0_SA },
+        { "MB", TargetTempMB },
+        { "RF", TargetTempRF },
     };
 
     /* Parse the configuration setting into <key>=<integer>. */
@@ -410,24 +422,28 @@ static void Usage(const char *IocName)
 "running <scripts> as IOC scripts.\n"
 "\n"
 "Options:\n"
-"    -h                 Writes out this usage description.\n"
-"    -v                 Writes version information\n"
-"    -p <pid-file>      Writes pid to <pid-file>.\n"
-"    -n                 Run non-interactively without an IOC shell\n"
-"    -c<key>=<value>    Configure run time parameter.  <key> can be:\n"
+"    -h             Writes out this usage description.\n"
+"    -v             Writes version information\n"
+"    -p <pid-file>  Writes pid to <pid-file>.\n"
+"    -n             Run non-interactively without an IOC shell\n"
+"    -c<key>=<val>  Configure run time parameter.  <key> can be:\n"
 "       LT      Length of long turn-by-turn buffer\n"
 "       TT      Length of short turn-by-turn buffer\n"
 "       TW      Length of turn-by-turn readout window\n"
 "       DD      Length of /1024 decimated data buffer\n"
+"       SC      Number of switch cycles per conditioning round\n"
 "       HA      Harmonic: number of bunches per revolution\n"
 "       LP      LMTD prescale factor\n"
 "       NT      Turns per switch position\n"
 "       S0FT    S0 power scaling for FT mode\n"
 "       S0SA    S0 power scaling for SA mode\n"
-"    -f <f_mc>          Machine revolution frequency\n"
-"    -s <state-file>    Read and record persistent state in <state-file>\n"
-"    -d <device>        Name of device for database\n"
-"    -N                 Disable NTP status monitoring\n"
+"       MB      Target motherboard temperature\n"
+"       RF      Target RF board temperature\n"
+"    -f <f_mc>      Machine revolution frequency\n"
+"    -s <file>      Read and record persistent state in <file>\n"
+"    -M             Remount rootfs rw while writing persistent state\n"
+"    -d <device>    Name of device for database\n"
+"    -N             Disable NTP status monitoring\n"
 "\n"
 "Note: This IOC application should normally be run from within runioc.\n",
         IocName);
@@ -444,7 +460,7 @@ static bool ProcessOptions(int &argc, char ** &argv)
     bool Ok = true;
     while (Ok)
     {
-        switch (getopt(argc, argv, "+hvp:nc:f:s:d:N"))
+        switch (getopt(argc, argv, "+hvp:nc:f:s:Md:N"))
         {
             case 'h':   Usage(argv[0]);                 return false;
             case 'v':   StartupMessage();               return false;
@@ -453,6 +469,7 @@ static bool ProcessOptions(int &argc, char ** &argv)
             case 'c':   Ok = ParseConfigInt(optarg);    break;
             case 'f':   Ok = ParseFloat(optarg, RevolutionFrequency);  break;
             case 's':   StateFileName = optarg;         break;
+            case 'M':   RemountRootfs = true;           break;
             case 'd':   DeviceName = optarg;            break;
             case 'N':   MonitorNtp = false;             break;
             case '?':
@@ -535,7 +552,12 @@ static bool LoadDatabases()
         DB_("%d", "TT_LONG",        LongTurnByTurnLength)  &&
         DB_("%d", "TT_WINDOW",      TurnByTurnWindowLength)  &&
         DB_("%d", "FR_LENGTH",      FreeRunLength)  &&
+        DB_("%d", "SC_IQ_LENGTH",   ConditioningIQlength())  &&
         DB_("%d", "ATTEN_COUNT",    MaximumAttenuation() + 1)  &&
+        DB_("%d", "TEMP_MB_HIGH",   TargetTempMB + 5)  &&
+        DB_("%d", "TEMP_MB_HIHI",   TargetTempMB + 10)  &&
+        DB_("%d", "TEMP_RF_HIGH",   TargetTempRF + 5)  &&
+        DB_("%d", "TEMP_RF_HIHI",   TargetTempRF + 10)  &&
         
         LOAD_RECORDS_("db/libera.db")  &&
         IF_(Version2FpgaPresent, LOAD_RECORDS_("db/libera-2.0.db"))  &&
