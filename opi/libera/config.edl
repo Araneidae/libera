@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 814
-y 326
+x 815
+y 347
 w 473
 h 567
 font "helvetica-medium-r-16.0"
@@ -2345,7 +2345,7 @@ endObjectProperties
 
 endGroup
 
-visPv "$(display):VE:FPGA2"
+visPv "$(device):VE:FPGA2"
 visMin "1"
 visMax "2"
 endObjectProperties
