@@ -1,34 +1,14 @@
-RERUN_GREP='Rerun to get (citations correct|cross-references right)'
+ASCIIDOC = /home/mga83/local/bin/asciidoc
 
-%.dvi: %.tex
-	latex $*
-	if grep -E $(RERUN_GREP) $*.log; then latex $*; fi
+%.html: %.txt
+	$(ASCIIDOC) $<
 
-%.ps: %.dvi
-	dvips -o $@ $<
 
-%.pdf: %.dvi
-	echo $($*_OPT)
-	dvips -j0 -G0 -o - -Ppdf $* | ps2pdf - $@
 
-# %.pdf: %.tex
-# 	pdflatex $<
+default: $(patsubst %.txt, %.html, $(wildcard *.txt))
 
-DOCUMENTS = requirements libera
-
-default: ps pdf
-
-dvi: $(patsubst %, %.dvi, $(DOCUMENTS))
-
-ps: $(patsubst %, %.ps, $(DOCUMENTS))
-
-pdf: $(patsubst %, %.pdf, $(DOCUMENTS))
 
 .PHONY: clean
 clean:
-	rm -f *.ps *.dvi *.pdf *.aux *.log
-
-
-# Target required for cooperation with EPICS make system.
-install:  default
+	rm -f *.html
 
