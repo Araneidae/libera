@@ -2,9 +2,40 @@ Change history of Libera EPICS Driver development
 =================================================
 
 
-Change accidentially omitted from svn commit log:
-    SVN commit 28695 also includes change to device link type from CONSTANT
-    to INST_IO.
+2009/06/?? Version 2.00
+-----------------------
+Substantial new features including full support for Libera 2.00 FPGA features.
+This release works properly with 1.46, 1.60, 1.82 and 2.00 to 2.03 i-Tech
+Libera releases.
+
+The following are the major changes in this release:
+
+ - Support multiple target architectures, including Libera 2.00 and new DLS
+   target.
+ - Automatically detects installation target and available system features,
+   automatically makes approprate features available.
+ - Support for new 2.00 functionality:
+   1. ``Mean Sum'': computation of average beam intensity between successive
+      triggers, useful for direct measurement of injection efficiency.
+   2. Configuration of Spike Removal feature.
+ - Support for attenuator offsets: help support mixture of Electron and
+   Brilliance BPMs on the same machine.
+ - Added detailed version identification PVs (useful for system diagnosis) and
+   more detailed logging on IOC startup.  IOC logging now includes timestamps.
+ - Add monitoring of NTP synchronisation status, included in clock health.
+ - Integrate health daemon into EPICS driver, monitor both temperature sensors
+   (if available), improve fan health monitoring.
+ - Add support for decimated Turn by Turn capture.
+
+The following minor changes and bug fixes are worth noting:
+
+ - Fixed error in device link type which caused repeated broadcast requests
+   for unobtainable PVs.
+ - Brilliance detection works correctly on older systems.
+ - Fix dependency on `DECIMATION` value by reading it directly from the FPGA.
+   This helps integration on newer versions of Libera.
+ - Automatically install `libstdc++.so.6` on 1.46 target if not present (a bit
+   late for this now, sorry about that).
 
 
 2008/12/15 Version 1.46.4.2

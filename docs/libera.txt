@@ -7,14 +7,15 @@ This software provides an EPICS interface to the Libera electron beam position
 monitor, allowing the performance of the electron beam to be monitored through
 EPICS channels.
 
-This version of the EPICS driver is designed to work with with version 1.46
-and later versions of the Libera device driver, as distributed by
-Instrumentation Technologies, http://www.i-tech.si[], and has been built to
-support the operation of the Diamond light source, http://www.diamond.ac.uk[].
+This version of the EPICS driver is designed to work with with any version of
+the Libera device driver from 1.46 up to and including version 2, as
+distributed by Instrumentation Technologies, http://www.i-tech.si[], and has
+been built to support the operation of the Diamond light source,
+http://www.diamond.ac.uk[].
 
 The normal distribution point for this software is the Diamond controls
 download site, from URL
-    http://controls.diamond.ac.uk/downloads/libera/index.html[].
+    http://controls.diamond.ac.uk/downloads/libera[].
 The author, Dr. Michael Abbott, can be contacted at Diamond Light Source at
 mailto:michael.abbott@diamond.ac.uk[].
 

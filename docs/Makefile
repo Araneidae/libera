@@ -4,8 +4,9 @@ ASCIIDOC = /home/mga83/local/bin/asciidoc
 	$(ASCIIDOC) $<
 
 
+DOCUMENTS = libera CHANGES
 
-default: $(patsubst %.txt, %.html, $(wildcard *.txt))
+default: $(patsubst %, %.html, $(DOCUMENTS))
 
 
 .PHONY: clean
