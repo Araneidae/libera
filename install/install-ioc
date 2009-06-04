@@ -84,6 +84,9 @@ for f in $SCRIPT_FILES; do
     cp "$SOURCE"/scripts/$f "$TARGET"/scripts
 done
 
+# Place the runioc script
+cp "$SOURCE"/runioc "$TARGET"
+
 # A special hack for targeting Libera 1.46 systems: here we're using a newer
 # compiler than used for the original distibution, and the C++ .so needs to
 # be installed.  Hunt it down here and place it ready for installation.
@@ -96,18 +99,6 @@ if [ -n "$GNU_DIR" -a -f "$CPP_SO" ]; then
     CPP_SO_="$(readlink -fn "$CPP_SO")"  &&
     cp "$CPP_SO_" "$TARGET"/install
 fi
-
-
-# To be friendly create a redirector script to invoke the true runioc script.
-# This is only intended for testing use.
-cat <<'EOF' >"$TARGET/runioc"
-#!/bin/sh
-cd "$(dirname "$0")"
-SOURCE="$(pwd)"
-. scripts/architecture
-CONFIGDIR=$CONFIGDIR exec ./scripts/runioc "$@"
-EOF
-chmod +x "$TARGET/runioc"
 
 
 # Finally copy over the FPGA files
