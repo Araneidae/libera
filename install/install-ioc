@@ -39,6 +39,7 @@ INSTALL_FILES='
     libera-driver
     healthd
     locations
+    make-notch-filters
     libera-install-fpga
     libera-install-ioc'
 
@@ -66,7 +67,7 @@ TARGET="$INSTALL_HOST"/ioc
 rm -rf "$TARGET"
 mkdir -p "$TARGET"
 
-# Copy over the appropriate components
+# Copy over the appropriate built components
 for dir in bin dbd db; do
     cp -r "$SOURCE/$dir" "$TARGET"
 done
@@ -80,7 +81,7 @@ done
 # Copy over the scripts
 mkdir -p "$TARGET"/scripts
 for f in $SCRIPT_FILES; do
-    cp "$SOURCE"/install/$f "$TARGET"/scripts
+    cp "$SOURCE"/scripts/$f "$TARGET"/scripts
 done
 
 # A special hack for targeting Libera 1.46 systems: here we're using a newer

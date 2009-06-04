@@ -33,6 +33,10 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include <dbFldTypes.h>
 
@@ -360,6 +364,73 @@ static bool InitialiseSpikeRemoval()
 
 /****************************************************************************/
 /*                                                                          */
+/*                           Notch Filter Control                           */
+/*                                                                          */
+/****************************************************************************/
+
+
+static bool NotchFilterEnabled = true;
+
+static NOTCH_FILTER DisabledNotchFilter = { 0x1FFFF, 0, 0, 0, 0 };
+static NOTCH_FILTER NotchFilters[2];
+
+#define NOTCH_FILTER_FILENAME   "/opt/lib/notch%d"
+
+
+static void SetNotchFilterEnable()
+{
+    if (NotchFilterEnabled)
+    {
+        WriteNotchFilter(0, NotchFilters[0]);
+        WriteNotchFilter(1, NotchFilters[1]);
+    }
+    else
+    {
+        WriteNotchFilter(0, DisabledNotchFilter);
+        WriteNotchFilter(1, DisabledNotchFilter);
+    }
+}
+
+
+static bool InitialiseNotchFilterEnable()
+{
+    bool Ok = true;
+    for (int filter_index = 0; Ok && filter_index < 2; filter_index++)
+    {
+        char FilterFileName[80];
+        sprintf(FilterFileName, NOTCH_FILTER_FILENAME, filter_index + 1);
+
+        /* Read the entire file in one go.  Saves hassle fighting with
+         * stupidities of fscanf(), though this code is much more
+         * complicated! */
+        int Input;
+        char NotchFile[1024 + 1];
+        int Read = 0;
+        Ok =
+            TEST_IO(Input = open(FilterFileName, O_RDONLY))  &&
+            TEST_IO(Read  = read(Input, NotchFile, 1024));
+        if (Ok)
+        {
+            NotchFile[Read] = '\0';    // Ensure file is null terminated
+            char * String = NotchFile;
+            for (int i = 0; Ok && i < 5; i ++)
+            {
+                char * End;
+                NotchFilters[filter_index][i] = strtoul(String, &End, 0);
+                errno = 0;
+                Ok = TEST_OK(End > String);
+                String = End;
+            }
+        }
+        if (Input != -1)
+            close(Input);
+    }
+    return Ok;
+}
+
+
+/****************************************************************************/
+/*                                                                          */
 
 void SetBpmEnabled()
 {
@@ -372,6 +443,13 @@ void SetBpmEnabled()
 
 bool InitialiseConfigure()
 {
+    /* Enable the configuration features that need special initialisation. */
+    bool Ok =
+        InitialiseNotchFilterEnable()  &&
+        IF_(Version2FpgaPresent, InitialiseSpikeRemoval());
+    if (!Ok)
+        return false;
+    
     /* Master enable flag.  Disabling this has little practical effect on BPM
      * outputs (apart from disabling interlock), but is available as a global
      * PV for BPM management. */
@@ -402,6 +480,9 @@ bool InitialiseConfigure()
         AttenuatorDelta, UpdateAttenuation);
     new ATTENUATOR_OFFSETS("CF:ATTEN:OFFSET", UpdateAttenuation);
     Publish_ai("CF:ATTEN:TRUE", CorrectedAttenuation);
+
+    PUBLISH_FUNCTION_OUT(bo, "CF:NOTCHEN",
+        NotchFilterEnabled, SetNotchFilterEnable);
     
     /* Write the initial state to the hardware and initialise everything that
      * needs initialising. */
@@ -412,10 +493,7 @@ bool InitialiseConfigure()
     UpdateSwitchTrigger();
     UpdateSwitchTriggerDelay();
     WriteExternalTriggerDelay(ExternalTriggerDelay);
+    SetNotchFilterEnable();
 
-    /* Finally enable the 2.0 specific configuration features. */
-    if (Version2FpgaPresent)
-        return InitialiseSpikeRemoval();
-    else
-        return true;
+    return true;
 }

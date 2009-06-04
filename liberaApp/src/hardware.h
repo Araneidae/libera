@@ -205,6 +205,10 @@ bool SetEventMask(int EventMask);
 bool ReadEvent(int &EventId, int &Parameter);
 
 
+/* Writes the selected filter to the selected notch filter. */
+typedef int NOTCH_FILTER[5];
+bool WriteNotchFilter(int Index, NOTCH_FILTER Filter);
+
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                      DSC Device Interface Routines.                       */

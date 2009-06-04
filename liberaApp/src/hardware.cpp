@@ -980,6 +980,25 @@ bool WritePostmortemTriggering(
 
 
 
+bool WriteNotchFilter(int index, NOTCH_FILTER Filter)
+{
+    unsigned int WriteNotchAddress = 0x1401C018 + 4*index;
+    unsigned int * WriteNotch;
+    errno = 0;
+    bool Ok = 
+        TEST_OK((index & 1) == index)  &&
+        TEST_NULL(WriteNotch = MapRawRegister(WriteNotchAddress));
+    if (Ok)
+    {
+        for (int i = 0; i < 5; i ++)
+            *WriteNotch = Filter[i];
+        UnmapRawRegister(WriteNotch);
+    }
+    return Ok;
+}
+
+
+
 /*****************************************************************************/
 /*                                                                           */
 /*                      Initialisation and Shutdown                          */
