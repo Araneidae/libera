@@ -37,7 +37,6 @@
 #   /etc/init.d/libera-driver start
 
 echo Running Libera EPICS ioc in test mode
-echo
 
 cd "$(dirname "$0")"
 SOURCE="$(pwd)"

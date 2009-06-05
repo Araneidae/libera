@@ -8,14 +8,8 @@
 # each time EPICS_BASE, SNCSEQ, or any other external
 # module defined in the RELEASE file is rebuilt.
 
-BUILD_FF_SUPPORT=$(shell \
-    sed -n '/^BUILD_FF_SUPPORT=/{s///;p;}' $(TOP)/install/CONFIG)
 
-# EPICS_BASE usually appears last so other apps can override stuff.
-# This location will need to be configured for each port of this application
-# to an environment other than Diamond, and will need to be updated each time
-# the Epics version changes.
-
+# Point this to the EPICS installation.
 EPICS_BASE=/dls_sw/epics/R3.14.9/base
 # EPICS_BASE=/scratch/local/base-3.14.9
 

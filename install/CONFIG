@@ -10,9 +10,6 @@ VERSION=2.00-dev
 # EPICS run-time files will be placed in $INSTALL_HOST/epics.
 INSTALL_HOST=/home/libera/nfs/testing
 
-# Set this to yes to enable fast feedback support, any other value to disable.
-BUILD_FF_SUPPORT=yes
-
 
 # ----------------------------------------------------------------------------
 #
@@ -101,7 +98,7 @@ IOC_S0_FT=2342000
 # this can be disabled by setting this variable to 0.
 IOC_MONITOR_NTP=1
 
-# The health daemon manages either the RF board (if Brilliance deteced) or
+# The health daemon manages either the RF board (if Brilliance detected) or
 # motherboard temperature at the appropriate setting configured below.  Alarm
 # temperatures are set at 5 and 10 degrees above these values.
 IOC_TEMP_MB=42

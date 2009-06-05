@@ -50,6 +50,7 @@
 #include "interlock.h"
 #include "versions.h"
 #include "events.h"
+#include "numeric.h"
 
 #include "conditioning.h"
 
@@ -116,7 +117,6 @@ static const PERMUTATION BrillancePermutationLookup[] =
 
 /* Some magic numbers to be configurable real soon now. */
 #define SWITCH_HOLDOFF  6
-#define PRESCALE        8
 
 #define AI_SCALE        1e6
 
@@ -278,11 +278,23 @@ static bool SwitchMarker(const LIBERA_ROW *Data, size_t Length, size_t &Marker)
 /*****************************************************************************/
 
 
-/* The signal conditioning thread runs periodically to manage the state of
- * the correction matrices in the digital signal conditioning (DSC) part of
- * the FPGA.
- *    The button signals received by Libera undergo the following stages of
- * processing
+/* Computes a prescale factor such that prescaled IQ data will not overflow
+ * when computing the waveform digest array. */
+
+static int ComputePrescale(int TurnsPerSwitch, int SwitchCycles)
+{
+    /* Each digest entry accumulates SwitchCyles cycles, with TurnsPerSwitch
+     * points per cycle.  IQ data seems in practice to be bounded comfortably
+     * below 2^31, but we can affort to be fairly pessimistic -- so we just
+     * compute Prescale so that 2^Prescale >= TurnsPerSwitch*SwitchCycles. */
+    return 32 - CLZ(TurnsPerSwitch * SwitchCycles);
+}
+
+
+/* The signal conditioning thread runs periodically to manage the state of the
+ * correction matrices in the digital signal conditioning (DSC) part of the
+ * FPGA.  The button signals received by Libera undergo the following stages
+ * of processing
  *
  *  1. Cross bar switching of button inputs: each of four RF channels is
  *     selected to process each of the button inputs.  After a complete round
@@ -306,14 +318,15 @@ static bool SwitchMarker(const LIBERA_ROW *Data, size_t Length, size_t &Marker)
 class CONDITIONING : public LOCKED_THREAD, I_EVENT
 {
 public:
-    CONDITIONING(REAL f_if, int TurnsPerSwitch, int SampleSize) :
+    CONDITIONING(REAL f_if, int TurnsPerSwitch, int SwitchCycles) :
         LOCKED_THREAD("Conditioning"),
         
         cotan_if(1.0/tan(f_if)),
         cosec_if(1.0/sin(f_if)),
         m_cis_if(exp(-I*f_if)),
         TurnsPerSwitch(TurnsPerSwitch),
-        SampleSize(SampleSize),
+        SampleSize((SwitchCycles + 1) * SwitchSequenceLength * TurnsPerSwitch),
+        Prescale(ComputePrescale(TurnsPerSwitch, SwitchCycles)),
         IqData(SampleSize, true),
         EpicsWritePhaseArray(*this),
         signal(false),
@@ -730,12 +743,8 @@ private:
                     /* Work through all of the I and Q button readings. */
                     for (int b = 0; b < 2*BUTTON_COUNT; b ++)
                     {
-                         /* We can accumulate prescaled integer values here
-                          * without penalty: the incoming raw ADC data has up
-                          * to 16 bits of precision, and subsequent
-                          * turn-by-turn filtering adds perhaps 8 more.  We
-                          * can therefore prescale by 8 without penalty. */
-                        int Value = Data[Start + i][b] >> PRESCALE;
+                         /* Prescale data to avoid accumulator overflow. */
+                        int Value = Data[Start + i][b] >> Prescale;
                         Totals[ix][b] += Value;
                         Squares[ix][b] += (long long int) Value * Value;
                     }
@@ -1079,6 +1088,7 @@ private:
 
     const int TurnsPerSwitch;
     const int SampleSize;   // Number of samples actually captured
+    const int Prescale;
 
     /* Device handle used to read raw IQ waveforms.  Needs to be abstracted
      * into hardware.h at some point. */
@@ -1277,9 +1287,7 @@ bool InitialiseSignalConditioning(
      * in radians per sample. */
     REAL f_if = 2 * M_PI *
         (REAL) (Harmonic % DecimationFactor) / DecimationFactor;
-    ConditioningThread = new CONDITIONING(
-        f_if, TurnsPerSwitch,
-        (SwitchCycles + 1) * SwitchSequenceLength * TurnsPerSwitch);
+    ConditioningThread = new CONDITIONING(f_if, TurnsPerSwitch, SwitchCycles);
     return ConditioningThread->StartThread();
 }
 

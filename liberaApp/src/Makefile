@@ -14,14 +14,14 @@ include $(TOP)/configure/CONFIG
 USR_CXXFLAGS += -march=armv5te
 USR_CXXFLAGS += -Werror -Wall -Wno-trigraphs
 
+USR_CXXFLAGS += -DRAW_REGISTER
+USR_CXXFLAGS += -DBUILD_FF_SUPPORT
+
 # Only for the most up to date compiler, enable all the extra options
 USR_CXXFLAGS_linux-arm_gnueabi += -Wextra -Wno-unused-parameter
+
 # We play some tricks with structures, need this option.
 versions_CXXFLAGS_linux-arm_gnueabi += -Wno-missing-field-initializers
-
-
-USR_CXXFLAGS += -DRAW_REGISTER
-
 # Make sure that we pick up the version from install/CONFIG.
 versions_CXXFLAGS += -DLIBERA_VERSION='"$(shell \
     sed -n '/^VERSION=/{s///;p}' $(TOP)/install/CONFIG)"'
@@ -73,14 +73,11 @@ ioc_SRCS += interlock.cpp       # Machine protection interlock
 ioc_SRCS += sensors.cpp         # Machine state sensors
 ioc_SRCS += conditioning.cpp    # Signal conditioning control
 ioc_SRCS += meanSums.cpp        # Trigger to trigger mean intensity
+ioc_SRCS += fastFeedback.cpp    # Fast feedback register access
 ioc_SRCS += versions.cpp        # Version identification
 
 ioc_SRCS += iocMain.cpp         # Ioc startup and configuration
 
-ifeq ($(BUILD_FF_SUPPORT),yes)
-USR_CXXFLAGS += -DBUILD_FF_SUPPORT
-ioc_SRCS += fastFeedback.cpp    # Fast feedback register access
-endif
 
 ioc_LIBS += $(EPICS_BASE_IOC_LIBS) 
 
