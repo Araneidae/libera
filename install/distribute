@@ -67,10 +67,7 @@ cd "$LIBERA_VERSION"
 
 # Patch this release for public distribution.
 # We remove docs because it's work in progress and contains crap right now.
-# We remove dsc because it's not actually part of this distribution.
-rm -rf docs system/dsc
-# Make sure the distributed version doesn't try to build FF
-sed -r -i 's/(^BUILD_FF_SUPPORT=).*$/\1no/' install/CONFIG
+rm -rf docs 
 
 # Build the core distribution.  Note that we can't compress the tar file as
 # we create it as we're going to need to add the prebuilt files afterwards.
@@ -80,7 +77,7 @@ tar cf "$TAR_FILE" -C.. "$LIBERA_VERSION"
 # Now prepare the prebuilt files.
 mkdir install/prebuilt
 ln -s liberaApp/src dbd
-for db in libera fastFeedback; do
+for db in libera libera-2.0 fastFeedback; do
     python2.4 liberaApp/Db/$db.py /dev/stdout |
         sed '/^# \*\*\* Please do not edit/d' >install/prebuilt/$db.db
 done
@@ -92,4 +89,4 @@ done
 tar rf "$TAR_FILE" -C.. "$LIBERA_VERSION/install/prebuilt"
 gzip -f "$TAR_FILE"
 
-echo "Distribution built ok in: $TAR_FILE.gz"
+echo "Source distribution built ok in: $TAR_FILE.gz"

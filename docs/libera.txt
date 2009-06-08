@@ -103,7 +103,7 @@ beam position monitor buttons.
 computed electron beam position (`X`,`Y`), a skew factor (`Q`) and the total
 beam intensity (`S`).  The intensity `S` is in arbitrary units, normally
 scaled to 0.5822*2^31 full scale; the positions are in nm for waveforms and in
-mm for single points.
+mm for single points.  The skew factor is unscaled with maximum value +-1.
 
 ...`_S`:: Records of the form <name>`_S` are used to write values into the
 driver.  Most of these written values are remembered over IOC restart.   
@@ -406,7 +406,10 @@ of the button or stripline pickups.  At Diamond typical values are
 and vertical) for the booster buttons.  
 
 `Q_0_S`::
-Q_0
+This is used to set the zero offset for the ``skew'' measurement.  Large
+deviations from the zero point are a good diagnostic of electrical or button
+faults, as the skew does not normally change by much during normal beam
+movements.
 
 `BBA_X_S`, `BBA_Y_S`, `BCD_X_S`, `BCD_Y_S`, `GOLDEN_X_S`, `GOLDEN_Y_S`::
 Offsets on the position reported by the BPM are divided into three
@@ -461,20 +464,66 @@ multiplexing switch.
 Processing this PV causes the current DSC settings to be written to
 persistent storage for reloading the next time the IOC is restarted.
 
-`ATTEN_S`::
-Attenuator settings in dB: a value between 0 and 62dB or 31dB can be
-set, depending on whether Libera Electron or Libera Brilliance
-(respectively) is operational.
+`ATTEN_S`, `ATTEN:DISP_S`::
+These two settings are added together to control the attenuator setting in dB.
+The final setting can be a value between 0 and 62dB for Libera Electron or
+between 0 and 31dB for Libera Brilliance.  
++
+The `ATTEN:DISP_S` setting can be set to any value between -62 and +62, while
+`ATTEN_S` is limited to the range 0 to 62 -- true attenuator settings will be
+clipped to the range supported by the machine.  
++
+These two settings are designed so that the same global attenuator setting
+can be written to `ATTEN_S` on all Liberas on a machine and individual Libera
+characteristics can be accounted for by setting individual offsets into
+`ATTEN:DISP_S`.  This is particularly useful if Electron and Brilliance
+Liberas are mixed on the same system.
 
 `ATTEN:OFFSET_S`::
 Waveform of corrections for attenuator settings, one entry for each
 possible attenuator setting (63 for Libera Electron, 32 for Libera
-Brilliance).  Affects `SA:POWER` and `SA:CURRENT` calculations.
+Brilliance).  Affects `SA:POWER`, `SA:CURRENT` and `CF:ATTEN:TRUE`
+calculations. 
+
+`ATTEN:TRUE`::
+This reports the set attenuation taking into account the programmed
+attenuation, the configured displacement, clipping to a valid value, and the
+offset waveform.
 
 `ISCALE_S`::
 Nominal beam current at 0dBm input power as seen by Libera.  This is
 used to compute `SA:CURRENT` and `FT:CHARGE`.
 
+`NOTCHEN_S`::
+For certain machine physics investigations it can be helpful to turn off the
+notch filters in the fast feedback stream.  Note that fast feedback will not
+work properly when this is disabled!
+
+`TRIGDLY_S`::
+This can be used to generate an internal delay on the Libera trigger, and can
+be set to any number between 0 and 2047.  The delay is in Libera sample
+clocks, or steps of approximately 8ns.  This setting is not particulary
+useful.
+
+The following configuration options are only available if a version 2.0 or
+higher FPGA is loaded.
+
+`SR:ENABLE_S`::
+The ``spike removal'' feature removes some of the switching transients from
+the fast feedback stream before down filtering -- this can significantly
+reduce the impact of switching artifacts.  This PV controls whether this
+feature is enabled.
++
+Note that although spike removal is performed on turn by turn data, it does
+not affect the normal turn by turn waveforms (`FR`, `TT`, `PM`, `BN`).
+
+`SR:AVESTOP_S`, `SR:AVEWIN_S`, `SR:SPIKEST_S`, `SR:SPIKEWIN_S`:: 
+These settings control the operation of spike removal.
+
+`SR:DEBUGWF`::
+This waveform allows the effect of spike removal to be viewed on one data
+stream (button A magnitude).  To update this waveform either manually process
+it or set its `.SCAN` field to a suitable value.
 
 
 Clock (<group> = CK):

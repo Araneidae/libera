@@ -159,13 +159,8 @@ fi
 # If final installation selected then copy over all the run-time files and
 # update the configuration file to point to them.
 if [ $TARGET == final ]; then
-    # Hard-wired targets on local file system
+    # Hard-wired target on local file system
     IOC_TARGET=/opt/ioc
-    STATE_DIR=/opt/state
-
-    # Ensure the state directory exists (but don't interfere with it!)
-    mkdir -p "$STATE_DIR"  
-
     # Copy over all the runtime files.  First make sure the target directory
     # is fresh.
     rm -rf "$IOC_TARGET"  
@@ -177,7 +172,13 @@ if [ $TARGET == final ]; then
 else
     # Compute EPICS and IOC paths relative to this directory.  
     IOC_TARGET="$SOURCE"
-fi  
+fi
+
+# Ensure the state directory exists.
+STATE_DIR="$(
+    sed -n '/IOC_STATE_PATH=/{s///;p;q;}' "$SOURCE"/install/CONFIG)"  &&
+[ -n "$STATE_DIR" ]  &&
+mkdir -p "$STATE_DIR"
 
 # Now install the epics_ioc file.
 (
