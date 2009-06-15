@@ -30,11 +30,61 @@
 # Starts or stops health daemon
 # This file should be placed in /etc/init.d
 
+
+# Hard-wired panic temperatures for health daemon.  If the temperature is
+# above either of these temperatures then the FPGA will be placed in low
+# power mode and the health daemon is not started.
+MAX_BR_TEMP=75
+MAX_EL_TEMP=65
+
+
 CONFIGDIR='@@CONFIGDIR@@'
 . $CONFIGDIR/epics_ioc
 . "$LIBERA_IOC"/scripts/epics-functions
 
 HEALTHD="$LIBERA_IOC"/bin/$EPICS_ARCH/healthd
+
+
+# Reads the temperature from the given I2C sensor device, returning the
+# temperature in degrees.  Works on both with and without sysfs, so can work
+# on 2.4 and 2.6 kernels.
+#
+#   read_temperature <sensor-number>
+#
+read_temperature()
+{
+    if [ -e /sys ]; then
+        RAW_TEMP="$(cat /sys/bus/i2c/devices/0-00$1/temp1_input)"  &&
+        echo ${RAW_TEMP%%000}
+    else
+        RAW_TEMP="$(cat /proc/sys/dev/sensors/*-$1/temp1)"  &&
+        echo "${RAW_TEMP%% *}"
+    fi
+}
+
+# Checks motherboard temperature and RF board temperature (if available),
+# returning failure if either is over temperature.
+check_health()
+{
+    if detect_brilliance; then
+        TEMP="$(read_temperature 18)"  &&
+        [ "$TEMP" -lt "$MAX_BR_TEMP" ]
+    fi  &&
+    TEMP="$(read_temperature 29)"  &&
+    [ "$TEMP" -lt "$MAX_EL_TEMP" ]
+}
+
+
+# Perform sanity check on temperature.  If temperature is too high then just
+# bail out right now and force the FPGA into power-down mode.  The healthd
+# command pipe is used as a health daemon status flag.
+rm -f /tmp/healthd.command
+if ! check_health; then
+    echo "Powering down FPGA"
+    /opt/bin/fp </opt/lib/powerdown.bin
+    Error "Health daemon not started"
+fi
+
 
 case "$1" in
     start)

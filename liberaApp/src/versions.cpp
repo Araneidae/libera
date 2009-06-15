@@ -189,6 +189,7 @@ static ENV_MAP<bool> EnvironmentBools[] = {
     { "OPT_OLD_BR",     "OLDBR",    &OldBrillianceApi },
     { "OPT_DLS_FPGA",   "DLS",      &DlsFpgaFeatures },
     { "OPT_FF",         "FF",       &FastFeedbackFeature },
+    { "OPT_GBETH",      "GBETH" },
     { "OPT_MAF",        "MAF",      &MafFeaturePresent },
     { "ITECH_MAX_ADC",  "ITMAXADC", &ItechMaxAdcPresent },
     { "FPGA_2_SUPPORT", "FPGA2",    &Version2FpgaPresent },

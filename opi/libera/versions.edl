@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 451
-y 64
+x 2422
+y 42
 w 392
 h 584
 font "helvetica-medium-r-14.0"
@@ -1191,7 +1191,7 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 344
+x 352
 y 488
 w 32
 h 16
@@ -1233,7 +1233,7 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 344
+x 352
 y 456
 w 32
 h 16
@@ -1349,6 +1349,48 @@ bgColor index 0
 useDisplayBg
 value {
   "Linked library:"
+}
+autoSize
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 352
+y 472
+w 32
+h 16
+controlPv "$(device):VE:GBETH"
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 4
+useDisplayBg
+autoHeight
+limitsFromDb
+nullColor index 0
+newPos
+objType "monitors"
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 208
+y 472
+w 132
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "Gigabit ethernet FF?"
 }
 autoSize
 endObjectProperties

@@ -840,6 +840,7 @@ def Versions():
     boolin('OLDBR',     'Old Brilliance attenuators')
     boolin('DLS',       'DLS FGPA')
     boolin('FF',        'Fast Feedback enabled')
+    boolin('GBETH',     'Gigabit FF controller')
     boolin('MAF',       'Boxcard filter present')
     boolin('ITMAXADC',  'i-Tech MAX ADC register')
     boolin('FPGA2',     'Libera 2.00+ FPGA features')

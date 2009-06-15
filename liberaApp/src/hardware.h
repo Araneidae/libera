@@ -116,7 +116,7 @@ typedef ADC_ROW ADC_DATA[ADC_LENGTH];
 /* To be called once on startup to initialise connection to Libera device.
  * If this routine fails (and returns false) then no further operations can
  * be done and system startup should fail. */
-bool InitialiseHardware();
+bool InitialiseHardware(int TurnsPerSwitch);
 
 
 #ifdef RAW_REGISTER
@@ -124,8 +124,8 @@ bool InitialiseHardware();
  * frequent use, as the associated memory mapping is created and deleted each
  * time this routine is called! */
 bool WriteRawRegister(
-    unsigned int Address, unsigned int Value, unsigned int Mask = 0xFFFFFFFF);
-bool ReadRawRegister(unsigned int Address, unsigned int &Value);
+    uint32_t Address, uint32_t Value, uint32_t Mask = 0xFFFFFFFF);
+bool ReadRawRegister(uint32_t Address, uint32_t &Value);
 #endif
 
 

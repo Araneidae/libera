@@ -61,6 +61,12 @@ fi
 
 case "$1" in
     start)
+        if ! [ -e /tmp/healthd.command ]; then
+            sleep 1     # Just in case it's still starting...
+            [ -e /tmp/healthd.command ]  ||
+                Error "Health daemon not running, not starting Libera FPGA"
+        fi
+
         # First load the FPGA design
         echo -n "Loading FPGA design..."
         /opt/bin/fp < $DESIGN
@@ -70,6 +76,16 @@ case "$1" in
         echo -n "Initializing FPGA design..."
         /opt/bin/fpga_init $NCLK_ADC > /dev/null
         evaluate_retval
+
+        # If gigabit ethernet Fast Feedback is enabled and we have the
+        # appropriate files, initialise the controller: this isn't supported
+        # by the EPICS driver yet.
+        if [ "$OPT_GBETH" = 1 ]; then
+            echo -n "Initialising gigabit FF controller..."
+            [ -x /opt/bin/fai_init -a -e $CONFIGDIR/fai_header ]  &&
+                /opt/bin/fai_init < $CONFIGDIR/fai_header
+            evaluate_retval
+        fi
 
         # Load MSP driver
         echo -n "Loading MSP driver..."

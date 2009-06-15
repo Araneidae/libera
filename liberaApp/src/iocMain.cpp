@@ -245,7 +245,7 @@ static bool InitialiseLibera()
         InitialiseVersions()  &&
         /* Initialise the connections to the Libera device.  This also needs
          * to be done early, as this is used by other initialisation code. */
-        InitialiseHardware()  &&
+        InitialiseHardware(TurnsPerSwitch)  &&
         /* Get the event receiver up and running.  This spawns background
          * threads for dispatching trigger events. */
         InitialiseEventReceiver()  &&
@@ -614,6 +614,10 @@ static bool StartIOC()
 
 int main(int argc, char *argv[])
 {
+    /* Configure stdout for line buffered output so log file entries appear
+     * immediately. */
+    setvbuf(stdout, NULL, _IOLBF, 0);
+    
     /* Consume any option arguments and start the driver. */
     bool Ok =
         ProcessOptions(argc, argv)  &&

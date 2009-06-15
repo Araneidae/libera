@@ -183,7 +183,8 @@ else
     set_var FPGA_2_SUPPORT $ITECH_MAX_ADC
 fi
 
-# Fast feedback is available if DLS FPAG present or iTech FF option selected.
+# The DLS Fast feedback controller is available if DLS FPAG present or the
+# iTech FF option is selected.
 set_var OPT_FF $((OPT_DLS_FPGA  ||  (FPGA_ITECH & (1 << 6)) != 0))
 # If FF option set then read the FF version
 if [ $OPT_FF = 1 ]; then
@@ -198,6 +199,9 @@ if [ $OPT_FF = 1 ]; then
 else
     set_var FF_VERSION No-FF
 fi
+
+# The i-Tech Gigabit ethernet fast feedback controller is detected here.
+set_var OPT_GBETH $(((FPGA_ITECH & 0x8) != 0))
 
 # We now have enough information to make a reasonable estimate of the FPGA
 # version. 

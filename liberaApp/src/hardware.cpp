@@ -60,10 +60,23 @@
 #define REGISTER_MAX_ADC_DLS    0x1400C000
 /* This register is used to set the turn by turn ADC overflow threshold. */
 #define REGISTER_ADC_OVERFLOW   0x1400C004
+
 /* These registers are used to access the triggered sum average. */
-#define REGISTER_FA_NSUMS       0x1401C024  // Number of samples
-#define REGISTER_FA_SUM_LSW     0x1401C028  // Low 32 bits
-#define REGISTER_FA_SUM_MSW     0x1401C02C  // High 32 bits of sum
+#define FA_OFFSET               0x1401C000  // Base of FA register area
+
+#define REGISTER_FA_NSUMS       (FA_OFFSET + 0x024) // Number of samples
+#define REGISTER_FA_SUM_LSW     (FA_OFFSET + 0x028) // Low 32 bits
+#define REGISTER_FA_SUM_MSW     (FA_OFFSET + 0x02C) // High 32 bits of sum
+
+/* Spike removal control registers. */
+#define REGISTER_SR_ENABLE      (FA_OFFSET + 0x030) // 1 => removal enabled
+#define REGISTER_SR_AVE_STOP    (FA_OFFSET + 0x034) // End point for average
+#define REGISTER_SR_AVE_WIN     (FA_OFFSET + 0x038) // Length of average window
+#define REGISTER_SR_SPIKE_START (FA_OFFSET + 0x03C) // Start of spike
+#define REGISTER_SR_SPIKE_WIN   (FA_OFFSET + 0x040) // Length of spike window
+#define REGISTER_SR_DEBUG       (FA_OFFSET + 0x044) // Debug register
+#define REGISTER_SR_BUFFER      (FA_OFFSET + 0x800) // Debug buffer
+
 
 /* This bit is set in the ITECH register to enable DLS extensions. */
 #define DLS_EXTENSION_BIT       (1 << 23)
@@ -135,6 +148,9 @@ static int AdcExcessBits = 4;
 /* Max ADC register read at SA rate.  We preallocate this to avoid
  * continually mapping the register! */
 static unsigned int * RegisterMaxAdcRaw = NULL;
+
+/* Number of turns per switch. */
+static int TurnsPerSwitch;
 
 
 
@@ -778,11 +794,11 @@ bool WriteInterlockIIR_K(int K)
 
 
 /* Paging information. */
-static unsigned int OsPageSize;         // 0x1000
-static unsigned int OsPageMask;         // 0x0FFF
+static uint32_t OsPageSize;         // 0x1000
+static uint32_t OsPageMask;         // 0x0FFF
 
 
-static unsigned int * MapRawRegister(unsigned int Address)
+static uint32_t * MapRawRegister(uint32_t Address)
 {
     char * MemMap = (char *) mmap(
         0, OsPageSize, PROT_READ | PROT_WRITE, MAP_SHARED,
@@ -793,21 +809,20 @@ static unsigned int * MapRawRegister(unsigned int Address)
         return NULL;
     }
     else
-        return (unsigned int *)(MemMap + (Address & OsPageMask));
+        return (uint32_t *)(MemMap + (Address & OsPageMask));
 }
 
-static void UnmapRawRegister(unsigned int *MappedAddress)
+static void UnmapRawRegister(uint32_t *MappedAddress)
 {
     void * BaseAddress = (void *) (
-        ((unsigned int) MappedAddress) & ~OsPageMask);
+        ((uint32_t) MappedAddress) & ~OsPageMask);
     munmap(BaseAddress, OsPageSize);
 }
 
 
-bool WriteRawRegister(
-    unsigned int Address, unsigned int Value, unsigned int Mask)
+bool WriteRawRegister(uint32_t Address, uint32_t Value, uint32_t Mask)
 {
-    unsigned int * Register = MapRawRegister(Address);
+    uint32_t * Register = MapRawRegister(Address);
     if (Register == NULL)
         return false;
     else
@@ -821,9 +836,9 @@ bool WriteRawRegister(
 }
 
 
-bool ReadRawRegister(unsigned int Address, unsigned int &Value)
+bool ReadRawRegister(uint32_t Address, uint32_t &Value)
 {
-    unsigned int * Register = MapRawRegister(Address);
+    uint32_t * Register = MapRawRegister(Address);
     if (Register == NULL)
         return false;
     else
@@ -835,22 +850,21 @@ bool ReadRawRegister(unsigned int Address, unsigned int &Value)
 }
 
 #else
-static unsigned int * MapRawRegister(unsigned int Address)
+static uint32_t * MapRawRegister(uint32_t Address)
 {
     errno = 0;
     print_error("Cannot map registers into memory", __FILE__, __LINE__);
     return NULL;
 }
 
-static void UnmapRawRegister(unsigned int *MappedAddress) { }
+static void UnmapRawRegister(uint32_t *MappedAddress) { }
 
-bool WriteRawRegister(
-    unsigned int Address, unsigned int Value, unsigned int Mask)
+bool WriteRawRegister(uint32_t Address, uint32_t Value, uint32_t Mask)
 {
     return false;
 }
 
-bool ReadRawRegister(unsigned int Address, unsigned int &Value)
+bool ReadRawRegister(uint32_t Address, uint32_t &Value)
 {
     return false;
 }
@@ -866,7 +880,7 @@ bool ReadRawRegister(unsigned int Address, unsigned int &Value)
 /*****************************************************************************/
 
 
-static unsigned int * AverageSumRegisters = NULL;
+static uint32_t * AverageSumRegisters = NULL;
 
 #ifdef RAW_REGISTER
 static bool InitialiseAverageSum()
@@ -917,11 +931,47 @@ bool WriteMafSettings(int Offset, int Delay)
 }
 
 
+static int rem(int a, int b)
+{
+    int result = a % b;
+    return result >= 0 ? result : result + b;
+}
+
+#define FA_REG(base, address) \
+    ((uint32_t *) ((char *) base + address - FA_OFFSET))
+
 bool WriteSpikeRemovalSettings(
     bool Enable, int AverageWindow, int AverageStop,
     int SpikeStart, int SpikeWindow)
 {
-#if defined(__EBPP_H_2)
+    if (DlsFpgaFeatures)
+    {
+        /* The spike removal settings differ subtly between the i-Tech and DLS
+         * FPGAs.  For the DLS FPGA the start point of the average window must
+         * be specified, not the stop, and values must be modulo
+         * TurnsPerSwitch. */
+        AverageStop -= AverageWindow;
+        AverageStop = rem(AverageStop, TurnsPerSwitch);
+        SpikeStart  = rem(SpikeStart,  TurnsPerSwitch);
+    }
+    
+#if defined(RAW_REGISTER)
+    /* No driver support, so write directly to the hardware instead.
+     * Probably shouldn't bother with driver support in the first place... */
+    uint32_t * FA_area;
+    if (!TEST_NULL(FA_area = MapRawRegister(FA_OFFSET)))
+        return false;
+
+    /* Sort out these horrid numbers: see libera_kernel.h. */
+    *FA_REG(FA_area, REGISTER_SR_ENABLE)      = Enable;
+    *FA_REG(FA_area, REGISTER_SR_AVE_STOP)    = AverageStop;
+    *FA_REG(FA_area, REGISTER_SR_AVE_WIN)     = AverageWindow;
+    *FA_REG(FA_area, REGISTER_SR_SPIKE_START) = SpikeStart;
+    *FA_REG(FA_area, REGISTER_SR_SPIKE_WIN)   = SpikeWindow;
+    UnmapRawRegister(FA_area);
+    return true;
+    
+#elif defined(__EBPP_H_2)
     int EnableInt = Enable;
     return
         WriteCfgValue(LIBERA_CFG_SR_ENABLE,         EnableInt)  &&
@@ -930,21 +980,6 @@ bool WriteSpikeRemovalSettings(
         WriteCfgValue(LIBERA_CFG_SR_START,          SpikeStart)  &&
         WriteCfgValue(LIBERA_CFG_SR_WINDOW,         SpikeWindow);
     
-#elif defined(RAW_REGISTER)
-    /* No driver support, so write directly to the hardware instead.
-     * Probably shouldn't bother with driver support in the first place... */
-    unsigned int * FA_area;
-    if (!TEST_NULL(FA_area = MapRawRegister(0x1401C000)))
-        return false;
-
-    /* Sort out these horrid numbers: see libera_kernel.h. */
-    FA_area[0x0C] = Enable;
-    FA_area[0x0D] = AverageStop;
-    FA_area[0x0E] = AverageWindow;
-    FA_area[0x0F] = SpikeStart;
-    FA_area[0x10] = SpikeWindow;
-    UnmapRawRegister(FA_area);
-    return true;
 #else
     return TEST_OK(false);
 #endif
@@ -953,18 +988,19 @@ bool WriteSpikeRemovalSettings(
 
 bool ReadSpikeRemovalBuffer(int Buffer[SPIKE_DEBUG_BUFLEN])
 {
-    unsigned int * FA_area;
-    if (!TEST_NULL(FA_area = MapRawRegister(0x1401C000)))
+    uint32_t * FA_area;
+    if (!TEST_NULL(FA_area = MapRawRegister(FA_OFFSET)))
         return false;
 
     /* Enable spike capture and wait for some waveforms to be captured.
      * If switching is enabled the buffer will be filled within a few
      * microseconds, even on the largest of machines.  So we sleep a
      * little and disable capture before reading out. */
-    FA_area[0x11] = 1;
+    *FA_REG(FA_area, REGISTER_SR_DEBUG) = 1;
     usleep(1000);
-    FA_area[0x11] = 0;
-    memcpy(Buffer, FA_area + 0x200, SPIKE_DEBUG_BUFLEN * sizeof(int));
+    *FA_REG(FA_area, REGISTER_SR_DEBUG) = 0;
+    memcpy(Buffer, FA_REG(FA_area, REGISTER_SR_BUFFER),
+        SPIKE_DEBUG_BUFLEN * sizeof(int));
     UnmapRawRegister(FA_area);
     return true;
 }
@@ -982,8 +1018,8 @@ bool WritePostmortemTriggering(
 
 bool WriteNotchFilter(int index, NOTCH_FILTER Filter)
 {
-    unsigned int WriteNotchAddress = 0x1401C018 + 4*index;
-    unsigned int * WriteNotch;
+    uint32_t WriteNotchAddress = 0x1401C018 + 4*index;
+    uint32_t * WriteNotch;
     errno = 0;
     bool Ok = 
         TEST_OK((index & 1) == index)  &&
@@ -1027,8 +1063,10 @@ static bool EnableMaxAdc()
 
 
 
-bool InitialiseHardware()
+bool InitialiseHardware(int _TurnsPerSwitch)
 {
+    TurnsPerSwitch = _TurnsPerSwitch;
+    
 #ifdef RAW_REGISTER
     OsPageSize = getpagesize();
     OsPageMask = OsPageSize - 1;

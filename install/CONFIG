@@ -103,7 +103,8 @@ IOC_MONITOR_NTP=1
 # temperatures are set at 5 and 10 degrees above these values.
 IOC_TEMP_MB=42
 IOC_TEMP_RF=48
+
 # Specifies program or script to run on temperature overflow.
-IOC_HEALTHD_PANIC=
+IOC_HEALTHD_PANIC=/sbin/reboot
 # Extra health daemon options can be specified by setting this variable.
 IOC_HEALTHD_OPTS=
