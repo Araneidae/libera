@@ -65,10 +65,6 @@ cd "$TEMP_ROOT"
 svn export -q "$SVN_SOURCE" "$LIBERA_VERSION"
 cd "$LIBERA_VERSION"
 
-# Patch this release for public distribution.
-# We remove docs because it's work in progress and contains crap right now.
-rm -rf docs 
-
 # Build the core distribution.  Note that we can't compress the tar file as
 # we create it as we're going to need to add the prebuilt files afterwards.
 TAR_FILE="$TARGET/libera-epics-$VERSION.tar"
