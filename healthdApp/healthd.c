@@ -69,13 +69,13 @@
 
 /* Default controller parameters when using RF board sensor. */ 
 #define TARGET_TEMP_RF          49
-#define PANIC_TEMP_RF           80
+#define PANIC_TEMP_RF           75
 #define CONTROLLER_KP_RF        160
 #define CONTROLLER_KI_RF        100
 
 /* Default controller parameters when using motherboard sensor. */ 
 #define TARGET_TEMP_MB          42
-#define PANIC_TEMP_MB           70
+#define PANIC_TEMP_MB           65
 #define CONTROLLER_KP_MB        40
 #define CONTROLLER_KI_MB        40
 
@@ -91,11 +91,13 @@ static bool daemon_mode = true;
 static bool use_rf_sensor = false;
 static int loop_interval = 60;
 static const char * panic_action = NULL;
+/* Panic temperatures used to force reboot (or configured panic action). */
+static int max_temperature_MB = PANIC_TEMP_MB;
+static int max_temperature_RF = PANIC_TEMP_RF;
 
 /* These paramters are all sensor dependent.  If they are not specified then
  * defaults will be configured. */
 static int target_temperature = -1;
-static int max_temperature = -1;
 static int controller_KP = -1;
 static int controller_KI = -1;
 
@@ -208,7 +210,8 @@ static bool SetParameter(char Option, const char * Value)
     switch (Option)
     {
         case 'T':   Ok = ParseInt(Value, &target_temperature);  break;
-        case 'm':   Ok = ParseInt(Value, &max_temperature);     break;
+        case 'm':   Ok = ParseInt(Value, &max_temperature_MB);  break;
+        case 'e':   Ok = ParseInt(Value, &max_temperature_RF);  break;
         case 't':   Ok = ParseInt(Value, &loop_interval);       break;
         case 'p':   Ok = ParseInt(Value, &controller_KP);       break;
         case 'i':   Ok = ParseInt(Value, &controller_KI);       break;
@@ -286,18 +289,17 @@ static bool InitialiseCommandLoop(void)
 /*****************************************************************************/
 
 
-static const char *sensor_temp0;    // RF board temperature sensor
-static const char *sensor_temp1;    // Motherboard temperature sensor
+static const char *sensor_temp_RF;  // RF board temperature sensor
+static const char *sensor_temp_MB;  // Motherboard temperature sensor
 static const char *sensor_fan0;     // Front fan set speed
 static const char *sensor_fan1;     // Rear fan set speed
 
 static bool UseSys;     // Whether we're using /sys or /proc
 
 
-bool ReadTemperature(int *temp)
+static bool ReadTemperature(const char * temp_sensor, int *temp)
 {
     FILE * input;
-    const char * temp_sensor = use_rf_sensor ? sensor_temp0 : sensor_temp1;
     bool Ok = TEST_NULL(input = fopen(temp_sensor, "r"));
     if (Ok)
     {
@@ -306,6 +308,15 @@ bool ReadTemperature(int *temp)
             *temp /= 1000;
         fclose(input);
     }
+    return Ok;
+}
+
+static bool ReadTemperatures(int *temp_MB, int *temp_RF)
+{
+    *temp_RF = 0;
+    bool Ok = ReadTemperature(sensor_temp_MB, temp_MB);
+    if (Ok  &&  use_rf_sensor)
+        Ok = ReadTemperature(sensor_temp_RF, temp_RF);
     return Ok;
 }
 
@@ -337,8 +348,8 @@ static bool InitialiseController(void)
     if (UseSys)
     {
         /* The /sys file system exists.  All our sensors live here. */
-        sensor_temp0 = I2C_DEVICE "0-0018/temp1_input";
-        sensor_temp1 = I2C_DEVICE "0-0029/temp1_input";
+        sensor_temp_RF = I2C_DEVICE "0-0018/temp1_input";
+        sensor_temp_MB = I2C_DEVICE "0-0029/temp1_input";
 
         /* Depending on the kernel version, the fan speed is either set by
          * setting pwm1_enable to 2 (closed loop) and writing to fan1_target,
@@ -364,16 +375,15 @@ static bool InitialiseController(void)
         /* No /sys file system: revert to the older /proc filesystem.  Note
          * that the rf sensor is assumed to be an ADM1023 -- we shouldn't use
          * the MAX1617 if it is present. */
-        sensor_temp0 = PROC_DEVICE "adm1023-i2c-0-18/temp1";
-        sensor_temp1 = PROC_DEVICE "max1617a-i2c-0-29/temp1";
-        sensor_fan0  = PROC_DEVICE "max6650-i2c-0-4b/speed";
-        sensor_fan1  = PROC_DEVICE "max6650-i2c-0-48/speed";
+        sensor_temp_RF = PROC_DEVICE "adm1023-i2c-0-18/temp1";
+        sensor_temp_MB = PROC_DEVICE "max1617a-i2c-0-29/temp1";
+        sensor_fan0    = PROC_DEVICE "max6650-i2c-0-4b/speed";
+        sensor_fan1    = PROC_DEVICE "max6650-i2c-0-48/speed";
     }
 
 
     /* Assign defaults to all unassigned parameters. */
     SET_DEFAULT(target_temperature, TARGET_TEMP);
-    SET_DEFAULT(max_temperature,    PANIC_TEMP);
     SET_DEFAULT(controller_KP,      CONTROLLER_KP);
     SET_DEFAULT(controller_KI,      CONTROLLER_KI);
 
@@ -381,18 +391,26 @@ static bool InitialiseController(void)
         "Health daemon started: sensor: %s, target: %d, KP: %d, KI: %d",
         use_rf_sensor ? "RF" : "MB", target_temperature,
         controller_KP, controller_KI);
+    if (use_rf_sensor)
+        log_message(LOG_INFO,
+            "  MB panic temperature %d, RF panic temperature %d",
+            max_temperature_MB, max_temperature_RF);
+    else
+        log_message(LOG_INFO,
+            "  MB panic temperature %d", max_temperature_MB);
     log_message(LOG_INFO,
-        "  panic temperature: %d, panic action: %s",
-        max_temperature, panic_action == NULL ? "not set" : panic_action);
+        "  panic action: %s",
+        panic_action == NULL ? "not set" : panic_action);
     
     return true;
 }
 
 
-static void PressPanicButton(int temp)
+static void PressPanicButton(const char *Reason, int temp_MB, int temp_RF)
 {
-    log_message(LOG_ERR, "Over temperature detected: %d > %d, exiting",
-        temp, max_temperature);
+    log_message(LOG_ERR,
+        "healthd panic, %s, MB: (%d, %d), RF: (%d, %d)",
+        Reason, temp_MB, max_temperature_MB, temp_RF, max_temperature_RF);
     if (panic_action == NULL)
         log_message(LOG_ERR, "No panic action specified");
     else
@@ -409,12 +427,13 @@ static void PressPanicButton(int temp)
 
 static void StepControlLoop(int *integral)
 {
-    int temp;
-    if (ReadTemperature(&temp))
+    int temp_MB, temp_RF;
+    if (ReadTemperatures(&temp_MB, &temp_RF))
     {
-        if (temp > max_temperature)
-            PressPanicButton(temp);
-        
+        if (temp_MB > max_temperature_MB  ||  temp_RF > max_temperature_RF)
+            PressPanicButton("Over temperature", temp_MB, temp_RF);
+
+        int temp = use_rf_sensor ? temp_RF : temp_MB;
         int error = temp - target_temperature;
         *integral += error;
         int new_speed = INITIAL_FAN_SPEED +
@@ -441,6 +460,8 @@ static void StepControlLoop(int *integral)
         WriteDevice(sensor_fan0, "%d", new_speed);
         WriteDevice(sensor_fan1, "%d", new_speed);
     }
+    else
+        PressPanicButton("Unable to read temperature", 0, 0);
 }
 
 
@@ -477,7 +498,8 @@ static void Usage(const char *Name)
 "    -t:    Specify loop interval in seconds (default is 60 seconds)\n"
 "    -p:    Specify KP parameter for control loop\n"
 "    -i:    Specify KI parameter for control loop\n"
-"    -m:    Specify maximum acceptable temperature\n"
+"    -m:    Specify maximum motherboard temperature\n"
+"    -e:    Specify maximum RF board temperature\n"
 "    -E     Use RF board temperature sensor (default is motherboard)\n"
 "    -M     Use motherboard temperature sensor\n"
 "    -x:    Specify program to call in event of temperature overflow\n"
@@ -490,7 +512,7 @@ static bool ProcessOptions(int argc, char *argv[])
 {
     while (true)
     {
-        int opt = getopt(argc, argv, "+hnT:t:p:i:m:EMx:v:");
+        int opt = getopt(argc, argv, "+hnT:t:p:i:m:e:EMx:v:");
         switch (opt)
         {
             case 'h':
@@ -501,7 +523,7 @@ static bool ProcessOptions(int argc, char *argv[])
             case 'n':   daemon_mode = false;    break;
             case 'x':   panic_action = optarg;  break;
                 
-            case 'T':   case 'm':   case 't':   case 'v':
+            case 'T':   case 'm':   case 'e':   case 't':   case 'v':
             case 'p':   case 'i':   case 'E':   case 'M':
                 if (!SetParameter(opt, optarg))
                 {

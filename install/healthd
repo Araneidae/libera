@@ -34,8 +34,8 @@
 # Hard-wired panic temperatures for health daemon.  If the temperature is
 # above either of these temperatures then the FPGA will be placed in low
 # power mode and the health daemon is not started.
-MAX_BR_TEMP=75
-MAX_EL_TEMP=65
+MAX_RF_TEMP=75
+MAX_MB_TEMP=65
 
 
 CONFIGDIR='@@CONFIGDIR@@'
@@ -68,10 +68,10 @@ check_health()
 {
     if detect_brilliance; then
         TEMP="$(read_temperature 18)"  &&
-        [ "$TEMP" -lt "$MAX_BR_TEMP" ]
+        [ "$TEMP" -lt "$MAX_RF_TEMP" ]
     fi  &&
     TEMP="$(read_temperature 29)"  &&
-    [ "$TEMP" -lt "$MAX_EL_TEMP" ]
+    [ "$TEMP" -lt "$MAX_MB_TEMP" ]
 }
 
 
@@ -100,7 +100,7 @@ case "$1" in
             else
                 OPTS="-M -T$IOC_TEMP_MB"
             fi
-            OPTS="$OPTS $IOC_HEALTHD_OPTS"
+            OPTS="$OPTS -m$MAX_MB_TEMP -e$MAX_RF_TEMP $IOC_HEALTHD_OPTS"
             
             if [ -z "$IOC_HEALTHD_PANIC" ]; then
                 "$HEALTHD" $OPTS
