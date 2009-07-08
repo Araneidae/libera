@@ -10,8 +10,17 @@
 
 
 # Point this to the EPICS installation.
-EPICS_BASE=/dls_sw/epics/R3.14.9/base
+EPICS_BASE = /dls_sw/epics/R3.14.9/base
 # EPICS_BASE=/scratch/local/base-3.14.9
 
-# Identifies which python compiler to use.  Must be at least version 2.4.
-PYTHON=python2.4
+# Identifies which python compiler to use.  Must be at least version 2.4,
+# won't work with version 3.
+PYTHON = python2.4
+
+# Identifies either the path to the IOC builder python library or its
+# pkg_resources version identification.  Very simple test: if it begins with /
+# it's a path!  If this is left blank then the builder is assumed to be on the
+# path.
+#    Note: if the IOC builder is not installed, please place the prebuilt .db
+# files in the liberaApp/Db directory to avoid any need to invoke this.
+IOCBUILDER = 1.7

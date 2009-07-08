@@ -353,7 +353,8 @@ def Config():
         EGU  = 'mA', ESLO = 1e-5, PREC = 1)
 
     # Notch filter enable
-    boolOut('NOTCHEN', 'Disabled', 'Enabled')
+    boolOut('NOTCHEN', 'Disabled', 'Enabled',
+        DESC = 'Enable/disable notch filter')
 
     # Internal trigger skew
     longOut('TRIGDLY', 0, (1<<12)-1, DESC = 'Internal trigger delay')

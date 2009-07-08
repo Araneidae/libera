@@ -30,8 +30,18 @@
 import sys
 import os
 
-from pkg_resources import require
-require('iocbuilder==1.7')
+
+# All this palaver is to pick up the IOC builder version from
+# configure/RELEASE so that it can be maintained properly.
+builder_version = os.environ['IOCBUILDER']
+if builder_version == '':
+    # Assume iocbuilder already on python path, do nothing more
+    pass
+elif builder_version[0] == '/':
+    sys.path.append(builder_version)
+else:
+    from pkg_resources import require
+    require('iocbuilder==%s' % builder_version)
 from iocbuilder import ModuleVersion, TemplateRecordNames, ConfigureTemplate
 
 
