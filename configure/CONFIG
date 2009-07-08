@@ -1,9 +1,9 @@
 # Top level EPICS build configuration
 
-include $(TOP)/configure/CONFIG_APP
-
 # Cross-compiling for linux-arm on linux-x86.
 HOST_ARCH = linux-x86
+
+include $(TOP)/configure/CONFIG_APP
 
 BUILD_ARCHS =
 # Choose the appropriate target architecture here:
