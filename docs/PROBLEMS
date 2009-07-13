@@ -1,3 +1,11 @@
+ * Note that the i-Tech Libera distribution uses the openntp NTP daemon, and
+   the version installed on current i-Tech distributions has the following
+   bug: if the NTP server is not available at startup, then once the server is
+   available ntpd gets into a state where is fails to correctly synchronise
+   local time on the Libera, and yet reports that it is correctly
+   synchronised!
+
+
 This records significant known problems in release 1.40.2 of the Libera EPICS
 driver.
 

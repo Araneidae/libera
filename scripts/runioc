@@ -119,9 +119,6 @@ IocParameter -cS0SA= $((IOC_S0_SA))
 IocParameter -cHA= $((HARMONIC))
 IocParameter -cLP= $((MCPRESC))
 IocParameter -cNT= $((NTBT))
-# Temperature monitoring parameters
-IocParameter -cMB= $((IOC_TEMP_MB))
-IocParameter -cRF= $((IOC_TEMP_RF))
 
 # If requested, disable NTP monitoring.
 [ "$IOC_MONITOR_NTP" = 0 ]  &&  IocParameter -N

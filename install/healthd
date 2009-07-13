@@ -34,8 +34,8 @@
 # Hard-wired panic temperatures for health daemon.  If the temperature is
 # above either of these temperatures then the FPGA will be placed in low
 # power mode and the health daemon is not started.
-MAX_RF_TEMP=75
-MAX_MB_TEMP=65
+MAX_RF_TEMP=80
+MAX_MB_TEMP=70
 
 
 CONFIGDIR='@@CONFIGDIR@@'

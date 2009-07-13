@@ -51,15 +51,20 @@
 /* Limits on controlled fan speeds: the controller won't attempt to push
  * beyond these limits. */
 #define MAX_FAN_SPEED   5700
-#define MIN_FAN_SPEED   2500
+/* This minimum speed of 4,300 RPM is specified by Instrumentation
+ * Technologies.  If the fans are driven at lower speeds then their drive
+ * transistors can be overloaded!  This constraint was reported in an e-mail
+ * from Matjaz Znidarcic dated 1st July 2009.  A minimum set speed of 4,100
+ * appears to be acceptable, according to i-Tech. */
+#define MIN_FAN_SPEED   4100
 
 /* It really doesn't matter hugely how we start, so to simplify things we
- * assume an initial fan speed of 4000 RPM.  The controller will settle
+ * assume an initial fan speed of 4,500 RPM.  The controller will settle
  * quickly enough anyhow.
  *    The one disadvantage of not reading the fan speed at startup is that
  * restarting the health daemon will force the controller to hunt for the
- * right speed again. */
-#define INITIAL_FAN_SPEED   4000
+ * right speed again.  Not a big deal. */
+#define INITIAL_FAN_SPEED   4500
 
 
 /* Macro to set specified variable to defaults below. */
@@ -69,13 +74,13 @@
 
 /* Default controller parameters when using RF board sensor. */ 
 #define TARGET_TEMP_RF          49
-#define PANIC_TEMP_RF           75
+#define PANIC_TEMP_RF           80
 #define CONTROLLER_KP_RF        160
 #define CONTROLLER_KI_RF        100
 
 /* Default controller parameters when using motherboard sensor. */ 
 #define TARGET_TEMP_MB          42
-#define PANIC_TEMP_MB           65
+#define PANIC_TEMP_MB           70
 #define CONTROLLER_KP_MB        40
 #define CONTROLLER_KI_MB        40
 
@@ -135,6 +140,7 @@ void print_error(const char * Message, const char * FileName, int LineNumber)
          *  http://sources.redhat.com/ml/glibc-bugs/2005-11/msg00101.html
          * and the rather unhelpful reply:
          *  http://sources.redhat.com/ml/glibc-bugs/2005-11/msg00108.html
+         * Good grief.  Reading Drepper is bad for the blood pressure!
          *
          * On the other hand, the recommended routine strerror_r() is
          * inconsistently defined -- depending on the precise library and its

@@ -723,27 +723,35 @@ def Voltages():
 ExtraHealthRecords = []
 
 def Sensors():
-    TEMP_MB_HIGH = Parameter('TEMP_MB_HIGH')
-    TEMP_MB_HIHI = Parameter('TEMP_MB_HIHI')
-    TEMP_RF_HIGH = Parameter('TEMP_RF_HIGH')
-    TEMP_RF_HIHI = Parameter('TEMP_RF_HIHI')
-    
     SetChannelName('SE')
+    
     enable = Enable(ZSV  = 'MAJOR', OSV  = 'NO_ALARM')
+    longOut('SETTEMP', EGU = 'deg C',
+        DESC = 'Health daemon target temp')
 
+    # The alarm settings for the temperatures track how close we are to the
+    # panic temperature.  For RF1 we panic (by default) at 80 degrees, and for
+    # MB we panic at 70; RF2 isn't monitored for panic detection, but it
+    # typically runs 5 degrees hotter than RF1.  We set the alarm temperatures
+    # 10 and 15 degrees below the default panic temperatures.
     temp_monitors = [
-        longIn('TEMP_RF', 40, 70, 'deg C',
+        longIn('TEMP_RF1', 40, 70, 'deg C',
             DESC = 'RF board temperature',
-            HIGH = TEMP_RF_HIGH,    HSV  = 'MINOR',
-            HIHI = TEMP_RF_HIHI,    HHSV = 'MAJOR'),
+            HIGH = 65,    HSV  = 'MINOR',
+            HIHI = 70,    HHSV = 'MAJOR'),
+        aIn('TEMP_RF2', 40, 70, 1e-3, 'deg C',
+            DESC = 'RF board temperature',
+            PREC = 1,
+            HIGH = 70,    HSV  = 'MINOR',
+            HIHI = 75,    HHSV = 'MAJOR'),
         longIn('TEMP_MB', 30, 60, 'deg C',
             DESC = 'Motherboard temperature',
-            HIGH = TEMP_MB_HIGH,    HSV  = 'MINOR',
-            HIHI = TEMP_MB_HIHI,    HHSV = 'MAJOR')]
+            HIGH = 55,    HSV  = 'MINOR',
+            HIHI = 60,    HHSV = 'MAJOR')]
     for i in (1, 2):
-        fan_speed = longIn('FAN%d' % i, 0, 6000, 'RPM',
+        fan_speed = longIn('FAN%d' % i,     4000, 6000, 'RPM',
             DESC = 'Fan %d speed' % i)
-        fan_set = longIn('FAN%d_SET' % i, 0, 6000, 'RPM',
+        fan_set = longIn('FAN%d_SET' % i,   4000, 6000, 'RPM',
             DESC = 'Fan %d set speed' % i)
         fan_err = records.calc('FAN%d_ERR' % i,
             DESC = 'Fan %d speed error' % i,

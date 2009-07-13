@@ -131,10 +131,6 @@ static bool RemountRootfs = false;
 /* NTP monitoring can be turned off at startup. */
 static bool MonitorNtp = true;
 
-/* Target temperatures, only used for setting db limits on startup. */
-static int TargetTempMB = 42;
-static int TargetTempRF = 48;
-
 
 
 /* We take any of the four traditional shutdown signals (HUP, INT, QUIT or
@@ -360,8 +356,6 @@ static bool ParseConfigInt(char *optarg)
         { "NT", TurnsPerSwitch },
         { "S0FT", S0_FT },
         { "S0SA", S0_SA },
-        { "MB", TargetTempMB },
-        { "RF", TargetTempRF },
     };
 
     /* Parse the configuration setting into <key>=<integer>. */
@@ -437,8 +431,6 @@ static void Usage(const char *IocName)
 "       NT      Turns per switch position\n"
 "       S0FT    S0 power scaling for FT mode\n"
 "       S0SA    S0 power scaling for SA mode\n"
-"       MB      Target motherboard temperature\n"
-"       RF      Target RF board temperature\n"
 "    -f <f_mc>      Machine revolution frequency\n"
 "    -s <file>      Read and record persistent state in <file>\n"
 "    -M             Remount rootfs rw while writing persistent state\n"
@@ -554,10 +546,6 @@ static bool LoadDatabases()
         DB_("%d", "FR_LENGTH",      FreeRunLength)  &&
         DB_("%d", "SC_IQ_LENGTH",   ConditioningIQlength())  &&
         DB_("%d", "ATTEN_COUNT",    MaximumAttenuation() + 1)  &&
-        DB_("%d", "TEMP_MB_HIGH",   TargetTempMB + 5)  &&
-        DB_("%d", "TEMP_MB_HIHI",   TargetTempMB + 10)  &&
-        DB_("%d", "TEMP_RF_HIGH",   TargetTempRF + 5)  &&
-        DB_("%d", "TEMP_RF_HIHI",   TargetTempRF + 10)  &&
         
         LOAD_RECORDS_("db/libera.db")  &&
         IF_(Version2FpgaPresent, LOAD_RECORDS_("db/libera-2.0.db"))  &&
