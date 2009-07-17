@@ -102,12 +102,12 @@ if ((BINARY)); then
     INSTALL="$LIBERA_VERSION"-install
     INSTALL_DIR="$TEMP_ROOT/$INSTALL"
     INSTALL_TAR="$TARGET"/libera-epics-$VERSION-install.tar.gz
-    make BUILD_ARCHS=linux-arm
+    make
     make -C docs
 
     install/install-ioc "$INSTALL_DIR"
     cp -a COPYING opi docs "$INSTALL_DIR"
-    ln -s docs/INSTALL.txt .
+    ln -s docs/INSTALL.txt "$INSTALL_DIR"
     
     tar czf "$INSTALL_TAR" -C "$TEMP_ROOT" "$INSTALL"
 fi
