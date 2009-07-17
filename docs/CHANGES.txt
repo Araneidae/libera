@@ -2,8 +2,8 @@ Change history of Libera EPICS Driver development
 =================================================
 
 
-2009/06/?? Version 2.00
------------------------
+2009/07/17 Version 2.00.0
+-------------------------
 Substantial new features including full support for Libera 2.00 FPGA features.
 This release works properly with 1.46, 1.60, 1.82 and 2.00 to 2.03 i-Tech
 Libera releases.
@@ -36,6 +36,8 @@ The following minor changes and bug fixes are worth noting:
    This helps integration on newer versions of Libera.
  - Automatically install `libstdc++.so.6` on 1.46 target if not present (a bit
    late for this now, sorry about that).
+ - The gigabit ethernet controller is initialised if present (but is not
+   otherwise configurable in this release).
 
 
 2008/12/15 Version 1.46.4.2

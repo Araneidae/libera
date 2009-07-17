@@ -10,6 +10,9 @@ distribute
 epics
     IOC startup script to be installed in /etc/init.d on Libera.
 
+healthd
+    Health daemon startup script to be installed in /etc/init.d on Libera.
+
 install-ioc
     Builds local copy of installation in $INSTALL_HOST directory.
 
@@ -25,6 +28,12 @@ libera-install-ioc
 
 Makefile
     Hooks into EPICS make process to execute final wrap-up of build process.
+
+make_current
+    Updates user interface selection used by launcher.
+
+make-notch-filters
+    Creates notch filter files from /opt/bin/fpga_init_specific.
 
 offsets.conf
     Attenuator offsets.
@@ -44,3 +53,5 @@ runioc
 
 temp-file-daemon
     Probably obsolete.
+
+

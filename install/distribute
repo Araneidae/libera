@@ -28,13 +28,22 @@
 #      michael.abbott@diamond.ac.uk
 
 set -e
+set -o pipefail
 
 # Script to build the distribution, called thus:
 #
-#   distribute <version> <destination>
+#   distribute [-b] <version> <destination>
 #
 # The specified version (or the trunk, if requested) is built for
-# distribution in <destination>.
+# distribution in <destination>.  If -b is set then a binary build is also
+# made.
+
+if [ "$1" = -b ]; then
+    BINARY=1
+    shift
+else
+    BINARY=0
+fi
 
 VERSION="${1:?Which version to distribute?}"
 TARGET="${2:?Where to put the distribution?}"
@@ -71,12 +80,12 @@ TAR_FILE="$TARGET/libera-epics-$VERSION.tar"
 tar cf "$TAR_FILE" -C.. "$LIBERA_VERSION"
 
 # Now prepare the prebuilt files.
-mkdir install/prebuilt
-ln -s liberaApp/src dbd
-for db in libera libera-2.0 fastFeedback; do
-    python2.4 liberaApp/Db/$db.py /dev/stdout |
-        sed '/^# \*\*\* Please do not edit/d' >install/prebuilt/$db.db
-done
+mkdir install/prebuilt dbd
+# The .db files need libera.dbd to be in place
+cp liberaApp/src/libera.dbd dbd
+make -C liberaApp/Db
+cp db/* install/prebuilt
+# The .h files are built from python files
 for py in liberaApp/src/*.py; do
     python2.4 $py >install/prebuilt/$(basename $py .py).h
 done
@@ -86,3 +95,19 @@ tar rf "$TAR_FILE" -C.. "$LIBERA_VERSION/install/prebuilt"
 gzip -f "$TAR_FILE"
 
 echo "Source distribution built ok in: $TAR_FILE.gz"
+
+
+# Now build the complete binary distribution if requested.
+if ((BINARY)); then
+    INSTALL="$LIBERA_VERSION"-install
+    INSTALL_DIR="$TEMP_ROOT/$INSTALL"
+    INSTALL_TAR="$TARGET"/libera-epics-$VERSION-install.tar.gz
+    make BUILD_ARCHS=linux-arm
+    make -C docs
+
+    install/install-ioc "$INSTALL_DIR"
+    cp -a COPYING opi docs "$INSTALL_DIR"
+    ln -s docs/INSTALL.txt .
+    
+    tar czf "$INSTALL_TAR" -C "$TEMP_ROOT" "$INSTALL"
+fi

@@ -1,376 +1,62 @@
-Libera EPICS driver version 1.46.4, for use with Libera drivers version 1.46,
-1.60 and 1.82.
-
-Note that this release has been tested with gcc 3.4.5 and glibc 2.3.6.  Using
-this tool chain will involve some extra installation work (see below) and
-makes first turn mode less usable (see the PROBLEMS file), but the overall
-increase in system stability is worthwhile.
-
-
-INSTALLATION INSTRUCTIONS
-
-This software depends on the following components:
-
- * ARM cross compiler.  The software was previous developed using gcc 3.3.3
-   configured to cross-compile from linux-x86 to linux-arm but this release
-   was developed using gcc 3.4.5 and glibc 2.3.6.
-
- * EPICS 3.14 base.  This version of the software has been developed using 
-   version 3.14.9 of EPICS, which can be downloaded from 
-        http://www.aps.anl.gov/epics/base/R3-14/9.php
-   For earlier versions (3.14.6, 3.14.7 and 3.14.8.2) the included patches
-   will need to be applied to ensure that linux-arm support is provided.
-   EPICS version 3.14.9 can be used without applying any patches.
-
- * Libera 1.46.  To run the driver a complete Libera system must be
-   used together with the full Libera distribution.  Libera can be obtained 
-   from Instrumentation Technologies at: http://www.i-tech.si. 
-       The CSPI library and its associated header files are included with this
-   distribution.  Its makefile has been modified to integrate with the EPICS
-   build.
-
- * System updates.  The Libera system must be upgraded to version 1.46.
-
-
-The instructions below are divided into the following stages:
-
- 1. Preparation
- 2. Building the Cross Compiler Tool Chain
- 3. Building EPICS for linux-arm
- 4. Building the Libera EPICS driver
- 5. Preparing Libera for EPICS installation
- 6. Installing the Libera EPICS driver
- 7. Running the Libera EPICS driver
-
-
-
-Preparation
-===========
-
-A number of file locations will need to be defined before installing this
-software, both on the development system (assumed to be Linux) and on the
-target Libera machine.  These are identified through this document by the
-symbols below.
-
-Directories on development machine:
-
-LIBERA_EPICS    Root of this distribution as extracted
-ARM_LINUX_GCC   Root of gcc cross compiler
-EPICS_BASE      Root of epics base distribution
-INSTALL_HOST    Where to build the installation
-
-The following directory on the target machine is assumed to contain the same
-files as $INSTALL_HOST.  It is assumed in this document that this is done
-through an NFS mount on Libera.
-
-INSTALL_TARGET  Where to find installation files on Libera.  
-
-Other symbols:
-
-EPICS_VERSION   Any of 3.14.6, 3.14.7, 3.14.8.2, 3.14.9 for this release.
-
-
-The instructions below assume that you have already extracted
-libera-epics-$EPICS_VERSION.tgz into $LIBERA_EPICS.
-
-When running make the environment variable HOST_ARCH will be assumed to be
-set thus: 
-    $ export HOST_ARCH=linux-x86
-This is used by the Epics environment to determine which build configuration
-to use.
-
-
-Start by editing $LIBERA_EPICS/install/CONFIG to suit your installation.  The
-following symbol should be defined:
-
-    INSTALL_HOST    Set to $INSTALL_HOST as described above
-
-In all of the instructions below a line of the form
-    $ command
-describes a command to be run on the host build machine, and a line of the
-form
-    # command
-describes a command to be run on Libera, when logged in as root.
-
-
-
-Building the Cross Compiler Tool Chain
-======================================
-
-The cross compiler can be obtained from Instrumentation Technologies, or can
-be built with the help of crosstool, available from
-    http://kegel.com/crosstool/
-
-The following process worked well for me:
-
-1.  Download http://kegel.com/crosstool/crosstool-0.43.tar.gz and unzip.
-
-2.  Change into the crosstool directory and run the commands below.  
-
-    $ set -aex
-    $ # These directories need to already exist
-    $ TARBALLS_DIR=/scratch/crosstool/downloads
-    $ RESULT_TOP=/scratch/crosstool/results
-    $ # You may need to specify your web proxy server here
-    $ #http_proxy=http://wwwcache.rl.ac.uk:8080/
-
-    $ GCC_LANGUAGES=c,c++
-    $ . gcc-3.4.5-glibc-2.3.6.dat
-    $ . arm.dat
-    $ TARGET=arm-linux
-    $ ./all.sh --notest
-
-    The last step takes quite a long time, and will automatically download
-    any source files needed.  The resulting compiler toolchain will appear
-    in $RESULT_TOP/gcc-3.4.5-glibc-2.3.6 .
-
-3.  Remember ARM_LINUX_GCC=$RESULT_TOP/gcc-3.4.5-glibc-2.3.6/arm-linux for the
-    next step.
-
-
-
-Building EPICS for linux-arm
-============================
-
-The instructions below assume that you don't already have a copy of EPICS
-installed, and we assume the use of version 3.14.6, 3.14.7, 3.14.8.2 or
-3.14.9.
-
-1.  Install a suitable cross compiler.  This release was built with a version
-    of gcc 3.4.5 configured as a cross compiler with prefix arm-linux.  Let
-    ARM_LINUX_GCC be the root of the compiler, so that GCC is available as
-    $ARM_LINUX_GCC/bin/arm-linux-gcc.
-
-2.  Extract EPICS from
-        http://www.aps.anl.gov/epics/download/base/baseR$EPICS_VERSION.tar.gz
-    into a suitable directory.  Let EPICS_BASE be the path to the root
-    directory of this distribution.
-
-3.  If the EPICS version is earlier than 3.14.9, patch it as follows:
-        $ cd $EPICS_BASE
-        $ patch -p0 <$LIBERA_EPICS/install/patches/patch-epics-$EPICS_VERSION
-    Note that the correct patch must be used depending on which version of
-    EPICS is installed.  The linux-arm patches are fully incorporated into
-    3.14.9 and do not need to be applied to this version of EPICS.
-
-4.  Unless $ARM_LINUX_GCC is /usr you will need to tell EPICS where to find
-    its cross compiler by editing the site configuration file
-        $EPICS_BASE/configure/os/CONFIG_SITE.linux-x86.linux-arm
-    and defining 
-        GNU_DIR=<expansion of ARM_LINUX_GCC>
-
-5.  Make sure that linux-arm is included as a cross compiler target
-    architecture, by editing
-        $EPICS_BASE/configure/CONFIG_SITE
-    and defining 
-        CROSS_COMPILER_TARGET_ARCHS=linux-arm
-    Multiple target architectures can be supported by EPICS and defined on
-    this line, but the Libera driver will only use the linux-arm target. 
-
-6.  The linux-arm build must now be configured for static building.  Add the
-    following lines to $EPICS_BASE/configure/os/CONFIG.linux-x86.linux-arm :
-
-        CROSS_CPPFLAGS=
-        STATIC_BUILD=YES
-        SHARED_LIBRARIES=NO
-
-7.  Remove the following line from $EPICS_BASE/configure/CONFIG.CrossCommon :
-        export GCC_EXEC_PREFIX = $(GNU_LIB)/gcc-lib/
-    This line does not seem to be necessary, and it confuses gcc 3.4.5 (as the
-    path gcc-lib has changed) resulting in compilation failure.
-
-8.  Run make from $EPICS_BASE.  This will take a while...
-        $ cd $EPICS_BASE
-        $ make
-
-
-Note that the EPICS build has library and header file dependencies including
-readline and curses: these may need to be resolved before the build above is
-successful.
-
-
-
-Building the Libera EPICS driver
-================================
-
-One thing missing from this distribution is the Python library used to build
-the .db files, and as yet there is no separate distribution published for
-this, as it is very dependent on the Diamond environment.  The library can be
-provided on request, but it will require integration work, thus pre-built .db
-files are included with this distribution.
-
-1.  Edit $LIBERA_EPICS/configure/RELEASE so that EPICS_BASE points to
-    $EPICS_BASE.
-
-2.  To remove the dependency on the Python epics library, copy the prebuilt
-    files from the install directory to the Db directory thus:
-        $ cd $LIBERA_EPICS
-        $ cp install/prebuilt/*.db liberaApp/Db
-
-3.  If your build environment lacks Python then a pre-built header file is
-    also provided in the install/prebuilt directory which can be copied into
-    liberaApp/src if required:
-        $ cp install/prebuilt/*.h liberaApp/src
-
-4.  Run make thus:
-        $ make
-
-5.  Copy the runtime files to $INSTALL_HOST by running
-        $ ./install/install-ioc
-    This builds the directory $INSTALL_HOST/ioc ready for installation on
-    Libera.
-
-    Note that this step is not required if the directory $LIBERA_EPICS is
-    directly accessible from the Libera over NFS.
-
-
-
-
-Preparing Libera for EPICS installation
-=======================================
-
-You will need to obtain the the appropriate version of the Libera SBC software
-release from Instrumentation Technologies (www.i-tech.si) and follow the
-installation instructions.  
-
-This EPICS driver may misbehave in obscure ways, or more usually will refuse
-to start, if the wrong version of Libera software is installed.  The following
-table records all current versions of the EPICS driver and the appropriate
-Libera driver version to use.
-
-    EPICS Driver (date)         Compatible Libera Drivers
-    -------------------         -------------------------
-    1.46.4 (2008-07-14)         1.46, 1.60, 1.82 (+Brilliance)
-    1.46.1 (2007-09-27)         1.46
-    1.40.2 (2007-06-12)         1.40, 1.42
-    1.40.0 (2007-01-15)         1.40, 1.42
-    0.6.3  (2006-10-03)         1.20, 1.21
-    0.6.1  (2006-08-17)         1.20, 1.21
-    0.5    (2006-07-07)         1.00
-    0.4    (2006-03-13)         1.00
-    0.2    (2006-02-06)         0.92
-
-For accurate timestamps it is necessary to run an NTP daemon on Libera.  The
-process of building this is automated by the script system/ntp/build, and the
-process of installing it is automated by system/ntp/install-ntpd.  
-    In slightly more detail: download ntp-4.2.2p3.tar.gz (or a more recent
-version if required) from http://support.ntp.org and edit system/ntp/build so
-that TAR_DIR points to the directory containing the downloaded file.  Also
-edit system/ntp/ntp.conf so that there is a server line pointing to your local
-NTP server (which should if possible also be configured to act as an rdate
-server).
-    Running the build script will created a directory system/ntp/install
-containing all the files required to install ntp on libera.  Make this
-directory visible to Libera and then run the script install/install-ntp.
-
-
-One final stage of preparation is required: if glibc 2.3.6 has been used as
-suggested then it will be necessary to copy libstdc++.so.6* onto Libera.  The
-following commands will do the job.  First on the development host run:
-    $ mkdir -p $INSTALL_HOST/lib
-    $ cp -d $ARM_LINUX_GCC/arm-linux/lib/libstdc++.so.6* $INSTALL_HOST/lib
-    $ $ARM_LINUX_GCC/bin/arm-linux-strip $INSTALL_HOST/lib/libstdc++.so.6.0.3
-Then on each Libera run
-    # cp -d $INSTALL_TARGET/lib/* /lib
-    # ldconfig
-
-
-
-Installing the Libera EPICS driver
-==================================
-
-Two modes of installation are supported:
-
-Test    Designed for testing, files are accessed over NFS.
-
-Final   Designed for production, files are copied to standard locations on the
-        Libera IOC.
-
-In all of the following it is assumed that the Libera IOC has access to the
-contents of the directory $INSTALL_HOST as $INSTALL_TARGET, either by copying
-the files onto Libera, or via a shared NFS mount point.
-
-
-Test Installation
------------------
-
-    In this mode of installation the run-time files are accessed over NFS and
-    nothing is copied onto the Libera file system.  This is useful when
-    developing Libera, but is not recommended for normal operation as
-    uninterrupted access to NFS is required.
-
-    To install a Test installation run one of following commands on Libera,
-    either:
-        # $INSTALL_TARGET/ioc/install/libera-install-ioc -t
-    or:
-        # $INSTALL_TARGET/ioc/install/libera-install-ioc -tl
-
-    Using the -a option ensures that the libera IOC is automatically started
-    on reboot or when /etc/init.d/libera is invoked.
-
-    Note that libera-install-ioc only needs to be run once: subsequent updates
-    to the $INSTALL_HOST / $INSTALL_TARGET directory will be automatically
-    picked up, as Libera is configured to run the EPICS driver directly from
-    this directory.
-
-
-Final Installation
-------------------
-    
-    In this mode of installation the run-time files are copied to standard
-    locations on Libera.  This mode is recommended for production use.
-
-    In this mode the following hard wired targets are used on Libera for
-    placing files:
-
-        /opt/ioc        Location for Libera EPICS driver runtime files
-        /opt/state      Location for storing persistent state
-
-    To install the IOC files run one of the following commands on Libera,
-    either:
-        # $INSTALL_TARGET/ioc/install/libera-install-ioc -f
-    or:
-        # $INSTALL_TARGET/ioc/install/libera-install-ioc -fl
-
-    Using the -l option ensures that the libera IOC is automatically started
-    on reboot.
-
-
-
-Running the Libera EPICS driver
-===============================
-
-The Libera EPICS IOC can be run in two ways on Libera.  Interactive operation
-is possible by running the IOC file directly (depending on whether a test or
-final installation has been selected):
-    # $INSTALL_TARGET/ioc/bin/linux-arm/runioc
-or
-    # /opt/ioc/bin/linux-arm/runioc
-This will provide an epics shell prompt.
-
-Alternatively, daemon operation is possible by using the epics script:
-    # /etc/init.d/epics start
-This will start the IOC running, and it can be stopped by running
-    # /etc/init.d/epics stop
-
-If the -l option has been used when running libera-install-ioc then the EPICS
-IOC will start automatically when Libera reboots or when the
-/etc/init.d/libera script is used to restart the Libera driver and daemons.
-
-When the IOC is running as a daemon it will log all relevant activity to the
-file /var/log/ioc.
-
-
-Note that the IOC will take the IOC device name from the configured hostname,
-thus for example if 
-    # hostname
-returns
-    TS-DI-EBPM-01
-then running
-    $ caget TS-DI-EBPM-01:VERSION
-should return the IOC build version.
-
-
-The script $LIBERA_EPICS/opi/demoLibera will use the EPICS EDM viewer to
-display $LIBERA_EPICS/opi/launcher.edl which provides access to Libera control
-screens.
+This binary distribution of the Libera Electron Beam Position Monitor EPICS
+driver contains the following directories:
+
+ioc
+    This is the complete installation ready to be deployed on the target 
+    system.  See instructions below for installation.
+
+docs
+    Documentation, including this file.
+
+opi
+    EDM control screens for managing the EPICS interface to each Libera.  It
+    should be possible to use all the files in opi/libera without
+    modification, but other files will need to be customised to the
+    appropriate target environment.
+
+
+To install the Libera EPICS driver follow these steps:
+
+1.  Copy the entire ioc directory somewhere that the Libera IOC can see it.
+Ideally an nfs mount point should be created and mounted on the Libera.  In
+the following I'll assume this directory has been copied to a directory named
+    /mnt/nfs/ioc
+on Libera.
+
+2.  Modify the file ioc/install/CONFIG to suit your target if necessary.
+
+3.  Run the command:
+    /mnt/nfs/ioc/install/libera-install-ioc -h
+to see the possible installation options.  Normally installation should be
+performed using the command
+    /mnt/nfs/ioc/install/libera-install-ioc -fas SR
+This will ensure that all the necessary files are copied to the Libera (-f),
+the IOC is started automatically when Libera is rebooted (-a), and the IOC is
+started immediately (-s).  If necessary use -w on newer versions of Libera.
+
+Note that simply copying files onto Libera won't work properly, though the IOC
+can be run interactively after a successful install by running the command
+    /mnt/nfs/ioc/runioc
+This is designed for testing and development only.
+
+
+To manage the IOC there are three scripts, each of which can be run with one
+argument, any of start, stop or restart.
+
+/etc/init.d/healthd
+    This starts and stops the health daemon, which should normally be left
+    running.  The libera-driver script will not run if the health daemon is
+    not running.
+
+/etc/init.d/libera-driver
+    This starts starts and stops all the Libera driver daemons, including the
+    IOC if -a was specified as part of the installation.
+
+/etc/init.d/epics
+    This starts and stops the EPICS IOC without disturbing the driver or the
+    clock PLL daemon.  This is normally called automatically by the
+    libera-driver script.
+
+After installation the original /etc/init.d/libera script is renamed to
+/etc/init.d/old-libera.  This script should no longer be used and can be
+deleted if desired.

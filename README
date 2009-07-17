@@ -1,0 +1,18 @@
+This is the source distribution for the Libera Electron Beam Position monitor
+EPICS driver.  See the attached file COPYING for licensing (in brief, GPL v2).
+
+Documentation is in the docs directory:
+
+CHANGES.txt
+    Log of changes to this software.
+
+BUILD.txt
+    Detailed build and installation instructions.  Unfortunately this hasn't
+    yet been updated for targeting Libera 2.00, which requires a different
+    compiler -- use the binary distribution if this is an issue.
+
+INSTALL.txt
+    Installation instructions for binary distribution.
+
+libera.txt
+    Detailed description of functionality provided by the EPICS driver.
