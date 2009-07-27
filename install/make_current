@@ -39,7 +39,7 @@ VERSION="${1?Specify version to select as current}"
 
 if [ -d "$PROD_ROOT/$VERSION" ]; then
     echo "cd '$PROD_ROOT'  &&  ln -s '$VERSION' Rx-y" \
-        >"$QUEUE_DIR/Make-Libera-Rx-y"
+        >"$QUEUE_DIR/Make-Libera-Rx-y.sh"
 else
     echo >&2 "Libera version '$VERSION' not found"
     exit 1

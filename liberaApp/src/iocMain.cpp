@@ -282,10 +282,8 @@ static bool InitialiseLibera()
         InitialiseSlowAcquisition(S0_SA)  &&
         /* Mean sums, only enabled if FPGA 2 features present. */
         IF_(Version2FpgaPresent, InitialiseMeanSums())  &&
-#ifdef BUILD_FF_SUPPORT
         /* Initialise the fast feedback interface. */
         InitialiseFastFeedback()  &&
-#endif
         /* Background monitoring stuff: fan, temperature, memory, etcetera. */
         InitialiseSensors(MonitorNtp);
 }
@@ -549,9 +547,7 @@ static bool LoadDatabases()
         
         LOAD_RECORDS_("db/libera.db")  &&
         IF_(Version2FpgaPresent, LOAD_RECORDS_("db/libera-2.0.db"))  &&
-#ifdef BUILD_FF_SUPPORT
         IF_(FastFeedbackFeature, LOAD_RECORDS_("db/fastFeedback.db"))  &&
-#endif
         true;
 
 #undef DB_

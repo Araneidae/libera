@@ -54,40 +54,11 @@
 
 
 
-#define FA_BASE_ADDRESS         0x1401C000
 #define FF_BASE_ADDRESS         0x14028000
 #define FF_CONTROL_ADDRESS      0x1402A000
 /* Offset from FF_BASE_ADDRESS of the status space registers.  This is
  * assumed to be on the same page. */
 #define FF_STATUS_OFFSET        0x0C00
-//#define FF_STATUS_OFFSET        0x0200
-
-
-/* This structure mostly does not belong as part of this module, but there
- * are a handful of registers that we need. */
-struct FA_CONFIG_CONTROL        // At FA_BASE_ADDRESS (1401C000)
-{
-    /* The following registers are used to manage the offsets and scaling
-     * factors used to generate the FA data stream.  These values are
-     * normally managed through the WriteCalibrationSettings() routine. */
-    int XOffset;
-    int YOffset;
-    int QOffset;
-    int K_X;
-    int K_Y;
-    
-    /* The following fifo registers are used to write coefficents into the FA
-     * filters. */
-    int FirCoefficientsFIFO;
-    int Notch0CoefficientsFIFO;
-    int Notch1CoefficientsFIFO;
-
-    /* The following registers are the ones we need for fast feedback
-     * control. */
-    int FFPMlimit;                      // PMLIMIT
-    int EnableFFPM;
-    int ArmFFPM;                        // ARM
-};
 
 
 struct FF_CONFIG_SPACE          // At FF_BASE_ADDRESS (14028000)
@@ -96,7 +67,6 @@ struct FF_CONFIG_SPACE          // At FF_BASE_ADDRESS (14028000)
     int TimerFrameCountDown;            // FRAMELEN
     int PowerDown;                      // :ENABLE
     int LoopBack;                       // :LOOPBACK
-    int ClearDelay;                     // CLEAR_DELAY
 };
 
 
@@ -147,14 +117,11 @@ static int DevMem = -1;
 static void * FF_AddressSpaceMem = (void *) -1;
 /* Memory mapped page for access to control register. */
 static void * FF_ControlSpaceMem = (void *) -1;
-/* Memory mapped page for access to FA control registers. */
-static void * FA_ControlSpaceMem = (void *) -1;
 
 /* These pointers directly overlay the FF memory. */
 static FF_CONFIG_SPACE * ConfigSpace;
 static FF_STATUS_SPACE * StatusSpace;
 static volatile FF_CONTROL_SPACE * ControlSpace;
-static volatile FA_CONFIG_CONTROL * FA_ControlSpace;
 
 
 /* Boolean values extracted from LinkUp field.  This array is updated once a
@@ -169,9 +136,6 @@ static bool GlobalEnable = true;
 static bool LinkEnable[4] = { true, true, true, true };
 static int LoopBack[4] = { 0, 0, 0, 0 };
 
-/* Variables for managing the FF PM interface. */
-static int FFPMlimit = 100000;      // 100 um
-
 
 
 static bool MapFastFeedbackMemory()
@@ -185,10 +149,7 @@ static bool MapFastFeedbackMemory()
             DevMem, FF_BASE_ADDRESS & ~PageMask))  &&
         TEST_IO(FF_ControlSpaceMem = mmap(
             0, PageSize, PROT_READ | PROT_WRITE, MAP_SHARED,
-            DevMem, FF_CONTROL_ADDRESS & ~PageMask))  &&
-        TEST_IO(FA_ControlSpaceMem = mmap(
-            0, PageSize, PROT_READ | PROT_WRITE, MAP_SHARED,
-            DevMem, FA_BASE_ADDRESS & ~PageMask));
+            DevMem, FF_CONTROL_ADDRESS & ~PageMask));
     if (Ok)
     {
         ConfigSpace = (FF_CONFIG_SPACE *)
@@ -197,8 +158,6 @@ static bool MapFastFeedbackMemory()
             ((char *) ConfigSpace + FF_STATUS_OFFSET);
         ControlSpace = (volatile FF_CONTROL_SPACE *)
             ((char *) FF_ControlSpaceMem + (FF_CONTROL_ADDRESS & PageMask));
-        FA_ControlSpace = (volatile FA_CONFIG_CONTROL *)
-            ((char *) FA_ControlSpaceMem + (FA_BASE_ADDRESS & PageMask));
     }
         
     return Ok;
@@ -291,53 +250,6 @@ static void StartFastFeedback()
 }
 
 
-/* Routines called to manage the FF PM interface.  The EPICS interface has
- * two components: PMLIMIT used to set the threshold (in nm) at which an
- * internal PM event is generated from the FA stream, and ARM used to enable
- * the trigger.
- *     The hardware interface adds an extra "enable" register.  This should be
- * cleared before changing the threshold, and doing so automatically disarms
- * the trigger.  Also each time the trigger occurs it is automatically
- * disarmed (so that only the first event is captured).
- *     We receive notification on each PM event so that the status of the ARM
- * register can be checked. */
-
-static READBACK_bool * ArmFFPMreadback = NULL;
-
-static bool ArmFFPM(bool NewArmValue)
-{
-    if (NewArmValue)
-    {
-        FA_ControlSpace->EnableFFPM = 1;
-        FA_ControlSpace->ArmFFPM = 0;
-    }
-    else
-        FA_ControlSpace->EnableFFPM = 0;
-
-    ArmFFPMreadback->Write(NewArmValue);
-    return true;
-}
-
-
-void OnPMtrigger()
-{
-    if (FastFeedbackFeature)
-        ArmFFPMreadback->Write(FA_ControlSpace->ArmFFPM);
-}
-
-static void WriteFFPMlimit()
-{
-    bool FFPMArmed = FA_ControlSpace->ArmFFPM;
-    if (FA_ControlSpace->EnableFFPM)
-        /* If FF PM is enabled it needs to be disabled (and automatically
-         * disarmed) before writing a new limit value.*/
-        FA_ControlSpace->EnableFFPM = 0;
-    FA_ControlSpace->FFPMlimit = FFPMlimit;
-    if (FFPMArmed)
-        ArmFFPM(true);
-}
-
-
 
 bool InitialiseFastFeedback()
 {
@@ -368,16 +280,13 @@ bool InitialiseFastFeedback()
      * other treatment is required. */
     PUBLISH_ACTION("FF:PROCESS", ProcessRead);
 
-    /* Sensible defaults for frame length and clear delay. */
+    /* Sensible defaults for frame length. */
     ConfigSpace->TimerFrameCountDown = 6000;
-    ConfigSpace->ClearDelay = 8000;
     
     PUBLISH_CONFIGURATION(longout, "FF:BPMID", 
         ConfigSpace->BpmId, ProcessWrite);
     PUBLISH_CONFIGURATION(longout, "FF:FRAMELEN", 
         ConfigSpace->TimerFrameCountDown, ProcessWrite);
-    PUBLISH_CONFIGURATION(longout, "FF:CLEAR_DELAY", 
-        ConfigSpace->ClearDelay, ProcessWrite);
 
     for (int i = 0; i < 4; i ++)
     {
@@ -394,13 +303,8 @@ bool InitialiseFastFeedback()
     PUBLISH_ACTION("FF:STOP",  StopFastFeedback);
     PUBLISH_ACTION("FF:START", StartFastFeedback);
 
-    PUBLISH_CONFIGURATION(longout, "FF:PMLIMIT", FFPMlimit, WriteFFPMlimit);
-    ArmFFPMreadback = PUBLISH_READBACK(bi, bo, "FF:ARM", false, ArmFFPM);
-    
     /* Initialise the FPGA by writing the current configuration. */
     ProcessWrite();
-    FA_ControlSpace->EnableFFPM = 0;
-    WriteFFPMlimit();
     
     return true;
 }

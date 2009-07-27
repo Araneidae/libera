@@ -735,6 +735,8 @@ def Sensors():
     # typically runs 5 degrees hotter than RF1.  We set the alarm temperatures
     # 10 and 15 degrees below the default panic temperatures.
     temp_monitors = [
+        longIn('TEMP', 30, 70, 'deg C',
+            DESC = 'Monitored board temperature'),
         longIn('TEMP_RF1', 40, 70, 'deg C',
             DESC = 'RF board temperature',
             HIGH = 65,    HSV  = 'MINOR',

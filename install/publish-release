@@ -95,7 +95,7 @@ svn cp -m "Libera: Release $VERSION" "$SVN_TRUNK" "$SVN_RELEASE/$VERSION" ||
 # done by the release builder, so we prepare its instructions here.
 
 QUEUE_DIR=/dls_sw/work/etc/build/queue
-RELEASE_JOB=Release-Libera-$VERSION
+RELEASE_JOB=Release-Libera-$VERSION.sh
 
 # Create the release job as a hidden file (so the builder doesn't start it
 # prematurely) and then rename it make it happen.

@@ -605,7 +605,9 @@ bool InitialiseSensors(bool _MonitorNtp)
         proc_fan0_set = PROC_DEVICE "max6650-i2c-0-4b/speed";
         proc_fan1_set = PROC_DEVICE "max6650-i2c-0-48/speed";
     }
-    
+
+    Publish_longin("SE:TEMP",
+        LiberaBrilliance ? RfTemperature1 : MbTemperature);
     Publish_longin("SE:TEMP_RF1",  RfTemperature1);
     Publish_ai    ("SE:TEMP_RF2",  RfTemperature2);
     Publish_longin("SE:TEMP_MB",   MbTemperature);

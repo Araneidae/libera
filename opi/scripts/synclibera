@@ -249,7 +249,6 @@ def RefreshFastFeedback(ActiveBpms):
             list(enumerate(TS_BPMS))
         if bpm in ActiveBpms])
     catools.caput(PVs(Bpms, 'FF:BPMID_S'), Ids, timeout = 5)
-    caput(PVs(Bpms, 'FF:FRAMELEN_S'), 9000)
 
     
 def RestartFastFeedback(Bpms, triggers):

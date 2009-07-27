@@ -27,6 +27,4 @@
  */
 
 
-void OnPMtrigger();
-
 bool InitialiseFastFeedback();

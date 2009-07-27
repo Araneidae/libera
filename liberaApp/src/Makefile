@@ -15,7 +15,6 @@ USR_CXXFLAGS += -march=armv5te
 USR_CXXFLAGS += -Werror -Wall -Wno-trigraphs
 
 USR_CXXFLAGS += -DRAW_REGISTER
-USR_CXXFLAGS += -DBUILD_FF_SUPPORT
 
 # Only for the most up to date compiler, enable all the extra options
 USR_CXXFLAGS_linux-arm_gnueabi += -Wextra -Wno-unused-parameter

@@ -77,18 +77,12 @@ def FastFeedback():
     longOut('BPMID', 0, MAX_ID, DESC = 'BPM id')
     longOut('FRAMELEN', DESC = 'Timeframe length')
     
-    longOut('CLEAR_DELAY', 0, 65535, DESC = 'Buffer clear offset')
-
     # CR 1 - position or time
     boolOut('DATA_SELECT', 'Positions', 'Timestamps',
         DESC = 'Position data select')
 
     boolOut('STOP',  'Stop',  DESC = 'Stop fast feedback')
     boolOut('START', 'Start', DESC = 'Start fast feedback')
-
-    # Control of postmortem on FA stream overflow
-    longOut('PMLIMIT', 0, None, EGU = 'nm', DESC = 'FF PM threshold')
-    boolInOut('ARM', 'Unarmed', 'Armed', DESC = 'Enable FF PM')
 
     UnsetChannelName()
     

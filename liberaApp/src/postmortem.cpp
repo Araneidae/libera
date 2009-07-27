@@ -46,10 +46,6 @@
 
 #include "postmortem.h"
 
-#ifdef BUILD_FF_SUPPORT
-#include "fastFeedback.h"
-#endif
-
 #define POSTMORTEM_LENGTH       16384
 
 
@@ -105,11 +101,6 @@ private:
 
         /* Let EPICS know there's stuff to read. */
         Interlock.Ready(WaveformIq.GetTimestamp());
-
-#ifdef BUILD_FF_SUPPORT
-        /* Let the fast feedback know that PM triggered. */
-        OnPMtrigger();
-#endif        
     }
 
     /* Processes the interlock and switch event flags in the bottom bit of
