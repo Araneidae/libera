@@ -49,7 +49,7 @@ endObjectProperties
 object xyGraphClass
 beginObjectProperties
 major 4
-minor 3
+minor 5
 release 0
 # Geometry
 x 8
@@ -97,7 +97,7 @@ endObjectProperties
 object xyGraphClass
 beginObjectProperties
 major 4
-minor 3
+minor 5
 release 0
 # Geometry
 x 8
@@ -145,7 +145,7 @@ endObjectProperties
 object xyGraphClass
 beginObjectProperties
 major 4
-minor 3
+minor 5
 release 0
 # Geometry
 x 8
@@ -281,7 +281,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 4
 release 0
 x 120
 y 640
@@ -298,13 +298,14 @@ nullColor index 0
 showUnits
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Text Monitor)
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 4
 release 0
 x 192
 y 640
@@ -320,6 +321,7 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Static Text)
@@ -346,7 +348,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 4
 release 0
 x 120
 y 656
@@ -363,13 +365,14 @@ nullColor index 0
 showUnits
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Text Monitor)
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 4
 release 0
 x 192
 y 656
@@ -385,6 +388,7 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Static Text)
@@ -411,7 +415,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 4
 release 0
 x 120
 y 672
@@ -428,13 +432,14 @@ nullColor index 0
 showUnits
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Text Monitor)
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 4
 release 0
 x 192
 y 672
@@ -450,6 +455,7 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Related Display)
@@ -476,5 +482,120 @@ displayFileName {
 symbols {
   0 "device=$(device),mode=PM"
 }
+endObjectProperties
+
+# (Group)
+object activeGroupClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 296
+y 664
+w 64
+h 24
+
+beginGroup
+
+# (Related Display)
+object relatedDisplayClass
+beginObjectProperties
+major 4
+minor 2
+release 0
+x 296
+y 664
+w 64
+h 24
+fgColor index 43
+bgColor index 3
+topShadowColor index 1
+botShadowColor index 11
+font "helvetica-bold-r-12.0"
+buttonLabel "Trigger"
+numPvs 4
+numDsps 1
+displayFileName {
+  0 "libera/PM_trigger.edl"
+}
+symbols {
+  0 "device=$(device)"
+}
+endObjectProperties
+
+endGroup
+
+visPv "$(device):VE:FPGA2"
+visMin "1"
+visMax "2"
+endObjectProperties
+
+# (Menu Button)
+object activeMenuButtonClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 488
+y 640
+w 88
+h 22
+fgColor index 14
+bgColor index 3
+inconsistentColor index 0
+topShadowColor index 1
+botShadowColor index 11
+controlPv "$(device):PM:MODE_S"
+font "helvetica-medium-r-12.0"
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 4
+release 0
+x 296
+y 640
+w 112
+h 16
+controlPv "$(device):PM:READY"
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+autoHeight
+limitsFromDb
+nullColor index 0
+smartRefresh
+fastUpdate
+useHexPrefix
+newPos
+objType "monitors"
+noExecuteClipMask
+endObjectProperties
+
+# (Message Button)
+object activeMessageButtonClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 416
+y 640
+w 64
+h 22
+fgColor index 14
+onColor index 4
+offColor index 4
+topShadowColor index 1
+botShadowColor index 11
+controlPv "$(device):PM:REARM_S"
+pressValue "0"
+onLabel "Arming"
+offLabel "Rearm"
+3d
+useEnumNumeric
+font "helvetica-bold-r-12.0"
 endObjectProperties
 

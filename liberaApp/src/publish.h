@@ -115,9 +115,11 @@ class CLOSURE_OUT : public I_WRITER<R>
 { 
 public: 
     CLOSURE_OUT(T&t, bool (T::*f)(R), bool (T::*i)(R&)) :
-        t(t), i(i), f(f), v(NULL) {}
+        t(t), i(i), f(f), u(NULL), v(NULL) {}
     CLOSURE_OUT(T&t, bool (T::*f)(R), R T::*v) :
-        t(t), i(NULL), f(f), v(v) {}
+        t(t), i(NULL), f(f), u(NULL), v(v) {}
+    CLOSURE_OUT(T&t, void (T::*u)(), R T::*v) :
+        t(t), i(NULL), f(NULL), u(u), v(v) {}
     bool init(R& arg)
     {
         if (v == (R T::*) NULL)
@@ -128,11 +130,22 @@ public:
             return true;
         }
     }
-    bool write(R arg) { return (t.*f)(arg); } 
+    bool write(R arg)
+    {
+        if (f == (bool (T::*)(R)) NULL)
+        {
+            t.*v = arg;
+            (t.*u)();
+            return true;
+        }
+        else
+            return (t.*f)(arg);
+    } 
 private: 
     T & t; 
     bool (T::*i)(R&);
     bool (T::*f)(R);
+    void (T::*u)();
     R T::*v;
 };
 

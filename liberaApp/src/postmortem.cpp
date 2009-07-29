@@ -43,10 +43,16 @@
 #include "events.h"
 #include "convert.h"
 #include "waveform.h"
+#include "versions.h"
 
 #include "postmortem.h"
 
 #define POSTMORTEM_LENGTH       16384
+
+
+static void SetPmTrigger();
+static bool SetTriggerSource(int NewSource);
+static void SetTriggerMode();
 
 
 class POSTMORTEM : I_EVENT
@@ -71,22 +77,77 @@ public:
         Publish_bi("PM:X_OFL", X_overflow);
         Publish_bi("PM:Y_OFL", Y_overflow);
         Publish_bi("PM:ADC_OFL", ADC_overflow);
-        
-        Interlock.Publish("PM", true);
+
+        /* Publish the retriggering controls. */
+        OneShotTrigger = false;
+        CanRetrigger = true;
+        PUBLISH_CONFIGURATION(bo, "PM:MODE", OneShotTrigger, SetTriggerMode);
+        Publish_bi("PM:READY", CanRetrigger);
+        PUBLISH_METHOD_ACTION("PM:REARM", RearmTrigger);
+
+        /* Finally publish all the PM trigger source controls. */
+        TriggerSource = 0;          // Hardware trigger source by default
+        MinX = MinY = -1000000;     // Plausible initial defaults
+        MaxX = MaxY = 1000000;
+        OverflowLimit = 30000;
+        OverflowTime = 5;
+        PUBLISH_CONFIGURATION(ao,      "PM:MINX", MinX,          SetPmTrigger);
+        PUBLISH_CONFIGURATION(ao,      "PM:MAXX", MaxX,          SetPmTrigger);
+        PUBLISH_CONFIGURATION(ao,      "PM:MINY", MinY,          SetPmTrigger);
+        PUBLISH_CONFIGURATION(ao,      "PM:MAXY", MaxY,          SetPmTrigger);
+        PUBLISH_CONFIGURATION(longout, "PM:OVER", OverflowLimit, SetPmTrigger);
+        PUBLISH_CONFIGURATION(longout, "PM:TIME", OverflowTime , SetPmTrigger);
+
+        PUBLISH_CONFIGURATION(
+            mbbo, "PM:SOURCE", TriggerSource, SetTriggerSource);
+        RealSetTriggerSource(TriggerSource);
         
         /* Announce our interest in the postmortem event. */
+        Interlock.Publish("PM", true);
         RegisterPostmortemEvent(*this, PRIORITY_PM);
+    }
+
+    void RealSetPmTrigger()
+    {
+        if (Version2FpgaPresent)
+            WritePmTriggerParameters(
+                (PM_TRIGGER_SOURCE) TriggerSource,
+                MinX, MaxX, MinY, MaxY, OverflowLimit, OverflowTime);
+    }
+
+    bool RealSetTriggerSource(int NewSource)
+    {
+        bool Ok = Version2FpgaPresent || NewSource == PM_SOURCE_HARDWARE;
+        TriggerSource = Ok ? NewSource : PM_SOURCE_HARDWARE;
+        RealSetPmTrigger();
+        return Ok;
+    }
+
+    void RealSetTriggerMode()
+    {
+        CanRetrigger = true;
     }
 
     
 private:
+    bool RearmTrigger()
+    {
+        CanRetrigger = true;
+        return true;
+    }
+    
     void OnEvent(int Missed)
     {
         /* We could log missed triggers here, but that's not such a good idea,
-         * as the log file tends to fill up!
+         * as the log file tends to fill up! 
         if (Missed > 0)
             printf("%d PM trigger(s) missed\n", Missed);
          */
+
+        /* If single shot triggering selected and we've had our single shot,
+         * just silently ignore this trigger. */
+        if (!CanRetrigger)
+            return;
         
         /* Wait for EPICS to be ready. */
         Interlock.Wait();
@@ -98,6 +159,7 @@ private:
 
         /* Process the interlock event flags. */
         ProcessFlags();
+        CanRetrigger = ! OneShotTrigger;
 
         /* Let EPICS know there's stuff to read. */
         Interlock.Ready(WaveformIq.GetTimestamp());
@@ -160,6 +222,16 @@ private:
     int X_offset, Y_offset, ADC_offset;
     bool X_overflow, Y_overflow, ADC_overflow;
 
+    /* Retriggering control. */
+    bool OneShotTrigger;
+    bool CanRetrigger;
+
+    /* Postmortem trigger source control. */
+    int TriggerSource;
+    int MinX, MaxX, MinY, MaxY;
+    int OverflowLimit;
+    int OverflowTime;
+
     /* EPICS interlock. */
     INTERLOCK Interlock;
 };
@@ -167,6 +239,12 @@ private:
 
 
 static POSTMORTEM * Postmortem = NULL;
+
+static void SetPmTrigger()   { Postmortem->RealSetPmTrigger(); }
+static void SetTriggerMode() { Postmortem->RealSetTriggerMode(); }
+static bool SetTriggerSource(int NewSource)
+    { return Postmortem->RealSetTriggerSource(NewSource); }
+
 
 bool InitialisePostmortem()
 {

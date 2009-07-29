@@ -39,6 +39,7 @@
 #include <linux/unistd.h>
 #include <sys/mman.h>
 #include <stdint.h>
+#include <pthread.h>
 
 #include "versions.h"
 
@@ -51,8 +52,13 @@
 #define REGISTER_BUILD_NUMBER   0x14000008
 #define REGISTER_DLS_FEATURE    0x14000018
 #define REGISTER_ITECH_FEATURE  0x1400001C
-/* Bits 16-27 of this register are used to program a delay on the external
- * trigger. */
+
+/* This register has two functions:
+ *  bits 29:16: program a delay on the external trigger.
+ *  bits 15:14: PM trigger source selection:
+ *      0 => External hardware PM trigger
+ *      1 => Internal interlock check
+ *      2,3 => Separate check on FA data programmed by extra registers. */
 #define REGISTER_TRIG_DELAY     0x14004038
 /* These two registers record the maximum ADC reading since they were last
  * read.  Unfortunately the DLS and iTech FPGAs use different registers. */
@@ -60,6 +66,9 @@
 #define REGISTER_MAX_ADC_DLS    0x1400C000
 /* This register is used to set the turn by turn ADC overflow threshold. */
 #define REGISTER_ADC_OVERFLOW   0x1400C004
+/* Postmortem trigger ADC overflow registers. */
+#define REGISTER_PM_ADC_LIMIT   0x1400C040  // ADC overflow threshold for PM
+#define REGISTER_PM_ADC_TIME    0x1400C044  // ADC overflow duration for PM
 
 /* These registers are used to access the triggered sum average. */
 #define FA_OFFSET               0x1401C000  // Base of FA register area
@@ -76,6 +85,12 @@
 #define REGISTER_SR_SPIKE_WIN   (FA_OFFSET + 0x040) // Length of spike window
 #define REGISTER_SR_DEBUG       (FA_OFFSET + 0x044) // Debug register
 #define REGISTER_SR_BUFFER      (FA_OFFSET + 0x800) // Debug buffer
+
+/* Postmortem trigger position limit registers. */
+#define REGISTER_PM_MINX        0x14024020  // PM trigger min X limit
+#define REGISTER_PM_MAXX        0x14024024  // PM trigger max X limit
+#define REGISTER_PM_MINY        0x14024028  // PM trigger min Y limit
+#define REGISTER_PM_MAXY        0x1402402C  // PM trigger max Y limit
 
 
 /* This bit is set in the ITECH register to enable DLS extensions. */
@@ -126,6 +141,33 @@ void print_error(const char * Message, const char * FileName, int LineNumber)
 /*****************************************************************************/
 
 
+/* This mutex is used to ensure serial access to hardware.  See also similar
+ * code in interlock.cpp.
+ *    Note that pthread_cleanup_{push,pop} need to be used here because we're
+ * also using pthread_cancel, and if we're not meticulous about cleaning up
+ * then orderly shutdown gets disrupted. */
+static pthread_mutex_t hardware_mutex = PTHREAD_MUTEX_INITIALIZER;
+static void Lock()         { TEST_0(pthread_mutex_lock(&hardware_mutex)); }
+static void Unlock(void *) { TEST_0(pthread_mutex_unlock(&hardware_mutex)); }
+#define LOCK()      Lock(); pthread_cleanup_push(Unlock, NULL)
+#define UNLOCK()    pthread_cleanup_pop(true)
+/*
+#define LOCK()      \
+    Lock(); pthread_cleanup_push(Unlock, NULL); printf("Locked %d\n",__LINE__)
+#define UNLOCK()    \
+    pthread_cleanup_pop(true); printf("Unlocked %d\n",__LINE__)
+ */
+#define LOCKED(result) \
+    ( { \
+        typeof(result) __result__; \
+        LOCK(); \
+        __result__ = (result); \
+        UNLOCK(); \
+        __result__; \
+    } )
+
+
+
 /* Device handles. */
 static int DevCfg = -1;     /* /dev/libera.cfg  General configuration. */
 static int DevAdc = -1;     /* /dev/libera.adc  ADC configuration. */
@@ -151,6 +193,89 @@ static unsigned int * RegisterMaxAdcRaw = NULL;
 
 /* Number of turns per switch. */
 static int TurnsPerSwitch;
+
+
+
+/*****************************************************************************/
+/*                                                                           */
+/*                           Raw Register Access                             */
+/*                                                                           */
+/*****************************************************************************/
+
+/* Uses /dev/mem to directly access a specified hardware address. */
+
+#ifdef RAW_REGISTER
+
+/* Paging information. */
+static uint32_t OsPageSize;         // 0x1000
+static uint32_t OsPageMask;         // 0x0FFF
+
+
+static uint32_t * MapRawRegister(uint32_t Address)
+{
+    char * MemMap = (char *) mmap(
+        0, OsPageSize, PROT_READ | PROT_WRITE, MAP_SHARED,
+        DevMem, Address & ~OsPageMask);
+    if (MemMap == MAP_FAILED)
+    {
+        perror("Unable to map register into memory");
+        return NULL;
+    }
+    else
+        return (uint32_t *)(MemMap + (Address & OsPageMask));
+}
+
+static void UnmapRawRegister(uint32_t *MappedAddress)
+{
+    void * BaseAddress = (void *) (
+        ((uint32_t) MappedAddress) & ~OsPageMask);
+    munmap(BaseAddress, OsPageSize);
+}
+
+#else
+static uint32_t * MapRawRegister(uint32_t Address)
+{
+    errno = 0;
+    print_error("Cannot map registers into memory", __FILE__, __LINE__);
+    return NULL;
+}
+
+static void UnmapRawRegister(uint32_t *MappedAddress) { }
+
+#endif
+
+
+static bool WriteRawRegister(
+    uint32_t Address, uint32_t Value, uint32_t Mask = 0xFFFFFFFF)
+{
+    uint32_t * Register = MapRawRegister(Address);
+    if (Register == NULL)
+        return false;
+    else
+    {
+        if (Mask != 0xFFFFFFFF)
+            Value = (Value & Mask) | (*Register & ~Mask);
+        *Register = Value;
+        UnmapRawRegister(Register);
+        return true;
+    }
+}
+
+
+#if 0
+static bool ReadRawRegister(uint32_t Address, uint32_t &Value)
+{
+    uint32_t * Register = MapRawRegister(Address);
+    if (Register == NULL)
+        return false;
+    else
+    {
+        Value = *Register;
+        UnmapRawRegister(Register);
+        return true;
+    }
+}
+#endif
 
 
 
@@ -193,7 +318,7 @@ bool WriteInterlockParameters(
      * by the DSC.  Doing this here allows the rest of the system to believe
      * everything is 16 bits. */
     overflow_limit >>= AdcExcessBits;
-    return
+    return LOCKED(
         WriteCfgValue(LIBERA_CFG_ILK_MODE,           mode)  &&
         WriteCfgValue(LIBERA_CFG_ILK_XLOW,           Xlow)  &&
         WriteCfgValue(LIBERA_CFG_ILK_XHIGH,          Xhigh)  &&
@@ -212,17 +337,17 @@ bool WriteInterlockParameters(
         IF_(DlsFpgaFeatures,
             WriteRawRegister(REGISTER_ADC_OVERFLOW, overflow_limit))  &&
 #endif
-        true;
+        true);
 }
 
 
 bool WriteCalibrationSettings(int Kx, int Ky, int Xoffset, int Yoffset)
 {
-    return
+    return LOCKED(
         WriteCfgValue(LIBERA_CFG_KX, Kx)  &&
         WriteCfgValue(LIBERA_CFG_KY, Ky)  &&
         WriteCfgValue(LIBERA_CFG_XOFFSET, Xoffset)  &&
-        WriteCfgValue(LIBERA_CFG_YOFFSET, Yoffset);
+        WriteCfgValue(LIBERA_CFG_YOFFSET, Yoffset));
 }
 
 
@@ -261,8 +386,8 @@ bool GetClockState(bool &LmtdLocked, bool &LstdLocked)
 bool WriteExternalTriggerDelay(int Delay)
 {
     if (0 <= Delay  &&  Delay < 1<<12)
-        return WriteRawRegister(
-            REGISTER_TRIG_DELAY, Delay << 16, 0x0FFF0000);
+        return LOCKED(WriteRawRegister(
+            REGISTER_TRIG_DELAY, Delay << 16, 0x0FFF0000));
     else
         return false;
 }
@@ -288,12 +413,12 @@ size_t ReadWaveform(
     LIBERA_TIMESTAMP & Timestamp, int Offset)
 {
     const int ReadSize = sizeof(LIBERA_ROW) * WaveformLength;
-    int Read;
-    bool Ok =
+    int Read = 0;
+    bool Ok = LOCKED(
         TEST_IO(ioctl(DevDd, LIBERA_IOC_SET_DEC, &Decimation))  &&
         TEST_IO(lseek(DevDd, Offset, LIBERA_SEEK_TR))  &&
         TEST_IO(Read = read(DevDd, Data, ReadSize)) &&
-        TEST_IO(ioctl(DevDd, LIBERA_IOC_GET_DD_TSTAMP, &Timestamp));
+        TEST_IO(ioctl(DevDd, LIBERA_IOC_GET_DD_TSTAMP, &Timestamp)));
 
     return Ok ? Read / sizeof(LIBERA_ROW) : 0;
 }
@@ -303,14 +428,14 @@ size_t ReadPostmortem(
     size_t WaveformLength, LIBERA_ROW * Data, LIBERA_TIMESTAMP & Timestamp)
 {
     const int ReadSize = sizeof(LIBERA_ROW) * WaveformLength;
-    int Read;
-    bool Ok =
+    int Read = 0;
+    bool Ok = LOCKED(
         /* Very odd design in the driver: the postmortem waveform isn't
          * actually read until we do this ioctl!  This really isn't terribly
          * sensible, but never mind, that's how it works at the moment... */
         TEST_IO(ioctl(DevEvent, LIBERA_EVENT_ACQ_PM))  &&
         TEST_IO(Read = read(DevPm, Data, ReadSize))  &&
-        TEST_IO(ioctl(DevPm, LIBERA_IOC_GET_PM_TSTAMP, &Timestamp));
+        TEST_IO(ioctl(DevPm, LIBERA_IOC_GET_PM_TSTAMP, &Timestamp)));
     
     return Ok  &&  Read != -1  ?  Read / sizeof(LIBERA_ROW)  :  0;
 }
@@ -318,10 +443,10 @@ size_t ReadPostmortem(
 
 bool ReadAdcWaveform(ADC_DATA &Data)
 {
-    size_t Read;
-    bool Ok =
+    size_t Read = 0;
+    bool Ok = LOCKED(
         TEST_IO(Read = read(DevAdc, Data, sizeof(ADC_DATA)))  &&
-        TEST_OK(Read == sizeof(ADC_DATA));
+        TEST_OK(Read == sizeof(ADC_DATA)));
     if (Ok  &&  AdcExcessBits > 0)
     {
         /* Normalise all of the ADC data to 16 bits. */
@@ -338,8 +463,8 @@ bool ReadAdcWaveform(ADC_DATA &Data)
 bool ReadSlowAcquisition(ABCD_ROW &ButtonData, XYQS_ROW &PositionData)
 {
     libera_atom_sa_t Result;
-    int Read;
-    bool Ok =
+    int Read = 0;
+    bool Ok = 
         TEST_IO(Read = read(DevSa, &Result, sizeof(libera_atom_sa_t)))  &&
         TEST_OK(Read == sizeof(libera_atom_sa_t));
     if (Ok)
@@ -373,32 +498,12 @@ bool SetEventMask(int EventMask)
 }
 
 
-/* Reads a single event from the event queue. */
+/* Reads events from the event queue, returning the number read. */
 
-bool ReadEvent(int &EventId, int &Parameter)
+int ReadEvents(libera_event_t Events[], int MaxEventCount)
 {
-    libera_event_t Event;
-    int Read = read(DevEvent, &Event, sizeof(Event));
-    if (Read == sizeof(Event))
-    {
-        EventId = Event.id;
-        Parameter = Event.param;
-        return true;
-    }
-    else if (Read == 0)
-        /* Odd.  Looks like every successful read is followed by a failed
-         * read.  This appears to be a minor bug in the 1.46 device driver
-         * (tests are done in the wrong order); easy to just ignore this. */
-        return false;
-    else
-    {
-        /* This really really isn't supposed to happen, you know: the
-         * device takes care to return multiples of sizeof(Event)!  Well,
-         * all we can do now is fill up the log file... */
-        printf("Reading /dev/libera.event unexpectedly returned %d (%d)\n",
-            Read, errno);
-        return false;
-    }
+    int Read = read(DevEvent, Events, sizeof(libera_event_t) * MaxEventCount);
+    return TEST_IO(Read) ? Read / sizeof(libera_event_t) : 0;
 }
 
 
@@ -638,8 +743,10 @@ bool WriteAttenuation(int NewAttenuation)
 {
     if (0 <= NewAttenuation  &&  NewAttenuation <= MaximumAttenuation())
     {
+        LOCK();
         Attenuation = NewAttenuation;
         MARK_DIRTY(Attenuation);
+        UNLOCK();
         return true;
     }
     else
@@ -662,6 +769,7 @@ bool WriteSwitchSequence(
         printf("Switch pattern length %u must be power of 2\n", NewLength);
     else
     {
+        LOCK();
         /* Copy over the new switch pattern, repeating as necessary to fill
          * up to the standard length.  Only the bottom four bits of each
          * switch are used. */
@@ -669,6 +777,7 @@ bool WriteSwitchSequence(
             for (unsigned int j = 0; j < NewLength; j ++)
                 SwitchPattern[i+j] = NewSwitches[j] & 0xF;
         MARK_DIRTY(SwitchPattern);
+        UNLOCK();
         return true;
     }
     return false;
@@ -690,6 +799,7 @@ bool WriteSwitchSequence(
 
 void WritePhaseArray(int Switch, const PHASE_ARRAY Array)
 {
+    LOCK();
     for (int i = 0; i < BUTTON_COUNT; i ++)
     {
         int Base = ((Switch & 0xF) << 1) | (i << 5);
@@ -697,6 +807,7 @@ void WritePhaseArray(int Switch, const PHASE_ARRAY Array)
         RawPhaseComp[Base+1] = Array[i][1];
     }
     MARK_DIRTY(PhaseComp);
+    UNLOCK();
 }
 
 
@@ -715,6 +826,7 @@ void WritePhaseArray(int Switch, const PHASE_ARRAY Array)
  
 void WriteDemuxArray(int Switch, const DEMUX_ARRAY Array)
 {
+    LOCK();
     for (int j = 0; j < BUTTON_COUNT; j ++)
     {
         int Base = ((Switch & 0xF) << 1) | (j << 6);
@@ -722,6 +834,7 @@ void WriteDemuxArray(int Switch, const DEMUX_ARRAY Array)
             RawSwitchDemux[Base | (i & 1) | ((i & 2) << 4)] = Array[j][i];
     }
     MARK_DIRTY(SwitchDemux);
+    UNLOCK();
 }
 
 
@@ -731,7 +844,7 @@ void WriteDemuxArray(int Switch, const DEMUX_ARRAY Array)
 bool CommitDscState()
 {
     int Buffer;
-    return
+    return LOCKED(
         /* Pick up which double buffer is currently active. */
         ReadDscWord(DSC_DOUBLE_BUFFER, Buffer)  &&
 
@@ -742,7 +855,7 @@ bool CommitDscState()
         WriteDemuxState     (DOUBLE_BUFFER(Buffer, DSC_SWITCH_DEMUX))  &&
 
         /* Swap the new buffer into place: in effect, an atomic write. */
-        WriteDscWord(DSC_DOUBLE_BUFFER, Buffer^1);
+        WriteDscWord(DSC_DOUBLE_BUFFER, Buffer^1));
 }
 
 
@@ -752,10 +865,10 @@ bool CommitDscState()
 bool WriteSwitchTriggerSelect(bool ExternalTrigger)
 {
     int DividerValue;
-    return
+    return LOCKED(
         ReadDscWord(DSC_SWITCH_DIVIDER, DividerValue)  &&
         WriteDscWord(DSC_SWITCH_DIVIDER,
-            (DividerValue & 0x7FFFFFFF) | (ExternalTrigger << 31));
+            (DividerValue & 0x7FFFFFFF) | (ExternalTrigger << 31)));
 }
 
 
@@ -765,10 +878,10 @@ bool WriteSwitchTriggerSelect(bool ExternalTrigger)
 bool WriteSwitchTriggerDelay(int Delay)
 {
     int DelayControl;
-    return
+    return LOCKED(
         ReadDscWord(DSC_SWITCH_DELAY, DelayControl)  &&
         WriteDscWord(DSC_SWITCH_DELAY,
-            (DelayControl & 0xFFFF0000) | (Delay & 0x3FF));
+            (DelayControl & 0xFFFF0000) | (Delay & 0x3FF)));
 }
 
 
@@ -778,98 +891,8 @@ bool WriteSwitchTriggerDelay(int Delay)
 
 bool WriteInterlockIIR_K(int K)
 {
-    return WriteDscWord(DSC_INTERLOCK_IIR_K, K);
+    return LOCKED(WriteDscWord(DSC_INTERLOCK_IIR_K, K));
 }
-
-
-
-#ifdef RAW_REGISTER
-/*****************************************************************************/
-/*                                                                           */
-/*                           Raw Register Access                             */
-/*                                                                           */
-/*****************************************************************************/
-
-/* Uses /dev/mem to directly access a specified hardware address. */
-
-
-/* Paging information. */
-static uint32_t OsPageSize;         // 0x1000
-static uint32_t OsPageMask;         // 0x0FFF
-
-
-static uint32_t * MapRawRegister(uint32_t Address)
-{
-    char * MemMap = (char *) mmap(
-        0, OsPageSize, PROT_READ | PROT_WRITE, MAP_SHARED,
-        DevMem, Address & ~OsPageMask);
-    if (MemMap == MAP_FAILED)
-    {
-        perror("Unable to map register into memory");
-        return NULL;
-    }
-    else
-        return (uint32_t *)(MemMap + (Address & OsPageMask));
-}
-
-static void UnmapRawRegister(uint32_t *MappedAddress)
-{
-    void * BaseAddress = (void *) (
-        ((uint32_t) MappedAddress) & ~OsPageMask);
-    munmap(BaseAddress, OsPageSize);
-}
-
-
-bool WriteRawRegister(uint32_t Address, uint32_t Value, uint32_t Mask)
-{
-    uint32_t * Register = MapRawRegister(Address);
-    if (Register == NULL)
-        return false;
-    else
-    {
-        if (Mask != 0xFFFFFFFF)
-            Value = (Value & Mask) | (*Register & ~Mask);
-        *Register = Value;
-        UnmapRawRegister(Register);
-        return true;
-    }
-}
-
-
-bool ReadRawRegister(uint32_t Address, uint32_t &Value)
-{
-    uint32_t * Register = MapRawRegister(Address);
-    if (Register == NULL)
-        return false;
-    else
-    {
-        Value = *Register;
-        UnmapRawRegister(Register);
-        return true;
-    }
-}
-
-#else
-static uint32_t * MapRawRegister(uint32_t Address)
-{
-    errno = 0;
-    print_error("Cannot map registers into memory", __FILE__, __LINE__);
-    return NULL;
-}
-
-static void UnmapRawRegister(uint32_t *MappedAddress) { }
-
-bool WriteRawRegister(uint32_t Address, uint32_t Value, uint32_t Mask)
-{
-    return false;
-}
-
-bool ReadRawRegister(uint32_t Address, uint32_t &Value)
-{
-    return false;
-}
-
-#endif
 
 
 
@@ -908,6 +931,7 @@ void GetTriggeredAverageSum(int &Sum, int &Samples)
     }
     else
     {
+        LOCK();
         uint32_t u_samples = AverageSumRegisters[0];
         if (u_samples == 0)
         {
@@ -921,6 +945,7 @@ void GetTriggeredAverageSum(int &Sum, int &Samples)
             Sum = (int) (uint32_t) ((lsw + (msw << 32)) / u_samples);
             Samples = u_samples;
         }
+        UNLOCK();
     }
 }
 
@@ -963,22 +988,25 @@ bool WriteSpikeRemovalSettings(
         return false;
 
     /* Sort out these horrid numbers: see libera_kernel.h. */
+    LOCK();
     *FA_REG(FA_area, REGISTER_SR_ENABLE)      = Enable;
     *FA_REG(FA_area, REGISTER_SR_AVE_STOP)    = AverageStop;
     *FA_REG(FA_area, REGISTER_SR_AVE_WIN)     = AverageWindow;
     *FA_REG(FA_area, REGISTER_SR_SPIKE_START) = SpikeStart;
     *FA_REG(FA_area, REGISTER_SR_SPIKE_WIN)   = SpikeWindow;
+    UNLOCK();
+    
     UnmapRawRegister(FA_area);
     return true;
     
 #elif defined(__EBPP_H_2)
     int EnableInt = Enable;
-    return
+    return LOCKED(
         WriteCfgValue(LIBERA_CFG_SR_ENABLE,         EnableInt)  &&
         WriteCfgValue(LIBERA_CFG_SR_AVERAGE_WINDOW, AverageWindow)  &&
         WriteCfgValue(LIBERA_CFG_SR_AVERAGING_STOP, AverageStop)  &&
         WriteCfgValue(LIBERA_CFG_SR_START,          SpikeStart)  &&
-        WriteCfgValue(LIBERA_CFG_SR_WINDOW,         SpikeWindow);
+        WriteCfgValue(LIBERA_CFG_SR_WINDOW,         SpikeWindow));
     
 #else
     return TEST_OK(false);
@@ -996,38 +1024,60 @@ bool ReadSpikeRemovalBuffer(int Buffer[SPIKE_DEBUG_BUFLEN])
      * If switching is enabled the buffer will be filled within a few
      * microseconds, even on the largest of machines.  So we sleep a
      * little and disable capture before reading out. */
+    LOCK();
     *FA_REG(FA_area, REGISTER_SR_DEBUG) = 1;
     usleep(1000);
     *FA_REG(FA_area, REGISTER_SR_DEBUG) = 0;
     memcpy(Buffer, FA_REG(FA_area, REGISTER_SR_BUFFER),
         SPIKE_DEBUG_BUFLEN * sizeof(int));
+    UNLOCK();
+    
     UnmapRawRegister(FA_area);
     return true;
 }
 
 
 
-bool WritePostmortemTriggering(
-    PM_TRIGGER_MODE Mode, int Xlow, int Xhigh, int Ylow, int Yhigh,
-    int OverflowLimit, int OverflowDuration)
+bool WritePmTriggerParameters(
+    PM_TRIGGER_SOURCE source,
+    int Xlow, int Xhigh, int Ylow, int Yhigh,
+    unsigned int overflow_limit, unsigned int overflow_dur)
 {
-    return false;
-}
+    /* This is another case where the driver API is unstable, so we instead
+     * access the registers directly.  Another advantage of doing this this
+     * way is that we can use this FPGA feature even without driver support,
+     * in particular on 1.46. */
 
+    /* The ADC limit value is rather odd: it's the raw ADC limit in the top 16
+     * bits, and the top 16 bits of the ADC limit squared in the bottom. */
+    unsigned int overflow_limit_reg =
+        ((overflow_limit >> AdcExcessBits) << 16) |
+        ((overflow_limit * overflow_limit) >> 16);
+    return LOCKED(
+        WriteRawRegister(REGISTER_TRIG_DELAY, source << 14, 0x0000C000)  &&
+        WriteRawRegister(REGISTER_PM_MINX, Xlow)  &&
+        WriteRawRegister(REGISTER_PM_MAXX, Xhigh)  &&
+        WriteRawRegister(REGISTER_PM_MINY, Ylow)  &&
+        WriteRawRegister(REGISTER_PM_MAXY, Yhigh) &&
+        WriteRawRegister(REGISTER_PM_ADC_LIMIT, overflow_limit_reg)  &&
+        WriteRawRegister(REGISTER_PM_ADC_TIME,  overflow_dur));
+}
 
 
 bool WriteNotchFilter(int index, NOTCH_FILTER Filter)
 {
     uint32_t WriteNotchAddress = 0x1401C018 + 4*index;
-    uint32_t * WriteNotch;
+    uint32_t * WriteNotch = NULL;
     errno = 0;
     bool Ok = 
         TEST_OK((index & 1) == index)  &&
         TEST_NULL(WriteNotch = MapRawRegister(WriteNotchAddress));
     if (Ok)
     {
+        LOCK();
         for (int i = 0; i < 5; i ++)
             *WriteNotch = Filter[i];
+        UNLOCK();
         UnmapRawRegister(WriteNotch);
     }
     return Ok;

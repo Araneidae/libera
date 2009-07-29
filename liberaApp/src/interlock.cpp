@@ -142,7 +142,7 @@ static int InterlockIIR_K = 0;
  * thread will be the main EPICS processing thread (causing most configuration
  * changes, including calling TemporaryMaskInterlock()), and the other thread
  * is the slow acquisition update thread. */
-pthread_mutex_t InterlockMutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t InterlockMutex = PTHREAD_MUTEX_INITIALIZER;
 
 static void Lock()         { TEST_0(pthread_mutex_lock(&InterlockMutex)); }
 static void Unlock(void *) { TEST_0(pthread_mutex_unlock(&InterlockMutex)); }

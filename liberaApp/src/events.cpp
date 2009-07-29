@@ -304,9 +304,15 @@ private:
             /* Run until we're forcibly killed from outside. */
             while (true)
             {
-                int EventId, Param;
-                if (ReadEvent(EventId, Param))
-                    EventDispatcher->NotifyEvent(EventId, Param);
+                /* Read a block of events at a time, just to make things go a
+                 * little more briskly.  Actually, as we're in a separate
+                 * thread, this makes little practical difference... */
+                const int EVENT_COUNT = 512;
+                libera_event_t Events[EVENT_COUNT];
+                int Read = ReadEvents(Events, EVENT_COUNT);
+                for (int i = 0; i < Read; i ++)
+                    EventDispatcher->NotifyEvent(
+                        Events[i].id, Events[i].param);
             }
         }
     }

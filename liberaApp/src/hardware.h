@@ -119,16 +119,6 @@ typedef ADC_ROW ADC_DATA[ADC_LENGTH];
 bool InitialiseHardware(int TurnsPerSwitch);
 
 
-#ifdef RAW_REGISTER
-/* Writes or writes directly to or from a hardware register.  Not designed for
- * frequent use, as the associated memory mapping is created and deleted each
- * time this routine is called! */
-bool WriteRawRegister(
-    uint32_t Address, uint32_t Value, uint32_t Mask = 0xFFFFFFFF);
-bool ReadRawRegister(uint32_t Address, uint32_t &Value);
-#endif
-
-
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                   Reading waveform data from the FPGA.                    */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -200,9 +190,9 @@ bool GetClockState(bool &LmtdLocked, bool &LstdLocked);
 
 /* Programs the set of Libera events which will be notified. */
 bool SetEventMask(int EventMask);
-/* Returns the next event from the Libera event queue.  Blocks until the next
- * event is available. */
-bool ReadEvent(int &EventId, int &Parameter);
+/* Returns the next block of events from the Libera event queue.  Blocks until
+ * the events are available. */
+int ReadEvents(libera_event_t Events[], int MaxEventCount);
 
 
 /* Writes the selected filter to the selected notch filter. */
@@ -322,10 +312,18 @@ bool WriteSpikeRemovalSettings(
 bool ReadSpikeRemovalBuffer(int Buffer[SPIKE_DEBUG_BUFLEN]);
 
 /* Postmortem triggering control. */
-enum PM_TRIGGER_MODE { PM_EXTERNAL, PM_INTERLOCK, PM_SETTINGS };
-bool WritePostmortemTriggering(
-    PM_TRIGGER_MODE Mode, int Xlow, int Xhigh, int Ylow, int Yhigh,
-    int OverflowLimit, int OverflowDuration);
+enum PM_TRIGGER_SOURCE
+{
+    PM_SOURCE_HARDWARE,       // Postmortem on hardware PM trigger event
+    PM_SOURCE_INTERLOCK,      // Postmortem on interlock event
+    PM_SOURCE_SETTINGS        // Postmortem on configured limit violations
+};
+bool WritePmTriggerParameters(
+    PM_TRIGGER_SOURCE source,
+    // Valid X,Y positions for interlock
+    int Xlow, int Xhigh, int Ylow, int Yhigh,
+    // Interlock overflow limit and duration (ADC value and clocks)
+    unsigned int overflow_limit, unsigned int overflow_dur);
 
 
 

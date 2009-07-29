@@ -159,30 +159,6 @@ def FreeRunning():
     UnsetChannelName()
         
 
-# Postmortem fixed length buffer.  This mode is always enabled.
-def Postmortem():
-    LENGTH = 16384
-
-    def Overflow(name):
-        return [
-            longIn('%s_OFFSET' % name, 0, LENGTH,
-                DESC = '%s overflow offset' % name),
-            boolIn('%s_OFL' % name, 'No overflow', 'Overflowed',
-                DESC = '%s overflow occurred' % name)]
-    
-    SetChannelName('PM')
-
-    # All turn-by-turn data is provided.  We also provide digests of the
-    # postmortem reason.
-    Trigger(True,
-        IQ_wf(LENGTH) + ABCD_wf(LENGTH) + XYQS_wf(LENGTH) +
-        Overflow('X') + Overflow('Y') + Overflow('ADC') +
-        [Waveform('FLAGS', LENGTH, 'UCHAR',
-            DESC = 'Interlock overflow flags'),])
-    
-    UnsetChannelName()
-        
-
 # Turn-by-turn snapshot records.  Access to long waveforms captured on
 # request.  Typically used for tune measurements.  Up to 200,000 points can
 # be captured in one request.
@@ -362,15 +338,40 @@ def Config():
     UnsetChannelName()
 
 
-# Interlock control records.  Used for configuring interlock operation.
-def Interlock():
-    SetChannelName('IL')
-
+# Interlock settings, duplicated between IL and PM modes.
+def InterlockSettings():
     # Interlock window limits in mm
     aOut('MINX', -5, 5, EGU = 'mm', DESC = 'Interlock window min X')
     aOut('MAXX', -5, 5, EGU = 'mm', DESC = 'Interlock window max X')
     aOut('MINY', -5, 5, EGU = 'mm', DESC = 'Interlock window min Y')
     aOut('MAXY', -5, 5, EGU = 'mm', DESC = 'Interlock window max Y')
+
+    # ADC overflow detection
+    longOut('TIME', 1, 4095,
+        DESC = 'ADC overflow duration')
+    overflow = longOut('OVER', 0, MAX_ADC,
+        DESC = 'ADC overflow threshold')
+    overflow_pc = records.ao('OVER_PC_S',
+        DESC = 'ADC overflow threshold (%)',
+        OMSL = 'supervisory', DTYP = 'Raw Soft Channel', 
+        OUT  = PP(overflow),
+        EGUL = 0,   EGUF = 100,   EGU  = '%', PREC = 1,
+        DRVL = 0,           DRVH = 100.*(MAX_ADC-1.)/MAX_ADC,
+        LINR = 'LINEAR',    ESLO = 100./MAX_ADC)
+    overflow.FLNK = records.ao('OVER_C',
+        OMSL = 'closed_loop', DTYP = 'Raw Soft Channel', 
+        DOL  = overflow,    OUT  = overflow_pc,
+        DRVL = 0,           DRVH = MAX_ADC - 1,
+        LINR = 'LINEAR',    ESLO = MAX_ADC/100.,
+        PINI = 'YES')
+
+
+# Interlock control records.  Used for configuring interlock operation.
+def Interlock():
+    SetChannelName('IL')
+
+    # Common shared interlock settings
+    InterlockSettings()
 
     # Interlock control state.  This tracks the internal state, but can also
     # be reset externally.
@@ -391,23 +392,6 @@ def Interlock():
     # enabled and configured.
     boolOut('OVERFLOW', 'Disabled', 'Enabled',
         DESC = 'Enable ADC overflow detect')
-    longOut('TIME', 1, 4095,
-        DESC = 'ADC overflow duration')
-    overflow = longOut('OVER', 0, MAX_ADC,
-        DESC = 'ADC overflow threshold')
-    overflow_pc = records.ao('OVER_PC_S',
-        DESC = 'ADC overflow threshold (%)',
-        OMSL = 'supervisory', DTYP = 'Raw Soft Channel', 
-        OUT  = PP(overflow),
-        EGUL = 0,   EGUF = 100,   EGU  = '%', PREC = 1,
-        DRVL = 0,           DRVH = 100.*(MAX_ADC-1.)/MAX_ADC,
-        LINR = 'LINEAR',    ESLO = 100./MAX_ADC)
-    overflow.FLNK = records.ao('OVER_C',
-        OMSL = 'closed_loop', DTYP = 'Raw Soft Channel', 
-        DOL  = overflow,    OUT  = overflow_pc,
-        DRVL = 0,           DRVH = MAX_ADC - 1,
-        LINR = 'LINEAR',    ESLO = MAX_ADC/100.,
-        PINI = 'YES')
     
 
     # Interlock holdoff delay
@@ -448,6 +432,45 @@ def Interlock():
     
     UnsetChannelName()
 
+
+# Postmortem fixed length buffer.  This mode is always enabled.
+def Postmortem():
+    LENGTH = 16384
+
+    def Overflow(name):
+        return [
+            longIn('%s_OFFSET' % name, 0, LENGTH,
+                DESC = '%s overflow offset' % name),
+            boolIn('%s_OFL' % name, 'No overflow', 'Overflowed',
+                DESC = '%s overflow occurred' % name)]
+    
+    SetChannelName('PM')
+
+    # Retrigger control.
+    ready = boolIn('READY', 'Quiescent', 'Trigger enabled', PINI = 'YES',
+        DESC = 'Ready to capture postmortem')
+    boolOut('MODE', 'All', 'One Shot', FLNK = ready,
+        DESC = 'Postmortem trigger mode')
+    boolOut('REARM', 'Arm', FLNK = ready,
+        DESC = 'Process to arm one shot')
+
+    # All turn-by-turn data is provided.  We also provide digests of the
+    # postmortem reason.
+    Trigger(True,
+        IQ_wf(LENGTH) + ABCD_wf(LENGTH) + XYQS_wf(LENGTH) +
+        Overflow('X') + Overflow('Y') + Overflow('ADC') +
+        [Waveform('FLAGS', LENGTH, 'UCHAR',
+            DESC = 'Interlock overflow flags'), ready])
+    
+    # Special postmortem configuration control.  These correspond to
+    # interlock PVs, but can be used for separate control of PM events (but
+    # only if FPGA 2 support is loaded).
+    mbbOut('SOURCE', ('External', 0), ('Interlock', 1), ('Settings', 2),
+        DESC = 'Postmortem trigger source')
+    InterlockSettings()
+    
+    UnsetChannelName()
+        
 
 # Compensation matrices are all up to 8x4x2 -- 8 (or 4) switch positions, 4
 # channels, and two values for each channel.
