@@ -35,6 +35,7 @@
 #include <semaphore.h>
 #include <string.h>
 #include <stdint.h>
+#include <stdarg.h>
 
 #include <iocsh.h>
 #include <epicsThread.h>
