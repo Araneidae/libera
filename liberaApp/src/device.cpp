@@ -69,7 +69,7 @@
 /* Special casting operation to bypass strict aliasing warnings. */
 #define CAST(type, value) \
     ( { \
-        union { typeof(value) a; type b; } __u; \
+        union { __typeof__(value) a; type b; } __u; \
         __u.a = (value); \
         __u.b; \
     } )
@@ -492,8 +492,8 @@ static void post_process(dbCommon *pr, epicsEnum16 nsta, I_RECORD *iRecord)
 /* Redefine epicsExportAddress to avoid strict aliasing warnings. */
 #undef epicsExportAddress
 #define epicsExportAddress(typ,obj) \
-    epicsShareExtern typeof(obj) *EPICS_EXPORT_POBJ(typ, obj); \
-    epicsShareDef typeof(obj) *EPICS_EXPORT_POBJ(typ, obj) = &obj
+    epicsShareExtern __typeof__(obj) *EPICS_EXPORT_POBJ(typ, obj); \
+    epicsShareDef __typeof__(obj) *EPICS_EXPORT_POBJ(typ, obj) = &obj
 
 
 

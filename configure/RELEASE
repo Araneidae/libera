@@ -1,26 +1,27 @@
-#RELEASE Location of external products
-# Run "gnumake clean uninstall install" in the application
-# top directory each time this file is changed.
+# RELEASE - Location of external support modules
 #
-# NOTE: The build does not check dependencies on files
-# external to this application. Thus you should run
-# "gnumake clean uninstall install" in the top directory
-# each time EPICS_BASE, SNCSEQ, or any other external
-# module defined in the RELEASE file is rebuilt.
+# IF YOU MAKE ANY CHANGES to this file you must subsequently
+# do a "gnumake rebuild" in the application's top level
+# directory.
+#
+# NOTE: The build does not check dependencies against files
+# that are outside this application, thus you should run
+# "gnumake distclean install" in the top directory each time
+# EPICS_BASE, SNCSEQ, or any other external module pointed to
+# by this RELEASE file gets rebuilt.
+#
+# Host/target specific settings can be specified in files named
+#  RELEASE.$(EPICS_HOST_ARCH).Common
+#  RELEASE.Common.$(T_A)
+#  RELEASE.$(EPICS_HOST_ARCH).$(T_A)
+#
+# This file should ONLY contain paths to other support modules,
+# or include statements that pull in other RELEASE files.
+# Build settings that are not module paths should appear in a
+# CONFIG_SITE file.
 
-
+# EPICS_BASE usually appears last so other apps can override stuff.
 # Point this to the EPICS installation.
 EPICS_BASE = /dls_sw/epics/R3.14.9/base
-# EPICS_BASE=/scratch/local/base-3.14.9
-
-# Identifies which python compiler to use.  Must be at least version 2.4,
-# won't work with version 3.
-PYTHON = python2.4
-
-# Identifies either the path to the IOC builder python library or its
-# pkg_resources version identification.  Very simple test: if it begins with /
-# it's a path!  If this is left blank then the builder is assumed to be on the
-# path.
-#    Note: if the IOC builder is not installed, please place the prebuilt .db
-# files in the liberaApp/Db directory to avoid any need to invoke this.
-IOCBUILDER = 1.7
+# EPICS_BASE = /dls_sw/epics/R3.14.10/base
+# EPICS_BASE = /scratch/local/base-3.14.11-pre1

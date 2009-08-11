@@ -159,7 +159,7 @@ static void Unlock(void *) { TEST_0(pthread_mutex_unlock(&hardware_mutex)); }
  */
 #define LOCKED(result) \
     ( { \
-        typeof(result) __result__; \
+        __typeof__(result) __result__; \
         LOCK(); \
         __result__ = (result); \
         UNLOCK(); \

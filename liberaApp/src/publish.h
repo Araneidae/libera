@@ -151,8 +151,8 @@ private:
 
 
 /* This bit is evil.  The cute macros below need to know the type of `this`,
- * and normally typeof(this) does the trick: but not when taking the address
- * of a member function!
+ * and normally __typeof__(this) does the trick: but not when taking the
+ * address of a member function!
  *     For this macro to work it is necessary that the class T have a default
  * constructor.  However, it isn't required to be accessible or even to be
  * implemented: a private unimplemented declaration suffices! */
@@ -162,13 +162,14 @@ template<class T> class ID : public T { };
  * methods of the calling class. */
 #define PUBLISH_METHOD_IN(record, name, method) \
     Publish_##record(name, \
-        * new CLOSURE_IN<typeof(*this), TYPEOF(record)>( \
-            *(this), &ID<typeof(*this)>::method))
+        * new CLOSURE_IN<__typeof__(*this), TYPEOF(record)>( \
+            *(this), &ID<__typeof__(*this)>::method))
 
 #define PUBLISH_METHOD_OUT(record, name, method, init) \
     Publish_##record(name, \
-        * new CLOSURE_OUT<typeof(*this), TYPEOF(record)>( \
-            *(this), &ID<typeof(*this)>::method, &ID<typeof(*this)>::init))
+        * new CLOSURE_OUT<__typeof__(*this), TYPEOF(record)>( \
+            *(this), &ID<__typeof__(*this)>::method, \
+            &ID<__typeof__(*this)>::init))
 
 #define PUBLISH_METHOD_IN_OUT( \
         record_in, record_out, name, method_read, method_write) \
@@ -193,8 +194,8 @@ private:
 
 #define PUBLISH_METHOD_ACTION(name, method) \
     Publish_bo(name, \
-        * new CLOSURE_ACTION<typeof(*this)>( \
-            *this, &ID<typeof(*this)>::method))
+        * new CLOSURE_ACTION<__typeof__(*this)>( \
+            *this, &ID<__typeof__(*this)>::method))
 
 
 
@@ -273,8 +274,8 @@ private:
  * persistent value. */
 #define PUBLISH_CONFIGURATION(record, Name, Value, Action) \
     ( { \
-        CONFIGURATION_VALUE<typeof(Value)> & ConfigValue = \
-            * new CONFIGURATION_VALUE<typeof(Value)>(Value, Action); \
+        CONFIGURATION_VALUE<__typeof__(Value)> & ConfigValue = \
+            * new CONFIGURATION_VALUE<__typeof__(Value)>(Value, Action); \
         Publish_##record(Name, ConfigValue); \
         Persistent(Name, Value); \
     } )
@@ -285,7 +286,7 @@ private:
 
 #define PUBLISH_FUNCTION_OUT(record, Name, Value, Action) \
     Publish_##record(Name, \
-        * new CONFIGURATION_VALUE<typeof(Value)>(Value, Action))
+        * new CONFIGURATION_VALUE<__typeof__(Value)>(Value, Action))
 
 
 /* Yet another wrapper.  A bit of refactoring is going to be needed soon...
@@ -356,8 +357,8 @@ typedef READBACK<int>  READBACK_int;
 
 #define PUBLISH_READBACK(recin, recout, Name, InitialValue, Action) \
     ( { \
-        READBACK<typeof(InitialValue)> * Readback = \
-            new READBACK<typeof(InitialValue)>(InitialValue, Action); \
+        READBACK<__typeof__(InitialValue)> * Readback = \
+            new READBACK<__typeof__(InitialValue)>(InitialValue, Action); \
         Publish_##recin(Name "_R", Readback->Writer); \
         Publish_##recout(Name, Readback->Reader); \
         Readback; \
@@ -366,7 +367,7 @@ typedef READBACK<int>  READBACK_int;
 #define PUBLISH_READBACK_CONFIGURATION(recin, recout, Name, Value, Action) \
     ( { \
         Persistent(Name, Value); \
-        READBACK<typeof(Value)> * Readback = \
+        READBACK<__typeof__(Value)> * Readback = \
             PUBLISH_READBACK(recin, recout, Name, Value, Action); \
         Readback; \
     } )

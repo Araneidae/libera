@@ -4,6 +4,10 @@ include $(TOP)/configure/CONFIG
 # Default target is to do nothing, install target will do the work.
 build:
 
+$(CROSS_COMPILER_TARGET_ARCHS): 
+$(CROSS_COMPILER_TARGET_ARCHS:%=install.%): install
+realclean archclean: clean
+    
 # The install target in this makefile will be run after successful completion
 # of the rest of the project makefile.  We patch up the installation ready
 # for deployment to Libera.

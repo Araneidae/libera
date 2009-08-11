@@ -28,13 +28,6 @@ versions_CXXFLAGS += -DLIBERA_VERSION='"$(shell \
 versions_CXXFLAGS += -DBUILD_DATE_TIME='"$(shell date '+%Y-%m-%d %H:%M')"'
 
 
-# The lines below defeat the -ansi flag: we want to use some gcc specific
-# features (typeof, in particular).
-CONFORM_CFLAGS_STRICT = 
-CONFORM_CXXFLAGS_STRICT = 
-
-STATIC_BUILD = YES
-
 
 #=============================
 # build an ioc application
@@ -42,8 +35,11 @@ STATIC_BUILD = YES
 PROD_IOC = ioc
 
 
-DBD += ioc.dbd                  # ioc.dbd will be created from iocInclude.dbd
+DBD += ioc.dbd
 DBD += libera.dbd
+
+ioc_DBD += base.dbd
+ioc_DBD += libera.dbd
 
 
 # ioc_registerRecordDeviceDriver.cpp will be created from ioc.dbd

@@ -1,4 +1,0 @@
-# Pulls together the DBD definitions for libera.
-include "base.dbd"
-include "libera.dbd"
-

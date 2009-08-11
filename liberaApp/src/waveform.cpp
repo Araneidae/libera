@@ -271,7 +271,7 @@ void WAVEFORMS<T>::PublishColumn(
     snprintf(PrefixString, sizeof(PrefixString), "%s:%s", Prefix, SubName)
 
 #define PUBLISH_COLUMN(Name, Field) \
-    PublishColumn(PrefixString, Name, offsetof(typeof(*Data), Field))
+    PublishColumn(PrefixString, Name, offsetof(__typeof__(*Data), Field))
 
 
 
