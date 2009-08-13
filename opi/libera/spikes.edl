@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 380
-y 300
+x 805
+y 739
 w 224
 h 199
 font "helvetica-medium-r-8.0"
@@ -103,32 +103,6 @@ controlPv "$(device):CF:SR:ENABLE_S"
 font "helvetica-medium-r-14.0"
 endObjectProperties
 
-# (Text Control)
-object activeXTextDspClass
-beginObjectProperties
-major 4
-minor 1
-release 0
-x 128
-y 72
-w 80
-h 20
-controlPv "$(device):CF:SR:AVEWIN_S"
-font "helvetica-medium-r-14.0"
-fontAlign "right"
-fgColor index 14
-bgColor index 0
-useDisplayBg
-editable
-autoHeight
-motifWidget
-limitsFromDb
-nullColor index 0
-useHexPrefix
-newPos
-objType "controls"
-endObjectProperties
-
 # (Static Text)
 object activeXTextClass
 beginObjectProperties
@@ -176,7 +150,7 @@ endObjectProperties
 object activeXTextDspClass
 beginObjectProperties
 major 4
-minor 1
+minor 4
 release 0
 x 128
 y 96
@@ -196,6 +170,7 @@ nullColor index 0
 useHexPrefix
 newPos
 objType "controls"
+noExecuteClipMask
 endObjectProperties
 
 # (Static Text)
@@ -222,7 +197,7 @@ endObjectProperties
 object activeXTextDspClass
 beginObjectProperties
 major 4
-minor 1
+minor 4
 release 0
 x 128
 y 120
@@ -242,6 +217,7 @@ nullColor index 0
 useHexPrefix
 newPos
 objType "controls"
+noExecuteClipMask
 endObjectProperties
 
 # (Static Text)
@@ -268,7 +244,7 @@ endObjectProperties
 object activeXTextDspClass
 beginObjectProperties
 major 4
-minor 1
+minor 4
 release 0
 x 128
 y 144
@@ -288,6 +264,7 @@ nullColor index 0
 useHexPrefix
 newPos
 objType "controls"
+noExecuteClipMask
 endObjectProperties
 
 # (Static Text)
@@ -334,5 +311,24 @@ displayFileName {
 symbols {
   0 "device=$(device)"
 }
+endObjectProperties
+
+# (Menu Button)
+object activeMenuButtonClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 120
+y 64
+w 96
+h 22
+fgColor index 14
+bgColor index 3
+inconsistentColor index 0
+topShadowColor index 1
+botShadowColor index 11
+controlPv "$(device):CF:SR:AVEWIN_S"
+font "helvetica-medium-r-14.0"
 endObjectProperties
 

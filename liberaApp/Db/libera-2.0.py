@@ -56,7 +56,8 @@ def SpikeRemoval():
     SetChannelName('CF:SR')
     boolOut('ENABLE', 'Disabled', 'Enabled',
         DESC = 'Enable FA spike removal')
-    longOut('AVEWIN',
+    mbbOut('AVEWIN',
+        ('one', 0), ('two', 1), ('four', 2), ('eight', 3), ('sixteen', 4),
         DESC = 'Spike average window length')
     longOut('AVESTOP',
         DESC = 'Spike average window stop')

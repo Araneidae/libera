@@ -969,6 +969,7 @@ bool WriteSpikeRemovalSettings(
     bool Enable, int AverageWindow, int AverageStop,
     int SpikeStart, int SpikeWindow)
 {
+    AverageWindow = 1 << AverageWindow;         // Convert to power of 2
     if (DlsFpgaFeatures)
     {
         /* The spike removal settings differ subtly between the i-Tech and DLS
@@ -981,13 +982,11 @@ bool WriteSpikeRemovalSettings(
     }
     
 #if defined(RAW_REGISTER)
-    /* No driver support, so write directly to the hardware instead.
-     * Probably shouldn't bother with driver support in the first place... */
+    /* Write directly to the hardware in preference to using the driver. */
     uint32_t * FA_area;
     if (!TEST_NULL(FA_area = MapRawRegister(FA_OFFSET)))
         return false;
 
-    /* Sort out these horrid numbers: see libera_kernel.h. */
     LOCK();
     *FA_REG(FA_area, REGISTER_SR_ENABLE)      = Enable;
     *FA_REG(FA_area, REGISTER_SR_AVE_STOP)    = AverageStop;

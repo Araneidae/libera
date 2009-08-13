@@ -97,5 +97,5 @@ firstTurn.o: filter-header.h
 
 # Force versions to be rebuilt every time so that the build date and time is
 # current. 
-versions.o: EMPTY
-EMPTY:
+versions.o: FORCE
+FORCE:

@@ -305,7 +305,7 @@ int ComputeScaledCurrent(const PMFP & IntensityScale, int Intensity)
 
 
 static bool EnableSpikeRemoval = true;
-static int SpikeAverageWindow = 8;
+static int SpikeAverageWindow = 3;
 static int SpikeAverageStop = -1;
 static int SpikeStart = -3;
 static int SpikeWindow = 8;
@@ -347,8 +347,8 @@ static void UpdateSpikeRemoval()
     PUBLISH_CONFIGURATION(record, "CF:SR:" name, variable, UpdateSpikeRemoval)
 static bool InitialiseSpikeRemoval()
 {
-    PUBLISH_SPIKE(bo, "ENABLE", EnableSpikeRemoval);
-    PUBLISH_SPIKE(longout, "AVEWIN",    SpikeAverageWindow);
+    PUBLISH_SPIKE(bo,      "ENABLE",    EnableSpikeRemoval);
+    PUBLISH_SPIKE(mbbo,    "AVEWIN",    SpikeAverageWindow);
     PUBLISH_SPIKE(longout, "AVESTOP",   SpikeAverageStop);
     PUBLISH_SPIKE(longout, "SPIKEST",   SpikeStart);
     PUBLISH_SPIKE(longout, "SPIKEWIN",  SpikeWindow);
