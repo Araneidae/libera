@@ -27,6 +27,7 @@
  */
 
 
+/* Fills the given Axis with a linear scale from 0 to Duration. */
 void FillAxis(FLOAT_WAVEFORM &Axis, int Length, float Duration);
 
 /* Booster waveform support. */

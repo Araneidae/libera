@@ -59,7 +59,7 @@ public:
         Publish_ai("MS:DELTAI", MeanCurrentDelta);
         Publish_ai("MS:MEANP", MeanPower);
         
-        Interlock.Publish("MS");
+        Interlock.Publish("MS", true);
         Enable.Publish("MS");
         
         /* Announce our interest in the postmortem event. */

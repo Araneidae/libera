@@ -71,7 +71,7 @@ def FirstTurn():
         DESC = 'Charge of bunch train')
     max_S = longIn('MAXS', DESC = 'Maximum S in waveform')
 
-    Trigger(False, 
+    Trigger(True,
         # Raw waveforms as read from the ADC rate buffer
         RAW_ADC(LONG_LENGTH) +
         [maxadc, maxadc_pc, charge, max_S] +

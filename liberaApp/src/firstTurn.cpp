@@ -51,6 +51,7 @@
 #include "conditioning.h"
 #include "booster.h"
 #include "versions.h"
+#include "timestamps.h"
 
 #include "firstTurn.h"
 
@@ -228,7 +229,7 @@ public:
          * up so that the all the variables above are processed when a trigger
          * has occured.  This code is then responsible for ensuring that all
          * the waveforms are updated before the trigger is updated.   */
-        Interlock.Publish("FT");
+        Interlock.Publish("FT", true);
         Enable.Publish("FT");
 
         Publish_waveform("FT:AXIS", AxisScale);
@@ -268,7 +269,9 @@ public:
         ThresholdXYQS();
 
         /* Finally tell EPICS there's stuff to read. */
-        Interlock.Ready();
+        LIBERA_TIMESTAMP Timestamp;
+        GetTriggerTimestamp(Timestamp);
+        Interlock.Ready(Timestamp);
     }
 
     

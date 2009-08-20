@@ -36,7 +36,7 @@ from common import *
 def MeanSum():
     SetChannelName('MS')
     Enable()
-    Trigger(False, [
+    Trigger(True, [
         longIn('COUNT',     DESC = 'Samples in last interval'),
         longIn('MEANS',     DESC = 'Mean S in last interval'),
         longIn('DELTAS',    DESC = 'S delta'),
