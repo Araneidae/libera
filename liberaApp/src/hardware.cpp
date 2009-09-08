@@ -1047,18 +1047,21 @@ bool WritePmTriggerParameters(
      * way is that we can use this FPGA feature even without driver support,
      * in particular on 1.46. */
 
-    /* The ADC limit value is rather odd: it's the raw ADC limit in the top 16
-     * bits, and the top 16 bits of the ADC limit squared in the bottom. */
-    unsigned int overflow_limit_reg =
-        ((overflow_limit >> AdcExcessBits) << 16) |
-        ((overflow_limit * overflow_limit) >> 16);
+    if (!DlsFpgaFeatures)
+        /* The ADC limit value is rather odd on the i-Tech FPGA: it's the raw
+         * ADC limit in the top 16 bits, and the top 16 bits of the ADC limit
+         * squared in the bottom. */
+        overflow_limit =
+            ((overflow_limit >> AdcExcessBits) << 16) |
+            ((overflow_limit * overflow_limit) >> 16);
+    
     return LOCKED(
         WriteRawRegister(REGISTER_TRIG_DELAY, source << 14, 0x0000C000)  &&
         WriteRawRegister(REGISTER_PM_MINX, Xlow)  &&
         WriteRawRegister(REGISTER_PM_MAXX, Xhigh)  &&
         WriteRawRegister(REGISTER_PM_MINY, Ylow)  &&
         WriteRawRegister(REGISTER_PM_MAXY, Yhigh) &&
-        WriteRawRegister(REGISTER_PM_ADC_LIMIT, overflow_limit_reg)  &&
+        WriteRawRegister(REGISTER_PM_ADC_LIMIT, overflow_limit)  &&
         WriteRawRegister(REGISTER_PM_ADC_TIME,  overflow_dur));
 }
 
