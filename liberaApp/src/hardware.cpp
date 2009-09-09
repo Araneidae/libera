@@ -1047,7 +1047,9 @@ bool WritePmTriggerParameters(
      * way is that we can use this FPGA feature even without driver support,
      * in particular on 1.46. */
 
-    if (!DlsFpgaFeatures)
+    if (DlsFpgaFeatures)
+        overflow_limit >>= AdcExcessBits;
+    else
         /* The ADC limit value is rather odd on the i-Tech FPGA: it's the raw
          * ADC limit in the top 16 bits, and the top 16 bits of the ADC limit
          * squared in the bottom. */
