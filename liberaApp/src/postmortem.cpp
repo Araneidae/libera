@@ -98,6 +98,11 @@ public:
         PUBLISH_CONFIGURATION(longout, "PM:OVER", OverflowLimit, SetPmTrigger);
         PUBLISH_CONFIGURATION(longout, "PM:TIME", OverflowTime , SetPmTrigger);
 
+#ifdef __EBPP_H_2
+        TriggerOffset = 0;
+        PUBLISH_CONFIGURATION(longout, "PM:OFFSET",TriggerOffset, SetPmOffset);
+#endif
+
         PUBLISH_CONFIGURATION(
             mbbo, "PM:SOURCE", TriggerSource, SetTriggerSource);
         RealSetTriggerSource(TriggerSource);
@@ -231,6 +236,10 @@ private:
     int MinX, MaxX, MinY, MaxY;
     int OverflowLimit;
     int OverflowTime;
+
+#ifdef __EBPP_H_2
+    int TriggerOffset;
+#endif
 
     /* EPICS interlock. */
     INTERLOCK Interlock;

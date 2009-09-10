@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 2422
-y 42
+x 483
+y 202
 w 392
 h 584
 font "helvetica-medium-r-14.0"
@@ -126,7 +126,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 4
 release 0
 x 168
 y 64
@@ -142,13 +142,14 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Text Monitor)
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 4
 release 0
 x 168
 y 80
@@ -164,6 +165,7 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Static Text)
@@ -190,7 +192,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 4
 release 0
 x 168
 y 96
@@ -206,6 +208,7 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Static Text)
@@ -232,7 +235,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 4
 release 0
 x 168
 y 168
@@ -248,6 +251,7 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Static Text)
@@ -274,7 +278,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 4
 release 0
 x 168
 y 264
@@ -290,6 +294,7 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Static Text)
@@ -316,7 +321,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 4
 release 0
 x 168
 y 184
@@ -332,6 +337,7 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Static Text)
@@ -358,7 +364,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 4
 release 0
 x 168
 y 200
@@ -374,6 +380,7 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Static Text)
@@ -400,7 +407,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 4
 release 0
 x 168
 y 216
@@ -416,6 +423,7 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Static Text)
@@ -442,7 +450,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 4
 release 0
 x 168
 y 320
@@ -460,6 +468,7 @@ nullColor index 0
 useHexPrefix
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Static Text)
@@ -486,7 +495,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 4
 release 0
 x 168
 y 336
@@ -504,6 +513,7 @@ nullColor index 0
 useHexPrefix
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Static Text)
@@ -530,7 +540,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 4
 release 0
 x 160
 y 456
@@ -546,6 +556,7 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Static Text)
@@ -572,7 +583,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 4
 release 0
 x 160
 y 472
@@ -588,6 +599,7 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Static Text)
@@ -614,7 +626,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 4
 release 0
 x 160
 y 488
@@ -630,6 +642,7 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Static Text)
@@ -656,7 +669,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 4
 release 0
 x 160
 y 504
@@ -672,6 +685,7 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Static Text)
@@ -698,7 +712,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 4
 release 0
 x 160
 y 520
@@ -714,6 +728,7 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Static Text)
@@ -780,7 +795,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 4
 release 0
 x 168
 y 352
@@ -798,6 +813,7 @@ nullColor index 0
 useHexPrefix
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Static Text)
@@ -824,7 +840,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 4
 release 0
 x 168
 y 368
@@ -841,6 +857,7 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Static Text)
@@ -867,7 +884,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 4
 release 0
 x 168
 y 384
@@ -885,6 +902,7 @@ nullColor index 0
 useHexPrefix
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Static Text)
@@ -911,7 +929,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 4
 release 0
 x 168
 y 400
@@ -929,6 +947,7 @@ nullColor index 0
 useHexPrefix
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Static Text)
@@ -955,7 +974,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 4
 release 0
 x 168
 y 416
@@ -973,6 +992,7 @@ nullColor index 0
 useHexPrefix
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Static Text)
@@ -1039,7 +1059,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 4
 release 0
 x 168
 y 232
@@ -1055,6 +1075,7 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Static Text)
@@ -1081,7 +1102,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 4
 release 0
 x 168
 y 248
@@ -1097,6 +1118,7 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Static Text)
@@ -1123,7 +1145,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 4
 release 0
 x 280
 y 352
@@ -1139,13 +1161,14 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Text Monitor)
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 4
 release 0
 x 168
 y 304
@@ -1163,6 +1186,7 @@ nullColor index 0
 useHexPrefix
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Static Text)
@@ -1189,7 +1213,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 4
 release 0
 x 352
 y 488
@@ -1205,6 +1229,7 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Static Text)
@@ -1231,7 +1256,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 4
 release 0
 x 352
 y 456
@@ -1247,6 +1272,7 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Static Text)
@@ -1273,7 +1299,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 4
 release 0
 x 168
 y 112
@@ -1289,6 +1315,7 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Static Text)
@@ -1315,7 +1342,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 4
 release 0
 x 168
 y 128
@@ -1331,6 +1358,7 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Static Text)
@@ -1357,7 +1385,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 4
 release 0
 x 352
 y 472
@@ -1373,6 +1401,7 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Static Text)
@@ -1391,6 +1420,49 @@ bgColor index 0
 useDisplayBg
 value {
   "Gigabit ethernet FF?"
+}
+autoSize
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 4
+release 0
+x 352
+y 504
+w 32
+h 16
+controlPv "$(device):VE:DRIVER2"
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 4
+useDisplayBg
+autoHeight
+limitsFromDb
+nullColor index 0
+newPos
+objType "monitors"
+noExecuteClipMask
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 208
+y 504
+w 124
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "V2 driver features?"
 }
 autoSize
 endObjectProperties

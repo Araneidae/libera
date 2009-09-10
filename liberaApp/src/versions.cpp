@@ -31,6 +31,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <stdint.h>
 #include <signal.h>
 #include <string.h>
 #include <sys/wait.h>
@@ -41,6 +42,7 @@
 #include "test_error.h"
 #include "device.h"
 #include "publish.h"
+#include "hardware.h"
 
 #include "versions.h"
 
@@ -59,6 +61,11 @@ bool DlsFpgaFeatures;
 bool MafFeaturePresent;
 bool ItechMaxAdcPresent;
 bool Version2FpgaPresent;
+#ifdef __EBPP_H_2
+bool Version2Driver = true;
+#else
+bool Version2Driver = false;
+#endif
 
 static int CustomerId;
 static EPICS_STRING CustomerIdString;
@@ -295,6 +302,7 @@ bool InitialiseVersions(void)
     Publish_stringin("VE:CUSTIDSTR", CustomerIdString);
     Publish_stringin("VE:COMPILER", CompilerVersion);
     Publish_stringin("VE:LIBRARY",  LibraryVersion);
+    Publish_bi      ("VE:DRIVER2",  Version2Driver);
     
     PUBLISH_ACTION("REBOOT",        DoReboot);
     PUBLISH_ACTION("RESTART",       DoRestart);

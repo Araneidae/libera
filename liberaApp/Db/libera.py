@@ -467,6 +467,7 @@ def Postmortem():
     # only if FPGA 2 support is loaded).
     mbbOut('SOURCE', ('External', 0), ('Interlock', 1), ('Settings', 2),
         DESC = 'Postmortem trigger source')
+    longOut('OFFSET', DESC = 'PM trigger offset')
     InterlockSettings()
     
     UnsetChannelName()
@@ -878,6 +879,7 @@ def Versions():
     boolin('MAF',       'Boxcard filter present')
     boolin('ITMAXADC',  'i-Tech MAX ADC register')
     boolin('FPGA2',     'Libera 2.00+ FPGA features')
+    boolin('DRIVER2',   'Libera 2.00+ driver features')
 
     UnsetChannelName()
 

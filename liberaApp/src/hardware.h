@@ -325,6 +325,10 @@ bool WritePmTriggerParameters(
     // Interlock overflow limit and duration (ADC value and clocks)
     unsigned int overflow_limit, unsigned int overflow_dur);
 
+#ifdef __EBPP_H_2
+/* Sets the trigger offset of the postmortem buffer. */
+bool SetPmOffset(int offset);
+#endif
 
 
 /* Pick up the generic helper test macros. */

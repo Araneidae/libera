@@ -1088,6 +1088,14 @@ bool WriteNotchFilter(int index, NOTCH_FILTER Filter)
 }
 
 
+#ifdef __EBPP_H_2
+bool SetPmOffset(int offset)
+{
+    return LOCKED(WriteCfgValue(LIBERA_CFG_PMOFFSET, offset));
+}
+#endif
+
+
 
 /*****************************************************************************/
 /*                                                                           */
