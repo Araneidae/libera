@@ -680,8 +680,9 @@ def Clock():
     ntp_health = mbbIn('NTPSTAT',
         ('Not monitored',   0,  'NO_ALARM'),    # Monitoring disabled
         ('No NTP server',   1,  'MAJOR'),       # Local NTP server not found
-        ('No Sync',         2,  'MINOR'),       # NTP server not synchronised
-        ('Synchronised',    3,  'NO_ALARM'),    # Synchronised to remote server
+        ('Startup',         2,  'NO_ALARM'),    # No alarm during startup
+        ('No Sync',         3,  'MINOR'),       # NTP server not synchronised
+        ('Synchronised',    4,  'NO_ALARM'),    # Synchronised to remote server
         DESC = 'Status of NTP server')
     global ntp_monitors                 # Needed for sensor record triggering
     ntp_monitors = [ntp_health,

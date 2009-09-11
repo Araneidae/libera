@@ -328,6 +328,7 @@ static void ReadHealth()
 enum {
     NTP_NOT_MONITORED,  // Monitoring disabled (or not yet happened)
     NTP_NO_NTP,         // No NTP server running locally
+    NTP_STARTUP,        // Startup grace period
     NTP_NO_SYNC,        // NTP running but not synchronised
     NTP_OK,             // NTP running ok.
 };
@@ -336,6 +337,11 @@ static int NTP_stratum = 16;    // 16 means unreachable/invalid server
 static EPICS_STRING NTP_server;
 static bool MonitorNtp; // Can be disabled
 
+
+/* The NTP server can take more than 20 minutes to satisfy itself before
+ * reporting synchronisation.  During this startup period we don't report an
+ * error if synchronisation has not been established. */
+static const int NTP_startup_window = 1500;
 
 
 /* NTP/SNTP message packet (except for NTP control messages).  See RFC 1305
@@ -442,7 +448,7 @@ static void refid_to_string(int stratum, int refid, EPICS_STRING string)
 {
 #define ID_BYTE(i) ((refid >> (8*(i))) & 0xFF)
     if (stratum > 1)
-        snprintf(NTP_server, sizeof(NTP_server),
+        snprintf(string, sizeof(EPICS_STRING),
             "%d.%d.%d.%d", ID_BYTE(0), ID_BYTE(1), ID_BYTE(2), ID_BYTE(3));
     else
     {
@@ -459,7 +465,9 @@ static void ProcessNtpHealth()
     if (SNTP_exchange("127.0.0.1", 100, &pkt))
     {
         int LI = (pkt.li_vn_mode >> 6) & 3;
-        NTP_status = LI == 3 ? NTP_NO_SYNC : NTP_OK;
+        NTP_status = LI == 3 ?
+            (LastUptime < NTP_startup_window ?
+                NTP_STARTUP : NTP_NO_SYNC) : NTP_OK;
         NTP_stratum = pkt.stratum == 0 ? 16 : pkt.stratum;
         refid_to_string(pkt.stratum, pkt.refid, NTP_server);
     }
