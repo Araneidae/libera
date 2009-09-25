@@ -1,0 +1,354 @@
+\documentclass{JAC2003}
+
+\usepackage{graphicx}
+\usepackage{booktabs}
+
+\usepackage{mathptmx}
+\usepackage{amsmath}
+
+\usepackage{url}
+\usepackage{mdwlist}
+
+% Using Xy-pic for our diagrams
+\usepackage[dvips,matrix,arrow,curve,line,all]{xy}
+\renewcommand{\objectstyle}{\displaystyle}
+\renewcommand{\labelstyle}{\textstyle}
+
+
+% Seems we're allowed to steal a bit of title space if we need to.
+\setlength{\titleblockheight}{27mm}
+
+%% Tone down hyphenation enthusiasm
+\sloppy
+\hyphenpenalty 2000
+
+
+
+\begin{document}
+\title{%
+    THE DIAMOND LIGHT SOURCE CONTROL SYSTEM INTERFACE \\
+    TO THE LIBERA ELECTRON BEAM POSITION MONITORS}
+
+\author{%
+    M.G.~Abbott, G.~Rehm, I.S.~Uzun,
+    Diamond Light Source, Oxfordshire, UK}
+
+\maketitle
+
+\begin{abstract}
+    Libera Electron Beam Position Monitors (EBPMs) used at Diamond provide
+    information about the electron beam position at a variety of frequency
+    scales from 10\,MHz, through revolution frequency, down to 10\,Hz.
+    Diamond Light Source has implemented an EPICS interface to Libera
+    integrating all of this information into the overall control system. In
+    conjunction with the timing and fast orbit feedback interfaces this
+    provides access to the rich data sets and functionality provided by
+    Libera. The details of the interfaces and available data, both directly
+    from the Libera and through a concentrator, are described here.
+\end{abstract}
+
+
+
+
+\section{Libera System Overview}
+
+Diamond Light Source uses 168 Electron Beam Position Monitors (EBPMs) in the
+storage ring, together with 22 in the booster and 7 in each of the two transfer
+paths, to monitor the position of the electron beam.  
+
+Each EBPM consists of a button block in the vacuum vessel with four pickup
+electrodes surrounding the electron beam; these pick up electric fields
+corresponding to the electron beam position as modulations of the machine RF
+($f_{RF} \approx 499.65\,$MHz).  The four button signals are fed by coaxial
+cables to a Libera\cite{i-tech} EBPM processor where the amplitudes of the
+signals are processed and used to compute the electron beam position, as shown
+in figure \ref{buttons}.
+
+\begin{figure}[h]
+\centering
+\input{buttons}
+\caption{%
+    Computing electron beam position $x,y$ and current $I$ from measured
+    button intensities $A$, $B$, $C$, $D$, scaling factors $K_X$, $K_Y$
+    determined by button geometry, offsets $X_0$, $Y_0$ measured by beam
+    based alignment, current scaling $K_I$ dynamically calibrated against
+    a DCCT, and the currently programmed RF gain $G$.
+}
+\label{buttons}
+\end{figure}
+
+Libera processes these signals in three stages: RF board, FPGA, and embedded
+controller.  In the RF board the four signals pass through a cross-bar switch
+into four parallel analogue channels where the signal is amplified with
+programmable gain and band-pass filtered to approximately 10\,MHz around
+$f_{RF}$ before being undersampled by ADCs at around 117\,MHz (sample
+frequency $f_S$).  The sampling frequency is carefully chosen to both place
+the intermediate frequency (IF) close to $\frac14 f_S$ and avoid, as far as
+possible, the folding back of IF and machine revolution ($f_{R} = f_{RF}/936$)
+harmonics onto the intermediate frequency.
+
+The raw sampled signal is processed by a Virtex-II Pro FPGA with firmware
+developed by the manufacturer, Instrumentation Technologies (I-Tech), with
+some modifications by Diamond.  In the FPGA the raw signal is first
+demultiplexed according to the cross-bar switch setting and phase and
+amplitude corrected to compensate for channel differences before being mixed
+with a digital local oscillator to bring the intermediate frequency down to
+DC: this involves the conversion of button signals to quadrature $I,Q$ values.
+These signals are filtered by repeated stages of digital down conversion to
+reduce the sample frequencies to the values provided by Libera, as below.
+
+\begin{description*}
+\renewcommand{\makelabel}{}     % Abusing the description style a bit here.
+\item
+    $f_S \approx 117$\,MHz (bandwidth 10\,MHz).  Fixed length 1024 point
+    waveforms of raw ADC button signals captured on trigger are useful for
+    first turn and transfer path position measurement.
+\item
+    $f_R \approx 534$\,kHz.  A circular buffer of two seconds of turn-by-turn
+    data is stored, from which triggered waveforms of at least one second of
+    turn-by-turn position data can reliably be provided.  Waveforms are read
+    from this buffer on every trigger, and the same buffer is read on
+    postmortem trigger.
+\item
+    $f_{FA} \approx 10$\,kHz.  Electron beam positions are generated at
+    approximately 10\,kHz and used for beam position validation (machine
+    protection interlock) and are transmitted to the Fast Feedback
+    network\cite{fast-feedback}.  This is the Fast Acquisition (FA) data
+    stream.
+\item
+    $f_{SA} \approx 10$\,Hz.  Beam positions at approximately 10\,Hz can be
+    handled directly by EPICS clients as scalars and are made available as
+    10\,Hz updates over Ethernet.  This is the Slow Acquisition (SA) data
+    stream.
+\end{description*}
+
+The turn-by-turn data stream can also be decimated by the FPGA by a factor of
+64 on readout; this is useful for cycling machines such as the Diamond
+booster, where a complete ramp can be returned as a 3,000 point waveform.
+
+The FA data stream is available via the fast feedback network; the remaining
+signals are processed by the final part of the system, the embedded
+controller.
+
+
+\begin{figure*}[tb]
+\centering
+\input{system-overview}
+\caption{%
+    Overview of Libera system with data processing chains and associated
+    groups of PVs. The two letter function code is part of the PV name,
+    for example \texttt{SR01C-DI-EBPM-01:SA:X} names an SA PV on the first
+    storage ring Libera.}
+\label{system-overview}
+\end{figure*}
+
+
+\section{System Software}
+
+For its control system interface Libera uses an ARM XScale PXA 255 processor
+running at 400\,MHz with 32\,MB flash and 64\,MB RAM.  There is no hardware
+floating point support: this must be allowed for during software development.
+The software on the controller consists of embedded Linux and a kernel device
+driver, both provided by I-Tech, together with Diamond developed processes
+adding EPICS functionality and supplementing or replacing I-Tech's original
+software\cite{libera-epics-web}.
+
+The direct software interface to the FPGA on Libera consists of device nodes
+provided by the kernel driver, and some directly accessed registers.  The
+control interface to Libera is provided by the EPICS driver which provides a
+complete interface to all of the functionality available from Libera and hides
+the kernel driver and registers.  Data access and control is provided via
+Process Variables\footnote{%
+%
+    An EPICS Process Variable (PV) is typically a single numerical value, or a
+    fixed length waveform, with a fixed name which can be read or written
+    by any remotely connected EPICS Channel Access client.  The naming
+    convention for PVs is an important part of controller design.
+%
+}, a fundamental notion in any EPICS controller.
+
+The EPICS driver provides around 500 PVs grouped into 14 major functions as
+shown in figure \ref{system-overview}.  The system software is structured as
+three daemons: clock control, temperature control, and an EPICS IO
+controller (IOC).
+
+
+\subsection{Clock Control}
+
+The ADC sample clock is maintained at a precise ratio of the machine
+revolution clock frequency via a voltage controlled crystal oscillator (VCXO)
+and a phase measurement circuit in the FPGA which counts sample clocks every
+53,382 revolution clocks, roughly every 100ms.  
+
+Stability of the ADC clock is essential for good beam position measurement:
+the clock daemon is able to maintain the phase of the sample clock to within
+$\pm 1.5$ samples against the machine clock; this is sufficient for stable
+position measurement and synchronisation.
+
+The sample clock is maintained at a frequency close to an integer fraction of
+the revolution clock (220 samples per revolution, versus 936 electron bunches
+per revolution).  However, if $f_S$ is precisely 220 samples per revolution
+then beating with harmonics of revolution sidebands is seen in the filtered
+beam position, so it is necessary to ``detune'' the sample clock; at Diamond
+the frequency offset is approximately 4\,kHz.
+
+The clock controller is also important for the fast feedback communication
+network which requires all Liberas to be synchronously clocked (to within a
+microsecond or so).  Synchronisation is done via a global trigger, and the
+clock controller checks for loss of synchronisation.
+
+
+\subsection{Position Measurements}
+
+The EPICS driver processes the button intensity data and computes positions
+from both raw ADC rate data and filtered turn-by-turn waveforms.  For speed of
+computation the calculation of button magnitudes from $I,Q$ values is
+performed using the CORDIC\cite{cordic} algorithm, and a specialised fast
+division routine using Newton-Raphson was written to accelerate position
+calculation.
+
+For ``first turn'' (\texttt{FT}) or transfer path position measurement the raw
+ADC waveform is frequency shifted and filtered in software, and a user
+defined window defines the region of interest from which a scalar position is
+calculated.
+
+Two triggers are used for turn-by-turn waveform capture: a global system
+trigger, normally fired on injection into the storage ring every 200ms, and a
+postmortem trigger fired on loss of machine protection interlock.  Postmortem
+data is very valuable in diagnosing causes of beam loss.
+
+Three groups of PVs are used for turn-by-turn data: \texttt{FR} and
+\texttt{BN} PVs update on every trigger returning fixed length waveforms,
+while the \texttt{TT} PVs provide variable length triggered waveform capture 
+designed for machine physics applications.  The postmortem \texttt{PM} group
+also returns turn-by-turn data.
+
+
+\subsection{Signal Conditioning}
+
+The beam position calculation is very sensitive to small variations in the
+measured signal: disturbing the coaxial button cables can move the measured
+position by microns.  In particular, drifting and instabilities in the four
+analogue channels in the RF board cause high levels of lower frequency noise.
+This is compensated in Libera via an RF cross-bar which ensures that each
+button signal is passed, in turn, through each filter and amplifier chain on
+the RF board; the final measured button signal is then an average of the four
+channels.
+
+This switching process largely eliminates low frequency drift in measured
+position, but at the cost of high levels of noise at the switching frequency.
+At Diamond switching occurs every 40 turns with a complete cycle of switching
+every 320 turns (Diamond's RF boards require 8 switch positions), resulting in
+a lowest switching frequency of 1.67\,kHz.  Careful filter design plus a pair
+of notch filters removes most of this switching noise from FA and SA data, but
+it is important to reduce the impact of switching.
+
+One source of noise is the different phase and gain of each analogue channel.
+This can be modelled as a complex scaling factor $K_c$ for each channel $c$,
+so the measured signal with the cross-bar switch in position $n$ passing
+button $b$ through channel $p(n,b)$ is $Z_{n,b} = K_{p(n,b)} X_b$.  By
+measuring $\vec{Z}$ for all button positions and channels (a 2048 point
+turn-by-turn waveform is ample for this measurement) the input signal
+$\vec{X}$ can be estimated by averaging over all switch positions, assuming
+that the input signal is constant during measurement, and from this the error
+$\vec{K}$ can be computed\footnote{%
+%
+    This is oversimplified, see the code\cite{libera-epics-web} for details.
+    In practice the estimation of $\vec{X}$ requires geometric means of
+    magnitudes and arithmetic means of angles, and $K_c$ also needs to depend
+    on $n$.
+%
+}.  By working with complex gains and signals, phase and gain can be
+compensated together at the sampled intermediate frequency.
+
+The Diamond EPICS driver performs this calculation every few seconds during
+normal operation and updates a two point FIR filter for each channel to
+perform the correction, and also provides all the measurements as PVs.
+Monitoring the signal conditioning PVs can provide very helpful information
+about the health of the RF board.
+
+
+\subsection{Interlocks and Monitoring}
+
+Within the FPGA the 10\,kHz data stream is used as a beam position interlock
+to protect against mis-steering of the stored beam: when the stored beam is
+more than 10\,mA the beam is confined to a window of $\pm 1$\,mm; if this
+window is exceeded a machine protection interlock is dropped and the beam is
+dumped.
+
+PVs are provided for monitoring the health of the Libera, and an alarm is
+indicated if appropriate.  Monitors include fan speeds and internal system
+temperatures, on board voltages, available RAM (including log file
+consumption) and CPU usage.  The health of the clocks is monitored, and loss
+of synchronisation generates an alarm.
+
+
+\section{System Integration}
+
+All 168 storage ring Liberas are operated together through control scripts,
+from client applications, or through the ``Concentrator'': this EPICS server
+monitors all Liberas, gathers position readings into aggregate waveforms, and
+manages global functions.  The Concentrator further monitors the maximum ADC
+levels on all Liberas and controls the gain programmed into the RF board to
+avoid ADC overflow in any Libera.  This is done globally to avoid jumps in
+position from unexpected changes in gain, particularly during fast feedback.
+
+When the beam intensity measurement from all Liberas is averaged the result is
+a very sensitive beam current measurement with high frequency noise levels
+well below those of the DCCT used for beam current measurement.  By
+calibrating this average against the more accurate DCCT it is possible to
+measure very low storage ring injection currents with high precision and
+sensitivity.
+
+The 10\,kHz Fast Acquisition data stream from each Libera passes onto the fast
+feedback network which communicates real time position data from all attached
+Liberas to all attached nodes, including fast feedback motor
+controllers\cite{fast-feedback}.  An extra ``sniffer'' node is attached to
+this network and manages a circular buffer of 100,000 samples of beam
+positions around the ring at 10\,kHz which can be read out in blocks via
+EPICS.  Using this tool detailed spectral analysis of full machine beam
+behaviour can be investigated from 1.5\,kHz down to 100\,mHz.
+
+
+\section{Conclusions}
+
+EPICS integration of Libera into the Diamond control system has been
+successful and Libera operates reliably.
+
+The Diamond Libera EPICS driver has been developed as an open source
+application under GPL and is available for download from Diamond's web
+site\cite{libera-epics-web}.  This driver is in use at synchrotron light
+sources in Germany, China and Korea, and is being evaluated for use at NSLS2
+in the USA.
+
+Future work on Libera will mostly concentrate on minor changes, but there are
+two major developments in the pipeline: a new rootfs built from scratch, based
+on Busybox and a standard Linux kernel, which we'll be deploying to the
+machine this year; and plans for moving much of the kernel driver into user
+space to improve maintainability.
+
+
+
+
+\begin{thebibliography}{9}
+
+\bibitem{i-tech}
+Instrumentation Technologies, \url{http://www.i-tech.si}.
+
+\bibitem{fast-feedback}
+M.G.~Abbott, J.A.~Dobbing, M.T.~Heron, G.~Rehm, J.~Rowland, I.S.~Uzun,
+S.~Duncan, ``Diamond Light Source Electron Beam Position Feedback: Design,
+Realization and Performance'', ICALEPCS'09. 
+
+
+\bibitem{libera-epics-web}
+Diamond Libera EPICS driver downloads:
+\url{http://controls.diamond.ac.uk/downloads/libera/}.
+
+\bibitem{cordic} 
+Volder, J.E., 1959; ``The CORDIC Trigonometric Computing Technique'', IRE
+Transactions on Electronic Computers, V.~EC-8, No.~3, pp.~330-334.
+
+\end{thebibliography}
+
+\end{document}

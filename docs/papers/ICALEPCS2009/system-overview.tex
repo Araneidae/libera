@@ -1,0 +1,135 @@
+% Figure to illustrate overall structure of internal Libera processing chain.
+
+{
+% Draws the ADC symbol at the current position
+\newgraphescape{a}#1{
+    []!{\save   \xygraph{ 
+        []="o"              % Remember origin on entry
+        !{+0;+<1em,0em>:} % Set appropriate scaling
+        !~-{@[thicker]@{-}}     % Thicker lines
+        "o"[l(2)u]="a"[d]-[ur]-[r(2.5)]-[dd]="b"-[l(2.5)]-[ul]
+        !~-{@{-}}               % and back to normal
+        "o"*{\text{#1}} 
+    } \restore} 
+    % Put origin at point of entry and combine with opposite corners
+    !{"o"."a"."b"} 
+}
+% Draws a box with a formula inside it at the current position
+\newgraphescape{t}#1{
+    []!{\save   \xygraph{ 
+        []="o"
+        !{+0;+<1em,0em>:}
+        !~-{@[thicker]@{-}}     % Thicker lines
+        "o"[l(1.75)u]="a"-[r(3.5)]-[d(2)]="b"-[l(3.5)]-[u(2)]
+        !~-{@{-}}               % and back to normal
+        "o"*{#1} 
+    } \restore} 
+    % Put origin at point of entry and combine with opposite corners
+    !{"o"."a"."b"} 
+}
+% Labels a row with the arguments set in a two column table
+\newgraphescape{l}#1{
+    [r(0.2)]
+    []*+!!<0pt,\fontdimen22\textfont2>!L{\text{
+        \begin{tabular}[c]{@{\ttfamily}p{6mm}l}
+        #1
+        \end{tabular}
+    }}
+}
+% Draws simple text with the proper baseline
+\newgraphescape{s}#1{
+    []*+!!<0pt,\fontdimen22\textfont2>{\text{#1}}
+}
+% Draw a single button
+\newgraphescape{b}#1#2{
+    "z"[#2(1.5)#1]="o"   % Move into buttton position
+    [l(0.8)]-[r(1.6)] "o"-[#1(1.5)][] % Draw the button body
+}
+% The figure itself
+\hfill\xygraph{
+    []!{0;<3pc,0pc>:<0pc,2.2pc>::}
+    % 
+    % Label the columns of the diagra
+    [ll] !s{\textbf{Buttons}}
+    [r(2.5)] !s{\textbf{FPGA Processing}}
+    [r(5.5)]  !s{\textbf{EPICS Process Variable Interface by function}}
+    \\[u(.2)]
+    %
+    % CK label
+    [rrr]="ck" !l{CK & Clock control} \\[u(.2)]
+    %
+    % Draws the button block assembly 
+    [ll]="z" !{\save\xygraph{ 
+        !{+0;+<0.5em,0em>:} 
+%        !~-{@[thicker]@{-}}     % Thicker lines
+        !bul !bur !bdr !bdl 
+        "z"[u(2)l(3)]="a" "z"[d(2)r(3)]="c" !{"a"."c"*\frm<1em>{-}}
+    } \restore}
+    !{"z"."a"."c"}="buttons"
+    % followed by the ADC
+    && !a{ADC}="adc"  
+    %
+    % Sample frequency data feed
+    "buttons"-"adc"-[r]="nadc":[rr]^{f_S \approx 117\,\text{MHz}} 
+    !l{FT & 1024\,pt waveform + scalars on trigger (5\,Hz)}
+    \\[d(.2)]
+    %
+    % Turn by turn data feed
+    !t{\div 220}="d220"-[r]="n220":[rr]^{f_R \approx 533\,\text{kHz}} 
+    !l{
+        FR & 2048\,pt waveform on trigger (5\,Hz) \\
+        TT & Up to 524,288\,pt waveform on demand \\
+        PM & 16,384\,pt waveform on postmortem trigger \\
+        SC & Signal Conditioning
+    }
+    !{*--\frm{\{}}
+    \\[d(.2)]
+    %
+    % BN decimated data feed
+    !t{\div 64}="d64":@{-->}[rrr] [ll]:@{}[rr]^{\text{(on demand)}}
+    !l{BN & Decimated waveform on trigger (5\,Hz)}
+    \\
+    %
+    % FA data feed and interlocks
+    !t{\div 53}="d53"-[r]="n53":@{.>}[rr]^{f_{FA} \approx 10\,\text{kHz}}
+    !l{
+        FF & Fast feedback status and control \\
+        IL & Interlock control \\
+        MS & Mean current measured between triggers
+    }
+    !{*--\frm{\{}}
+    \\
+    %
+    % SA data feed
+    !t{\div 1024}="d1024"-[r]:[rr]^{f_{SA} \approx 10\,\text{Hz}}
+    !l{SA & Scalars at 10\,Hz} \\
+    %
+    % The last annotations
+    [r(0.5)]!s{Configuration and control}
+    [r(2.5)] !l{
+        CF & Configuration \\
+        SE & Sensors and system monitoring \\
+        VE & Version identification
+    }
+    !{*--\frm{\{}}
+    %
+    % Finally the curves joining things together.
+    "ck"-[lll]:"adc"
+    % Original lines without bendy corners
+%    "nadc"-[d(.6)]-[ll]-[d(.6)]-"d220"     % The original working version
+%    "n220"-[d(.6)]-[ll]-[d(.6)]="b64"-"d64" "b64"-[d]-"d53"
+%    "n53"-[d(.5)]-[ll]-[d(.5)]-"d1024"
+    %
+    % More complicated bendy corners
+    %    This is rather horrible really
+    "nadc"!{\ar@{-} 
+        `d/4pt -(0,.6) `^d-(2,0)!/r4pt/ `^r-(0,.6)!/u4pt/ "d220" }
+    "n220"!{\ar@{-}
+        `d/4pt -(0,.6) `^d-(2,0)!/r4pt/ -(0,.6)="b64" 
+        `^r-(0,1.6)!/u4pt/ "d53"}
+    "b64"-"d64"
+    "n53"!{\ar@{-}
+        `d/4pt +(0,-.5) `^d+(-2,0)!/r4pt/ `^r+(0,-0.5)!/u4pt/ "d1024" }
+%
+}
+}
