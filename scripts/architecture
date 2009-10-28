@@ -35,24 +35,24 @@
 #
 #   EPICS_ARCH
 #       Name of EPICS architecture to run on this target, one of:
-#           linux-arm               Original architecture
-#           linux-arm_gnueabi       Libera with EABI installed
-#           linux-arm_gnueabi_2_3   Compatibility EABI library versions
+#           linux-arm           Original architecture
+#           linux-arm_el        Libera with EABI installed
+#           linux-arm_el-2_3    Compatibility EABI library versions
 #
 #   CONFIGDIR
 #       Location of libera and IOC configuration files, one of:
-#           /etc/sysconfig  The original configration file location
-#           /etc/default    The current iTech standard
-#           /etc/libera     The Diamond standard
+#           /etc/sysconfig      The original configuration file location
+#           /etc/default        The current iTech standard
+#           /etc/libera         The Diamond standard
 #
 #   ROOTFS_ARCH
 #       Basic rootfs architecture.  This is set at the same time as
 #       CONFIGDIR, and tracks exactly the same information.
-#           ITECH-v0        iTech release 1.46
-#           ITECH-v1        iTech release 1.60 to 1.82
-#           ITECH-v2        iTech release 2.00 and later
-#           DLS-v0          DLS pre-releaase
-#           DLS-v1          DLS release
+#           ITECH-v0            iTech release 1.46
+#           ITECH-v1            iTech release 1.60 to 1.82
+#           ITECH-v2            iTech release 2.00 and later
+#           DLS-v0              DLS pre-releaase
+#           DLS-v1              DLS release
 
 Error()
 {
@@ -89,22 +89,22 @@ case "$(uname -r)" in
             if [ -e /lib/ld-2.3.6.so ]; then
                 # This looks like an iTech 2.0 Libera.  If we have a
                 # compatibility build we'd better install it.
-                if [ -e "$SOURCE"/bin/linux-arm_gnueabi-2_3 ]; then
-                    # At Diamond we build linux-arm_gnueabi with a newer
+                if [ -e "$SOURCE"/bin/linux-arm_el-2_3 ]; then
+                    # At Diamond we build linux-arm_el with a newer
                     # C library.  This results in compatibility problems
                     # with the elderly 2.3.6 C library installed by
                     # iTech, so a separate 2.3.6 compatible build is
                     # supported which we install if present.
-                    EPICS_ARCH=linux-arm_gnueabi-2_3
+                    EPICS_ARCH=linux-arm_el-2_3
                 else
                     # Fall back to the default EABI build.  Maybe it's
                     # been configured with the right library?
-                    EPICS_ARCH=linux-arm_gnueabi
+                    EPICS_ARCH=linux-arm_el
                 fi
                 CONFIGDIR=/etc/default
                 ROOTFS_ARCH=ITECH-v2
             else
-                EPICS_ARCH=linux-arm_gnueabi
+                EPICS_ARCH=linux-arm_el
                 if [ -e /etc/version ]  &&
                    [ "$(cat /etc/version | cut -c1-4)" = "DLS " ]; then
                     # This must be a DLS distribution.
