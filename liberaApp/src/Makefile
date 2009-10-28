@@ -23,7 +23,7 @@ USR_CXXFLAGS_linux-arm_gnueabi += -Wextra -Wno-unused-parameter
 versions_CXXFLAGS_linux-arm_gnueabi += -Wno-missing-field-initializers
 # Make sure that we pick up the version from install/CONFIG.
 versions_CXXFLAGS += -DLIBERA_VERSION='"$(shell \
-    sed -n '/^VERSION=/{s///;p}' $(TOP)/install/CONFIG)"'
+    sed -n '/^VERSION=/{s///;p}' $(TOP)/install_d/CONFIG)"'
 # Compute a sensible format of build date
 versions_CXXFLAGS += -DBUILD_DATE_TIME='"$(shell date '+%Y-%m-%d %H:%M')"'
 
