@@ -39,7 +39,7 @@
 SOURCE="$(cd "$(dirname "$0")"/..; pwd)"
 . "$SOURCE"/scripts/architecture
 
-LOCATIONS="$(cat "$SOURCE"/install/locations)"
+LOCATIONS="$(cat "$SOURCE"/install_d/locations)"
 
 
 
@@ -140,7 +140,7 @@ fi  ||
 # wasn't part of the standard distribution for 1.46, and is required by this
 # driver.
 if [ "$ROOTFS_ARCH" == ITECH-v0 -a ! -e /lib/libstdc++.so.6 ]; then
-    LIBC_SO="$(echo -n "$SOURCE"/install/libstdc++.so.6.*)"
+    LIBC_SO="$(echo -n "$SOURCE"/install_d/libstdc++.so.6.*)"
     if [ -f "$LIBC_SO" ]; then
         echo Installing /lib/libstdc++.so.6
         cp "$LIBC_SO" /lib  &&
@@ -152,7 +152,7 @@ if [ "$ROOTFS_ARCH" == ITECH-v0 -a ! -e /lib/libstdc++.so.6 ]; then
 fi
 
 # Generate the notch filters if appropriate
-"$SOURCE"/install/make-notch-filters $NOTCH_FLAG  ||
+"$SOURCE"/install_d/make-notch-filters $NOTCH_FLAG  ||
     Error Problem generating notch filters
 
 
@@ -176,7 +176,7 @@ fi
 
 # Ensure the state directory exists.
 STATE_DIR="$(
-    sed -n '/IOC_STATE_PATH=/{s///;p;q;}' "$SOURCE"/install/CONFIG)"  &&
+    sed -n '/IOC_STATE_PATH=/{s///;p;q;}' "$SOURCE"/install_d/CONFIG)"  &&
 [ -n "$STATE_DIR" ]  &&
 mkdir -p "$STATE_DIR"
 
@@ -194,7 +194,7 @@ mkdir -p "$STATE_DIR"
     sed -r '
         s/^'"$LOCATION"'_(IOC_)/\1/
         /^IOC_/! d
-        ' "$SOURCE"/install/CONFIG
+        ' "$SOURCE"/install_d/CONFIG
     # If libera autostart is configured then add the appropriate entry
     $AUTOSTART  &&  echo 'START_EPICS=yes'
 ) > $CONFIGDIR/epics_ioc
@@ -202,7 +202,7 @@ mkdir -p "$STATE_DIR"
 # Copy over the startup scripts substituting in the hard-wired CONFIGDIR value
 # we've determined.
 for f in libera-driver epics healthd; do
-    sed s:@@CONFIGDIR@@:"$CONFIGDIR": "$SOURCE"/install/$f \
+    sed s:@@CONFIGDIR@@:"$CONFIGDIR": "$SOURCE"/install_d/$f \
         >/etc/init.d/$f
     chmod +x /etc/init.d/$f
 done

@@ -80,18 +80,18 @@ TAR_FILE="$TARGET/libera-epics-$VERSION.tar"
 tar cf "$TAR_FILE" -C.. "$LIBERA_VERSION"
 
 # Now prepare the prebuilt files.
-mkdir install/prebuilt dbd
+mkdir install_d/prebuilt dbd
 # The .db files need libera.dbd to be in place
 cp liberaApp/src/libera.dbd dbd
 make -C liberaApp/Db
-cp db/* install/prebuilt
+cp db/* install_d/prebuilt
 # The .h files are built from python files
 for py in liberaApp/src/*.py; do
-    python2.4 $py >install/prebuilt/$(basename $py .py).h
+    python2.4 $py >install_d/prebuilt/$(basename $py .py).h
 done
 
 # Add the prebuilt files and finish off the distribution
-tar rf "$TAR_FILE" -C.. "$LIBERA_VERSION/install/prebuilt"
+tar rf "$TAR_FILE" -C.. "$LIBERA_VERSION/install_d/prebuilt"
 gzip -f "$TAR_FILE"
 
 echo "Source distribution built ok in: $TAR_FILE.gz"
@@ -105,7 +105,7 @@ if ((BINARY)); then
     make
     make -C docs
 
-    install/install-ioc "$INSTALL_DIR"
+    install_d/install-ioc "$INSTALL_DIR"
     cp -a COPYING opi docs "$INSTALL_DIR"
     ln -s docs/INSTALL.txt "$INSTALL_DIR"
     

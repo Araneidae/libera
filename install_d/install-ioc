@@ -73,9 +73,9 @@ for dir in bin dbd db; do
 done
 
 # Copy over the installation specific files into the install directory.
-mkdir -p "$TARGET"/install  
+mkdir -p "$TARGET"/install_d
 for f in $INSTALL_FILES; do
-    cp "$SOURCE"/install_d/$f "$TARGET"/install
+    cp "$SOURCE"/install_d/$f "$TARGET"/install_d
 done
 
 # Copy over the scripts
@@ -97,7 +97,7 @@ GNU_DIR="$(
 CPP_SO="$GNU_DIR/arm-linux/lib/libstdc++.so.6"
 if [ -n "$GNU_DIR" -a -f "$CPP_SO" ]; then
     CPP_SO_="$(readlink -fn "$CPP_SO")"  &&
-    cp "$CPP_SO_" "$TARGET"/install
+    cp "$CPP_SO_" "$TARGET"/install_d
 fi
 
 
