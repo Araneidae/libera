@@ -40,7 +40,7 @@
 #include "thread.h"
 #include "trigger.h"
 #include "convert.h"
-#include "configure.h"
+#include "attenuation.h"
 #include "waveform.h"
 #include "numeric.h"
 #include "interlock.h"
@@ -123,9 +123,11 @@ private:
                 ABCD = NewABCD;
                 ABCDtoXYQS(&ABCD, &XYQS, 1);
                 PowerAndCurrentFromS(XYQS.S, Power, Current);
-                NotifyInterlockCurrent(Current);
                 MaxAdc = ReadMaxAdc();
                 Interlock.Ready();
+                
+                NotifyInterlockCurrent(Current);
+                NotifyMaxAdc(MaxAdc);
             }
         }
     }

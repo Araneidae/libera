@@ -167,7 +167,7 @@ def longIn(name, LOPR=None, HOPR=None, EGU=None, MDEL=-1, **fields):
         MDEL = MDEL,  EGU  = EGU,
         LOPR = LOPR,  HOPR = HOPR, **fields)
 
-def longOut(name, DRVL=None, DRVH=None, **fields):
+def longOut(name, DRVL=None, DRVH=None, EGU=None, **fields):
     return Libera.longout(name + '_S', address=name,
         OMSL = 'supervisory',
         DRVL = DRVL, DRVH = DRVH, **fields)
@@ -231,12 +231,13 @@ def __makeInOut(record, mkIn, mkOut):
 
 boolInOut = __makeInOut(records.bo, boolIn, boolOut)
 mbbInOut  = __makeInOut(records.mbbo, mbbIn, mbbOut)
+longInOut = __makeInOut(records.longout, longIn, longOut)
 
 
 __all__ = [
     'Libera', 'ChannelName',
     'aIn',      'aOut',
     'boolIn',   'boolOut',  'boolInOut',
-    'longIn',   'longOut',
+    'longIn',   'longOut',  'longInOut',
     'mbbIn',    'mbbOut',   'mbbInOut',
     'stringIn', 'Waveform']

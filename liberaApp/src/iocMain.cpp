@@ -62,12 +62,11 @@
 #include "booster.h"
 #include "meanSums.h"
 #include "versions.h"
-
 #include "fastFeedback.h"
-
 #include "events.h"
 #include "convert.h"
 #include "configure.h"
+#include "attenuation.h"
 #include "timestamps.h"
 
 
@@ -256,7 +255,9 @@ static bool InitialiseLibera()
         /* Initialise conversion code.  This needs to be done fairly early as
          * it is used globally. */
         InitialiseConvert()  &&
-        /* Initialise Libera configuration: switches, attenuators, etc. */
+        /* Initialise attenuation management. */
+        InitialiseAttenuation()  &&
+        /* Initialise Libera configuration: switches, etc. */
         InitialiseConfigure()  &&
         /* Timestamp and clock management. */
         InitialiseTimestamps()  &&

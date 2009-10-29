@@ -44,7 +44,7 @@
 #include "trigger.h"
 #include "events.h"
 #include "convert.h"
-#include "configure.h"
+#include "attenuation.h"
 #include "waveform.h"
 #include "numeric.h"
 #include "cordic.h"

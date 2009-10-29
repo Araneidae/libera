@@ -242,7 +242,7 @@ def SlowAcquisition():
 # geometry and a variety of other configuration settings.
 def Config():
     # The number of attenuators depends on whether we're Electron or
-    # Brilliance.  Annoyingly we need to be given this number twice!
+    # Brilliance.
     ATTEN_COUNT = Parameter('ATTEN_COUNT')
     MAX_ATTEN = 62
     
@@ -312,7 +312,7 @@ def Config():
     true_atten = aIn('ATTEN:TRUE', 0, MAX_ATTEN,
         EGU = 'dB',     PREC = 2,   PINI = 'YES',
         DESC = 'Corrected attenuator setting')
-    longOut('ATTEN', 0, MAX_ATTEN, EGU = 'dB',
+    longInOut('ATTEN', 0, MAX_ATTEN, EGU = 'dB',
         FLNK = true_atten,
         DESC = 'Attenuator setting')
     Waveform('ATTEN:OFFSET_S', address = 'ATTEN:OFFSET',
@@ -322,6 +322,13 @@ def Config():
     longOut('ATTEN:DISP', -MAX_ATTEN, MAX_ATTEN, EGU = 'dB',
         FLNK = true_atten,
         DESC = 'Attenuator displacement')
+    
+    boolOut('ATTEN:AGC', 'AGC off', 'AGC on',
+        DESC = 'Enables attenuator AGC')
+    longOut('ATTEN:AGC:DN', 0, 100, '%',
+        DESC = 'AGC drop threshold')
+    longOut('ATTEN:AGC:UP', 0, 100, '%',
+        DESC = 'AGC raise threshold')
 
     # Scaling factor for conversion to bunch charge and stored current.
     aOut('ISCALE', 0, 20000, 
