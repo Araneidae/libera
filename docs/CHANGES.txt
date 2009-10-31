@@ -1,6 +1,28 @@
 Change history of Libera EPICS Driver development
 =================================================
 
+2009/11/02 Version 2.05
+-----------------------
+Mostly incremental changes, but supports some new features.  Version number
+stepped to match current Libera release.
+
+The following major changes are in this release:
+
+ - Support for simple (but rapid, 10dB/s) ``automatic gain control''.
+ - Add support for internal postmortem triggers where supported by FPGA.
+ - Add support for postmortem trigger offset where supported by driver.
+ - Default release now based on EPICS 3.14.11
+
+Some minor changes:
+
+ - Allow 25 minutes for NTP daemon to synchronise before reporting NTP status
+   in overall clock health: the standard health daemon can take this long.
+ - A few relics have been tidied up.
+ - The PV documentation is now more complete.
+ - Timestamps on FT records are now more accurate.
+ - Spike removal length parameter is now an mbbo selection: this may cause an
+   incompatibility on upgrade; if so, simply reset spike removal length.
+
 
 2009/07/17 Version 2.00.0
 -------------------------

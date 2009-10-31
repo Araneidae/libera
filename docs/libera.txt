@@ -21,8 +21,6 @@ mailto:michael.abbott@diamond.ac.uk[].
 
 To be notified of updates to this software please subscribe to the EPICS
 tech-talk mailing list http://www.aps.anl.gov/epics/tech-talk/index.php[].
-Releases will also be notified through the iTech forum
-http://www.i-tech.si/forum/[].
 
 
 Do please read the following attached files:
@@ -30,11 +28,12 @@ Do please read the following attached files:
 `COPYING`:: This contains the standard GNU license, and all files in this
 release are distributed under this license.
 
-`INSTALL`:: Read this file for detailed build and install instructions.
+`INSTALL.{txt,html}`:: Read this file for installation instructions using the
+pre-built distribution.
 
-`CHANGES`:: Records the change history of this driver.
+`CHANGES.{txt,html}`:: Records the change history of this driver.
 
-`PROBLEMS`:: Known problems in this release.
+`PROBLEMS`:: Known problems in this release (rather out of date.)
 
 
 This release of the Libera EPICS driver provides the following functionality:
@@ -245,6 +244,9 @@ The maximum window readout length of 32768 can be be modified at IOC start
 time by editing the configuration setting `IOC_TT_WINDOW` in
 `/etc/sysconfig/epics_ioc`.
 
+// Internal PVs:
+// FANA, REARM::
+
 
 Booster (<group> = BN):
 -----------------------
@@ -318,6 +320,55 @@ the `WF`<iq> waveforms.  The bits are numbered (from lsb to msb) thus:
 +
 The remaining four bits repeat the same sequence.
 
+`MODE_S`, `REARM_S`, `READY`::
+Postmortem triggering can be configured for one-shot triggering if desired by
+setting `MODE_S` to ``One Shot''.  In this mode `READY` indicates whether PM
+trigger will be captured, and `REARM_S` must be processed to re-enable capture
+once a postmortem has been captured.
+
+`OFFSET_S`::
+If a version 2 driver is installed then the postmortem trigger delay can be
+configured.
+
+If a version 2 FPGA is installed then postmortem triggering can be configured
+from multiple sources.
+
+`SOURCE_S`::
+Configures the postmortem trigger source, can be one of ``External'' for
+normal triggering from the hardware PM trigger, ``Interlock'' to trigger on
+an interlock drop event, or ``Settings'' to trigger on the trigger settings
+below.
+
+`MAXX_S`, `MINX_S`, `MAXY_S`, `MINY_S`, `TIME_S`, `OVER_S`, `OVER_PC_S`::
+These settings are the same as the correspong `IL` interlock settings, and
+configure the operation of the internally generated postmortem trigger when
+`SOURCE_S` is set to ``Settings''.  These settings are not designed for
+general use.
+
+
+
+Triggered Mean Sum (<group> = MS):
+----------------------------------
+
+The following PVs provide access to current averaged between triggers.  This
+is only available with a version 2 FPGA.
+
+`ENABLE_S`::
+Enables processing of mean sum calculations.  The calculations are low cost,
+so there is little reason to disable this.
+
+`COUNT`::
+Number of samples (in FA samples, approximately 10kHz) in this capture.
+
+`MEANS`, `MEANP`, `MEANI`::
+Mean sum (in arbitrary units, equivalent to `SA:S`), input power (in dBm,
+subject to calibration), and computed current (as configured by `CF:ISCALE_S`)
+between the last two triggers.
+
+`DELTAS`, `DELTAI`::
+Change in mean sum and computed current over the last three triggers.
+
+
 
 Interlock Control (<group> = IL):
 ---------------------------------
@@ -354,10 +405,6 @@ pole at 1-2^-K^ per sample for K in the range 0..6.
 This can be set to Enabled to enable ADC overflow detection even when
 the interlock is otherwise disabled.
 
-`ILIMIT_S`:
-The interlock will automatically Enabled when the beam current,
-measured by `SA:CURRENT`, exceeds this value.
-
 `STATE`::
 `STATE` records whether the interlock is currently dropped or has been
 dropped within the last 0.5 seconds.  
@@ -379,6 +426,9 @@ reason bits with the following meanings:
 +
 This field should be manually set to zero after the interlock reason
 has been recorded.
+
+// The following internal PVs associated with REASON are not documented:
+// CHK_REASON, RAW_REASON, POKE::
 
 `TEST_S`::
 Setting this PV to "Interlock Test" will unconditionally force the
@@ -460,10 +510,6 @@ Configures the operation of the "digital signal conditioning" (DSC)
 daemon: this controls channel gains during automatic rotation of the
 multiplexing switch.
 
-`WRITEDSC_S`::
-Processing this PV causes the current DSC settings to be written to
-persistent storage for reloading the next time the IOC is restarted.
-
 `ATTEN_S`, `ATTEN:DISP_S`::
 These two settings are added together to control the attenuator setting in dB.
 The final setting can be a value between 0 and 62dB for Libera Electron or
@@ -505,6 +551,18 @@ be set to any number between 0 and 2047.  The delay is in Libera sample
 clocks, or steps of approximately 8ns.  This setting is not particulary
 useful.
 
+`ATTEN:AGC_S`, `ATTEN:AGC:UP_S`, `ATTEN:AGC:DN_S`::
+If `ATTEN:AGC_S` is set to ``AGC on'' then a simple form of automatic gain
+control is enabled: this will only work on a version of Libera with a working
+`SA:MAXADC` reading.
++
+Every 100ms the field `SA:MAXADC_PC` is compared with `ATTEN:AGC:UP_S` and
+`ATTEN:AGC:DN_S`.  If the reading is too high then the attenuator setting
+`ATTEN_S` is incremented by 1dB, if too low then it is decremented by 1dB.
+This results in a quick tracking (10dB/s) of beam intensity within the
+configured limits.
+
+
 The following configuration options are only available if a version 2.0 or
 higher FPGA is loaded.
 
@@ -517,7 +575,7 @@ feature is enabled.
 Note that although spike removal is performed on turn by turn data, it does
 not affect the normal turn by turn waveforms (`FR`, `TT`, `PM`, `BN`).
 
-`SR:AVESTOP_S`, `SR:AVEWIN_S`, `SR:SPIKEST_S`, `SR:SPIKEWIN_S`:: 
+`SR:AVESTOP_S`, `SR:AVEWIN_S`, `SR:SPIKEST_S`, `SR:SPIKEWIN_S`::
 These settings control the operation of spike removal.
 
 `SR:DEBUGWF`::
@@ -657,20 +715,33 @@ Libera is correctly synchronised to an NTP server.
 synchronisation source (16 means not synchronised), and `SERVER` identifies
 the NTP server to which we are synchronised.
 
+// The following records are internal and do not need documentation here:
+// TICK_CALC, TIME, TIMEFAN, TIMEFAN1::
+
 
 Sensors (<group> = SE):
 -----------------------
 
-`TEMP_MB`, `TEMP_RF`::
+`TEMP`, `TEMP_MB`, `TEMP_RF1`, `TEMP_RF2`::
 Internal Libera temperatures.  `TEMP_MB` measures the Libera motherboard
-temperature.  If the Brilliance RF board is installed then `TEMP_RF` measures
-the RF board temperature, otherwise it will read zero.  These temperatures
-should be maintained at a stable level by the health daemon.
+temperature.  If the Brilliance RF board is installed then `TEMP_RF1` and
+`TEMP_RF2` measure the RF board temperature, otherwise it will read zero.
+These temperatures should be maintained at a stable level by the health
+daemon.
++
+`TEMP` is the sensor actually monitored by the health daemon, and is either
+`TEMP_MB` on Libera Electron, or `TEMP_RF1` on Libera Brilliance.
 
-`FAN<fan>`, `FAN<fan>_SET`, `FAN<fan>_ERR`::
-Internal fan speeds, normally running between 3000 and 5000 RPM, for <fan> = 1
-or 2.  `FAN<fan>_SET` is the set speed for each fan (as set by the health
-daemon) and `FAN<fan>_ERR` is the tracking error between the actual and set
+`SETTEMP_S`::
+The health daemon has a very limit range of fan speeds available to it, so in
+practice it can only be expected to stabilise the temperature close to the
+natural target temperature.  This PV sets the target temperature for the
+health daemon.
+
+`FAN`<fan>, `FAN`<fan>`_SET`, `FAN`<fan>`_ERR`::
+Internal fan speeds, normally running between 4200 and 5000 RPM, for <fan> = 1
+or 2.  `FAN`<fan>`_SET` is the set speed for each fan (as set by the health
+daemon) and `FAN`<fan>`_ERR` is the tracking error between the actual and set
 fan speeds -- an excessive tracking error can be a sign of a failed fan, and
 contributes to the overall health status.
 
@@ -697,7 +768,7 @@ Time since Libera was last rebooted in hours.
 `EPICSUP`::
 Time since the EPICS IOC was restarted in hours.
 
-`VOLT<1-8>`, `VHEALTH`::
+`VOLT`<1-8>, `VHEALTH`::
 Eight internal power supply voltages are monitored by Libera and
 reported through the PVs `VOLT1` to `VOLT8`.  Voltages outside 5 or 10
 percent are reported with minor and major severity EPICS alarms
@@ -711,6 +782,9 @@ observable noise on the RF board).  This mode of operation is not
 intended for normal operation: *DO NOT OPERATE LIBERA IN THIS MODE FOR
 EXTENDED PERIODS.*  The health daemon is also disabled when sensors are
 disabled.
+
+// Internal PV:
+// VOLTSOK::
 
 
 Signal Conditioning (<group> = SC):
@@ -751,6 +825,86 @@ captured as soon as `INTERVAL_S` has expired, when enabled conditioning will
 then wait for the next trigger.
 
 
+Fast Feedback (<group> = FF):
+-----------------------------
+
+These PVs control the Diamond Fast Feedback communication controller, and are
+only enabled if the controller is detected by the EPICS driver on startup.  
+
+`BPMID_S`::
+Configures the communication controller ID for this Libera.  Each node on
+the network must have a unique ID in the range 0 to 255.
+
+`BPM_COUNT`::
+Total number of nodes on the network detected by this Libera.
+
+`DATA_SELECT_S`::
+Selects the data to be transmitted by this Libera: should normally be
+``Positions'', but ``Timestamps'' can be selected for network debugging.
+
+`FRAMELEN_S`::
+Duration of communication phase in communication control clock cycles
+(106.25MHz).  Incoming packets are ignored outside this period: a value
+between 5000 and 9000 is normally appropriate, depending on network topology.
+
+
+`PROCESS_TIME`::
+Time from start of communication phase until last packet was received, in
+communication controller clock cycles.
+
+`STOP_S`, `START_S`::
+To stop the communication controller process the `STOP_S` PV, to restart
+process `STOP_S` and then process `START_S`: communication will then resume on
+the next trigger.
+
+`TIMEFRAME`::
+Counts total number of communication time frames, modulo 16-bits.
+
+`VERSION`::
+Communication controller FPGA firmware version.
+
+The following PVs manage the four communication links, and in the following
+descriptions <link> can be `LINK1`, `LINK2`, `LINK3` or `LINK4`.
+
+<link>`:LOOPBACK_S`::
+Controls link loopback.  Options are: ``No loopback'' for normal
+communication, ``Parallel'' for loopback before 8B/10B conversion, ``Serial''
+for physical loopback after serialisation.
+
+<link>`:PARTNER`::
+Identifies the BPM Id of the node sending to this link.
+
+<link>`:TX_CNT`, <link>`:RX_CNT`::
+Number of packets sent and received as a 16-bit counter.
+
+<link>`:RX_UP`, <link>`:TX_UP`::
+Link status.  Note that `TX_UP` will only be ``down'' when the link is enabled
+if there is an internal Rocket I/O port fault, whereas `RX_UP` records the
+presence of a valid input data stream.
+
+<link>`:ENABLE_S`::
+Enables selected link for input and output.
+
+<link>`:FRAME_ERR`, <link>`:SOFT_ERR`, <link>`:HARD_ERR`::
++
+Error counts per communication link.  Frame Errors include (1) Corrupted
+Frames where ``Start of Frame'' arrives, but ``End of Frame'' does not arrive
+within a timeout period.  (2) CRC errors.
++
+Soft Errors include (1) Receiver disparity error which usually indicates data
+corruption (bit errors) or transmission of an invalid control character, (2)
+8B/10B encoding error which means that the received data is not in the 8B/10B
+tables.
++
+Hard Errors include (1) RX Buffer Status error which indicates if an
+overflow/underflow error has occurred on internal RocketIO RX buffers, (2)
+Realignment error which indicates whenever the serial data is realigned from
+a comma character in the data stream. 
+
+// The following internal PV is not documented:
+// PROCESS_S::
+
+
 Version Identification (<group> = VE):
 --------------------------------------
 
@@ -762,6 +916,9 @@ Date and time this IOC was compiled.
 
 `EPICS`::
 EPICS version used to build this IOC.
+
+`COMPILER`, `LIBRARY`::
+Compiler version and libc version used to build this IOC.
 
 `ABI`::
 ABI identification (3=>EABI).  Newer ARM distributions use the ``Embedded
@@ -796,23 +953,19 @@ Architecture identification.  This EPICS driver is designed to work correctly
 on the following distributions:
 +
 --
-`ITECH-v0`::
-Libera 1.46 running on the original Libera Linux with 2.4 kernel and
-linuxthreads library.
+`ITECH-v0`:: Libera 1.46 running on the original Libera Linux with 2.4 kernel
+and linuxthreads library.
 
-`ITECH-v1`:: 
-Typically Libera 1.60 to 1.82 running on an updated Libera Linux with a 2.6
-kernel, still using the linuxthreads library and the original ABI.
+`ITECH-v1`:: Typically Libera 1.60 to 1.82 running on an updated Libera Linux
+with a 2.6 kernel, still using the linuxthreads library and the original ABI.
 
-`ITECH-v2`::
-Libera 2.00 and beyond running on an updated version of the `ITECH-v1`
-architecture: this uses the NPTL library and EABI to provide improved
-performance and stability.
+`ITECH-v2`:: Libera 2.00 and beyond running on an updated version of the
+`ITECH-v1` architecture: this uses the NPTL library and EABI to provide
+improved performance and stability.
 
-`DLS-v0`, `DLS-v1`::
-A Diamond Light Source generated Linux distribution with a more recent kernel
-and libraries, using NPTL and EABI.  The `-v0` release is used for internal
-testing, `-v1` will be the final working release.
+`DLS-v0`, `DLS-v1`:: A Diamond Light Source generated Linux distribution with
+a more recent kernel and libraries, using NPTL and EABI.  The `-v0` release is
+used for internal testing, `-v1` will be the final working release.
 --
 
 `ROOTFS`::
@@ -821,8 +974,8 @@ distribution.  Unfortunately the validity of this depends hugely on the value
 of `ARCH`, in particular for `ITECH-v0` there are no reliable identification
 strings!
 
-// `FPGA`::
-// FPGA version
+`FPGA`::
+FPGA version
 
 `COMPILED`::
 FPGA ``compiled'' register.  This register was originally intended to be used
@@ -864,40 +1017,59 @@ in this register are recognised by the EPICS driver:
 |0      |No     |Grouping           |
 |1      |No     |Desy Molex         |
 |2-3    |No     |Gigabit Ethernet   |
-Not supported by DLS EPICS driver
+    Not supported by DLS EPICS driver
 |4-5    |Maybe  |DDC filter         |
-0 => Standard DDC filter, 1 => modified boxcar filter (MAF)
+    0 => Standard DDC filter, 1 => modified boxcar filter (MAF)
 |6      |Yes    |DLS fast feedback  |
-This enables support for the fast feedback controller.
+    This enables support for the fast feedback controller.
 |7-22   |No     |Reserved           |
 |23     |Yes    |DLS FPGA           |
-If set used to identify DLS FPGA.
+    If set used to identify DLS FPGA.
 |24-27  |Yes    |Instrument Type    |
-0 => Libera Electron, 1 => Libera Brilliance
+    0 => Libera Electron, 1 => Libera Brilliance
 |28-31  |Yes    |Instrument class   |
-Must be 0 for Electron Beam Position Monitor.
+    Must be 0 for Electron Beam Position Monitor.
 |=====
 --
 
-`BR`::
-Libera Brillance detected
+`BR`, `BRHW`::
+Libera Brillance detected.  `BR` is set if the Libera Brilliance FPGA is
+configured and `BRHW` if the Brilliance RF board is detected.  It is a serious
+error if these two do not match!  
 
 `OLDBR`::
-Old Brilliance attenuators
+This detects a compatibility mode required for correct operation of Brilliance
+attenuator settings on older versions of the FPGA.
 
 `DLS`::
-DLS FGPA
+Set if the DLS FGPA installed.
 
 `FF`::
-Fast Feedback enabled
+Diamond Fast Feedback communication controller enabled.
+
+`GBETH`::
+I-Tech gigabit ethernet communication controller detected.
 
 `MAF`::
-Boxcar filter present
+Boxcar filter present.
+
+`ITMAXADC`::
+Detects presence of Instrumentation Technologies implementation of the SA
+MAXADC register.
+
+`DRIVER2`::
+Detects presence of Libera 2.00+ kernel driver, required for postmortem
+trigger control.  Actually mirrors `ABI` = 3.
+
+`FPGA2`::
+Detects Libera 2.00+ version of FPGA, required for a number of more recent
+useful features.
 
 
 
 Other (no group):
 -----------------
+// Note: this must come after other groups for check-pv-docs to work
 
 `VERSION`::
 Copy of `VE:VERSION` for compatibility.

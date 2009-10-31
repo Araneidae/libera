@@ -9,7 +9,11 @@ DOCUMENTS = libera CHANGES
 default: $(patsubst %, %.html, $(DOCUMENTS))
 
 
-.PHONY: clean
+.PHONY: clean check-pv-docs
 clean:
 	rm -f *.html
 
+check-pv-docs:
+	./check-pv-docs
+
+libera.html: check-pv-docs

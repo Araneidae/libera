@@ -106,7 +106,9 @@ if ((BINARY)); then
     make -C docs
 
     install_d/install-ioc "$INSTALL_DIR"
-    cp -a COPYING opi docs "$INSTALL_DIR"
+    cp -a COPYING README opi "$INSTALL_DIR"
+    mkdir "$INSTALL_DIR"/docs
+    cp docs/*.txt docs/*.html "$INSTALL_DIR"/docs
     ln -s docs/INSTALL.txt "$INSTALL_DIR"
     
     tar czf "$INSTALL_TAR" -C "$TEMP_ROOT" "$INSTALL"

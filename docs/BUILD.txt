@@ -1,12 +1,15 @@
-Libera EPICS driver version 1.46.4, for use with Libera drivers version 1.46,
-1.60, 1.82 and 2.00.
+Libera EPICS driver version 2.05, for use with Libera drivers version 1.46,
+1.60, 1.82 and 2.xx.
 
 This document has not been updated for the 2.00 release, in particular the
 procedure described here for building the cross compiler will not work for the
-2.00 EABI target.  In brief, I recommend crosstool-ng for this.
+2.00 EABI target.  Similarly, the build for the ntp daemon will not work
+correctly either anymore: you can use the (slightly inferior) ntp daemon
+integrated into the Libera 2.00 distribution instead.
 
 
-Note that this release has been tested with gcc 3.4.5 and glibc 2.3.6.  Using
+
+Note that release 1.46 was tested with gcc 3.4.5 and glibc 2.3.6.  Using
 this tool chain will involve some extra installation work (see below) and
 makes first turn mode less usable (see the PROBLEMS file), but the overall
 increase in system stability is worthwhile.
@@ -245,6 +248,7 @@ Libera driver version to use.
 
     EPICS Driver (date)         Compatible Libera Drivers
     -------------------         -------------------------
+    2.05   (2009-11-02)         1.46, 1.60, 1.82, 2.xx (+Brilliance)
     2.00.0 (2009-07-17)         1.46, 1.60, 1.82, 2.xx (+Brilliance)
     1.46.4 (2008-07-14)         1.46, 1.60, 1.82 (+Brilliance)
     1.46.1 (2007-09-27)         1.46

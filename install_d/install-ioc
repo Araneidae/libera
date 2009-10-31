@@ -91,9 +91,10 @@ cp "$SOURCE"/runioc "$TARGET"
 # compiler than used for the original distibution, and the C++ .so needs to
 # be installed.  Hunt it down here and place it ready for installation.
 GNU_DIR="$(
-    cd "$HERE"
-    make -pn BUILD_ARCHS=linux-arm 2>/dev/null |
-    sed -n '/^GNU_DIR = /{s///;p;q;}')"
+    make -C "$SOURCE"/configure -pn linux-arm |
+    # This is annoying: can get the local GNU_DIR in the list as well; assume
+    # the cross compiler is *not* in /usr
+    sed -n '/^GNU_DIR = /{s///;\:/usr:!p;}')"
 CPP_SO="$GNU_DIR/arm-linux/lib/libstdc++.so.6"
 if [ -n "$GNU_DIR" -a -f "$CPP_SO" ]; then
     CPP_SO_="$(readlink -fn "$CPP_SO")"  &&

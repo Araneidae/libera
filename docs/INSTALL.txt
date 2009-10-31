@@ -26,10 +26,10 @@ on Libera.
 2.  Modify the file ioc/install/CONFIG to suit your target if necessary.
 
 3.  Run the command:
-    /mnt/nfs/ioc/install/libera-install-ioc -h
+    /mnt/nfs/ioc/install_d/libera-install-ioc -h
 to see the possible installation options.  Normally installation should be
 performed using the command
-    /mnt/nfs/ioc/install/libera-install-ioc -fas SR
+    /mnt/nfs/ioc/install_d/libera-install-ioc -fas SR
 This will ensure that all the necessary files are copied to the Libera (-f),
 the IOC is started automatically when Libera is rebooted (-a), and the IOC is
 started immediately (-s).  If necessary use -w on newer versions of Libera.
