@@ -37,7 +37,7 @@ CROSS_COMPILER_TARGET_ARCHS += linux-arm_el-2_3
 #           http://scratchbox.org/debian/dists/stable/main/binary-i386/
 
 # Identify which python interpreter to use.  Must be at least version 2.4.
-PYTHON = python
+PYTHON = python2.4
 
 # Identifies either the path to the IOC builder python library or its
 # pkg_resources version identification.  Very simple test: if it begins with /

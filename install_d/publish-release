@@ -101,6 +101,9 @@ RELEASE_JOB=Release-Libera-$VERSION.sh
 # prematurely) and then rename it make it happen.
 cd "$QUEUE_DIR"  &&
 cat <<EOF  >.$RELEASE_JOB  &&
+SVN_ROOT=http://serv0002.cs.diamond.ac.uk/repos/controls
+export HOST_ARCH=linux-x86
+PATH=$PATH:/dls_sw/tools/bin
 cd "$PROD_ROOT"  &&
 svn co "\$SVN_ROOT/$RELEASE_PATH/$VERSION"  &&
 cd $VERSION  &&
