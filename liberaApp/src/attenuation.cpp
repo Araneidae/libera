@@ -57,7 +57,7 @@ static int CurrentScale = 100000000;
 /* AGC control. */
 static bool AgcEnable = false;
 static int AgcUpThreshold = 70;
-static int AgcDownThreshold = 10;
+static int AgcDownThreshold = 20;
 
 static READBACK<int> *AttenReadback = NULL;
 
@@ -176,7 +176,7 @@ static bool UpdateAttenuation(bool ForceUpdate)
     }
 }
 
-/* Called from EPICS whenever any attenuator parameter has changed. */
+/* Called from EPICS when the attenuation offset or delta has changed. */
 
 static void DoUpdateAttenuation()
 {
@@ -204,13 +204,15 @@ void NotifyMaxAdc(int MaxAdc)
             NewAttenuation += 1;
         else if (Percent <= AgcDownThreshold)
             NewAttenuation -= 1;
+
+        /* Ensure the new attenuation doesn't go outside the selectable
+         * bounds. */
         if (NewAttenuation < 0)   NewAttenuation = 0;
         if (NewAttenuation > 62)  NewAttenuation = 62;
         if (NewAttenuation != SelectedAttenuation)
         {
-            SelectedAttenuation = NewAttenuation;
-            if (UpdateAttenuation(false))
-                AttenReadback->Write(SelectedAttenuation);
+            SelectNewAttenuation(NewAttenuation);
+            AttenReadback->Write(NewAttenuation);
         }
     }
 }
