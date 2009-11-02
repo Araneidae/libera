@@ -40,31 +40,16 @@ TAR_FILE=ntp-$VERSION.tar.gz
 NTP_DIR=ntp-$VERSION
 # Location on host system of NTP distribution
 TAR_DIR=/dls_sw/prod/targetOS/tar-files/
+# Set this to the path to the arm-linux cross compiler.
+GNU_DIR=/usr
+GNU_TARGET=linux-arm
 
 cd "$(dirname "$0")"
 HERE="$(pwd)"
 INSTALL_DIR="$HERE/install"
 
-# Figure out where the cross-compiler is.  We do this by asking the EPICS
-# makefile, which certainly knows!
-GNU_DIR="$(
-    cd "$HERE/../.."
-    make -pn BUILD_ARCHS="$BUILD_ARCHS" 2>/dev/null |
-    sed -n '/^GNU_DIR = /{s///;p;q;}')"
 export PATH="$PATH:$GNU_DIR/bin"
 
-GNU_TARGET="$(
-    cd "$HERE/../.."
-    make -pn BUILD_ARCHS="$BUILD_ARCHS" 2>/dev/null |
-    sed -n '/^GNU_TARGET = /{s///;p;q;}')"
-
-echo GNU_DIR="$GNU_DIR"
-echo GNU_TARGET="$GNU_TARGET"
-
-if [ -z "$GNU_DIR" -o -z "$GNU_TARGET" ]; then
-    echo Couldn\'t set up environment
-    exit 1
-fi
 
 # Build everything
 rm -rf "$BUILD_DIR"  &&
