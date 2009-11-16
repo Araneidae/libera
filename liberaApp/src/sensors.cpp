@@ -71,8 +71,14 @@ static int Uptime;      // Machine uptime in seconds
 static int CpuUsage;    // % CPU usage over the last sample interval
 static int EpicsUp;     // EPICS run time in seconds
 
-/* Sensors can be disabled for particularly quiet operation. */
-static bool EnableSensors = true;
+/* The Health Daemon (and associated sensors) can be disabled for particularly
+ * quiet operation, or can simply be turned off for temperature stability. */
+enum {
+    SE_HEALTHD_ON,
+    SE_HEALTHD_OFF,
+    SE_HEALTHD_SILENT
+};
+static int EnableHealthd = SE_HEALTHD_ON;
 static int TargetTemperature = 40;
 
 
@@ -494,7 +500,7 @@ static void ProcessSensors()
 {
     ProcessUptimeAndIdle();
     ProcessFreeMemory();
-    if (EnableSensors)
+    if (EnableHealthd != SE_HEALTHD_SILENT)
         ReadHealth();
     if (MonitorNtp)
         ProcessNtpHealth();
@@ -548,10 +554,10 @@ static void SendHealthCommand(const char * command, ...)
 }
 
 
-static void SetEnableSensors()
+static void SetEnableHealthd()
 {
     /* Ensure the state of the health daemon is in step. */
-    SendHealthCommand(EnableSensors ? "ON\n" : "OFF\n");
+    SendHealthCommand(EnableHealthd == SE_HEALTHD_ON ? "ON\n" : "OFF\n");
 }
 
 
@@ -629,7 +635,7 @@ bool InitialiseSensors(bool _MonitorNtp)
     Publish_ai("SE:EPICSUP", EpicsUp);
     Publish_ai("SE:CPU",     CpuUsage);
 
-    PUBLISH_FUNCTION_OUT(bo, "SE:ENABLE", EnableSensors, SetEnableSensors);
+    PUBLISH_CONFIGURATION(mbbo, "SE:HEALTHD", EnableHealthd, SetEnableHealthd);
     PUBLISH_CONFIGURATION(longout, "SE:SETTEMP",
         TargetTemperature, SetTargetTemperature);
 
@@ -640,7 +646,10 @@ bool InitialiseSensors(bool _MonitorNtp)
     Publish_stringin("CK:SERVER", NTP_server);
 
     InitialiseUptime();
-    SetEnableSensors();
+    if (EnableHealthd == SE_HEALTHD_SILENT)
+        /* Don't preserved silent state across restart. */
+        EnableHealthd = SE_HEALTHD_ON;
+    SetEnableHealthd();
     SetTargetTemperature();
 
     SensorsThread = new SENSORS_THREAD();

@@ -756,8 +756,11 @@ ExtraHealthRecords = []
 
 def Sensors():
     SetChannelName('SE')
-    
-    enable = Enable(ZSV  = 'MAJOR', OSV  = 'NO_ALARM')
+
+    enable = mbbOut('HEALTHD',
+        ('Healthd On',      0, 'NO_ALARM'),
+        ('Healthd Off',     1, 'NO_ALARM'),
+        ('Healthd Silent',  2, 'MAJOR'))
     longOut('SETTEMP', EGU = 'deg C',
         DESC = 'Health daemon target temp')
 
@@ -782,6 +785,8 @@ def Sensors():
             DESC = 'Motherboard temperature',
             HIGH = 55,    HSV  = 'MINOR',
             HIHI = 60,    HHSV = 'MAJOR')]
+
+    fan_health = []
     for i in (1, 2):
         fan_speed = longIn('FAN%d' % i,     4000, 6000, 'RPM',
             DESC = 'Fan %d speed' % i)
@@ -793,7 +798,10 @@ def Sensors():
             EGU  = 'RPM',
             LOLO = -1000,   LLSV = 'MAJOR', LOW  = -500,    LSV  = 'MINOR',
             HIGH = 500,     HSV  = 'MINOR', HIHI = 1000,    HHSV = 'MAJOR')
+        fan_health.append(fan_err)
         temp_monitors.extend([fan_speed, fan_set, fan_err])
+    fan_health = AggregateSeverity('FAN:OK',
+        'Fan controller health', fan_health)
     
     memfree = aIn('FREE', 0, 64, 1./MB, 'MB', 2,
         DESC = 'Free memory',
@@ -825,7 +833,7 @@ def Sensors():
     
     Trigger(False,
         temp_monitors + alarmsensors + voltages + ntp_monitors +
-        [uptime, epicsup, temp_health, all_health])
+        [uptime, epicsup, fan_health, temp_health, all_health])
             
     UnsetChannelName()
 

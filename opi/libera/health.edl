@@ -3,10 +3,10 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 673
-y 378
+x 274
+y 310
 w 320
-h 408
+h 410
 font "helvetica-medium-r-14.0"
 ctlFont "helvetica-medium-r-14.0"
 btnFont "helvetica-bold-r-14.0"
@@ -419,8 +419,10 @@ w 79
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
+fgAlarm
 bgColor index 0
 useDisplayBg
+alarmPv "$(device):SE:FAN:OK"
 value {
   "Speed error:"
 }
@@ -902,9 +904,9 @@ beginObjectProperties
 major 4
 minor 0
 release 0
-x 200
+x 176
 y 172
-w 96
+w 120
 h 24
 fgColor index 14
 fgAlarm
@@ -912,7 +914,7 @@ bgColor index 3
 inconsistentColor index 0
 topShadowColor index 1
 botShadowColor index 11
-controlPv "$(device):SE:ENABLE_S"
+controlPv "$(device):SE:HEALTHD_S"
 font "helvetica-medium-r-14.0"
 endObjectProperties
 

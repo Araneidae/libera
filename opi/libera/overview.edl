@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 1923
-y 57
+x 1924
+y 58
 w 296
 h 400
 font "helvetica-medium-r-14.0"
@@ -896,8 +896,10 @@ w 81
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
+fgAlarm
 bgColor index 0
 useDisplayBg
+alarmPv "$(device):SE:FAN:OK"
 value {
   "Fans (RPM):"
 }

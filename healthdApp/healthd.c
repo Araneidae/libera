@@ -107,7 +107,7 @@ static int controller_KP = -1;
 static int controller_KI = -1;
 
 /* The health daemon can be externally turned on and off. */
-static bool enabled = true;
+static volatile bool enabled = true;
 
 static int verbosity = 0;
 
@@ -249,7 +249,7 @@ static void DispatchCommand(const char * Command)
         else if (strcmp(Command, "OFF") == 0)
         {
             enabled = false;
-            log_message(LOG_WARNING, "Health daemon turned ff");
+            log_message(LOG_WARNING, "Health daemon turned off");
         }
         else
             log_message(LOG_ERR, "Unknown command \"%s\"", Command);
@@ -327,9 +327,9 @@ static bool ReadTemperatures(int *temp_MB, int *temp_RF)
 }
 
 
-bool WriteDevice(const char * device, const char * format, ...)
+static bool WriteDevice(const char * device, const char * format, ...)
     __attribute__((format(printf, 2, 3)));
-bool WriteDevice(const char * device, const char * format, ...)
+static bool WriteDevice(const char * device, const char * format, ...)
 {
     FILE * output;
     bool Ok = TEST_NULL(output = fopen(device, "w"));
@@ -341,6 +341,14 @@ bool WriteDevice(const char * device, const char * format, ...)
         fclose(output);
     }
     return Ok;
+}
+
+static void SetFanSpeed(int speed)
+{
+    log_message(LOG_INFO,
+        "Setting fan speed %d => %s, %s", speed, sensor_fan0, sensor_fan1);
+    WriteDevice(sensor_fan0, "%d", speed);
+    WriteDevice(sensor_fan1, "%d", speed);
 }
 
 
@@ -463,8 +471,7 @@ static void StepControlLoop(int *integral)
         }
 
         /* Write the new target fan speed. */
-        WriteDevice(sensor_fan0, "%d", new_speed);
-        WriteDevice(sensor_fan1, "%d", new_speed);
+        SetFanSpeed(new_speed);
     }
     else
         PressPanicButton("Unable to read temperature", 0, 0);
@@ -474,10 +481,20 @@ static void StepControlLoop(int *integral)
 static void RunControlLoop(void)
 {
     int integral = 0;
+    bool was_enabled = enabled;
     while (true)
     {
-        if (enabled)
+        bool is_enabled = enabled;
+        if (is_enabled)
             StepControlLoop(&integral);
+        else if (was_enabled)
+        {
+            /* On transition from enabled to not enabled set the fan speed to
+             * a sensible idle speed and reset the control loop. */
+            SetFanSpeed(INITIAL_FAN_SPEED);
+            integral = 0;
+        }
+        was_enabled = is_enabled;
         sleep(loop_interval);
     }
 }

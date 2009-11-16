@@ -3,6 +3,12 @@ ASCIIDOC = /home/mga83/local/bin/asciidoc
 %.html: %.txt
 	$(ASCIIDOC) $<
 
+%.xml: %.txt
+	$(ASCIIDOC) -b docbook $<
+
+%.pdf: %.xml
+	docbook2pdf $<
+
 
 DOCUMENTS = libera CHANGES
 
