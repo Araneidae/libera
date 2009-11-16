@@ -842,10 +842,10 @@ captured as soon as `INTERVAL_S` has expired, when enabled conditioning will
 then wait for the next trigger.
 
 
-Fast Feedback (<group> = FF):
------------------------------
+Communication Controller (<group> = FF):
+----------------------------------------
 
-These PVs control the Diamond Fast Feedback communication controller, and are
+These PVs control the Diamond Fast Feedback Communication Controller, and are
 only enabled if the controller is detected by the EPICS driver on startup.  
 
 `BPMID_S`::

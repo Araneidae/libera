@@ -798,7 +798,7 @@ bgColor index 3
 topShadowColor index 1
 botShadowColor index 11
 font "helvetica-bold-r-12.0"
-buttonLabel "Fast Fb"
+buttonLabel "Comms Ctrl"
 numPvs 4
 numDsps 1
 displayFileName {

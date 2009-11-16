@@ -610,14 +610,14 @@ minor 1
 release 0
 x 24
 y 472
-w 81
+w 122
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
 bgColor index 0
 useDisplayBg
 value {
-  "FF enabled?"
+  "Comms Controller?"
 }
 autoSize
 endObjectProperties
@@ -1412,14 +1412,14 @@ minor 1
 release 0
 x 208
 y 472
-w 132
+w 111
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
 bgColor index 0
 useDisplayBg
 value {
-  "Gigabit ethernet FF?"
+  "Gigabit Ethernet?"
 }
 autoSize
 endObjectProperties
