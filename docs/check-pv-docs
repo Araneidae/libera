@@ -26,22 +26,21 @@ cat "$LIBERA"/docs/libera.txt |
 sed -nr '
     # Each group is headed by a line of the form <group> = XX
     /^.*<group> = (..).*:/{
-        s//\1/
-        h
+        s//\1/                      # Extract the group identifier
+        h                           # ... and stash it in hold space
     }
     # Each PV documentation set consists of a line of comma separated PV
     # descriptions with the line ending in ::
     1,/\(no group\):$/{
         /::$/{
             s///                    # Discard the ::
-            T
-            s:^// ::                # Allow for asciidoc comments
-#            \:^//:d                 # Ignore asciidoc comments
+            s:^// ::                # Use asciidoc comments for hidden PVs
             s/`//g                  # Discard the ` characters
         :1
             # This loop adds the group identification in front of each PV
             G                       # Pull group from hold space
-            s/^(.*)\n(..)$/\2:\1/   # Move to start of line
+            T                       # Reset group detection
+            s/^(.*)\n(..)$/\2:\1/   # Move to start of line and detect group
             T                       # Skips lines before first group
             s/, /\n/                # Split line at next ,
             P                       # And print it
@@ -61,14 +60,27 @@ sed -nr '
     }' |
 # Expand the special PV patterns.  These are all documented in libera.txt.
 sed -r '
+    # <channel> -> 1 2 3 4
     /^(.*)<channel>(.*)$/s//\11\2\n\12\2\n\13\2\n\14\2/
+    
+    # <iq> -> AI AQ BI BQ CI CQ DI DQ
     /^(.*)<iq>(.*)$/{
         s//\1AI\2\n\1AQ\2\n\1BI\2\n\1BQ\2\n\1CI\2\n\1CQ\2\n\1DI\2\n\1DQ\2/}
+        
+    # <buttons> -> A B C D
     /^(.*)<buttons>(.*)$/s//\1A\2\n\1B\2\n\1C\2\n\1D\2/
+    
+    # <positions> -> X Y Q S
     /^(.*)<positions>(.*)$/s//\1X\2\n\1Y\2\n\1Q\2\n\1S\2/
+    
+    # <fan> -> 1 2
     /^(.*)<fan>(.*)$/s//\11\2\n\12\2/
+    
+    # <1-8> -> 1 2 3 4 5 6 7 8              (voltage enumerations)
     /^(.*)<1-8>(.*)$/{
         s//\11\2\n\12\2\n\13\2\n\14\2\n\15\2\n\16\2\n\17\2\n\18\2/}
+        
+    # <link> -> LINK1 LINK2 LINK3 LINK4     (communication controller links)
     /^(.*)<link>(.*)$/{
         s//\1LINK1\2\n\1LINK2\2\n\1LINK3\2\n\1LINK4\2/}
     ' |

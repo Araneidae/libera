@@ -345,8 +345,9 @@ static bool WriteDevice(const char * device, const char * format, ...)
 
 static void SetFanSpeed(int speed)
 {
-    log_message(LOG_INFO,
-        "Setting fan speed %d => %s, %s", speed, sensor_fan0, sensor_fan1);
+    if (verbosity > 0)
+        log_message(LOG_INFO,
+            "Setting fan speed %d => %s, %s", speed, sensor_fan0, sensor_fan1);
     WriteDevice(sensor_fan0, "%d", speed);
     WriteDevice(sensor_fan1, "%d", speed);
 }
