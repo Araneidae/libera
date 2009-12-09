@@ -151,19 +151,21 @@ if [ "$ROOTFS_ARCH" == ITECH-v0 -a ! -e /lib/libstdc++.so.6 ]; then
     fi
 fi
 
-# Generate the notch filters if appropriate
-"$SOURCE"/install_d/make-notch-filters $NOTCH_FLAG  ||
-    Error Problem generating notch filters
+# Generate the notch filters if appropriate.  Not needed for DLS rootfs.
+if [ "${ROOTFS_ARCH:0:3}" != DLS ]; then
+    "$SOURCE"/install_d/make-notch-filters $NOTCH_FLAG  ||
+        Error Problem generating notch filters
+fi
 
 
 # If final installation selected then copy over all the run-time files and
-# update the configuration file to point to them.
+# update the configuration file to point to them.  Always remove the /opt/ioc
+# directory: if we're in testing mode we don't want it anyway!
+rm -rf /opt/ioc
 if [ $TARGET == final ]; then
     # Hard-wired target on local file system
     IOC_TARGET=/opt/ioc
-    # Copy over all the runtime files.  First make sure the target directory
-    # is fresh.
-    rm -rf "$IOC_TARGET"  
+    # Copy over all the runtime files.
     umask 22  
     mkdir -p "$IOC_TARGET" "$IOC_TARGET"/bin
     for dir in dbd db bin/$EPICS_ARCH scripts; do
@@ -242,6 +244,7 @@ RCD=/etc/rc$RUNLEVEL.d
 
 ln -fs ../init.d/healthd $RCD/S800healthd
 ln -fs ../init.d/libera-driver $RCD/S801libera-driver
+ln -fs ../init.d/libera-driver $RCD/K200libera-driver
 
 
 if $STARTNOW; then

@@ -980,9 +980,8 @@ with a 2.6 kernel, still using the linuxthreads library and the original ABI.
 `ITECH-v1` architecture: this uses the NPTL library and EABI to provide
 improved performance and stability.
 
-`DLS-v0`, `DLS-v1`:: A Diamond Light Source generated Linux distribution with
-a more recent kernel and libraries, using NPTL and EABI.  The `-v0` release is
-used for internal testing, `-v1` will be the final working release.
+`DLS`:: A Diamond Light Source generated Linux distribution with a more recent
+kernel and libraries, using NPTL and EABI.
 --
 
 `ROOTFS`::

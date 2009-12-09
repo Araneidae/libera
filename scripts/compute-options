@@ -99,7 +99,7 @@ export ABI_VERSION="$(echo /lib/ld-linux.so.* | sed 's/^.*\.so\.//')"
 case $ROOTFS_ARCH in
     ITECH-v0)   ROOTFS_VERSION="$(head -n1 /etc/motd)" ;;   # Best we can do
     ITECH-v*)   ROOTFS_VERSION="$(head -n1 /etc/issue)" ;;  # Looks better
-    DLS-*)      ROOTFS_VERSION="$(cat /etc/version)" ;;     # Best of all
+    DLS*)       ROOTFS_VERSION="$(head -n1 /etc/version)" ;; # Best of all
     *)          ROOTFS_VERSION=unknown ;;                   # Whoops!
 esac
 export ROOTFS_ARCH ROOTFS_VERSION

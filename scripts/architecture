@@ -51,8 +51,7 @@
 #           ITECH-v0            iTech release 1.46
 #           ITECH-v1            iTech release 1.60 to 1.82
 #           ITECH-v2            iTech release 2.00 and later
-#           DLS-v0              DLS pre-releaase
-#           DLS-v1              DLS release
+#           DLS                 DLS rootfs
 
 Error()
 {
@@ -106,10 +105,10 @@ case "$(uname -r)" in
             else
                 EPICS_ARCH=linux-arm_el
                 if [ -e /etc/version ]  &&
-                   [ "$(cat /etc/version | cut -c1-4)" = "DLS " ]; then
+                   [ "$(head -n1 /etc/version | cut -c1-4)" = "DLS " ]; then
                     # This must be a DLS distribution.
                     CONFIGDIR=/etc/libera
-                    ROOTFS_ARCH=DLS-v0
+                    ROOTFS_ARCH=DLS
                 else
                     # Must be an updated iTech distribution?
                     CONFIGDIR=/etc/default
