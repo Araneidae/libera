@@ -1,4 +1,4 @@
-#!/usr/bin/env /home/tools/bin/python2.4
+#!/usr/bin/env dls-python2.4
 # Build a config file for StripTool from EDM
 
 import sys, os, subprocess
