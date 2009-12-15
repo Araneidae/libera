@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 1924
-y 58
+x 1925
+y 59
 w 296
 h 400
 font "helvetica-medium-r-14.0"
@@ -461,9 +461,9 @@ beginObjectProperties
 major 4
 minor 4
 release 0
-x 96
+x 64
 y 240
-w 72
+w 64
 h 16
 controlPv "$(device):SE:UPTIME"
 font "helvetica-medium-r-14.0"
@@ -485,7 +485,7 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 40
+x 16
 y 240
 w 47
 h 16
@@ -505,9 +505,9 @@ beginObjectProperties
 major 4
 minor 4
 release 0
-x 192
+x 144
 y 240
-w 72
+w 56
 h 16
 controlPv "$(device):SE:EPICSUP"
 font "helvetica-medium-r-14.0"
@@ -529,9 +529,9 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 176
+x 136
 y 240
-w 4
+w 8
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -1311,5 +1311,28 @@ endGroup
 visPv "$(device):VE:BR"
 visMin "1"
 visMax "2"
+endObjectProperties
+
+# (Related Display)
+object relatedDisplayClass
+beginObjectProperties
+major 4
+minor 2
+release 0
+x 210
+y 238
+w 72
+h 24
+fgColor index 43
+bgColor index 4
+topShadowColor index 3
+botShadowColor index 3
+font "helvetica-bold-r-14.0"
+buttonLabel "Network"
+numPvs 4
+numDsps 1
+displayFileName {
+  0 "libera/network.edl"
+}
 endObjectProperties
 

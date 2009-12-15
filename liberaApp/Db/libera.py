@@ -802,38 +802,59 @@ def Sensors():
         temp_monitors.extend([fan_speed, fan_set, fan_err])
     fan_health = AggregateSeverity('FAN:OK',
         'Fan controller health', fan_health)
-    
-    memfree = aIn('FREE', 0, 64, 1./MB, 'MB', 2,
-        DESC = 'Free memory',
-        LOW  = 16,      LSV  = 'MINOR',
-        LOLO = 8,       LLSV = 'MAJOR')
-    ramfs = aIn('RAMFS', 0, 64, 1./MB, 'MB', 3,
-        DESC = 'Temporary file usage',
-        HIGH = 1,       HSV  = 'MINOR',
-        HIHI = 16,      HHSV = 'MAJOR')
-    cpu = aIn('CPU', 0, 100, 1e-3, '%', 1,
-        DESC = 'CPU usage',
-        HIGH = 80,      HSV  = 'MINOR',
-        HIHI = 95,      HHSV = 'MAJOR')
+
+    alarmsensors = [
+        aIn('FREE', 0, 64, 1./MB, 'MB', 2,
+            DESC = 'Free memory',
+            LOW  = 16,      LSV  = 'MINOR',
+            LOLO = 8,       LLSV = 'MAJOR'),
+        aIn('RAMFS', 0, 64, 1./MB, 'MB', 3,
+            DESC = 'Temporary file usage',
+            HIGH = 1,       HSV  = 'MINOR',
+            HIHI = 16,      HHSV = 'MAJOR'),
+        aIn('CPU', 0, 100, 1e-3, '%', 1,
+            DESC = 'CPU usage',
+            HIGH = 80,      HSV  = 'MINOR',
+            HIHI = 95,      HHSV = 'MAJOR')]
 
     voltages, voltage_health = Voltages()
-    
-    uptime = aIn('UPTIME', 0, 24*3600*5, 1./3600, 'h', 2,
-        DESC = 'Total system up time')
-    epicsup = aIn('EPICSUP', 0, 24*3600*5, 1./3600, 'h', 2,
-        DESC = 'Time since EPICS started')
+    alarmsensors.append(voltage_health)
+
+    extras = [
+        # Time since booting
+        aIn('UPTIME', 0, 24*3600*5, 1./3600, 'h', 2,
+            DESC = 'Total system up time'),
+        aIn('EPICSUP', 0, 24*3600*5, 1./3600, 'h', 2,
+            DESC = 'Time since EPICS started'),
+        
+        # Channel access counters
+        longIn('CAPVS',  DESC = 'Number of connected PVs'),
+        longIn('CACLNT', DESC = 'Number of connected clients'),
+        
+        # Network statistics
+        aIn('NWBRX', 0, 1e4, 1e-4, 'kB/s', 4,
+            DESC = 'Kilobytes received per second'),
+        aIn('NWBTX', 0, 1e4, 1e-4, 'kB/s', 4,
+            DESC = 'Kilobytes sent per second'),
+        aIn('NWPRX', 0, 1e4, 0.1, 'pkt/s', 1,
+            DESC = 'Packets received per second'),
+        aIn('NWPTX', 0, 1e4, 0.1, 'pkt/s', 1,
+            DESC = 'Packets sent per second'),
+        aIn('NWMRX', 0, 1e4, 0.1, 'pkt/s', 1,
+            DESC = 'Multicast received per second'),
+        aIn('NWMTX', 0, 1e4, 0.1, 'pkt/s', 1,
+            DESC = 'Multicast sent per second')]
 
     # Aggregate all the alarm generating records into a single "health"
     # record.  Only the alarm status of this record is meaningful.
-    alarmsensors = [memfree, ramfs, cpu, voltage_health]
     temp_health = AggregateSeverity(
         'TEMPMON', 'Temperature monitoring', temp_monitors + [enable])
     all_health = AggregateSeverity('HEALTH', 'Aggregated health',
         alarmsensors + ExtraHealthRecords + [temp_health])
     
     Trigger(False,
-        temp_monitors + alarmsensors + voltages + ntp_monitors +
-        [uptime, epicsup, fan_health, temp_health, all_health])
+        temp_monitors + alarmsensors + voltages + ntp_monitors + extras +
+        [fan_health, temp_health, all_health])
             
     UnsetChannelName()
 

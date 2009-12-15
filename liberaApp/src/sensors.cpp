@@ -41,6 +41,10 @@
 #include <fts.h>
 #include <stdint.h>
 
+extern "C" {
+#include <rsrv.h>
+}
+
 #include "device.h"
 #include "persistent.h"
 #include "publish.h"
@@ -326,6 +330,93 @@ static void ReadHealth()
 
 /*****************************************************************************/
 /*                                                                           */
+/*                            Network Monitoring                             */
+/*                                                                           */
+/*****************************************************************************/
+
+static int CasChannelCount;     // Number of connected PVs
+static int CasClientCount;      // Number of connected channel access clients
+
+static int NetBytesRxDelta,   NetBytesRxLast;
+static int NetPacketsRxDelta, NetPacketsRxLast;
+static int NetMultiRxDelta,   NetMultiRxLast;
+static int NetBytesTxDelta,   NetBytesTxLast;
+static int NetPacketsTxDelta, NetPacketsTxLast;
+static int NetMultiTxDelta,   NetMultiTxLast;
+
+
+static bool ReadNetworkStats(
+    int &NetBytesRx, int &NetPacketsRx, int &NetMultiRx,
+    int &NetBytesTx, int &NetPacketsTx, int &NetMultiTx)
+{
+    FILE * input;
+    bool Ok = false;
+    if (TEST_NULL(input = fopen("/proc/net/dev", "r")))
+    {
+        char line[1024];
+        while (fgets(line, sizeof(line), input))
+        {
+            if (strncmp(line, "  eth0", 6) == 0)
+            {
+                Ok = TEST_OK(sscanf(line,
+                    "  eth0:%d %d %*d %*d %*d %*d %*d %d "
+                           "%d %d %*d %*d %*d %*d %*d %d",
+                    &NetBytesRx, &NetPacketsRx, &NetMultiRx,
+                    &NetBytesTx, &NetPacketsTx, &NetMultiTx) == 6);
+            }
+        }
+        fclose(input);
+    }
+    return Ok;
+}
+
+static void ProcessNetworkStats()
+{
+    /* Channel access statistics. */
+    casStatsFetch(
+        (unsigned *)&CasChannelCount, (unsigned *)&CasClientCount);
+
+    int NetBytesRx, NetPacketsRx, NetMultiRx;
+    int NetBytesTx, NetPacketsTx, NetMultiTx;
+    if (ReadNetworkStats(
+            NetBytesRx, NetPacketsRx, NetMultiRx,
+            NetBytesTx, NetPacketsTx, NetMultiTx))
+    {
+#define UPDATE(name) \
+    name##Delta = name - name##Last; \
+    name##Last = name
+        UPDATE(NetBytesRx);
+        UPDATE(NetPacketsRx);
+        UPDATE(NetMultiRx);
+        UPDATE(NetBytesTx);
+        UPDATE(NetPacketsTx);
+        UPDATE(NetMultiTx);
+#undef UPDATE
+    }
+}
+
+
+static void PublishNetworkStats()
+{
+    Publish_longin("SE:CAPVS", CasChannelCount);
+    Publish_longin("SE:CACLNT", CasClientCount);
+
+    /* Read initial values to avoid crazy rates for first 10 seconds! */
+    ReadNetworkStats(
+        NetBytesRxLast, NetPacketsRxLast, NetMultiRxLast,
+        NetBytesTxLast, NetPacketsTxLast, NetMultiTxLast);
+    Publish_ai("SE:NWBRX", NetBytesRxDelta);
+    Publish_ai("SE:NWPRX", NetPacketsRxDelta);
+    Publish_ai("SE:NWMRX", NetMultiRxDelta);
+    Publish_ai("SE:NWBTX", NetBytesTxDelta);
+    Publish_ai("SE:NWPTX", NetPacketsTxDelta);
+    Publish_ai("SE:NWMTX", NetMultiTxDelta);
+}
+
+
+
+/*****************************************************************************/
+/*                                                                           */
 /*                           NTP Status Monitoring                           */
 /*                                                                           */
 /*****************************************************************************/
@@ -500,6 +591,7 @@ static void ProcessSensors()
 {
     ProcessUptimeAndIdle();
     ProcessFreeMemory();
+    ProcessNetworkStats();
     if (EnableHealthd != SE_HEALTHD_SILENT)
         ReadHealth();
     if (MonitorNtp)
@@ -634,6 +726,7 @@ bool InitialiseSensors(bool _MonitorNtp)
     Publish_ai("SE:UPTIME",  Uptime);
     Publish_ai("SE:EPICSUP", EpicsUp);
     Publish_ai("SE:CPU",     CpuUsage);
+    PublishNetworkStats();
 
     PUBLISH_CONFIGURATION(mbbo, "SE:HEALTHD", EnableHealthd, SetEnableHealthd);
     PUBLISH_CONFIGURATION(longout, "SE:SETTEMP",

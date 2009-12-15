@@ -1,0 +1,473 @@
+4 0 1
+beginScreenProperties
+major 4
+minor 0
+release 1
+x 275
+y 311
+w 320
+h 227
+font "helvetica-medium-r-14.0"
+ctlFont "helvetica-medium-r-14.0"
+btnFont "helvetica-bold-r-14.0"
+fgColor index 14
+bgColor index 3
+textColor index 14
+ctlFgColor1 index 14
+ctlFgColor2 index 0
+ctlBgColor1 index 0
+ctlBgColor2 index 14
+topShadowColor index 0
+botShadowColor index 14
+title "Health Detail"
+showGrid
+snapToGrid
+gridSize 8
+disableScroll
+endScreenProperties
+
+# (Exit Button)
+object activeExitButtonClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 216
+y 192
+w 88
+h 24
+fgColor index 25
+bgColor index 3
+topShadowColor index 1
+botShadowColor index 11
+label "EXIT"
+font "helvetica-medium-r-12.0"
+3d
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 0
+y 0
+w 320
+h 32
+font "helvetica-medium-r-18.0"
+fontAlign "center"
+fgColor index 14
+bgColor index 73
+value {
+  "$(device) Network"
+}
+endObjectProperties
+
+# (Shell Command)
+object shellCmdClass
+beginObjectProperties
+major 4
+minor 2
+release 0
+x 4
+y 4
+w 24
+h 24
+fgColor index 14
+bgColor index 3
+topShadowColor index 1
+botShadowColor index 11
+font "helvetica-bold-r-14.0"
+buttonLabel "?"
+numCmds 1
+command {
+  0 "libera-help health"
+}
+includeHelpIcon
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 4
+release 0
+x 216
+y 40
+w 72
+h 16
+controlPv "$(device):SE:CAPVS"
+font "helvetica-medium-r-14.0"
+fgColor index 14
+fgAlarm
+bgColor index 4
+useDisplayBg
+autoHeight
+limitsFromDb
+nullColor index 0
+showUnits
+newPos
+objType "monitors"
+noExecuteClipMask
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 4
+release 0
+x 8
+y 40
+w 192
+h 16
+controlPv "$(device):SE:CAPVS.DESC"
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 4
+useDisplayBg
+autoHeight
+limitsFromDb
+nullColor index 0
+newPos
+objType "monitors"
+noExecuteClipMask
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 4
+release 0
+x 216
+y 56
+w 72
+h 16
+controlPv "$(device):SE:CACLNT"
+font "helvetica-medium-r-14.0"
+fgColor index 14
+fgAlarm
+bgColor index 4
+useDisplayBg
+autoHeight
+limitsFromDb
+nullColor index 0
+showUnits
+newPos
+objType "monitors"
+noExecuteClipMask
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 4
+release 0
+x 8
+y 56
+w 192
+h 16
+controlPv "$(device):SE:CACLNT.DESC"
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 4
+useDisplayBg
+autoHeight
+limitsFromDb
+nullColor index 0
+newPos
+objType "monitors"
+noExecuteClipMask
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 4
+release 0
+x 216
+y 80
+w 72
+h 16
+controlPv "$(device):SE:NWBRX"
+font "helvetica-medium-r-14.0"
+fgColor index 14
+fgAlarm
+bgColor index 4
+useDisplayBg
+autoHeight
+limitsFromDb
+nullColor index 0
+showUnits
+newPos
+objType "monitors"
+noExecuteClipMask
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 4
+release 0
+x 8
+y 80
+w 192
+h 16
+controlPv "$(device):SE:NWBRX.DESC"
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 4
+useDisplayBg
+autoHeight
+limitsFromDb
+nullColor index 0
+newPos
+objType "monitors"
+noExecuteClipMask
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 4
+release 0
+x 216
+y 96
+w 72
+h 16
+controlPv "$(device):SE:NWPRX"
+font "helvetica-medium-r-14.0"
+fgColor index 14
+fgAlarm
+bgColor index 4
+useDisplayBg
+autoHeight
+limitsFromDb
+nullColor index 0
+showUnits
+newPos
+objType "monitors"
+noExecuteClipMask
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 4
+release 0
+x 8
+y 96
+w 192
+h 16
+controlPv "$(device):SE:NWPRX.DESC"
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 4
+useDisplayBg
+autoHeight
+limitsFromDb
+nullColor index 0
+newPos
+objType "monitors"
+noExecuteClipMask
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 4
+release 0
+x 216
+y 112
+w 72
+h 16
+controlPv "$(device):SE:NWMRX"
+font "helvetica-medium-r-14.0"
+fgColor index 14
+fgAlarm
+bgColor index 4
+useDisplayBg
+autoHeight
+limitsFromDb
+nullColor index 0
+showUnits
+newPos
+objType "monitors"
+noExecuteClipMask
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 4
+release 0
+x 8
+y 112
+w 192
+h 16
+controlPv "$(device):SE:NWMRX.DESC"
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 4
+useDisplayBg
+autoHeight
+limitsFromDb
+nullColor index 0
+newPos
+objType "monitors"
+noExecuteClipMask
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 4
+release 0
+x 216
+y 136
+w 72
+h 16
+controlPv "$(device):SE:NWBTX"
+font "helvetica-medium-r-14.0"
+fgColor index 14
+fgAlarm
+bgColor index 4
+useDisplayBg
+autoHeight
+limitsFromDb
+nullColor index 0
+showUnits
+newPos
+objType "monitors"
+noExecuteClipMask
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 4
+release 0
+x 8
+y 136
+w 192
+h 16
+controlPv "$(device):SE:NWBTX.DESC"
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 4
+useDisplayBg
+autoHeight
+limitsFromDb
+nullColor index 0
+newPos
+objType "monitors"
+noExecuteClipMask
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 4
+release 0
+x 216
+y 152
+w 72
+h 16
+controlPv "$(device):SE:NWPTX"
+font "helvetica-medium-r-14.0"
+fgColor index 14
+fgAlarm
+bgColor index 4
+useDisplayBg
+autoHeight
+limitsFromDb
+nullColor index 0
+showUnits
+newPos
+objType "monitors"
+noExecuteClipMask
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 4
+release 0
+x 8
+y 152
+w 192
+h 16
+controlPv "$(device):SE:NWPTX.DESC"
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 4
+useDisplayBg
+autoHeight
+limitsFromDb
+nullColor index 0
+newPos
+objType "monitors"
+noExecuteClipMask
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 4
+release 0
+x 216
+y 168
+w 72
+h 16
+controlPv "$(device):SE:NWMTX"
+font "helvetica-medium-r-14.0"
+fgColor index 14
+fgAlarm
+bgColor index 4
+useDisplayBg
+autoHeight
+limitsFromDb
+nullColor index 0
+showUnits
+newPos
+objType "monitors"
+noExecuteClipMask
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 4
+release 0
+x 8
+y 168
+w 192
+h 16
+controlPv "$(device):SE:NWMTX.DESC"
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 4
+useDisplayBg
+autoHeight
+limitsFromDb
+nullColor index 0
+newPos
+objType "monitors"
+noExecuteClipMask
+endObjectProperties
+
