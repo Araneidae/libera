@@ -145,7 +145,7 @@ private:
         long long int Variance = 0;
         for (int i = 0; i < WaveformLength; i ++)
         {
-            long long int Value = use_offset(int, Waveform[i], Field);
+            long long int Value = Waveform[i];
             Variance += (Value - Mean) * (Value - Mean);
         }
         Variance /= WaveformLength;

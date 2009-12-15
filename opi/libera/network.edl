@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 275
-y 311
+x 276
+y 312
 w 320
 h 227
 font "helvetica-medium-r-14.0"
@@ -82,7 +82,7 @@ font "helvetica-bold-r-14.0"
 buttonLabel "?"
 numCmds 1
 command {
-  0 "libera-help health"
+  0 "libera-help network"
 }
 includeHelpIcon
 endObjectProperties
