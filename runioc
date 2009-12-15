@@ -30,7 +30,7 @@
 # This script is designed for development use only.  To run the EPICS IOC
 # normally, install it using the command
 #
-#   ./install/libera-install-ioc -a <options>
+#   ./install_d/libera-install-ioc -af <options>
 #
 # and start it with the command
 #
