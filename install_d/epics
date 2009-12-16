@@ -54,9 +54,10 @@ case "$1" in
             print_status failure
         else
             # Run as a daemon with all output sent to log file.
-            CONFIGDIR=$CONFIGDIR \
-                "$LIBERA_IOC"/scripts/runioc -n 2>&1 </dev/null |
-            timestamps >>"$IOC_LOG" 2>&1 &
+            {
+                CONFIGDIR=$CONFIGDIR "$LIBERA_IOC"/scripts/runioc -n |
+                timestamps
+            } >>"$IOC_LOG" 2>&1 </dev/null 2>&1 &
             print_status success
         fi
         ;;

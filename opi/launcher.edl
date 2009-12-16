@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 2903
-y 867
+x 2904
+y 882
 w 295
 h 117
 font "helvetica-medium-r-18.0"
@@ -50,7 +50,7 @@ endObjectProperties
 object activeXTextDspClass
 beginObjectProperties
 major 4
-minor 1
+minor 4
 release 0
 x 8
 y 48
@@ -69,6 +69,7 @@ nullColor index 0
 useHexPrefix
 newPos
 objType "controls"
+noExecuteClipMask
 endObjectProperties
 
 # (Related Display)
