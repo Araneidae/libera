@@ -193,6 +193,8 @@ def TurnByTurn():
     ready.FLNK = create_fanout('FANA', rearm, captured)
 
     # Readout window and total capture length
+    records.longin('MAXLENGTH', VAL = WINDOW_LENGTH, PINI = 'YES',
+        DESC = 'Max TT readout window length')
     longOut('LENGTH', 1, WINDOW_LENGTH,
         DESC = 'TT readout window length')
     longOut('CAPLEN', 1, LONG_LENGTH,
@@ -208,6 +210,9 @@ def TurnByTurn():
     # Decimation control
     boolOut('DECIMATION', '1:1', '1:64',
         DESC = 'Decimation from turn-by-turn')
+    # Controls whether to update windowed data on capture.
+    boolOut('DOREFRESH', 'Stale Data', 'Update Data',
+        DESC = 'Update displayed data on trigger')
 
     Trigger(True, 
         # Raw I and Q values
@@ -760,7 +765,8 @@ def Sensors():
     enable = mbbOut('HEALTHD',
         ('Healthd On',      0, 'NO_ALARM'),
         ('Healthd Off',     1, 'NO_ALARM'),
-        ('Healthd Silent',  2, 'MAJOR'))
+        ('Healthd Silent',  2, 'MAJOR'),
+        DESC = 'Sensor monitoring control')
     longOut('SETTEMP', EGU = 'deg C',
         DESC = 'Health daemon target temp')
 
@@ -806,7 +812,7 @@ def Sensors():
     alarmsensors = [
         aIn('FREE', 0, 64, 1./MB, 'MB', 2,
             DESC = 'Free memory',
-            LOW  = 16,      LSV  = 'MINOR',
+            LOW  = 12,      LSV  = 'MINOR',
             LOLO = 8,       LLSV = 'MAJOR'),
         aIn('RAMFS', 0, 64, 1./MB, 'MB', 3,
             DESC = 'Temporary file usage',

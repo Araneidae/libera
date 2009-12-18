@@ -3,10 +3,10 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 555
-y 27
+x 556
+y 28
 w 584
-h 760
+h 777
 font "helvetica-medium-r-18.0"
 ctlFont "helvetica-medium-r-18.0"
 btnFont "helvetica-medium-r-18.0"
@@ -52,7 +52,7 @@ major 4
 minor 1
 release 0
 x 512
-y 728
+y 744
 w 64
 h 24
 fgColor index 25
@@ -68,7 +68,7 @@ endObjectProperties
 object activeXTextDspClass
 beginObjectProperties
 major 4
-minor 1
+minor 4
 release 0
 x 120
 y 664
@@ -87,6 +87,7 @@ nullColor index 0
 useHexPrefix
 newPos
 objType "controls"
+noExecuteClipMask
 endObjectProperties
 
 # (Static Text)
@@ -113,7 +114,7 @@ endObjectProperties
 object activeXTextDspClass
 beginObjectProperties
 major 4
-minor 1
+minor 4
 release 0
 x 120
 y 688
@@ -132,6 +133,7 @@ nullColor index 0
 useHexPrefix
 newPos
 objType "controls"
+noExecuteClipMask
 endObjectProperties
 
 # (Static Text)
@@ -158,7 +160,7 @@ endObjectProperties
 object activeXTextDspClass
 beginObjectProperties
 major 4
-minor 1
+minor 4
 release 0
 x 120
 y 712
@@ -177,6 +179,7 @@ nullColor index 0
 useHexPrefix
 newPos
 objType "controls"
+noExecuteClipMask
 endObjectProperties
 
 # (Static Text)
@@ -203,7 +206,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 4
 release 0
 x 120
 y 736
@@ -221,6 +224,7 @@ nullColor index 0
 useHexPrefix
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Static Text)
@@ -249,8 +253,8 @@ beginObjectProperties
 major 4
 minor 0
 release 0
-x 224
-y 728
+x 216
+y 744
 w 64
 h 24
 fgColor index 14
@@ -270,10 +274,10 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 4
 release 0
 x 296
-y 728
+y 744
 w 136
 h 24
 controlPv "$(device):TT:READY"
@@ -289,13 +293,14 @@ fastUpdate
 useHexPrefix
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (X-Y Graph)
 object xyGraphClass
 beginObjectProperties
 major 4
-minor 3
+minor 5
 release 0
 # Geometry
 x 8
@@ -343,7 +348,7 @@ endObjectProperties
 object xyGraphClass
 beginObjectProperties
 major 4
-minor 3
+minor 5
 release 0
 # Geometry
 x 8
@@ -391,7 +396,7 @@ endObjectProperties
 object xyGraphClass
 beginObjectProperties
 major 4
-minor 3
+minor 5
 release 0
 # Geometry
 x 8
@@ -442,7 +447,7 @@ major 4
 minor 2
 release 0
 x 440
-y 728
+y 744
 w 64
 h 24
 fgColor index 43
@@ -465,7 +470,7 @@ endObjectProperties
 object activeXTextDspClass
 beginObjectProperties
 major 4
-minor 1
+minor 4
 release 0
 x 328
 y 664
@@ -484,6 +489,7 @@ nullColor index 0
 useHexPrefix
 newPos
 objType "controls"
+noExecuteClipMask
 endObjectProperties
 
 # (Static Text)
@@ -538,7 +544,7 @@ release 0
 x 328
 y 688
 w 80
-h 24
+h 22
 fgColor index 14
 bgColor index 3
 inconsistentColor index 0
@@ -575,7 +581,7 @@ major 4
 minor 2
 release 0
 x 440
-y 704
+y 720
 w 64
 h 22
 fgColor index 43
@@ -592,5 +598,44 @@ displayFileName {
 symbols {
   0 "device=$(device),mode=TT"
 }
+endObjectProperties
+
+# (Menu Button)
+object activeMenuButtonClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 312
+y 712
+w 120
+h 24
+fgColor index 14
+bgColor index 3
+inconsistentColor index 0
+topShadowColor index 1
+botShadowColor index 11
+controlPv "$(device):TT:DOREFRESH_S"
+font "helvetica-medium-r-14.0"
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 216
+y 712
+w 86
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "When Ready:"
+}
+autoSize
 endObjectProperties
 

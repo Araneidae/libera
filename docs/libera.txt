@@ -200,14 +200,17 @@ Records how many points were captured.  At Diamond's booster frequency
 
 `OFFSET_S`, `OFFSET`::
 Used to set the offset into the long buffer for reading out waveforms,
-together with read-back used for synchronisation.
+together with read-back used for synchronisation.  Note that if channel
+access ``put with callback'' is used it is not necessary to check the
+readback.
 
-`LENGTH_S`::
+`LENGTH_S`, `MAXLENGTH`::
 Used to set how many points are read from the long buffer.  The
-default (and maximum) value is 32768.
+default (and maximum) value is returned by `MAXLENGTH`, with default value
+131072.
 
 `WF`<iq>, `WF`<buttons>, `WF`<positions>::
-Waveforms of up to 32768 points read from the internal captured long
+Waveforms of up to `LENGTH_S` points read from the internal captured long
 waveform using the specified `OFFSET` and `LENGTH`.
 
 `DELAY_S`::
@@ -216,7 +219,20 @@ to be configured.
 
 `DECIMATION_S`::
 This can be set to ``1:1'' or ``1:64'' -- in the latter case FPGA decimated
-data will be captured at one point per 64 turns.
+data will be captured at one point per 64 turns.  
++
+Take care with decimated data: due to a device driver bug it is possible to
+make Libera hang if `CAPLEN_S` is set to values much larger than 32,000.
+
+`DOREFRESH_S`::
+When this is set to 1 (``Update Data'') every time a full turn-by-turn
+waveform is captured the windowed waveforms are also updated.  Unfortunately
+when capturing large waveforms (`CAPLEN_S` > `LENGTH_S`) this can result in
+wasted processing time as first window is often simply discarded.
++
+As an optimisation this PV can be set to 0 (``Stale Data''): in this case the
+windowed waveforms will only update when `OFFSET_S` is processed.  Note that
+processing a full 131072 point window takes about 1 second.
 
 The following protocol should be used when using this group of records.
 First the record must be armed, and then the trigger should be waited for.
@@ -233,15 +249,16 @@ Triggering:
 Reading:
 
 - Write <offset> to `OFFSET_S`
-- Wait until `OFFSET` == <offset>
+- Either use ``put with callback'' for the write above, or wait until
+`OFFSET` == <offset>  
 - Read desired waveforms
 
-If `CAPLEN` > 32768 then the reading process should be repeated with <offset>
-set to 0, 32768, 65536, etc until the entire desired waveform has been
-retrieved.
+If `CAPLEN` > `LENGTH_S` then the reading process should be repeated with
+<offset> set to 0, `LENGTH_S`, 2*`LENGTH_S`, etc until the entire desired
+waveform has been retrieved.
 
-The maximum window readout length of 32768 can be be modified at IOC start
-time by editing the configuration setting `IOC_TT_WINDOW` in
+The maximum window readout length of `MAXLENGTH` can be be modified at IOC
+start time by editing the configuration setting `IOC_TT_WINDOW` in
 `/etc/sysconfig/epics_ioc`.
 
 // Internal PVs:
@@ -800,8 +817,29 @@ This mode of operation is not intended for normal operation: *DO NOT OPERATE
 LIBERA IN THIS MODE FOR EXTENDED PERIODS.*  In particular fan faults or
 overheating will not be detected.
 
+`CACLNT`, `CAPVS`::
+These two PVs monitor the channel access connection.  `CACLNT` reports the
+number of connected channel access clients and `CAPVS` reports the total
+number of PVs being monitored.
+
+`NWBRX`, `NWPRX`, `NWMRX`, `NWBTX`, `NWPTX`, `NWMTX`::
+These monitor the status of the network connection, reporting respectively the
+number of kilobytes, normal packets and broadcast packets received and sent,
+all over the last 10 seconds.
++
+--
+`NWBRX`:: Kilobytes of data per second received.
+`NWPRX`:: Packets received per second
+`NWMRX`:: Broadcast packets received per second.
+`NWBTX`:: Kilobytes of data transmitted per second.
+`NWPTX`:: Packets sent per second.
+`NWMTX`:: Broadcast packets sent per second.
+--
+
+
 // Internal PV:
 // VOLTSOK::
+
 
 
 Signal Conditioning (<group> = SC):

@@ -3,7 +3,7 @@
 
 # Version number of this software: automatically included in build and used
 # to build distribution files.
-VERSION=2.05.1
+VERSION=2.05.2-dev
 
 # This is where installed files will be placed ready for deployment to the
 # Libera IOC.  The IOC files will be placed in $INSTALL_HOST/ioc and the
@@ -57,8 +57,10 @@ SR_IOC_SC_LENGTH=6
 # data, which is ample.
 IOC_TT_LENGTH=524288
 
-# Turn by turn readout window length.
-IOC_TT_WINDOW=32768
+# Turn by turn readout window length.  A large readout window helps speed up
+# transfers, but increased the memory footprint.  The values of
+# IOC_TT_LENGTH=2^19, IOC_TT_WINDOW=2^17 leave enough working memory
+IOC_TT_WINDOW=131072
 
 # Turn by turn small waveform length (continuously updating TT data).
 IOC_FR_LENGTH=2048

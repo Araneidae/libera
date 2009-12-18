@@ -63,6 +63,7 @@ public:
         WindowOffset = 0;
         CaptureOffset = 0;
         Decimated = false;
+        UpdateWaveformOnCapture = true;
         /* Make the default capture length equal to one window. */
         WindowLength = WindowWaveformLength;
         LongWaveform.SetLength(WindowLength);
@@ -92,6 +93,7 @@ public:
         Publish_longin("TT:OFFSET", WindowOffset);
         Publish_longout("TT:DELAY", CaptureOffset);
         Publish_bo("TT:DECIMATION", Decimated);
+        Publish_bo("TT:DOREFRESH", UpdateWaveformOnCapture);
 
         /* Turn by turn triggering is rather complicated, and needs to occur
          * in two stages.  The idea is that only a single shot of turn by
@@ -124,7 +126,8 @@ public:
             /* Also bring the short waveforms up to date.  Do this before
              * updating the long trigger so that the reader knows there is
              * valid data to read. */
-            ProcessShortWaveform();
+            if (UpdateWaveformOnCapture)
+                ProcessShortWaveform();
 
             /* Let EPICS know that this has updated. */
             LongTrigger.Write(true);
@@ -159,8 +162,9 @@ private:
         if (0 <= Offset  &&  Offset < LongWaveformLength)
         {
             /* Minor optimisation, but ProcessShortWaveform() is pretty
-             * expensive. */
-            if (WindowOffset != Offset)
+             * expensive.  However we have to suppress this optimisation if
+             * the waveform wasn't update on capture. */
+            if (WindowOffset != Offset || ! UpdateWaveformOnCapture)
             {
                 WindowOffset = Offset;
                 ProcessShortWaveform();
@@ -184,7 +188,7 @@ private:
             WindowAbcd.SetLength(WindowLength);
             WindowXyqs.SetLength(WindowLength);
             /* Only process the short waveform if it has grown in length.
-             * Otherwise there's nothing to do. */
+             * Otherwise there is nothing to do. */
             if (Process)
                 ProcessShortWaveform();
             return true;
@@ -270,6 +274,8 @@ private:
     int CaptureOffset;
     /* Whether to apply decimation reduction on captured waveform. */
     bool Decimated;
+    /* Whether to process short waveform on fresh waveform capture. */
+    bool UpdateWaveformOnCapture;
 };
 
 
