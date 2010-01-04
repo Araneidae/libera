@@ -838,9 +838,9 @@ def Sensors():
         longIn('CACLNT', DESC = 'Number of connected clients'),
         
         # Network statistics
-        aIn('NWBRX', 0, 1e4, 1e-4, 'kB/s', 4,
+        aIn('NWBRX', 0, 1e4, 1e-4, 'kB/s', 3,
             DESC = 'Kilobytes received per second'),
-        aIn('NWBTX', 0, 1e4, 1e-4, 'kB/s', 4,
+        aIn('NWBTX', 0, 1e4, 1e-4, 'kB/s', 3,
             DESC = 'Kilobytes sent per second'),
         aIn('NWPRX', 0, 1e4, 0.1, 'pkt/s', 1,
             DESC = 'Packets received per second'),

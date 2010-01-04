@@ -337,17 +337,15 @@ static void ReadHealth()
 static int CasChannelCount;     // Number of connected PVs
 static int CasClientCount;      // Number of connected channel access clients
 
-static int NetBytesRxDelta,   NetBytesRxLast;
-static int NetPacketsRxDelta, NetPacketsRxLast;
-static int NetMultiRxDelta,   NetMultiRxLast;
-static int NetBytesTxDelta,   NetBytesTxLast;
-static int NetPacketsTxDelta, NetPacketsTxLast;
-static int NetMultiTxDelta,   NetMultiTxLast;
+static int NetBytesRxDelta, NetPacketsRxDelta, NetMultiRxDelta;
+static int NetBytesTxDelta, NetPacketsTxDelta, NetMultiTxDelta;
+static uint64_t NetBytesRxLast, NetPacketsRxLast, NetMultiRxLast;
+static uint64_t NetBytesTxLast, NetPacketsTxLast, NetMultiTxLast;
 
 
 static bool ReadNetworkStats(
-    int &NetBytesRx, int &NetPacketsRx, int &NetMultiRx,
-    int &NetBytesTx, int &NetPacketsTx, int &NetMultiTx)
+    uint64_t &NetBytesRx, uint64_t &NetPacketsRx, uint64_t &NetMultiRx,
+    uint64_t &NetBytesTx, uint64_t &NetPacketsTx, uint64_t &NetMultiTx)
 {
     FILE * input;
     bool Ok = false;
@@ -359,10 +357,11 @@ static bool ReadNetworkStats(
             if (strncmp(line, "  eth0", 6) == 0)
             {
                 Ok = TEST_OK(sscanf(line,
-                    "  eth0:%d %d %*d %*d %*d %*d %*d %d "
-                           "%d %d %*d %*d %*d %*d %*d %d",
+                    "  eth0:%llu %llu %*d %*d %*d %*d %*d %llu "
+                           "%llu %llu %*d %*d %*d %*d %*d %llu",
                     &NetBytesRx, &NetPacketsRx, &NetMultiRx,
                     &NetBytesTx, &NetPacketsTx, &NetMultiTx) == 6);
+                break;
             }
         }
         fclose(input);
@@ -376,14 +375,14 @@ static void ProcessNetworkStats()
     casStatsFetch(
         (unsigned *)&CasChannelCount, (unsigned *)&CasClientCount);
 
-    int NetBytesRx, NetPacketsRx, NetMultiRx;
-    int NetBytesTx, NetPacketsTx, NetMultiTx;
+    uint64_t NetBytesRx, NetPacketsRx, NetMultiRx;
+    uint64_t NetBytesTx, NetPacketsTx, NetMultiTx;
     if (ReadNetworkStats(
             NetBytesRx, NetPacketsRx, NetMultiRx,
             NetBytesTx, NetPacketsTx, NetMultiTx))
     {
 #define UPDATE(name) \
-    name##Delta = name - name##Last; \
+    name##Delta = (int) (name - name##Last); \
     name##Last = name
         UPDATE(NetBytesRx);
         UPDATE(NetPacketsRx);
