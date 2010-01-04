@@ -234,6 +234,7 @@ As an optimisation this PV can be set to 0 (``Stale Data''): in this case the
 windowed waveforms will only update when `OFFSET_S` is processed.  Note that
 processing a full 131072 point window takes about 1 second.
 
+
 The following protocol should be used when using this group of records.
 First the record must be armed, and then the trigger should be waited for.
 Segments should then be read by writing the offset and waiting for it to
@@ -242,7 +243,8 @@ update before reading.  To be explicit:
 Triggering:
 
 - Write desired capture length to `CAPLEN_S`
-- Write 0 to `READY` and wait for `READY` == 0
+- Write 0 to `READY` (either use ``put with callback'' or else wait for
+  `READY` == 0).
 - Write 1 to `ARM`
 - Wait until `READY` == 1
 

@@ -8,14 +8,16 @@ function iq = getiq(name, len)
 % length for Libera.
 
 % First figure out how long our window is.
-l = lcaGet([name ':TT:WFAI.NELM']);
-    
+l = lcaGet([name ':TT:MAXLENGTH']);
+r = lcaGet([name ':TT:DOREFRESH_S']);
+
 % Program in the desired capture length, set maximum readout window and
 % finally trigger capture.
 lcaPut([name ':TT:CAPLEN_S'], len);
 lcaPut([name ':TT:LENGTH_S'], l);
+lcaPut([name ':TT:DOREFRESH_S'], 0);
 lcaPut([name ':TT:READY'], 0);
-while lcaGet([name ':TT:READY'], 1, 'short') ~= 0; pause(.01); end
+
 lcaPut([name ':TT:ARM'],1);
 while lcaGet([name ':TT:READY'], 1, 'short') == 0; pause(.01); end
 
@@ -43,6 +45,8 @@ while read < captured;
     
     read = read + window;
 end
+
+lcaPut([name ':TT:DOREFRESH_S'], r);
 
 
 function wf = GetIqWf(name, button, length)

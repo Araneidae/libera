@@ -1,6 +1,29 @@
 Change history of Libera EPICS Driver development
 =================================================
 
+2010/01/04 Version 2.05.2
+-------------------------
+Incremental changes, a little more monitoring, some bug fixes.
+
+Major changes in this release:
+
+ - Fix fairly long standing bug in calculation of `FR:STDY`.  I'm afraid this
+   calculation has been broken ever since it was released!
+ - Add option for open loop operation to health daemon.  Also involves
+   renaming PV `SE:ENABLE_S` to `SE:HEALTHD_S`.
+ - Added network statistics monitoring PVs for displaying network and channel
+   access activity.
+ - Default turn-by-turn window size has been increased to 128K samples to
+   increase readout speed, and a corresponding new control `TT:DOREFRESH_S`
+   allows for more efficient turn by turn capture.  Matlab functions `getxy`
+   and `getiq` in `toolkit/matlab` have been updated accordingly.
+
+Other minor changes:
+
+ - References to ``Fast Feedback'' now renamed to ``Communication
+   Controller'' in displays and documentation.
+
+
 2009/11/02 Version 2.05
 -----------------------
 Mostly incremental changes, but supports some new features.  Version number
@@ -66,7 +89,8 @@ The following minor changes and bug fixes are worth noting:
 ---------------------------
 Mostly minor changes since 1.46.4.
 
- - Add `CF:ATTEN_OFFSET_S` waveforms to correct for built in attenuator offsets.
+ - Add `CF:ATTEN_OFFSET_S` waveforms to correct for built in attenuator
+   offsets.
  - Code now compiles without warnings with gcc 4.2.4 -- this is in preparation
    for migration to a newer environment.
  - Pick up the number of turns per switch position (`NTBT`) so that signal
@@ -161,16 +185,16 @@ Switching to this compiler and library has had two effects:
 
 Major changes:
 
- - Master BPM enable PV added.  This allows a BPM to be marked as ``disable'' if
-   it is returning unreliable positions.  The only direct effect on the BPM is
-   to disable operation of the interlock.
+ - Master BPM enable PV added.  This allows a BPM to be marked as ``disabled''
+   if it is returning unreliable positions.  The only direct effect on the
+   BPM is to disable operation of the interlock.
  - Significant changes to ``geometry'' configuration.  The simple beam offset
    PVs X0 and Y0 have been replaced by three separate displacements:
     `BBA_X,_Y`:: ``Beam Based Alignment'' offsets, persistent over reboots
     `BCD_X,_Y`:: ``Beam Current Dependent'' offset, initialised to 0 on reboot
     `GOLDEN_X,_Y`:: Special purpose local offsets (for bumps, etc), 0 on reboot
- - Control over DSC (``Digital Signal Conditioning'') is now available through a
-   new configuration PV.
+ - Control over DSC (``Digital Signal Conditioning'') is now available
+   through a new configuration PV. 
  - Control over switch triggering, both selection of trigger source (internal
    or external) and trigger delay (when using external trigger).
  - Control over the clock is more refined and the machine clock tracking
@@ -213,7 +237,8 @@ Significant changes:
 
 Minor changes:
 
- - Fix bash compatibility bug introduced in `/etc/init.d/epics` script in 0.6.3.
+ - Fix bash compatibility bug introduced in `/etc/init.d/epics` script in 
+   0.6.3.
  - Version numbering now changed to track Libera driver version numbers.
 
 
@@ -233,8 +258,9 @@ Significant changes:
 
 Minor changes:
 
- - Changed name of `FT:RAW` waveforms from <buttons> to <channel> to reflect the
-   fact that these waveforms do not follow the buttons as the switch changes.
+ - Changed name of `FT:RAW` waveforms from <buttons> to <channel> to reflect
+   the fact that these waveforms do not follow the buttons as the switch
+   changes.
  - New `EPICSUP` field to record EPICS IOC up time.
  - Diamond specific fast feedback support is present in this release, but not
    compiled in in the default configuration.
@@ -284,10 +310,10 @@ install process.
 
 Significant changes:
 
- - New `HEALTH` record which collects together alarm severities for temperature,
-   fans and free memory.
- - New `TICK` record which records time since last processed trigger and records
-   an alarm status after 1 and 10 seconds.
+ - New `HEALTH` record which collects together alarm severities for
+   temperature, fans and free memory.
+ - New `TICK` record which records time since last processed trigger and
+   records an alarm status after 1 and 10 seconds.
  - Redefine orientation of vertical mode: button/stripline B is now deemed to
    be in the negative X direction.  This makes the logic consistent with
    conventions at Diamond.
@@ -308,9 +334,9 @@ Minor changes:
  - Change implementation of interlocking with EPICS layer, used to rule out
    the EPICS layer from any involvement with Libera lockups (it is clear now
    that these occur in the iTech driver).
- - Remove rather arbitrary limits on `TT`, `TW`, `FR` and `BN` IOC configuration
-   parameters: if the installer insists on killing the IOC by setting
-   unreasonable values, be my guest.
+ - Remove rather arbitrary limits on `TT`, `TW`, `FR` and `BN` IOC
+   configuration parameters: if the installer insists on killing the IOC by
+   setting unreasonable values, be my guest.
 
 
 2006/03/13 Version 0.4
@@ -341,9 +367,9 @@ The following incompatible changes with the previous release should be noted:
  - The file `/etc/sysconfig/epics_ioc` now contains important startup
    configuration information which must be provided before the IOC will start.
    
- - The loading of initial configuration has changed.  `IOC_STATE_PATH` should be
-   defined appropriately and an initial configuration can be written through
-   the EPICS interface.
+ - The loading of initial configuration has changed.  `IOC_STATE_PATH` should
+   be defined appropriately and an initial configuration can be written
+   through the EPICS interface.
 
 
 2006/02/06 Version 0.2
