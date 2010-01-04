@@ -22,6 +22,8 @@ Other minor changes:
 
  - References to ``Fast Feedback'' now renamed to ``Communication
    Controller'' in displays and documentation.
+ - Updated build instructions and updated ntp build script.
+ - DLS architecture now reported as `DLS` and correctly recognised.
 
 
 2009/11/02 Version 2.05
