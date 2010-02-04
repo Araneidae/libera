@@ -32,7 +32,15 @@
 
 set -e
 
-# Files needed for installation but not installed on target
+# Files needed for installation process:
+#     CONFIG                Configuration template installed in /etc/libera
+#     epics                 Startup script installed in /etc/init.d
+#     libera-driver         Startup script installed in /etc/init.d
+#     healthd               Startup script installed in /etc/init.d
+#     locations             List of machine locations (eg SR/BO)
+#     make-notch-filters    Script to create notch filters
+#     libera-install-fpga   
+#     libera-install-ioc    Script to install libera IOC on target
 INSTALL_FILES='
     CONFIG
     epics
@@ -42,13 +50,6 @@ INSTALL_FILES='
     make-notch-filters
     libera-install-fpga
     libera-install-ioc'
-
-# Files needed for the target
-SCRIPT_FILES='
-    architecture
-    epics-functions
-    runioc
-    compute-options'
 
 
 SOURCE="$(cd "$(dirname "$0")"/..; pwd)"  
@@ -80,9 +81,7 @@ done
 
 # Copy over the scripts
 mkdir -p "$TARGET"/scripts
-for f in $SCRIPT_FILES; do
-    cp "$SOURCE"/scripts/$f "$TARGET"/scripts
-done
+cp "$SOURCE"/scripts/* "$TARGET"/scripts
 
 # Place the runioc script
 cp "$SOURCE"/runioc "$TARGET"

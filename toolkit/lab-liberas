@@ -3,8 +3,13 @@
 # Wrapper script for sending commands to the lab
 
 LAB_BASE_IP=172.23.252
-LAB_N=7
+LAB_N="$(seq -f%02g 7)"
+LAB_N="01 03 04 05 06 07"     # Currently excluding TS-2
 
-LAB_LIST="$(seq -f$LAB_BASE_IP.%g $LAB_N)"
+# LAB_LIST="$(seq -f$LAB_BASE_IP.%g $LAB_N)"
+LAB_LIST="$(
+    for n in $LAB_N; do
+        echo TS-DI-EBPM-$n
+    done)"
 
-liberas -w -l<(cat <<<"$LAB_LIST") '' "$@"
+liberas -w -l<(echo "$LAB_LIST") '' "$@"

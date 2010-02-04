@@ -34,6 +34,7 @@
 CONFIGDIR='@@CONFIGDIR@@'
 . $CONFIGDIR/libera
 . $CONFIGDIR/epics_ioc
+: "${LIBERA_IOC}"           # Path to EPICS IOC
 . "$LIBERA_IOC"/scripts/epics-functions
 
 # Figure out the firmware version.
@@ -53,19 +54,18 @@ esac
 : "${NTBT:?}"               # Number of turns per switch position
 : "${IL_K_CORR_ADC_LIMIT:?}"        # ADC interlock overflow filter scaling
 : "${IL_MAX_ADC_OVERFLOW_DUR:?}"    # factor and duration limit
-: "${LIBERA_IOC}"           # Path to EPICS IOC
-if $NEW_LIBERA; then
+$NEW_LIBERA  &&
     : "${POSTMORTEM_BUFFER:?}"  # Length of PM buffer
 fi
 
 
 case "$1" in
     start)
-        if ! [ -e /tmp/healthd.command ]; then
-            sleep 1     # Just in case it's still starting...
-            [ -e /tmp/healthd.command ]  ||
-                Error "Health daemon not running, not starting Libera FPGA"
-        fi
+        # Check for healthd.  If it's not running, give another second to
+        # finish starting before giving up.
+        [ -e /tmp/healthd.command ]  ||
+        { sleep 1; [ -e /tmp/healthd.command ]; }  ||
+            Error "Health daemon not running, not starting Libera FPGA"
 
         # First load the FPGA design
         echo -n "Loading FPGA design..."
