@@ -28,20 +28,6 @@
 
 
 #include "driver/libera.h"
-/* Unfortunately Instrumentation Technologies have been rather sloppy in the
- * 1.80 to 2.00 upgrade, and managed to badly break backwards compatibility.
- * Fortunately this was done on a architecture boundary, so we can detect
- * this on the presence of the __ARM_EABI__ flag.  Unfortunately they also
- * screwed up on the 2.00 to 2.02 upgrade, inserting LIBERA_CFG_PMDEC into
- * the middle of a block of definitions, so we'll need to take this into
- * account as well! */
-#ifdef __ARM_EABI__
-#define __EBPP_H_2
-#include "driver/ebpp.h"
-#else
-#define __EBPP_H_1
-#include "driver/ebpp-1.80.h"
-#endif
 
 
 /* Exports for libera device driver interface routines. */
