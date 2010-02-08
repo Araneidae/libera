@@ -179,6 +179,45 @@ The mean, standard deviation, minimum and maximum value and
 peak-to-peak deviation are computed over each `FR` waveform and
 reported in microns.
 
+The following PVs are used to control the averaging of a sequence of FR
+waveforms.  This can be useful if a sequence of repetitive experiments is
+being done, for example kicking the beam for machine physics investigations.
+Averaging is done by accumulating `A`, `B`, `C`, `D` waveforms.  Note that
+the IQ waveforms are not affected by this processing at all and always show
+the most recent update (this is becase the IQ data from shot to shot is not
+coherent).
+
+The default condition is `AVERAGE_S` = 1, `AUTOSTOP_S` = 0, which means that
+each waveform is displayed separately without any averaging.
+
+`AVERAGE_S`::
+The number of waveforms in a single full update can be any power of 2 in the
+range 1 (2^0^) to 65536 (2^16^) -- this PV should be set to the corresponding
+superscript.  A value of 0 causes every update to be displayed and processed
+normally.
+
+`ALLUPDATE_S`::
+If this PV is set to 0 then the waveform and statistics will only be updated
+when all configured samples have been captured, otherwise every sample is
+shown.
+
+`SAMPLES`::
+During accumulation of the waveforms this number counts up to the selected
+number of samples, 2^`AVERAGE_S`^ as triggers are received.  This PV updates
+even if `ALLUPDATE_S` is set to 0.
+
+`AUTOSTOP_S`::
+This PV configures what to do when a complete round of averaged waveforms has
+been captured.  If set to 0 then a new round of samples will automatically
+start at the next trigger, otherwise `RESET_S` needs to be processed to
+trigger another round of capture.
+
+`RESET_S`::
+Clears the currently averaged waveforms and restarts a fresh round of
+averaging.  Note that writing to `AVERAGE_S` also has the same effect as
+processing this PV.
+
+
 
 Turn by Turn (<group> = TT):
 ----------------------------
