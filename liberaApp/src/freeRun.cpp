@@ -59,12 +59,15 @@ public:
         WaveformIq(WaveformLength),
         InputAbcd(WaveformLength),
         WaveformAbcd(WaveformLength, true),
-        WaveformXyqs(WaveformLength)
+        WaveformXyqs(WaveformLength),
+        PublishCapturedSamples(0)
     {
         CaptureOffset = 0;
         AverageBits = 0;
         CapturedSamples = 0;
         StopWhenDone = false;
+        UpdateAll = true;
+        GotEpicsLock = false;
         
         /* Publish all the waveforms and the interlock. */
         WaveformIq.Publish("FR");
@@ -73,9 +76,10 @@ public:
         Publish_longout("FR:DELAY", CaptureOffset);
 
         /* Averaging control. */
-        Publish_longin("FR:SAMPLES", CapturedSamples);
+        Publish_longin("FR:SAMPLES", PublishCapturedSamples);
         PUBLISH_METHOD_OUT(longout, "FR:AVERAGE", SetAverageBits, AverageBits);
         Publish_bo("FR:AUTOSTOP", StopWhenDone);
+        Publish_bo("FR:ALLUPDATE", UpdateAll);
         PUBLISH_METHOD_ACTION("FR:RESET", ResetAverage);
 
         /* Publish statistics. */
@@ -122,9 +126,14 @@ private:
             if (CaptureComplete)
                 return;
         }
-        
-        /* Wait for EPICS to be ready. */
-        Interlock.Wait();
+
+
+        /* Before we do anything that might affect the variables we share
+         * with EPICS ensure that EPICS isn't reading them. */
+        if (!GotEpicsLock)
+            Interlock.Wait();
+
+        bool PublishUpdate;
         THREAD_LOCK(this);
         
         if (CapturedSamples >= (1 << AverageBits))
@@ -134,14 +143,22 @@ private:
         WaveformIq.Capture(1, CaptureOffset);
         InputAbcd.CaptureCordic(WaveformIq);
         AccumulateAbcd();
-        WaveformXyqs.CaptureConvert(WaveformAbcd);
-
-        UpdateStatistics(FIELD_X, MeanX, StdX, MinX, MaxX, PpX);
-        UpdateStatistics(FIELD_Y, MeanY, StdY, MinY, MaxY, PpY);
-
-        /* Let EPICS know there's stuff to read. */
+        PublishUpdate = UpdateAll  ||  CapturedSamples >= (1 << AverageBits);
+        
         THREAD_UNLOCK();
-        Interlock.Ready(WaveformIq.GetTimestamp());
+        
+        if (PublishUpdate)
+        {
+            WaveformXyqs.CaptureConvert(WaveformAbcd);
+            UpdateStatistics(FIELD_X, MeanX, StdX, MinX, MaxX, PpX);
+            UpdateStatistics(FIELD_Y, MeanY, StdY, MinY, MaxY, PpY);
+
+            /* Let EPICS know there's stuff to read. */
+            Interlock.Ready(WaveformIq.GetTimestamp());
+        }
+        GotEpicsLock = !PublishUpdate;
+        
+        PublishCapturedSamples.Write(CapturedSamples);
     }
 
 
@@ -241,6 +258,9 @@ private:
     int AverageBits;            // Log2 number of samples to average
     int CapturedSamples;        // Number of samples captured so far
     bool StopWhenDone;          // Whether to restart averaging
+    bool UpdateAll;             // Whether to update while averaging
+    bool GotEpicsLock;          // Tracks whether we're waiting for EPICS
+    UPDATER_int PublishCapturedSamples;
 
     /* EPICS interlock. */
     INTERLOCK Interlock;
