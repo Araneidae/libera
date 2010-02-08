@@ -232,18 +232,17 @@ void THREAD::Kill(int sig)
 
 
 
-LOCKED_THREAD::LOCKED_THREAD(const char * Name) :
-    THREAD(Name)
+LOCKED::LOCKED()
 {
-    /* Create the thread synchronisation mutex.  Note that is are
-     * never destroyed because this class (instance) is never destroyed ...
-     * because EPICS doesn't support any kind of restart, there's no point in
-     * doing this anywhere else! */
+    /* Create the thread synchronisation mutex.  Note that this is never
+     * destroyed because this class (instance) is never destroyed ...  because
+     * EPICS doesn't support any kind of restart, there's no point in doing
+     * this anywhere else! */
     TEST_0(pthread_mutex_init(&Mutex, NULL));
 }
 
-void LOCKED_THREAD::Unlock(void *arg)
+void LOCKED::Unlock(void *arg)
 {
-    LOCKED_THREAD &self = *(LOCKED_THREAD *) arg;
+    LOCKED &self = *(LOCKED *) arg;
     TEST_0(pthread_mutex_unlock(&self.Mutex));
 }

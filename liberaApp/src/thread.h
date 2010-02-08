@@ -117,27 +117,34 @@ private:
 };
 
 
-/* A thread class with mutex locking already built in. */
+/* Simple locking support. */
 
-class LOCKED_THREAD : public THREAD
+class LOCKED
 {
 public:
-    LOCKED_THREAD(const char * Name);
-
+    LOCKED();
 protected:
-     void Lock()   { TEST_0(pthread_mutex_lock(&Mutex)); }
-     static void Unlock(void *arg);
-    
+    void Lock()   { TEST_0(pthread_mutex_lock(&Mutex)); }
+    static void Unlock(void *arg);
 private:
-     pthread_mutex_t Mutex;
+    pthread_mutex_t Mutex;
 };
 
-/* Helper macros for LOCKED_THREAD. */
+/* Helper macros for LOCKED class. */
 #define THREAD_LOCK(self) \
     (self)->Lock(); \
-    pthread_cleanup_push((self)->Unlock, self)
+    pthread_cleanup_push((self)->Unlock, (LOCKED *) self)
 #define THREAD_UNLOCK() \
     pthread_cleanup_pop(true)
+
+
+/* A thread class with mutex locking already built in. */
+
+class LOCKED_THREAD : public THREAD, public LOCKED
+{
+public:
+    LOCKED_THREAD(const char * Name) : THREAD(Name), LOCKED() {}
+};
 
 
 /* On older revisions of the Libera driver and the pthread library we can't
