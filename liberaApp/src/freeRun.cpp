@@ -51,22 +51,32 @@
 
 
 
-class FREE_RUN : I_EVENT
+class FREE_RUN : I_EVENT, LOCKED
 {
 public:
     FREE_RUN(int WaveformLength) :
         WaveformLength(WaveformLength),
         WaveformIq(WaveformLength),
-        WaveformAbcd(WaveformLength),
+        InputAbcd(WaveformLength),
+        WaveformAbcd(WaveformLength, true),
         WaveformXyqs(WaveformLength)
     {
         CaptureOffset = 0;
+        AverageBits = 0;
+        CapturedSamples = 0;
+        StopWhenDone = false;
         
         /* Publish all the waveforms and the interlock. */
         WaveformIq.Publish("FR");
         WaveformAbcd.Publish("FR");
         WaveformXyqs.Publish("FR");
         Publish_longout("FR:DELAY", CaptureOffset);
+
+        /* Averaging control. */
+        Publish_longin("FR:SAMPLES", CapturedSamples);
+        PUBLISH_METHOD_OUT(longout, "FR:AVERAGE", SetAverageBits, AverageBits);
+        Publish_bo("FR:AUTOSTOP", StopWhenDone);
+        PUBLISH_METHOD_ACTION("FR:RESET", ResetAverage);
 
         /* Publish statistics. */
         Publish_ai("FR:MEANX", MeanX);
@@ -89,6 +99,8 @@ public:
 
 
 private:
+    FREE_RUN();
+    
     /* This code is called, possibly indirectly, in response to a trigger
      * event to read and process a First Turn waveform.  The waveform is read
      * and all associated values are computed.
@@ -98,19 +110,37 @@ private:
         /* Ignore events if not enabled. */
         if (!Enable.Enabled())
             return;
+
+        /* If we've captured a full set of samples and we're configured to
+         * stop then stop. */
+        if (StopWhenDone)
+        {
+            bool CaptureComplete;
+            THREAD_LOCK(this);
+            CaptureComplete = CapturedSamples >= (1 << AverageBits);
+            THREAD_UNLOCK();
+            if (CaptureComplete)
+                return;
+        }
         
         /* Wait for EPICS to be ready. */
         Interlock.Wait();
+        THREAD_LOCK(this);
+        
+        if (CapturedSamples >= (1 << AverageBits))
+            ResetAccumulator();
 
         /* Capture and convert everything. */
         WaveformIq.Capture(1, CaptureOffset);
-        WaveformAbcd.CaptureCordic(WaveformIq);
+        InputAbcd.CaptureCordic(WaveformIq);
+        AccumulateAbcd();
         WaveformXyqs.CaptureConvert(WaveformAbcd);
 
         UpdateStatistics(FIELD_X, MeanX, StdX, MinX, MaxX, PpX);
         UpdateStatistics(FIELD_Y, MeanY, StdY, MinY, MaxY, PpY);
 
         /* Let EPICS know there's stuff to read. */
+        THREAD_UNLOCK();
         Interlock.Ready(WaveformIq.GetTimestamp());
     }
 
@@ -154,12 +184,50 @@ private:
     }
 
 
+    bool SetAverageBits(int _AverageBits)
+    {
+        THREAD_LOCK(this);
+        AverageBits = _AverageBits;
+        ResetAccumulator();
+        THREAD_UNLOCK();
+        return true;
+    }
+
+    bool ResetAverage()
+    {
+        THREAD_LOCK(this);
+        ResetAccumulator();
+        THREAD_UNLOCK();
+        return true;
+    }
+
+    void ResetAccumulator()
+    {
+        CapturedSamples = 0;
+        memset(WaveformAbcd.Waveform(), 0, sizeof(ABCD_ROW) * WaveformLength);
+    }
+
+    void AccumulateAbcd()
+    {
+        CapturedSamples += 1;
+        ABCD_ROW * Input = InputAbcd.Waveform();
+        ABCD_ROW * Accum = WaveformAbcd.Waveform();
+        for (int i = 0; i < WaveformLength; i ++)
+        {
+            Accum[i].A += Input[i].A >> AverageBits;
+            Accum[i].B += Input[i].B >> AverageBits;
+            Accum[i].C += Input[i].C >> AverageBits;
+            Accum[i].D += Input[i].D >> AverageBits;
+        }
+    }
+
+
     const int WaveformLength;
     
     /* Captured and processed waveforms: these three blocks of waveforms are
      * all published to EPICS. */
     IQ_WAVEFORMS WaveformIq;
-    ABCD_WAVEFORMS WaveformAbcd;
+    ABCD_WAVEFORMS InputAbcd, WaveformAbcd;
     XYQS_WAVEFORMS WaveformXyqs;
 
     /* Statistics for the captured waveforms. */
@@ -168,6 +236,11 @@ private:
 
     /* Offset from trigger of capture. */
     int CaptureOffset;
+    
+    /* Averaging control. */
+    int AverageBits;            // Log2 number of samples to average
+    int CapturedSamples;        // Number of samples captured so far
+    bool StopWhenDone;          // Whether to restart averaging
 
     /* EPICS interlock. */
     INTERLOCK Interlock;

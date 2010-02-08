@@ -152,9 +152,18 @@ def FreeRunning():
     # In this mode we provide all the available data: raw IQ, buttons,
     # computed positions and statistics.
     Trigger(True, IQ_wf(LENGTH) + ABCD_wf(LENGTH) + XYQS_wf(LENGTH) +
-        FreeRunningStats('X') + FreeRunningStats('Y'))
+        FreeRunningStats('X') + FreeRunningStats('Y') +
+        [longIn('SAMPLES', DESC = 'Accumulated samples in average')])
+    
     # Trigger capture offset
     longOut('DELAY', DESC = 'Trigger capture offset')
+    
+    # Average length
+    longOut('AVERAGE', 0, 16,
+        DESC = 'Average samples as power of 2')
+    boolOut('RESET', DESC = 'Restart average accumulation')
+    boolOut('AUTOSTOP', 'Auto restart', 'Stop when done',
+        DESC = 'Restart averaging when done?')
     
     UnsetChannelName()
         
