@@ -5,3 +5,4 @@ O.*
 *.pyc
 docs/*.html
 install_d/locations
+*~
