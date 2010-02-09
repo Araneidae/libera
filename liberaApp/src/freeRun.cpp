@@ -107,56 +107,38 @@ private:
     
     /* This code is called, possibly indirectly, in response to a trigger
      * event to read and process a First Turn waveform.  The waveform is read
-     * and all associated values are computed.
-     *    We only process if armed. */
+     * and all associated values are computed. */
     void OnEvent(int)
     {
         /* Ignore events if not enabled. */
         if (!Enable.Enabled())
             return;
-
         /* If we've captured a full set of samples and we're configured to
          * stop then stop. */
-        if (StopWhenDone)
-        {
-            bool CaptureComplete;
-            THREAD_LOCK(this);
-            CaptureComplete = CapturedSamples >= (1 << AverageBits);
-            THREAD_UNLOCK();
-            if (CaptureComplete)
-                return;
-        }
-
+        if (StopWhenDone  &&  CheckComplete())
+            return;
 
         /* Before we do anything that might affect the variables we share
-         * with EPICS ensure that EPICS isn't reading them. */
+         * with EPICS ensure that EPICS isn't reading them.   In this case,
+         * because we don't always trigger an update, we can end up capturing
+         * the EPICS interlock without releasing it -- as this interlock only
+         * affects FR processing, this is the behaviour we want. */
         if (!GotEpicsLock)
             Interlock.Wait();
-
-        bool PublishUpdate;
-        THREAD_LOCK(this);
         
-        if (CapturedSamples >= (1 << AverageBits))
-            ResetAccumulator();
-
-        /* Capture and convert everything. */
         WaveformIq.Capture(1, CaptureOffset);
-        InputAbcd.CaptureCordic(WaveformIq);
-        AccumulateAbcd();
-        PublishUpdate = UpdateAll  ||  CapturedSamples >= (1 << AverageBits);
-        
-        THREAD_UNLOCK();
-        
-        if (PublishUpdate)
+        if (AccumulateWaveform())
         {
             WaveformXyqs.CaptureConvert(WaveformAbcd);
             UpdateStatistics(FIELD_X, MeanX, StdX, MinX, MaxX, PpX);
             UpdateStatistics(FIELD_Y, MeanY, StdY, MinY, MaxY, PpY);
 
-            /* Let EPICS know there's stuff to read. */
+            /* Let EPICS know there's stuff to read, releases interlock. */
             Interlock.Ready(WaveformIq.GetTimestamp());
+            GotEpicsLock = false;
         }
-        GotEpicsLock = !PublishUpdate;
+        else
+            GotEpicsLock = true;
         
         PublishCapturedSamples.Write(CapturedSamples);
     }
@@ -236,6 +218,47 @@ private:
             Accum[i].C += Input[i].C >> AverageBits;
             Accum[i].D += Input[i].D >> AverageBits;
         }
+    }
+
+    /* Returns true iff the current waveform is a complete capture. */
+    bool CheckComplete()
+    {
+        bool CaptureComplete;
+        THREAD_LOCK(this);
+        CaptureComplete = CapturedSamples >= (1 << AverageBits);
+        THREAD_UNLOCK();
+        return CaptureComplete;
+    }
+
+    /* Performs central work of accumulating a single ABCD waveform, returns
+     * true iff an update to EPICS should be triggered. */
+    bool AccumulateWaveform()
+    {
+        bool PublishUpdate;
+        THREAD_LOCK(this);
+
+        if (AverageBits > 0)
+        {
+            if (CapturedSamples >= (1 << AverageBits))
+                ResetAccumulator();
+
+            /* Convert IQ to ABCD and accumulate. */
+            InputAbcd.CaptureCordic(WaveformIq);
+            AccumulateAbcd();
+            PublishUpdate = UpdateAll  ||
+                CapturedSamples >= (1 << AverageBits);
+        }
+        else
+        {
+            /* Optimise special case when capturing exactly one sample:
+             * bypass accumulator and capture ABCD directly. */
+            WaveformAbcd.CaptureCordic(WaveformIq);
+            CapturedSamples = 1;
+            PublishUpdate = true;
+        }
+        
+        THREAD_UNLOCK();
+        return PublishUpdate;
     }
 
 
