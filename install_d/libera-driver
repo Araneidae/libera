@@ -56,7 +56,6 @@ esac
 : "${IL_MAX_ADC_OVERFLOW_DUR:?}"    # factor and duration limit
 $NEW_LIBERA  &&
     : "${POSTMORTEM_BUFFER:?}"  # Length of PM buffer
-fi
 
 
 case "$1" in
