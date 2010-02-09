@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 110
-y 65
+x 459
+y 82
 w 586
 h 696
 font "helvetica-medium-r-18.0"
@@ -30,7 +30,7 @@ endScreenProperties
 object xyGraphClass
 beginObjectProperties
 major 4
-minor 3
+minor 5
 release 0
 # Geometry
 x 8
@@ -51,9 +51,8 @@ xAxisSrc "AutoScale"
 xMax 1
 # Y axis properties
 showYAxis
-yAxisStyle "log10"
-yAxisSrc "fromUser"
-yMin 10000
+yAxisSrc "AutoScale"
+yMin 0
 yMax 1e+08
 # Y2 axis properties
 y2AxisSrc "AutoScale"
@@ -97,7 +96,7 @@ endObjectProperties
 object xyGraphClass
 beginObjectProperties
 major 4
-minor 3
+minor 5
 release 0
 # Geometry
 x 8
@@ -148,7 +147,7 @@ endObjectProperties
 object xyGraphClass
 beginObjectProperties
 major 4
-minor 3
+minor 5
 release 0
 # Geometry
 x 8
