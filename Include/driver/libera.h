@@ -49,22 +49,13 @@
 #define __EBPP_H_1
 #endif
 
-
 #include <linux/ioctl.h>
 #include <time.h>
-#include <limits.h>
 #include <stdint.h>
 
 
-
-/** Libera magic number for ioctl() calls */
-#define LIBERA_IOC_MAGIC    'l'
-#define LIBERA_EVENT_MAGIC  'e'
-
-
-
 /* Libera 64-bit time storage type. Used for (L)MT & (L)ST */
-typedef unsigned long long libera_hw_time_t; 
+typedef uint64_t libera_hw_time_t; 
 
 /* Libera userland timing pair, MT & ST */
 typedef struct 
@@ -108,119 +99,58 @@ enum {
 };
 
 
-#define LIBERA_IOC_CFG      0 /* Common Configuration Parameters  */
-#define LIBERA_IOC_DD      96 /* Data on Demand Parameters */
-#define LIBERA_IOC_PM     128 /* Post Mortem Parameters */
-
-
-/* Libera DD device parameter IOC tags */
-enum {
-    LIBERA_DD_DEC = LIBERA_IOC_DD,
-    LIBERA_DD_TSTAMP,
-};
-
-
-
-/* Action codes for ioctl definitions below. */
-enum {
-    LIBERA_EVENT_DAC_A = 0,
-    LIBERA_EVENT_DAC_B = 1,
-    LIBERA_EVENT_SC_TRIG = 2,
-    LIBERA_EVENT_MC_TRIG = 3,
-    LIBERA_EVENT_ST = 4,
-    LIBERA_EVENT_MT = 5,
-    LIBERA_EVENT_SC_TRIGGER_9 = 9,
-    LIBERA_EVENT_MC_TRIGGER_10 = 11,
-    LIBERA_EVENT_FLMC = 12,
-    LIBERA_EVENT_MASK = 16,
-    LIBERA_EVENT_PMBUF = 18,
-    LIBERA_EVENT_MCPHI = 19,
-    LIBERA_EVENT_SCPHI = 20,
-    LIBERA_EVENT_NCO = 23,
-    LIBERA_EVENT_MCPLL = 24,
-    LIBERA_EVENT_SCPLL = 25,
-};
-
-
 /* Libera driver ioctl definitions. */
 enum {
-    /* /dev/libera.cfg: Read configuration setting. */
-    LIBERA_IOC_GET_CFG = _IOWR(LIBERA_IOC_MAGIC,
-        LIBERA_IOC_CFG, libera_cfg_request_t),
-        
-    /* /dev/libera.cfg: Write configuration setting. */
-    LIBERA_IOC_SET_CFG = _IOW(LIBERA_IOC_MAGIC,
-        LIBERA_IOC_CFG, libera_cfg_request_t),
+    /* /dev/libera.cfg */
+    /* Read configuration setting. */
+    LIBERA_IOC_GET_CFG = _IOWR('l', 0, libera_cfg_request_t),
+    /* Write configuration setting. */
+    LIBERA_IOC_SET_CFG = _IOW('l', 0, libera_cfg_request_t),
 
-    /* /dev/libera.dd: Set decimation, 1 or 64. */
-    LIBERA_IOC_SET_DEC = _IOW(LIBERA_IOC_MAGIC,
-        LIBERA_IOC_DD, uint32_t),
-    
-    /* /dev/libera.dd: Read timestamp for current waveform. */
-    LIBERA_IOC_GET_DD_TSTAMP = _IOR(LIBERA_IOC_MAGIC, 
-        LIBERA_DD_TSTAMP, libera_timestamp_t),
+    /* /dev/libera.dd */
+    /* Set decimation, 1 or 64. */
+    LIBERA_IOC_SET_DEC = _IOW('l', 96, uint32_t),
+    /* Read timestamp for current waveform. */
+    LIBERA_IOC_GET_DD_TSTAMP = _IOR('l', 97, libera_timestamp_t),
 
-    /* /dev/libera.pm: load postmortem buffer from DD buffer. */
-    LIBERA_EVENT_ACQ_PM = _IOW(LIBERA_EVENT_MAGIC,
-        LIBERA_EVENT_PMBUF, uint32_t),
+    /* /dev/libera.pm */
+    /* Read timestamp for current waveform. */
+    LIBERA_IOC_GET_PM_TSTAMP = _IOR('l', 128, libera_timestamp_t),
 
-    /* /dev/libera.pm: Read timestamp for current waveform. */
-    LIBERA_IOC_GET_PM_TSTAMP = _IOR(LIBERA_IOC_MAGIC, 
-        LIBERA_IOC_PM, libera_timestamp_t),
+    /* /dev/libera.event */
 
-    /* /dev/libera.event: Set machine clock time (on next trigger). */
-    LIBERA_EVENT_SET_MT = _IOW(LIBERA_EVENT_MAGIC,
-        LIBERA_EVENT_MT, libera_HRtimestamp_t),
-
-    /* /dev/libera.event: Set system clock time (on next trigger). */
-    LIBERA_EVENT_SET_ST = _IOW(LIBERA_EVENT_MAGIC,
-        LIBERA_EVENT_ST, libera_HRtimestamp_t),
-
-    /* /dev/libera.event: Configure mask of events to be reported. */
-    LIBERA_EVENT_SET_MASK = _IOW(LIBERA_EVENT_MAGIC,
-        LIBERA_EVENT_MASK, uint32_t),
-        
-    /* /dev/libera.event: Read next raw machine time event. */    
-    LIBERA_EVENT_GET_MC_TRIGGER_10 = _IOR(LIBERA_EVENT_MAGIC, 
-        LIBERA_EVENT_MC_TRIGGER_10, libera_hw_time_t),
-
-    /* /dev/libera.event: Set machine clock frequency control DAC. */
-    LIBERA_EVENT_SET_DAC_A = _IOW(LIBERA_EVENT_MAGIC,
-        LIBERA_EVENT_DAC_A, int32_t),
-
-    /* /dev/libera.event: Notify machine clock parameters to driver. */
-    LIBERA_EVENT_SET_FLMC = _IOW(LIBERA_EVENT_MAGIC,
-        LIBERA_EVENT_FLMC, uint32_t),
-    LIBERA_EVENT_SET_MCPHI = _IOW(LIBERA_EVENT_MAGIC,
-        LIBERA_EVENT_MCPHI, libera_hw_time_t),
-    LIBERA_EVENT_SET_MCPLL = _IOW(LIBERA_EVENT_MAGIC,
-        LIBERA_EVENT_MCPLL, uint32_t),
-
-    /* /dev/libera.event: Set frequency of RF IF oscillator. */
-    LIBERA_EVENT_SET_NCO = _IOW(LIBERA_EVENT_MAGIC,
-        LIBERA_EVENT_NCO, uint32_t),
-
-    /* /dev/libera.event: Enable machine clock events. */
-    LIBERA_EVENT_ENABLE_MC_TRIG = _IOW(LIBERA_EVENT_MAGIC,
-        LIBERA_EVENT_MC_TRIG, int32_t),
-    
-    /* /dev/libera.event: Read next raw system clock event. */    
-    LIBERA_EVENT_GET_SC_TRIGGER_9 = _IOR(LIBERA_EVENT_MAGIC, 
-        LIBERA_EVENT_SC_TRIGGER_9, libera_hw_time_t),
-
-    /* /dev/libera.event: Set system clock frequency control DAC. */
-    LIBERA_EVENT_SET_DAC_B = _IOW(LIBERA_EVENT_MAGIC,
-        LIBERA_EVENT_DAC_B, int32_t),
-    
-    /* /dev/libera.event: Notify system clock parameters to driver. */
-    LIBERA_EVENT_SET_SCPHI = _IOW(LIBERA_EVENT_MAGIC,
-        LIBERA_EVENT_SCPHI, libera_hw_time_t),
-    LIBERA_EVENT_SET_SCPLL = _IOW(LIBERA_EVENT_MAGIC,
-        LIBERA_EVENT_SCPLL, uint32_t),
-
-    /* /dev/libera.event: Enable system clock events. */
-    LIBERA_EVENT_ENABLE_SC_TRIG = _IOW(LIBERA_EVENT_MAGIC,
-        LIBERA_EVENT_SC_TRIG, int32_t),
+    /* Set machine clock frequency control DAC. */
+    LIBERA_EVENT_SET_DAC_A = _IOW('e', 0, int32_t),
+    /* Set system clock frequency control DAC. */
+    LIBERA_EVENT_SET_DAC_B = _IOW('e', 1, int32_t),
+    /* Enable system clock events. */
+    LIBERA_EVENT_ENABLE_SC_TRIG = _IOW('e', 2, int32_t),
+    /* Enable machine clock events. */
+    LIBERA_EVENT_ENABLE_MC_TRIG = _IOW('e', 3, int32_t),
+    /* Set system clock time (on next trigger). */
+    LIBERA_EVENT_SET_ST = _IOW('e', 4, libera_HRtimestamp_t),
+    /* Set machine clock time (on next trigger). */
+    LIBERA_EVENT_SET_MT = _IOW('e', 5, libera_HRtimestamp_t),
+    /* Read next raw system clock event. */    
+    LIBERA_EVENT_GET_SC_TRIGGER_9 = _IOR('e', 9, libera_hw_time_t),
+    /* Read next raw machine time event. */    
+    LIBERA_EVENT_GET_MC_TRIGGER_10 = _IOR('e', 11, libera_hw_time_t),
+    /* Notify machine clock parameters to driver. */
+    LIBERA_EVENT_SET_FLMC = _IOW('e', 12, uint32_t),
+    /* Configure mask of events to be reported. */
+    LIBERA_EVENT_SET_MASK = _IOW('e', 16, uint32_t),
+    /* Load postmortem buffer from DD buffer. */
+    LIBERA_EVENT_ACQ_PM = _IOW('e', 18, uint32_t),
+    /* Notify machine clock parameters to driver. */
+    LIBERA_EVENT_SET_MCPHI = _IOW('e', 19, libera_hw_time_t),
+    /* Notify system clock parameters to driver. */
+    LIBERA_EVENT_SET_SCPHI = _IOW('e', 20, libera_hw_time_t),
+    /* Set frequency of RF IF oscillator. */
+    LIBERA_EVENT_SET_NCO = _IOW('e', 23, uint32_t),
+    /* Notify machine clock parameters to driver. */
+    LIBERA_EVENT_SET_MCPLL = _IOW('e', 24, uint32_t),
+    /* Notify system clock parameters to driver. */
+    LIBERA_EVENT_SET_SCPLL = _IOW('e', 25, uint32_t),
 };
 
 
@@ -259,11 +189,7 @@ enum {
 };
 
 
-/* Libera EBPP Data on Demand (DD) atom */
-/* NOTE: The size of libera_atom_dd_t structure is important. 
- *       The minimal lenght of libera_atom_dd_t is 4 bytes and it must be 
- *       integer (4-byte) aligned!
- */
+/* Libera EBPP Data on Demand (DD) atom: IQ data. */
 typedef struct {
     int32_t cosVa;
     int32_t sinVa;
@@ -276,11 +202,7 @@ typedef struct {
 } libera_atom_dd_t;
 
 
-/* Libera EBPP ADC-rate Data (ADC) atom */
-/* NOTE: The size of libera_atom_adc_t structure is important. 
- *       The minimal lenght of libera_atom_adc_t is 4 bytes and it must be 
- *       integer (4-byte) aligned!
- */
+/* Libera EBPP ADC-rate Data (ADC) atom: raw 16 bit ADC values. */
 typedef struct {
     int16_t ChD;
     int16_t ChC;
@@ -289,14 +211,7 @@ typedef struct {
 } libera_atom_adc_t;
 
 
-/* Libera EBPP Slow Acquisition (SA) atom */
-/* NOTE: The size of libera_atom_sa_t structure is important. 
- *       PAGE_SIZE MUST be a multiple of sizeof(libera_atom_sa_t) for proper 
- *       buffer wrapping. Pad this structure to the nearest common denominator 
- *       of PAGE_SIZE and sizeof(libera_atom_sa_t).
- *       The minimal lenght of libera_atom_sa_t is 4 bytes and it must be 
- *       integer (4-byte) aligned!
- */
+/* Libera EBPP Slow Acquisition (SA) atom: processed positions. */
 typedef struct {
     /* 4 amplitudes */
     int32_t Va, Vb, Vc, Vd;

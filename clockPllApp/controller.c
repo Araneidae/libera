@@ -43,6 +43,7 @@
 #include <string.h>
 #include <syslog.h>
 #include <pthread.h>
+#include <limits.h>
 
 #include "driver/libera.h"
 #include "test_error.h"
