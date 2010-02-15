@@ -139,12 +139,28 @@ def FreeRunningStats(axis):
         aIn('PP%s' % axis, 0, 2e4, 1e-3, 
             PREC = 2, EGU = 'um',
             DESC = 'Peak to peak %s FR' % axis)]
-        
+
+# Computed tune statistics
+def TuneStats(axis, tune_scale):
+    return [
+        aIn('TUNE%sI' % axis, 0, 1e6, tune_scale,
+            EGU  = 'nm', PREC = 2,
+            DESC = 'I component of %s tune' % axis),
+        aIn('TUNE%sQ' % axis, 0, 1e6, tune_scale,
+            EGU  = 'nm', PREC = 2,
+            DESC = 'Q component of %s tune' % axis),
+        aIn('TUNE%sMAG' % axis, 0, 1e6, tune_scale,
+            EGU  = 'nm', PREC = 1,
+            DESC = 'Magnitude of %s tune' % axis),
+        aIn('TUNE%sPH' % axis, -180, +180, 360 * 2**-32,
+            EGU  = 'deg', PREC = 1,
+            DESC = 'Phase of %s tune' % axis)]
 
 
 # Free running short (typically 2048) turn-by-turn buffer.  
 def FreeRunning():
     LENGTH = Parameter('FR_LENGTH')
+    TUNE_SCALE = Parameter('TUNE_SCALE')    # 1 / LENGTH
     
     SetChannelName('FR')
     Enable()
@@ -152,7 +168,8 @@ def FreeRunning():
     # In this mode we provide all the available data: raw IQ, buttons,
     # computed positions and statistics.
     Trigger(True, IQ_wf(LENGTH) + ABCD_wf(LENGTH) + XYQS_wf(LENGTH) +
-        FreeRunningStats('X') + FreeRunningStats('Y'))
+        FreeRunningStats('X') + FreeRunningStats('Y') +
+        TuneStats('X', TUNE_SCALE) + TuneStats('Y', TUNE_SCALE))
     
     # Trigger capture offset
     longOut('DELAY', DESC = 'Trigger capture offset')
@@ -167,6 +184,14 @@ def FreeRunning():
         DESC = 'Update waveforms during averaging?')
     longIn('SAMPLES', SCAN = 'I/O Intr',
         DESC = 'Accumulated samples in average')
+
+    # Tune measurement frequencies
+    aOut('TUNEX', 0, 0.5, 2**-32,
+        PREC = 5,
+        DESC = 'Tune frequency to detect on X')
+    aOut('TUNEY', 0, 0.5, 2**-32,
+        PREC = 5,
+        DESC = 'Tune frequency to detect on Y')
     
     UnsetChannelName()
         

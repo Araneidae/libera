@@ -46,9 +46,23 @@
 #include "events.h"
 #include "convert.h"
 #include "waveform.h"
+#include "numeric.h"
+#include "cordic.h"
 
 #include "freeRun.h"
 
+
+#define M_2_32      (4.0 * (1 << 30))
+
+static int clip(long long int x)
+{
+    if (x > INT_MAX)
+        return INT_MAX;
+    else if (x < INT_MIN)
+        return INT_MIN;
+    else
+        return x;
+}
 
 
 class FREE_RUN : I_EVENT, LOCKED
@@ -60,14 +74,17 @@ public:
         InputAbcd(WaveformLength),
         WaveformAbcd(WaveformLength, true),
         WaveformXyqs(WaveformLength),
-        PublishCapturedSamples(0)
+        PublishCapturedSamples(0),
+        RotateI(new int[WaveformLength]),
+        RotateQ(new int[WaveformLength])
     {
         CaptureOffset = 0;
         AverageBits = 0;
         CapturedSamples = 0;
         StopWhenDone = false;
-        UpdateAll = true;
+        UpdateAll = false;
         GotEpicsLock = false;
+        TuneFrequency = 0;
         
         /* Publish all the waveforms and the interlock. */
         WaveformIq.Publish("FR");
@@ -82,6 +99,7 @@ public:
         Publish_bo("FR:ALLUPDATE", UpdateAll);
         PUBLISH_METHOD_ACTION("FR:RESET", ResetAverage);
 
+
         /* Publish statistics. */
         Publish_ai("FR:MEANX", MeanX);
         Publish_ai("FR:MEANY", MeanY);
@@ -93,6 +111,18 @@ public:
         Publish_ai("FR:MAXY",  MaxY);
         Publish_ai("FR:PPX",   PpX);
         Publish_ai("FR:PPY",   PpY);
+
+        /* Publish tune statistics. */
+        Publish_ai("FR:TUNEXI",     TuneXI);
+        Publish_ai("FR:TUNEXQ",     TuneXQ);
+        Publish_ai("FR:TUNEXMAG",   TuneXMag);
+        Publish_ai("FR:TUNEXPH",    TuneXPhase);
+        Publish_ai("FR:TUNEYI",     TuneYI);
+        Publish_ai("FR:TUNEYQ",     TuneYQ);
+        Publish_ai("FR:TUNEYMAG",   TuneYMag);
+        Publish_ai("FR:TUNEYPH",    TuneYPhase);
+        PUBLISH_METHOD_OUT(ao, "FR:TUNEFREQ", SetTuneFrequency, TuneFrequency);
+        SetTuneFrequency();
         
         Interlock.Publish("FR", true);
         Enable.Publish("FR");
@@ -104,6 +134,10 @@ public:
 
 private:
     FREE_RUN();
+
+    
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+    /* Event handling.                                                       */
     
     /* This code is called, possibly indirectly, in response to a trigger
      * event to read and process a First Turn waveform.  The waveform is read
@@ -130,8 +164,19 @@ private:
         if (AccumulateWaveform())
         {
             WaveformXyqs.CaptureConvert(WaveformAbcd);
-            UpdateStatistics(FIELD_X, MeanX, StdX, MinX, MaxX, PpX);
-            UpdateStatistics(FIELD_Y, MeanY, StdY, MinY, MaxY, PpY);
+            
+            /* Compute our analysis on the X and Y waveforms, both position
+             * statistics and tune response measurement.
+             *    I think it may be marginally faster to grab the waveform
+             * once into a properly aligned local waveform, rather than having
+             * to index the required field repeatedly. */
+            int Waveform[WaveformLength];
+            WaveformXyqs.Read(FIELD_X, Waveform, WaveformLength);
+            UpdateStatistics(Waveform, MeanX, StdX, MinX, MaxX, PpX);
+            ComputeTune(Waveform, TuneXI, TuneXQ, TuneXMag, TuneXPhase);
+            WaveformXyqs.Read(FIELD_Y, Waveform, WaveformLength);
+            UpdateStatistics(Waveform, MeanY, StdY, MinY, MaxY, PpY);
+            ComputeTune(Waveform, TuneYI, TuneYQ, TuneYMag, TuneYPhase);
 
             /* Let EPICS know there's stuff to read, releases interlock. */
             Interlock.Ready(WaveformIq.GetTimestamp());
@@ -144,15 +189,12 @@ private:
     }
 
 
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+    /* Waveform statistics.                                                  */
+    
     void UpdateStatistics(
-        int Field, int &Mean, int &Std, int &Min, int &Max, int &Pp)
+        int *Waveform, int &Mean, int &Std, int &Min, int &Max, int &Pp)
     {
-        /* I think it may be marginally faster to grab the waveform once into
-         * a properly aligned local waveform, rather than having to index the
-         * required field repeatedly. */
-        int Waveform[WaveformLength];
-        WaveformXyqs.Read(Field, Waveform, WaveformLength);
-        
         long long int Total = 0;
         Min = INT_MAX;
         Max = INT_MIN;
@@ -183,6 +225,9 @@ private:
     }
 
 
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+    /* Waveform averaging.                                                   */
+    
     bool SetAverageBits(int _AverageBits)
     {
         THREAD_LOCK(this);
@@ -261,7 +306,35 @@ private:
         return PublishUpdate;
     }
 
+    
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+    /* Tune response measurement.                                            */
 
+    void SetTuneFrequency()
+    {
+        for (int i = 0, angle = 0; i < WaveformLength;
+             i ++, angle += TuneFrequency)
+            cos_sin(angle, RotateI[i], RotateQ[i]);
+    }
+
+    void ComputeTune(int *Waveform, int &I, int &Q, int &Mag, int &Phase)
+    {
+        long long TotalI = 0, TotalQ = 0;
+        for (int i = 0; i < WaveformLength; i ++)
+        {
+            TotalI += MulSS(4 * Waveform[i], RotateI[i]);
+            TotalQ += MulSS(4 * Waveform[i], RotateQ[i]);
+        }
+        I = clip(TotalI);
+        Q = clip(TotalQ);
+
+//        Mag = MulSS(CordicMagnitude(I, Q), CORDIC_SCALE >> 1);
+        Mag = lround(sqrt((double) I * I + (double) Q * Q));
+        Phase = lround(atan2(Q, I) * M_2_32 / M_PI / 2.);
+    }
+    
+
+    
     const int WaveformLength;
     
     /* Captured and processed waveforms: these three blocks of waveforms are
@@ -284,6 +357,12 @@ private:
     bool UpdateAll;             // Whether to update while averaging
     bool GotEpicsLock;          // Tracks whether we're waiting for EPICS
     UPDATER_int PublishCapturedSamples;
+
+    /* Tune response measurement. */
+    int TuneFrequency;
+    int TuneXI, TuneXQ, TuneXMag, TuneXPhase;
+    int TuneYI, TuneYQ, TuneYMag, TuneYPhase;
+    int *const RotateI, *const RotateQ; 
 
     /* EPICS interlock. */
     INTERLOCK Interlock;

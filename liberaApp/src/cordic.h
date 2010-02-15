@@ -34,3 +34,20 @@
  * returned is scaled by a factor of approximately 0.5822 times the true
  * magnitude.  For our application this factor can be ignored. */
 int CordicMagnitude(int x, int y);
+
+/* To convert the magnitude returned by CordicMagnitude() into the correct
+ * units compute
+ *
+ *  true_magnitude = MulUU(CordicMagnitude(int x, int y) << 1, CORDIC_SCALE)
+ *
+ * In practice this will overflow, so the left shift should be omitted for
+ * an unsigned result.  If a signed result without overflow is needed then
+ * CORDIC_SCALE must be halved before use and MulSS can be used.
+ *
+ * This constant is computed (in Python) as
+ *
+ *  CORDIC_SCALE = int(round(2**32 /
+ *      reduce(operator.mul, [sqrt(1 + 2**-(2*n)) for n in range(1, 13)])))
+ *
+ * See cordic.cpp for more details of this computation. */
+#define CORDIC_SCALE  3688454971U
