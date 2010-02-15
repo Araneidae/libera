@@ -126,6 +126,60 @@ private:
 
 
 
+class FREE_RUN_STATS
+{
+public:
+    FREE_RUN_STATS(int WaveformLength, const char *Axis) :
+        WaveformLength(WaveformLength)
+    {
+        Publish_ai(Concat("FR:MEAN", Axis), Mean);
+        Publish_ai(Concat("FR:STD", Axis),  Std);
+        Publish_ai(Concat("FR:MIN", Axis),  Min);
+        Publish_ai(Concat("FR:MAX", Axis),  Max);
+        Publish_ai(Concat("FR:PP", Axis),   Pp);
+    }
+
+    void Update(const int *Waveform)
+    {
+        long long int Total = 0;
+        Min = INT_MAX;
+        Max = INT_MIN;
+        for (int i = 0; i < WaveformLength; i ++)
+        {
+            int Value = Waveform[i];
+            Total += Value;
+            if (Value < Min)  Min = Value;
+            if (Value > Max)  Max = Value;
+        }
+        Mean = (int) (Total / WaveformLength);
+        Pp = Max - Min;
+
+        /* We get away with accumulating the variance in a long long.  This
+         * depends on reasonable ranges of values: at DLS the position is
+         * +-10mm (24 bits) and the waveform is 2^11 bits long.  2*24+11 fits
+         * into 63 bits, and seriously there is negligible prospect of this
+         * failing anyway with realistic inputs... */
+        long long int Variance = 0;
+        for (int i = 0; i < WaveformLength; i ++)
+        {
+            long long int Value = Waveform[i];
+            Variance += (Value - Mean) * (Value - Mean);
+        }
+        Variance /= WaveformLength;
+        /* At this point I'm lazy. */
+        Std = (int) sqrt(Variance);
+    }
+
+    
+private:
+    FREE_RUN_STATS();
+    
+    const int WaveformLength;
+
+    int Mean, Std, Min, Max, Pp;
+};
+
+
 class FREE_RUN : I_EVENT, LOCKED
 {
 public:
@@ -136,6 +190,8 @@ public:
         WaveformAbcd(WaveformLength, true),
         WaveformXyqs(WaveformLength),
         PublishCapturedSamples(0),
+        StatsX(WaveformLength, "X"),
+        StatsY(WaveformLength, "Y"),
         TuneX(WaveformLength, "X"),
         TuneY(WaveformLength, "Y")
     {
@@ -158,18 +214,6 @@ public:
         Publish_bo("FR:AUTOSTOP", StopWhenDone);
         Publish_bo("FR:ALLUPDATE", UpdateAll);
         PUBLISH_METHOD_ACTION("FR:RESET", ResetAverage);
-
-        /* Publish statistics. */
-        Publish_ai("FR:MEANX", MeanX);
-        Publish_ai("FR:MEANY", MeanY);
-        Publish_ai("FR:STDX",  StdX);
-        Publish_ai("FR:STDY",  StdY);
-        Publish_ai("FR:MINX",  MinX);
-        Publish_ai("FR:MINY",  MinY);
-        Publish_ai("FR:MAXX",  MaxX);
-        Publish_ai("FR:MAXY",  MaxY);
-        Publish_ai("FR:PPX",   PpX);
-        Publish_ai("FR:PPY",   PpY);
 
         Interlock.Publish("FR", true);
         Enable.Publish("FR");
@@ -213,16 +257,13 @@ private:
             WaveformXyqs.CaptureConvert(WaveformAbcd);
             
             /* Compute our analysis on the X and Y waveforms, both position
-             * statistics and tune response measurement.
-             *    I think it may be marginally faster to grab the waveform
-             * once into a properly aligned local waveform, rather than having
-             * to index the required field repeatedly. */
+             * statistics and tune response measurement. */
             int Waveform[WaveformLength];
             WaveformXyqs.Read(FIELD_X, Waveform, WaveformLength);
-            UpdateStatistics(Waveform, MeanX, StdX, MinX, MaxX, PpX);
+            StatsX.Update(Waveform);
             TuneX.Update(Waveform);
             WaveformXyqs.Read(FIELD_Y, Waveform, WaveformLength);
-            UpdateStatistics(Waveform, MeanY, StdY, MinY, MaxY, PpY);
+            StatsY.Update(Waveform);
             TuneY.Update(Waveform);
 
             /* Let EPICS know there's stuff to read, releases interlock. */
@@ -233,42 +274,6 @@ private:
             GotEpicsLock = true;
         
         PublishCapturedSamples.Write(CapturedSamples);
-    }
-
-
-    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-    /* Waveform statistics.                                                  */
-    
-    void UpdateStatistics(
-        int *Waveform, int &Mean, int &Std, int &Min, int &Max, int &Pp)
-    {
-        long long int Total = 0;
-        Min = INT_MAX;
-        Max = INT_MIN;
-        for (int i = 0; i < WaveformLength; i ++)
-        {
-            int Value = Waveform[i];
-            Total += Value;
-            if (Value < Min)  Min = Value;
-            if (Value > Max)  Max = Value;
-        }
-        Mean = (int) (Total / WaveformLength);
-        Pp = Max - Min;
-
-        /* We get away with accumulating the variance in a long long.  This
-         * depends on reasonable ranges of values: at DLS the position is
-         * +-10mm (24 bits) and the waveform is 2^11 bits long.  2*24+11 fits
-         * into 63 bits, and seriously there is negligible prospect of this
-         * failing anyway with realistic inputs... */
-        long long int Variance = 0;
-        for (int i = 0; i < WaveformLength; i ++)
-        {
-            long long int Value = Waveform[i];
-            Variance += (Value - Mean) * (Value - Mean);
-        }
-        Variance /= WaveformLength;
-        /* At this point I'm lazy. */
-        Std = (int) sqrt(Variance);
     }
 
 
@@ -362,10 +367,6 @@ private:
     ABCD_WAVEFORMS InputAbcd, WaveformAbcd;
     XYQS_WAVEFORMS WaveformXyqs;
 
-    /* Statistics for the captured waveforms. */
-    int MeanX, StdX, MinX, MaxX, PpX;
-    int MeanY, StdY, MinY, MaxY, PpY;
-
     /* Offset from trigger of capture. */
     int CaptureOffset;
     
@@ -376,6 +377,10 @@ private:
     bool UpdateAll;             // Whether to update while averaging
     bool GotEpicsLock;          // Tracks whether we're waiting for EPICS
     UPDATER_int PublishCapturedSamples;
+
+    /* Statistics for the captured waveforms. */
+    FREE_RUN_STATS StatsX;
+    FREE_RUN_STATS StatsY;
 
     /* Tune response measurement. */
     FREE_RUN_TUNE TuneX;
