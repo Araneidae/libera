@@ -65,6 +65,67 @@ static int clip(long long int x)
 }
 
 
+class FREE_RUN_TUNE
+{
+public:
+    FREE_RUN_TUNE(int WaveformLength, const char *Axis) :
+        WaveformLength(WaveformLength),
+        Axis(Axis),
+        RotateI(new int[WaveformLength]),
+        RotateQ(new int[WaveformLength])
+    {
+        Frequency = 0;
+        
+        Publish_ai(PvName("I"),   I);
+        Publish_ai(PvName("Q"),   Q);
+        Publish_ai(PvName("MAG"), Mag);
+        Publish_ai(PvName("PH"),  Phase);
+        PUBLISH_METHOD_OUT(ao, PvName(""), SetFrequency, Frequency);
+        SetFrequency();
+    }
+
+    
+    void Update(int *Waveform)
+    {
+        long long TotalI = 0, TotalQ = 0;
+        for (int i = 0; i < WaveformLength; i ++)
+        {
+            TotalI += MulSS(4 * Waveform[i], RotateI[i]);
+            TotalQ += MulSS(4 * Waveform[i], RotateQ[i]);
+        }
+        I = clip(TotalI);
+        Q = clip(TotalQ);
+
+        Mag = lround(sqrt((double) I * I + (double) Q * Q));
+        Phase = lround(atan2(Q, I) * M_2_32 / M_PI / 2.);
+    }
+
+private:
+    FREE_RUN_TUNE();
+    
+    const char * PvName(const char *Pv)
+    {
+        return Concat("FR:TUNE", Axis, Pv);
+    }
+    
+    void SetFrequency()
+    {
+        for (int i = 0, angle = 0; i < WaveformLength;
+             i ++, angle += Frequency)
+            cos_sin(angle, RotateI[i], RotateQ[i]);
+    }
+    
+
+    const int WaveformLength;
+    const char *const Axis;
+    int *const RotateI, *const RotateQ; 
+
+    int Frequency;
+    int I, Q, Mag, Phase;
+};
+
+
+
 class FREE_RUN : I_EVENT, LOCKED
 {
 public:
@@ -75,8 +136,8 @@ public:
         WaveformAbcd(WaveformLength, true),
         WaveformXyqs(WaveformLength),
         PublishCapturedSamples(0),
-        RotateI(new int[WaveformLength]),
-        RotateQ(new int[WaveformLength])
+        TuneX(WaveformLength, "X"),
+        TuneY(WaveformLength, "Y")
     {
         CaptureOffset = 0;
         AverageBits = 0;
@@ -84,7 +145,6 @@ public:
         StopWhenDone = false;
         UpdateAll = false;
         GotEpicsLock = false;
-        TuneFrequency = 0;
         
         /* Publish all the waveforms and the interlock. */
         WaveformIq.Publish("FR");
@@ -99,7 +159,6 @@ public:
         Publish_bo("FR:ALLUPDATE", UpdateAll);
         PUBLISH_METHOD_ACTION("FR:RESET", ResetAverage);
 
-
         /* Publish statistics. */
         Publish_ai("FR:MEANX", MeanX);
         Publish_ai("FR:MEANY", MeanY);
@@ -112,18 +171,6 @@ public:
         Publish_ai("FR:PPX",   PpX);
         Publish_ai("FR:PPY",   PpY);
 
-        /* Publish tune statistics. */
-        Publish_ai("FR:TUNEXI",     TuneXI);
-        Publish_ai("FR:TUNEXQ",     TuneXQ);
-        Publish_ai("FR:TUNEXMAG",   TuneXMag);
-        Publish_ai("FR:TUNEXPH",    TuneXPhase);
-        Publish_ai("FR:TUNEYI",     TuneYI);
-        Publish_ai("FR:TUNEYQ",     TuneYQ);
-        Publish_ai("FR:TUNEYMAG",   TuneYMag);
-        Publish_ai("FR:TUNEYPH",    TuneYPhase);
-        PUBLISH_METHOD_OUT(ao, "FR:TUNEFREQ", SetTuneFrequency, TuneFrequency);
-        SetTuneFrequency();
-        
         Interlock.Publish("FR", true);
         Enable.Publish("FR");
         
@@ -173,10 +220,10 @@ private:
             int Waveform[WaveformLength];
             WaveformXyqs.Read(FIELD_X, Waveform, WaveformLength);
             UpdateStatistics(Waveform, MeanX, StdX, MinX, MaxX, PpX);
-            ComputeTune(Waveform, TuneXI, TuneXQ, TuneXMag, TuneXPhase);
+            TuneX.Update(Waveform);
             WaveformXyqs.Read(FIELD_Y, Waveform, WaveformLength);
             UpdateStatistics(Waveform, MeanY, StdY, MinY, MaxY, PpY);
-            ComputeTune(Waveform, TuneYI, TuneYQ, TuneYMag, TuneYPhase);
+            TuneY.Update(Waveform);
 
             /* Let EPICS know there's stuff to read, releases interlock. */
             Interlock.Ready(WaveformIq.GetTimestamp());
@@ -307,34 +354,6 @@ private:
     }
 
     
-    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-    /* Tune response measurement.                                            */
-
-    void SetTuneFrequency()
-    {
-        for (int i = 0, angle = 0; i < WaveformLength;
-             i ++, angle += TuneFrequency)
-            cos_sin(angle, RotateI[i], RotateQ[i]);
-    }
-
-    void ComputeTune(int *Waveform, int &I, int &Q, int &Mag, int &Phase)
-    {
-        long long TotalI = 0, TotalQ = 0;
-        for (int i = 0; i < WaveformLength; i ++)
-        {
-            TotalI += MulSS(4 * Waveform[i], RotateI[i]);
-            TotalQ += MulSS(4 * Waveform[i], RotateQ[i]);
-        }
-        I = clip(TotalI);
-        Q = clip(TotalQ);
-
-//        Mag = MulSS(CordicMagnitude(I, Q), CORDIC_SCALE >> 1);
-        Mag = lround(sqrt((double) I * I + (double) Q * Q));
-        Phase = lround(atan2(Q, I) * M_2_32 / M_PI / 2.);
-    }
-    
-
-    
     const int WaveformLength;
     
     /* Captured and processed waveforms: these three blocks of waveforms are
@@ -359,10 +378,8 @@ private:
     UPDATER_int PublishCapturedSamples;
 
     /* Tune response measurement. */
-    int TuneFrequency;
-    int TuneXI, TuneXQ, TuneXMag, TuneXPhase;
-    int TuneYI, TuneYQ, TuneYMag, TuneYPhase;
-    int *const RotateI, *const RotateQ; 
+    FREE_RUN_TUNE TuneX;
+    FREE_RUN_TUNE TuneY;
 
     /* EPICS interlock. */
     INTERLOCK Interlock;
