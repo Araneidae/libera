@@ -67,9 +67,9 @@ ARM_GCC_PREFIX  Compiler prefix: see notes on toolchain below.
 The instructions below assume that you have already extracted
 libera-epics-$EPICS_VERSION.tgz into $LIBERA_EPICS.
 
-When running make the environment variable HOST_ARCH will be assumed to be
-set thus: 
-    $ export HOST_ARCH=linux-x86
+When running make the environment variable EPICS_HOST_ARCH will be assumed to
+be set thus: 
+    $ export EPICS_HOST_ARCH=linux-x86
 This is used by the Epics environment to determine which build configuration
 to use.
 
