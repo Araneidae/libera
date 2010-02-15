@@ -390,13 +390,10 @@ private:
     void InitialiseRotation(int Harmonic, int Decimation)
     {
         const double Offset = (double) (Harmonic % Decimation);
-        const double w_0 = 2.0 * M_PI * Offset / Decimation;
-        const double Scaling = (double) (1 << 30);
-        for (int i = 0; i < ADC_LENGTH; i ++)
-        {
-            RotateI[i] = lround(Scaling * cos(i * w_0));
-            RotateQ[i] = lround(Scaling * sin(i * w_0));
-        }
+        int phase_advance = lround((Offset * 4.0 * (1 << 30)) / Decimation);
+        for (int i = 0, angle = 0; i < ADC_LENGTH;
+             i ++, angle += phase_advance)
+            cos_sin(angle, RotateI[i], RotateQ[i]);
     }
 
 
