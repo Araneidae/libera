@@ -84,8 +84,7 @@ public:
         SetFrequency();
     }
 
-    
-    void Update(int *Waveform)
+    void Update(const int *Waveform)
     {
         long long TotalI = 0, TotalQ = 0;
         for (int i = 0; i < WaveformLength; i ++)
@@ -96,9 +95,10 @@ public:
         I = clip(TotalI);
         Q = clip(TotalQ);
 
-        Mag = lround(sqrt((double) I * I + (double) Q * Q));
+        Mag = 2 * MulUU(CordicMagnitude(I, Q), CORDIC_SCALE);
         Phase = lround(atan2(Q, I) * M_2_32 / M_PI / 2.);
     }
+    
 
 private:
     FREE_RUN_TUNE();
