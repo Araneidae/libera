@@ -341,3 +341,76 @@ unsigned int from_dB(int X, int &shift)
         return 0xFFFFFFFF;
     }
 }
+
+
+/* Computes simultaneous cos and sin by means of a lookup table.  It turns out
+ * that using a lookup table is perhaps twice as fast as using CORDIC:
+ * unfortunately administering the angle is quite costly.
+ *
+ * The basic lookup handles angles in the range 0 to 45 degrees, returning
+ * precomputed sin and cos values.  A linear fix up then doubles the available
+ * precision at the cost of three multiplies using the simple approximation
+ *
+ *      sin(x + d) ~~ sin(x) + d cos(x)
+ *      cos(x + d) ~~ cos(x) - d sin(x)
+ *
+ * The other octets are selected by the top three bits of the angle (2^32
+ * represents a complete rotation), with three bits of administration needed:
+ *
+ *  octet: in alternating octets we can compute using the formulae
+ *  
+ *      cos(x) = sin(pi/2 - x)
+ *      sin(x) = sin(pi/2 - x)
+ *
+ *  quadrants: in the four quadrants can express the rotations by multiples
+ *      of pi/2 as interchanges of sin and cos (as also done for the octets)
+ *      together with changes of sign for sin and for cos.
+ *
+ * It turns out that the fixups (as captured in the code below) can be simply
+ * captured by the following triggers on the top three bits, b31, b30, b29:
+ *
+ *  b30 ^ b29 => Exchange sin & cos
+ *  b31       => Negate sin
+ *  b30 ^ b31 => Negate cos
+ *
+ * With SINCOS_N set to 10 this code runs in around 250-300ns. */
+
+void cos_sin(int angle_in, int &c_out, int &s_out)
+{
+    /* Divide each quadrant into two octants; the angles go in opposite
+     * directions on the two octants. */
+    int angle = angle_in;
+    if (angle_in & 0x20000000)
+        angle = - angle;
+    angle &= 0x3FFFFFFF;
+    
+    /* Split angle into index and residue. */
+    int shift = 32 - COS_SIN_N - 3;
+    int index = ((angle + (1 << (shift - 1))) >> shift);
+    int residue = angle - (index << shift);
+
+    /* Compute accurate sin/cos in current octant: lookup table followed by
+     * linear fixup of the residue. */
+    const COS_SIN_LOOKUP * lut = &cos_sin_lookup_table[index];
+    int c = lut->cos;
+    int s = lut->sin;
+    /* Finally perform a linear fixup. */
+    residue = MulSS(COS_SIN_PI, residue << 4);   // Scale residue by 2 PI
+    c -= MulSS(residue, s);
+    s += MulSS(residue, c);
+
+    /* Fix up for appropriate octant. */
+    if (((angle_in >> 30) ^ (angle_in >> 29)) & 1)
+    {
+        int t = s;
+        s = c; c = t;
+    }
+    if (angle_in < 0)
+        s = - s;
+    if (((angle_in >> 31) ^ (angle_in >> 30)) & 1)
+        c = - c;
+
+    c_out = c;
+    s_out = s;
+}
+

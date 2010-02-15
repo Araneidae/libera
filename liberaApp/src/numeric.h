@@ -200,6 +200,19 @@ int to_dB(unsigned int X);
 unsigned int from_dB(int X, int &shift);
 
 
+/* Computes simultaneous cos and sin of the given angle.  The angle is a
+ * 32-bit fraction of a complete rotation, so to compute angle_in from an
+ * angle in radians compute
+ *
+ *                  32   angle
+ *      angle_in = 2   * -----
+ *                       2 pi
+ *
+ * The computed values are scaled by 2^30, so that the signed result fits in
+ * 32 bits without overflow. */
+void cos_sin(int angle_in, int &c_out, int &s_out);
+
+
 
 /*****************************************************************************/
 /*                                                                           */
