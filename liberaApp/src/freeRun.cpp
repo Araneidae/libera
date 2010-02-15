@@ -110,9 +110,23 @@ private:
     
     void SetFrequency()
     {
+        long long ITotal = 0, QTotal = 0;
         for (int i = 0, angle = 0; i < WaveformLength;
              i ++, angle += Frequency)
+        {
             cos_sin(angle, RotateI[i], RotateQ[i]);
+            ITotal += RotateI[i];
+            QTotal += RotateQ[i];
+        }
+
+        /* Compensate for residual DC effect. */
+        ITotal /= WaveformLength;
+        QTotal /= WaveformLength;
+        for (int i = 0; i < WaveformLength; i ++)
+        {
+            RotateI[i] -= ITotal;
+            RotateQ[i] -= QTotal;
+        }
     }
     
 
