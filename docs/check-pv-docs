@@ -72,6 +72,9 @@ sed -r '
     
     # <positions> -> X Y Q S
     /^(.*)<positions>(.*)$/s//\1X\2\n\1Y\2\n\1Q\2\n\1S\2/
+
+    # <axis> -> X Y
+    /^(.*)<axis>(.*)$/s//\1X\2\n\1Y\2/
     
     # <fan> -> 1 2
     /^(.*)<fan>(.*)$/s//\11\2\n\12\2/

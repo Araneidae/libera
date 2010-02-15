@@ -104,6 +104,9 @@ beam intensity (`S`).  The intensity `S` is in arbitrary units, normally
 scaled to 0.5822*2^31 full scale; the positions are in nm for waveforms and in
 mm for single points.  The skew factor is unscaled with maximum value +-1.
 
+<axis>:: refers to the two names, `X`, `Y` only.  Generally used for
+statistics calculations and so forth.
+
 ...`_S`:: Records of the form <name>`_S` are used to write values into the
 driver.  Most of these written values are remembered over IOC restart.   
 
@@ -174,10 +177,29 @@ capture turn by turn data before the trigger.
 `ENABLE_S`::
 If set to Disabled then `FR` processing will not occur.
 
-`MEANX`, `STDX`, `MINX`, `MAXX`, `PPX`, `MEANY`, `STDY`, `MINY`, `MAXY`, `PPY`::
+`MEAN`<axis>, `STD`<axis>, `MIN`<axis>, `MAX`<axis>, `PP`<axis>::
 The mean, standard deviation, minimum and maximum value and
 peak-to-peak deviation are computed over each `FR` waveform and
 reported in microns.
+
+The following PVs are used to calculate the component of a selected frequency
+(ideally the tune frequency) in the position waveform.  Normally these values
+are only meaningful if the tune frequency is correctly set and the beam is
+being excited at this frequency.
+
+`TUNE`<axis>`_S`::
+This sets the frequency being probed by the PVs below.  This frequency is in
+units of revolution frequency and can be set to any value between 0 and 0.5.
+
+`TUNE`<axis>`I`, `TUNE`<axis>`Q`, `TUNE`<axis>`MAG`, `TUNE`<axis>`PH`::
+A sine and cosine waveform at the selected probe frequency is mixed with the
+`X` and `Y` waveforms to compute `I` and `Q` components, in nm, and the
+corresponding magnitude `MAG`, also in nm, and phase `PH` in degrees.
++
+Note that the DC component is subtracted from the computed sine and cosine
+(with some integer rounding) and that thus the response at low frequencies is
+reduced: indeed, the response at `TUNE`<axis>`_S` = 0 is zero.
+
 
 The following PVs are used to control the averaging of a sequence of FR
 waveforms.  This can be useful if a sequence of repetitive experiments is
