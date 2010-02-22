@@ -133,6 +133,8 @@ public:
      * waveform that actually fits at the requested offset, truncating
      * Length as appropriate so that Offset+Length<=ActiveLength. */
     size_t CaptureLength(size_t Offset, size_t Length) const;
+    /* Returns the underlying maximum waveform size. */
+    size_t MaxLength() const { return WaveformSize; };
 
     /* Reads a column from the block of waveforms, returns the number of
      * points actually read.  The Field must be the offset of the selected

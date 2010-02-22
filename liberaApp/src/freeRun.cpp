@@ -68,9 +68,11 @@ static int clip(long long int x)
 class FREE_RUN_TUNE
 {
 public:
-    FREE_RUN_TUNE(int WaveformLength, const char *Axis) :
-        WaveformLength(WaveformLength),
+    FREE_RUN_TUNE(XYQS_WAVEFORMS &Waveform, int Field, const char *Axis) :
+        Waveform(Waveform),
+        Field(Field),
         Axis(Axis),
+        WaveformLength(Waveform.MaxLength()),
         RotateI(new int[WaveformLength]),
         RotateQ(new int[WaveformLength])
     {
@@ -84,15 +86,16 @@ public:
         SetFrequency();
     }
 
-    void Update(const int *Waveform)
+    void Update()
     {
         int64_t TotalI = 0, TotalQ = 0;
-        for (int i = 0; i < WaveformLength; i ++)
+        for (size_t i = 0; i < Waveform.GetLength(); i ++)
         {
+            int data = *use_offset(int, &Waveform.Waveform()[i], Field);
             /* To avoid too much loss of precision during accumulation we use
              * a comfortable number of bits. */
-            TotalI += ((int64_t) Waveform[i] * RotateI[i]) >> 16;
-            TotalQ += ((int64_t) Waveform[i] * RotateQ[i]) >> 16;
+            TotalI += ((int64_t) data * RotateI[i]) >> 16;
+            TotalQ += ((int64_t) data * RotateQ[i]) >> 16;
         }
         /* The shifts above and below add up to 28: this is 2 less than the
          * excess scaling factor 2^30 in the IQ waveform, leaving a factor of
@@ -139,8 +142,10 @@ private:
     }
     
 
-    const int WaveformLength;
+    XYQS_WAVEFORMS &Waveform;
+    const int Field;
     const char *const Axis;
+    const int WaveformLength;
     int *const RotateI, *const RotateQ; 
 
     int Frequency;
@@ -152,8 +157,10 @@ private:
 class FREE_RUN_STATS
 {
 public:
-    FREE_RUN_STATS(int WaveformLength, const char *Axis) :
-        WaveformLength(WaveformLength)
+    FREE_RUN_STATS(XYQS_WAVEFORMS &Waveform, int Field, const char *Axis) :
+        Waveform(Waveform),
+        Field(Field),
+        WaveformLength(Waveform.MaxLength())
     {
         Publish_ai(Concat("FR:MEAN", Axis), Mean);
         Publish_ai(Concat("FR:STD", Axis),  Std);
@@ -162,14 +169,14 @@ public:
         Publish_ai(Concat("FR:PP", Axis),   Pp);
     }
 
-    void Update(const int *Waveform)
+    void Update()
     {
         long long int Total = 0;
         Min = INT_MAX;
         Max = INT_MIN;
-        for (int i = 0; i < WaveformLength; i ++)
+        for (size_t i = 0; i < Waveform.GetLength(); i ++)
         {
-            int Value = Waveform[i];
+            int Value = *use_offset(int, &Waveform.Waveform()[i], Field);
             Total += Value;
             if (Value < Min)  Min = Value;
             if (Value > Max)  Max = Value;
@@ -183,9 +190,9 @@ public:
          * into 63 bits, and seriously there is negligible prospect of this
          * failing anyway with realistic inputs... */
         long long int Variance = 0;
-        for (int i = 0; i < WaveformLength; i ++)
+        for (size_t i = 0; i < Waveform.GetLength(); i ++)
         {
-            long long int Value = Waveform[i];
+            int64_t Value = *use_offset(int, &Waveform.Waveform()[i], Field);
             Variance += (Value - Mean) * (Value - Mean);
         }
         Variance /= WaveformLength;
@@ -197,6 +204,8 @@ public:
 private:
     FREE_RUN_STATS();
     
+    XYQS_WAVEFORMS &Waveform;
+    const int Field;
     const int WaveformLength;
 
     int Mean, Std, Min, Max, Pp;
@@ -213,10 +222,10 @@ public:
         WaveformAbcd(WaveformLength, true),
         WaveformXyqs(WaveformLength),
         PublishCapturedSamples(0),
-        StatsX(WaveformLength, "X"),
-        StatsY(WaveformLength, "Y"),
-        TuneX(WaveformLength, "X"),
-        TuneY(WaveformLength, "Y")
+        StatsX(WaveformXyqs, FIELD_X, "X"),
+        StatsY(WaveformXyqs, FIELD_Y, "Y"),
+        TuneX(WaveformXyqs, FIELD_X, "X"),
+        TuneY(WaveformXyqs, FIELD_Y, "Y")
     {
         CaptureOffset = 0;
         AverageBits = 0;
@@ -281,13 +290,10 @@ private:
             
             /* Compute our analysis on the X and Y waveforms, both position
              * statistics and tune response measurement. */
-            int Waveform[WaveformLength];
-            WaveformXyqs.Read(FIELD_X, Waveform, WaveformLength);
-            StatsX.Update(Waveform);
-            TuneX.Update(Waveform);
-            WaveformXyqs.Read(FIELD_Y, Waveform, WaveformLength);
-            StatsY.Update(Waveform);
-            TuneY.Update(Waveform);
+            StatsX.Update();
+            TuneX.Update();
+            StatsY.Update();
+            TuneY.Update();
 
             /* Let EPICS know there's stuff to read, releases interlock. */
             Interlock.Ready(WaveformIq.GetTimestamp());
