@@ -64,10 +64,8 @@ public:
         WaveformAbcd(WaveformLength, true),
         WaveformXyqs(WaveformLength),
         PublishCapturedSamples(0),
-        StatsX(WaveformXyqs, FIELD_X, "X"),
-        StatsY(WaveformXyqs, FIELD_Y, "Y"),
-        TuneX(WaveformXyqs, FIELD_X, "X"),
-        TuneY(WaveformXyqs, FIELD_Y, "Y")
+        StatsX("FR", "X", WaveformXyqs, FIELD_X),
+        StatsY("FR", "Y", WaveformXyqs, FIELD_Y)
     {
         CaptureOffset = 0;
         AverageBits = 0;
@@ -130,12 +128,9 @@ private:
         {
             WaveformXyqs.CaptureConvert(WaveformAbcd);
             
-            /* Compute our analysis on the X and Y waveforms, both position
-             * statistics and tune response measurement. */
+            /* Update our statistics on the X and Y waveforms. */
             StatsX.Update();
-            TuneX.Update();
             StatsY.Update();
-            TuneY.Update();
 
             /* Let EPICS know there's stuff to read, releases interlock. */
             Interlock.Ready(WaveformIq.GetTimestamp());
@@ -250,12 +245,8 @@ private:
     UPDATER_int PublishCapturedSamples;
 
     /* Statistics for the captured waveforms. */
-    WAVEFORM_STATS StatsX;
-    WAVEFORM_STATS StatsY;
-
-    /* Tune response measurement. */
-    WAVEFORM_TUNE TuneX;
-    WAVEFORM_TUNE TuneY;
+    STATISTICS StatsX;
+    STATISTICS StatsY;
 
     /* EPICS interlock. */
     INTERLOCK Interlock;

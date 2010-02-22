@@ -60,60 +60,79 @@ static int clip(long long int x)
 }
 
 
-static size_t clz_64(uint64_t x)
+
+static const char * PvName(const char *Group, const char *Pv, const char *Axis)
 {
-    if (x >> 32)
-        return CLZ(x >> 32);
-    else
-        return 32 + CLZ((uint32_t) (x & 0xFFFFFFFF));
+    char *name = (char *) malloc(
+        strlen(Group) + 1 + strlen(Pv) + strlen(Axis) + 1);
+    sprintf(name, "%s:%s%s", Group, Pv, Axis);
+    return name;
 }
 
 
-
-/* This routine computes 2^-shift * a * b with as much precision as possible.
- * This is a bit tricky, as we don't know in advance which of a and b has
- * bits to spare, so we have to normalise first. */
-
-static int64_t LongMultiply(int64_t a, int64_t b, size_t shift)
-{
-    bool negative = false;
-    if (a < 0) { a = - a; negative = true; }
-    if (b < 0) { b = - b; negative = !negative; }
-
-    int n = clz_64(a);
-    int m = clz_64(b);
-    int nm = (n + m) / 2;
-    int sa = shift - n + nm;
-    if (sa < 0)
-        sa = 0;
-    else if (sa > (int) shift)
-        sa = shift;
-    a >>= sa;
-    b >>= shift - sa;
-
-    int64_t ab = a * b;
-    return negative ? - ab : ab;
-}
-
-
-WAVEFORM_TUNE::WAVEFORM_TUNE(
-    XYQS_WAVEFORMS &Waveform, int Field, const char *Axis) :
+STATISTICS::STATISTICS(
+    const char *Group, const char *Axis,
+    XYQS_WAVEFORMS &Waveform, int Field) :
 
     Waveform(Waveform),
-    Field(Field),
-    Axis(Axis)
+    Field(Field)
 {
-    Frequency = 0;
-    Update();
+#define PV_NAME(pv) PvName(Group, pv, Axis)
+    /* Waveform statistics. */
+    Mean = Std = Min = Max = Pp = 0;
+    Publish_ai(PV_NAME("MEAN"), Mean);
+    Publish_ai(PV_NAME("STD"),  Std);
+    Publish_ai(PV_NAME("MIN"),  Min);
+    Publish_ai(PV_NAME("MAX"),  Max);
+    Publish_ai(PV_NAME("PP"),   Pp);
 
-    Publish_ai(PvName("I"),   I);
-    Publish_ai(PvName("Q"),   Q);
-    Publish_ai(PvName("MAG"), Mag);
-    Publish_ai(PvName("PH"),  Phase);
-    PUBLISH_METHOD_OUT(ao, PvName(""), Update, Frequency);
+    /* Tune statistics. */
+    Frequency = 0;
+    UpdateTune();
+
+    Publish_ai(PV_NAME("TUNEI"),   I);
+    Publish_ai(PV_NAME("TUNEQ"),   Q);
+    Publish_ai(PV_NAME("TUNEMAG"), Mag);
+    Publish_ai(PV_NAME("TUNEPH"),  Phase);
+    PUBLISH_METHOD_OUT(ao, PV_NAME("TUNE"), Update, Frequency);
+#undef PV_NAME
 }
 
-void WAVEFORM_TUNE::Update()
+
+void STATISTICS::UpdateStats()
+{
+    long long int Total = 0;
+    Min = INT_MAX;
+    Max = INT_MIN;
+    size_t Length = GetLength();
+    for (size_t i = 0; i < Length; i ++)
+    {
+        int Value = GetField(i);
+        Total += Value;
+        if (Value < Min)  Min = Value;
+        if (Value > Max)  Max = Value;
+    }
+    Mean = (int) (Total / Length);
+    Pp = Max - Min;
+
+    /* We get away with accumulating the variance in a long long.  This
+     * depends on reasonable ranges of values: at DLS the position is
+     * +-10mm (24 bits) and the waveform is 2^11 bits long.  2*24+11 fits
+     * into 63 bits, and seriously there is negligible prospect of this
+     * failing anyway with realistic inputs... */
+    long long int Variance = 0;
+    for (size_t i = 0; i < Length; i ++)
+    {
+        int64_t Value = GetField(i);
+        Variance += (Value - Mean) * (Value - Mean);
+    }
+    Variance /= Length;
+    /* At this point I'm lazy. */
+    Std = (int) sqrt(Variance);
+}
+
+
+void STATISTICS::UpdateTune()
 {
     if (Frequency == 0)
         /* Effectively turn processing off in this case. */
@@ -121,34 +140,20 @@ void WAVEFORM_TUNE::Update()
     else
     {
         int64_t TotalI = 0, TotalQ = 0;
-        int64_t cos_sum = 0, sin_sum = 0, data_sum = 0;
         int angle = 0;
-        size_t length = Waveform.GetLength();
+        size_t length = GetLength();
         for (size_t i = 0; i < length; i ++)
         {
             int cos, sin;
             cos_sin(angle, cos, sin);
-            cos_sum += cos;
-            sin_sum += sin;
-
-            int data = GET_FIELD(Waveform, i, Field, int);
-            data_sum += data;
 
             /* To avoid too much loss of precision during accumulation we
              * use a comfortable number of bits. */
+            int data = GetField(i) - Mean;
             TotalI += ((int64_t) data * cos) >> 16;
             TotalQ += ((int64_t) data * sin) >> 16;
             angle += Frequency;
         }
-
-        /* Correct for DC offset in the original cos/sin waveform: this
-         * arises from the fact that there isn't (necessarily) a complete
-         * cycle of the selected frequency.  So we compute
-         *  I = SUM(x_i*(c_i - mean(c))) = SUM(x_i*c_i) - SUM(x)*SUM(c)/N
-         * This is made a bit complicated by the fact that this is all
-         * fixed point arithmetic. */
-        TotalI -= LongMultiply(cos_sum, data_sum, 16) / length;
-        TotalQ -= LongMultiply(sin_sum, data_sum, 16) / length;
 
         /* The shifts above and below add up to 28: this is 2 less than
          * the excess scaling factor 2^30 in the IQ waveform, leaving a
@@ -167,55 +172,8 @@ void WAVEFORM_TUNE::Update()
 }
 
 
-const char * WAVEFORM_TUNE::PvName(const char *Pv)
+void STATISTICS::Update()
 {
-    return Concat("FR:TUNE", Axis, Pv);
-}
-
-
-
-WAVEFORM_STATS::WAVEFORM_STATS(
-    XYQS_WAVEFORMS &Waveform, int Field, const char *Axis) :
-    
-    Waveform(Waveform),
-    Field(Field),
-    WaveformLength(Waveform.MaxLength())
-{
-    Publish_ai(Concat("FR:MEAN", Axis), Mean);
-    Publish_ai(Concat("FR:STD", Axis),  Std);
-    Publish_ai(Concat("FR:MIN", Axis),  Min);
-    Publish_ai(Concat("FR:MAX", Axis),  Max);
-    Publish_ai(Concat("FR:PP", Axis),   Pp);
-}
-
-
-void WAVEFORM_STATS::Update()
-{
-    long long int Total = 0;
-    Min = INT_MAX;
-    Max = INT_MIN;
-    for (size_t i = 0; i < Waveform.GetLength(); i ++)
-    {
-        int Value = GET_FIELD(Waveform, i, Field, int);
-        Total += Value;
-        if (Value < Min)  Min = Value;
-        if (Value > Max)  Max = Value;
-    }
-    Mean = (int) (Total / WaveformLength);
-    Pp = Max - Min;
-
-    /* We get away with accumulating the variance in a long long.  This
-     * depends on reasonable ranges of values: at DLS the position is
-     * +-10mm (24 bits) and the waveform is 2^11 bits long.  2*24+11 fits
-     * into 63 bits, and seriously there is negligible prospect of this
-     * failing anyway with realistic inputs... */
-    long long int Variance = 0;
-    for (size_t i = 0; i < Waveform.GetLength(); i ++)
-    {
-        int64_t Value = GET_FIELD(Waveform, i, Field, int);
-        Variance += (Value - Mean) * (Value - Mean);
-    }
-    Variance /= WaveformLength;
-    /* At this point I'm lazy. */
-    Std = (int) sqrt(Variance);
+    UpdateStats();
+    UpdateTune();
 }

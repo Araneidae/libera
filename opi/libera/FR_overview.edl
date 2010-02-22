@@ -1126,7 +1126,7 @@ x 296
 y 792
 w 64
 h 16
-controlPv "$(device):FR:TUNEXI"
+controlPv "$(device):FR:TUNEIX"
 font "helvetica-medium-r-14.0"
 fontAlign "right"
 fgColor index 14
@@ -1152,7 +1152,7 @@ x 368
 y 792
 w 64
 h 16
-controlPv "$(device):FR:TUNEXQ"
+controlPv "$(device):FR:TUNEQX"
 font "helvetica-medium-r-14.0"
 fontAlign "right"
 fgColor index 14
@@ -1178,7 +1178,7 @@ x 456
 y 792
 w 64
 h 16
-controlPv "$(device):FR:TUNEXMAG"
+controlPv "$(device):FR:TUNEMAGX"
 font "helvetica-medium-r-14.0"
 fontAlign "right"
 fgColor index 14
@@ -1204,7 +1204,7 @@ x 520
 y 792
 w 48
 h 16
-controlPv "$(device):FR:TUNEXPH"
+controlPv "$(device):FR:TUNEPHX"
 font "helvetica-medium-r-14.0"
 fontAlign "right"
 fgColor index 14
@@ -1250,7 +1250,7 @@ x 296
 y 808
 w 64
 h 16
-controlPv "$(device):FR:TUNEYI"
+controlPv "$(device):FR:TUNEIY"
 font "helvetica-medium-r-14.0"
 fontAlign "right"
 fgColor index 14
@@ -1276,7 +1276,7 @@ x 368
 y 808
 w 64
 h 16
-controlPv "$(device):FR:TUNEYQ"
+controlPv "$(device):FR:TUNEQY"
 font "helvetica-medium-r-14.0"
 fontAlign "right"
 fgColor index 14
@@ -1302,7 +1302,7 @@ x 456
 y 808
 w 64
 h 16
-controlPv "$(device):FR:TUNEYMAG"
+controlPv "$(device):FR:TUNEMAGY"
 font "helvetica-medium-r-14.0"
 fontAlign "right"
 fgColor index 14
@@ -1328,7 +1328,7 @@ x 520
 y 808
 w 48
 h 16
-controlPv "$(device):FR:TUNEYPH"
+controlPv "$(device):FR:TUNEPHY"
 font "helvetica-medium-r-14.0"
 fontAlign "right"
 fgColor index 14

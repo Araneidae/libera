@@ -41,6 +41,17 @@
  * generates a single clz instruction. */
 #define CLZ(x)  ((unsigned int) __builtin_clz(x))
 
+/* Implementation of CLZ for 64 bit integers. */
+inline unsigned int clz_64(uint64_t x)
+{
+    if (x >> 32)
+        return CLZ(x >> 32);
+    else
+        return 32 + CLZ((uint32_t) (x & 0xFFFFFFFF));
+}
+
+
+
 
 /* Returns 2^-32 * x * y, signed or unsigned.  This is particularly convenient
  * for fixed point arithmetic, and is remarkably inexpensive (approximately

@@ -28,42 +28,32 @@
 
 /* Shared support for X/Y statistics. */
 
-class WAVEFORM_TUNE
+class STATISTICS
 {
 public:
-    WAVEFORM_TUNE(XYQS_WAVEFORMS &Waveform, int Field, const char *Axis);
+    STATISTICS(
+        const char *Group, const char *Axis,
+        XYQS_WAVEFORMS &Waveform, int Field);
 
     void Update();
-
-private:
-    WAVEFORM_TUNE();
     
-    const char * PvName(const char *Pv);
+private:
+    STATISTICS();
+
+    void UpdateStats();
+    void UpdateTune();
+    
+    size_t GetLength() { return Waveform.GetLength(); }
+    int GetField(int i) { return GET_FIELD(Waveform, i, Field, int); }
     
 
     XYQS_WAVEFORMS &Waveform;
     const int Field;
-    const char *const Axis;
 
+    /* Computed waveform statistics. */
+    int Mean, Std, Min, Max, Pp;
+
+    /* Computed tune statistics. */
     int Frequency;
     int I, Q, Mag, Phase;
-};
-
-
-
-class WAVEFORM_STATS
-{
-public:
-    WAVEFORM_STATS(XYQS_WAVEFORMS &Waveform, int Field, const char *Axis);
-
-    void Update();
-    
-private:
-    WAVEFORM_STATS();
-    
-    XYQS_WAVEFORMS &Waveform;
-    const int Field;
-    const int WaveformLength;
-
-    int Mean, Std, Min, Max, Pp;
 };

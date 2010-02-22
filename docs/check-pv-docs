@@ -17,6 +17,7 @@ sed -r '
     /^.*DONE$/d                 #   and done records
     /^.*TRIGFAN.*$/d            # Trigger and
     /^.*FANOUT[0-9]*$/d         #   normal fanout records
+    /^.*TUNEFAN[XY]$/d          #   and tune fanout
     /^.*_C$/d                   # In-Out
     /^.*_R$/d' |                #  loopback records
 sort >"$TEMP_ROOT"/pvs.txt

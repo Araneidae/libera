@@ -191,7 +191,7 @@ being excited at this frequency.
 This sets the frequency being probed by the PVs below.  This frequency is in
 units of revolution frequency and can be set to any value between 0 and 0.5.
 
-`TUNE`<axis>`I`, `TUNE`<axis>`Q`, `TUNE`<axis>`MAG`, `TUNE`<axis>`PH`::
+`TUNEI`<axis>, `TUNEQ`<axis>, `TUNEMAG`<axis>, `TUNEPH`<axis>::
 A sine and cosine waveform at the selected probe frequency is mixed with the
 `X` and `Y` waveforms to compute `I` and `Q` components, in nm, and the
 corresponding magnitude `MAG`, also in nm, and phase `PH` in degrees.

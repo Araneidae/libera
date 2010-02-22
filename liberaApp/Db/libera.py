@@ -143,22 +143,22 @@ def FreeRunningStats(axis):
 # Computed tune statistics
 def TuneStats(axis, tune_scale):
     tune_stats = [
-        aIn('TUNE%sI' % axis, 0, 1e6, tune_scale,
+        aIn('TUNEI%s' % axis, 0, 1e6, tune_scale,
             EGU  = 'nm', PREC = 2,
             DESC = 'I component of %s tune' % axis),
-        aIn('TUNE%sQ' % axis, 0, 1e6, tune_scale,
+        aIn('TUNEQ%s' % axis, 0, 1e6, tune_scale,
             EGU  = 'nm', PREC = 2,
             DESC = 'Q component of %s tune' % axis),
-        aIn('TUNE%sMAG' % axis, 0, 1e6, tune_scale,
+        aIn('TUNEMAG%s' % axis, 0, 1e6, tune_scale,
             EGU  = 'nm', PREC = 1,
             DESC = 'Magnitude of %s tune' % axis),
-        aIn('TUNE%sPH' % axis, -180, +180, 360 * 2**-32,
+        aIn('TUNEPH%s' % axis, -180, +180, 360 * 2**-32,
             EGU  = 'deg', PREC = 1,
             DESC = 'Phase of %s tune' % axis)]
     
     aOut('TUNE%s' % axis, 0, 0.5, 2**-32,
         PREC = 5,
-        FLNK = create_fanout('FAN%sTUNE' % axis, *tune_stats),
+        FLNK = create_fanout('TUNEFAN%s' % axis, *tune_stats),
         DESC = 'Tune frequency to detect on %s' % axis)
     return tune_stats
 
