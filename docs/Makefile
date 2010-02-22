@@ -12,14 +12,12 @@ ASCIIDOC = /home/mga83/local/bin/asciidoc
 
 DOCUMENTS = libera CHANGES
 
-default: $(patsubst %, %.html, $(DOCUMENTS))
+default: check-pv-docs $(patsubst %, %.html, $(DOCUMENTS))
 
-
-.PHONY: clean check-pv-docs
 clean:
 	rm -f *.html
 
 check-pv-docs:
 	./check-pv-docs
 
-libera.html: check-pv-docs
+.PHONY: clean check-pv-docs

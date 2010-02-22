@@ -210,4 +210,5 @@ for n in range(2**COS_SIN_N + 1):
         lround(2**30 * math.cos(angle)), lround(2**30 * math.sin(angle))),
     if n % 2 == 1:
         print
+print
 print '};'
