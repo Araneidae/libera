@@ -70,6 +70,7 @@ ioc_SRCS += sensors.cpp         # Machine state sensors
 ioc_SRCS += conditioning.cpp    # Signal conditioning control
 ioc_SRCS += meanSums.cpp        # Trigger to trigger mean intensity
 ioc_SRCS += fastFeedback.cpp    # Fast feedback register access
+ioc_SRCS += statistics.cpp      # X/Y statistics calculations
 ioc_SRCS += versions.cpp        # Version identification
 
 ioc_SRCS += iocMain.cpp         # Ioc startup and configuration
