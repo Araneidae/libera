@@ -71,19 +71,16 @@ public:
     FREE_RUN_TUNE(XYQS_WAVEFORMS &Waveform, int Field, const char *Axis) :
         Waveform(Waveform),
         Field(Field),
-        Axis(Axis),
-        WaveformLength(Waveform.MaxLength()),
-        RotateI(new int[WaveformLength]),
-        RotateQ(new int[WaveformLength])
+        Axis(Axis)
     {
         Frequency = 0;
+        Update();
         
         Publish_ai(PvName("I"),   I);
         Publish_ai(PvName("Q"),   Q);
         Publish_ai(PvName("MAG"), Mag);
         Publish_ai(PvName("PH"),  Phase);
-        PUBLISH_METHOD_OUT(ao, PvName(""), SetFrequency, Frequency);
-        SetFrequency();
+        PUBLISH_METHOD_OUT(ao, PvName(""), Update, Frequency);
     }
 
     void Update()
@@ -94,14 +91,36 @@ public:
         else
         {
             int64_t TotalI = 0, TotalQ = 0;
-            for (size_t i = 0; i < Waveform.GetLength(); i ++)
+            int64_t cos_sum = 0, sin_sum = 0, data_sum = 0;
+            int angle = 0;
+            size_t length = Waveform.GetLength();
+            for (size_t i = 0; i < length; i ++)
             {
+                int cos, sin;
+                cos_sin(angle, cos, sin);
+                cos_sum += cos;
+                sin_sum += sin;
+                
                 int data = GET_FIELD(Waveform, i, Field, int);
+                data_sum += data;
+                
                 /* To avoid too much loss of precision during accumulation we
                  * use a comfortable number of bits. */
-                TotalI += ((int64_t) data * RotateI[i]) >> 16;
-                TotalQ += ((int64_t) data * RotateQ[i]) >> 16;
+                TotalI += ((int64_t) data * cos) >> 16;
+                TotalQ += ((int64_t) data * sin) >> 16;
+                angle += Frequency;
             }
+
+            /* Correct for DC offset in the original cos/sin waveform: this
+             * arises from the fact that there isn't (necessarily) a complete
+             * cycle of the selected frequency.  So we compute
+             *  I = SUM(x_i*(c_i - mean(c))) = SUM(x_i*c_i) - SUM(x)*SUM(c)/N
+             * This is made a bit complicated by the fact that this is all
+             * fixed point arithmetic. */
+            data_sum >>= 16;
+            TotalI -= (cos_sum / length) * data_sum;
+            TotalQ -= (sin_sum / length) * data_sum;
+            
             /* The shifts above and below add up to 28: this is 2 less than
              * the excess scaling factor 2^30 in the IQ waveform, leaving a
              * factor of 2 for CORDIC_SCALE, and a further factor of 2 to
@@ -127,35 +146,10 @@ private:
         return Concat("FR:TUNE", Axis, Pv);
     }
     
-    void SetFrequency()
-    {
-        long long ITotal = 0, QTotal = 0;
-        for (int i = 0, angle = 0; i < WaveformLength;
-             i ++, angle += Frequency)
-        {
-            cos_sin(angle, RotateI[i], RotateQ[i]);
-            ITotal += RotateI[i];
-            QTotal += RotateQ[i];
-        }
-
-        /* Compensate for residual DC effect. */
-        ITotal /= WaveformLength;
-        QTotal /= WaveformLength;
-        for (int i = 0; i < WaveformLength; i ++)
-        {
-            RotateI[i] -= ITotal;
-            RotateQ[i] -= QTotal;
-        }
-
-        Update();
-    }
-    
 
     XYQS_WAVEFORMS &Waveform;
     const int Field;
     const char *const Axis;
-    const int WaveformLength;
-    int *const RotateI, *const RotateQ; 
 
     int Frequency;
     int I, Q, Mag, Phase;
