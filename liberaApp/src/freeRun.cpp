@@ -86,17 +86,26 @@ public:
 
     void Update(const int *Waveform)
     {
-        long long TotalI = 0, TotalQ = 0;
+        int64_t TotalI = 0, TotalQ = 0;
         for (int i = 0; i < WaveformLength; i ++)
         {
-            TotalI += MulSS(4 * Waveform[i], RotateI[i]);
-            TotalQ += MulSS(4 * Waveform[i], RotateQ[i]);
+            /* To avoid too much loss of precision during accumulation we use
+             * a comfortable number of bits. */
+            TotalI += ((int64_t) Waveform[i] * RotateI[i]) >> 16;
+            TotalQ += ((int64_t) Waveform[i] * RotateQ[i]) >> 16;
         }
-        I = clip(TotalI);
-        Q = clip(TotalQ);
+        /* The shifts above and below add up to 28: this is 2 less than the
+         * excess scaling factor 2^30 in the IQ waveform, leaving a factor of
+         * 2 for CORDIC_SCALE, and a further factor of 2 to convert a single
+         * frequency measurement into a properly scaled magnitude. */
+        I = clip(TotalI >> 12);
+        Q = clip(TotalQ >> 12);
 
-        Mag = 2 * MulUU(CordicMagnitude(I, Q), CORDIC_SCALE);
+        Mag = MulUU(CordicMagnitude(I, Q), CORDIC_SCALE);
         Phase = lround(atan2(Q, I) * M_2_32 / M_PI / 2.);
+        /* Finally we publish the underlying (scaled) I and Q. */
+        I /= 2;
+        Q /= 2;
     }
     
 
