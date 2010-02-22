@@ -189,6 +189,11 @@ protected:
 };
 
 
+/* Macro for retrieving a single field from a waveform. */
+#define GET_FIELD(waveform, index, field, type) \
+    (*use_offset(type, &waveform.Waveform()[index], field))
+
+
 class IQ_WAVEFORMS : public WAVEFORMS<IQ_ROW>
 {
 public:

@@ -88,27 +88,34 @@ public:
 
     void Update()
     {
-        int64_t TotalI = 0, TotalQ = 0;
-        for (size_t i = 0; i < Waveform.GetLength(); i ++)
+        if (Frequency == 0)
+            /* Effectively turn processing off in this case. */
+            I = Q = Mag = Phase = 0;
+        else
         {
-            int data = *use_offset(int, &Waveform.Waveform()[i], Field);
-            /* To avoid too much loss of precision during accumulation we use
-             * a comfortable number of bits. */
-            TotalI += ((int64_t) data * RotateI[i]) >> 16;
-            TotalQ += ((int64_t) data * RotateQ[i]) >> 16;
-        }
-        /* The shifts above and below add up to 28: this is 2 less than the
-         * excess scaling factor 2^30 in the IQ waveform, leaving a factor of
-         * 2 for CORDIC_SCALE, and a further factor of 2 to convert a single
-         * frequency measurement into a properly scaled magnitude. */
-        I = clip(TotalI >> 12);
-        Q = clip(TotalQ >> 12);
+            int64_t TotalI = 0, TotalQ = 0;
+            for (size_t i = 0; i < Waveform.GetLength(); i ++)
+            {
+                int data = GET_FIELD(Waveform, i, Field, int);
+                /* To avoid too much loss of precision during accumulation we
+                 * use a comfortable number of bits. */
+                TotalI += ((int64_t) data * RotateI[i]) >> 16;
+                TotalQ += ((int64_t) data * RotateQ[i]) >> 16;
+            }
+            /* The shifts above and below add up to 28: this is 2 less than
+             * the excess scaling factor 2^30 in the IQ waveform, leaving a
+             * factor of 2 for CORDIC_SCALE, and a further factor of 2 to
+             * convert a single frequency measurement into a properly scaled
+             * magnitude. */
+            I = clip(TotalI >> 12);
+            Q = clip(TotalQ >> 12);
 
-        Mag = MulUU(CordicMagnitude(I, Q), CORDIC_SCALE);
-        Phase = lround(atan2(Q, I) * M_2_32 / M_PI / 2.);
-        /* Finally we publish the underlying (scaled) I and Q. */
-        I /= 2;
-        Q /= 2;
+            Mag = MulUU(CordicMagnitude(I, Q), CORDIC_SCALE);
+            Phase = lround(atan2(Q, I) * M_2_32 / M_PI / 2.);
+            /* Finally we publish the underlying (scaled) I and Q. */
+            I /= 2;
+            Q /= 2;
+        }
     }
     
 
@@ -178,7 +185,7 @@ public:
         Max = INT_MIN;
         for (size_t i = 0; i < Waveform.GetLength(); i ++)
         {
-            int Value = *use_offset(int, &Waveform.Waveform()[i], Field);
+            int Value = GET_FIELD(Waveform, i, Field, int);
             Total += Value;
             if (Value < Min)  Min = Value;
             if (Value > Max)  Max = Value;
@@ -194,7 +201,7 @@ public:
         long long int Variance = 0;
         for (size_t i = 0; i < Waveform.GetLength(); i ++)
         {
-            int64_t Value = *use_offset(int, &Waveform.Waveform()[i], Field);
+            int64_t Value = GET_FIELD(Waveform, i, Field, int);
             Variance += (Value - Mean) * (Value - Mean);
         }
         Variance /= WaveformLength;
