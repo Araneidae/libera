@@ -69,7 +69,7 @@
 
 /* Dual of offsetof macro, used to reference a selected field. */
 #define use_offset(Type, Struct, Field) \
-    (*(Type *)((char *)&(Struct) + (Field)))
+    ((Type *)((char *)(Struct) + (Field)))
 
 
 /* Converts Count rows of IQ data into ABCD format by applying Cordic

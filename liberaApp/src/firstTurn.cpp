@@ -330,7 +330,7 @@ private:
              * IntegrateIntensity() is better at position calulations, but
              * much worse at computing charge (train length and profile has
              * too much effect). */
-            use_offset(int, ABCD, Field) = IntegrateIntensity(Condensed);
+            *use_offset(int, &ABCD, Field) = IntegrateIntensity(Condensed);
             /* Finally accumulate an integrated charge. */
             RawCharge += IntegrateCharge(Extracted[Channel]);
         }
