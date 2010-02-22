@@ -142,7 +142,7 @@ def FreeRunningStats(axis):
 
 # Computed tune statistics
 def TuneStats(axis, tune_scale):
-    return [
+    tune_stats = [
         aIn('TUNE%sI' % axis, 0, 1e6, tune_scale,
             EGU  = 'nm', PREC = 2,
             DESC = 'I component of %s tune' % axis),
@@ -155,6 +155,12 @@ def TuneStats(axis, tune_scale):
         aIn('TUNE%sPH' % axis, -180, +180, 360 * 2**-32,
             EGU  = 'deg', PREC = 1,
             DESC = 'Phase of %s tune' % axis)]
+    
+    aOut('TUNE%s' % axis, 0, 0.5, 2**-32,
+        PREC = 5,
+        FLNK = create_fanout('FAN%sTUNE' % axis, *tune_stats),
+        DESC = 'Tune frequency to detect on %s' % axis)
+    return tune_stats
 
 
 # Free running short (typically 2048) turn-by-turn buffer.  
@@ -184,14 +190,6 @@ def FreeRunning():
         DESC = 'Update waveforms during averaging?')
     longIn('SAMPLES', SCAN = 'I/O Intr',
         DESC = 'Accumulated samples in average')
-
-    # Tune measurement frequencies
-    aOut('TUNEX', 0, 0.5, 2**-32,
-        PREC = 5,
-        DESC = 'Tune frequency to detect on X')
-    aOut('TUNEY', 0, 0.5, 2**-32,
-        PREC = 5,
-        DESC = 'Tune frequency to detect on Y')
     
     UnsetChannelName()
         

@@ -139,6 +139,8 @@ private:
             RotateI[i] -= ITotal;
             RotateQ[i] -= QTotal;
         }
+
+        Update();
     }
     
 
