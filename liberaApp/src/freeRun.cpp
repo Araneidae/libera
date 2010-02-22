@@ -65,6 +65,42 @@ static int clip(long long int x)
 }
 
 
+static size_t clz_64(uint64_t x)
+{
+    if (x >> 32)
+        return CLZ(x >> 32);
+    else
+        return 32 + CLZ((uint32_t) (x & 0xFFFFFFFF));
+}
+
+
+
+/* This routine computes 2^-shift * a * b with as much precision as possible.
+ * This is a bit tricky, as we don't know in advance which of a and b has
+ * bits to spare, so we have to normalise first. */
+
+static int64_t LongMultiply(int64_t a, int64_t b, size_t shift)
+{
+    bool negative = false;
+    if (a < 0) { a = - a; negative = true; }
+    if (b < 0) { b = - b; negative = !negative; }
+
+    int n = clz_64(a);
+    int m = clz_64(b);
+    int nm = (n + m) / 2;
+    int sa = shift - n + nm;
+    if (sa < 0)
+        sa = 0;
+    else if (sa > (int) shift)
+        sa = shift;
+    a >>= sa;
+    b >>= shift - sa;
+
+    int64_t ab = a * b;
+    return negative ? - ab : ab;
+}
+
+
 class FREE_RUN_TUNE
 {
 public:
@@ -117,9 +153,8 @@ public:
              *  I = SUM(x_i*(c_i - mean(c))) = SUM(x_i*c_i) - SUM(x)*SUM(c)/N
              * This is made a bit complicated by the fact that this is all
              * fixed point arithmetic. */
-            data_sum >>= 16;
-            TotalI -= (cos_sum / length) * data_sum;
-            TotalQ -= (sin_sum / length) * data_sum;
+            TotalI -= LongMultiply(cos_sum, data_sum, 16) / length;
+            TotalQ -= LongMultiply(sin_sum, data_sum, 16) / length;
             
             /* The shifts above and below add up to 28: this is 2 less than
              * the excess scaling factor 2^30 in the IQ waveform, leaving a
