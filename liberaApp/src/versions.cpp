@@ -88,14 +88,16 @@ static void DetachProcess(const char *Process, const char *const argv[])
 {
     /* We fork twice to avoid leaving "zombie" processes behind.  These are
      * harmless enough, but annoying.  The double-fork is a simple enough
-     * trick if a bit clunky. */
+     * trick if a bit clunky.
+     *     We use vfork() rather than fork() here so that we don't run into
+     * unnecessary problems when the system is low on memory. */
     pid_t MiddlePid;
-    if (TEST_IO(MiddlePid = fork()))
+    if (TEST_IO(MiddlePid = vfork()))
     {
         if (MiddlePid == 0)
         {
             pid_t NewPid;
-            if (TEST_IO(NewPid = fork()))
+            if (TEST_IO(NewPid = vfork()))
             {
                 if (NewPid == 0)
                 {
