@@ -64,8 +64,7 @@ public:
         WaveformAbcd(WaveformLength, true),
         WaveformXyqs(WaveformLength),
         PublishCapturedSamples(0),
-        StatsX("FR", "X", WaveformXyqs, FIELD_X),
-        StatsY("FR", "Y", WaveformXyqs, FIELD_Y)
+        StatsXY("FR", WaveformXyqs)
     {
         CaptureOffset = 0;
         AverageBits = 0;
@@ -127,10 +126,8 @@ private:
         if (AccumulateWaveform())
         {
             WaveformXyqs.CaptureConvert(WaveformAbcd);
-            
             /* Update our statistics on the X and Y waveforms. */
-            StatsX.Update();
-            StatsY.Update();
+            StatsXY.Update();
 
             /* Let EPICS know there's stuff to read, releases interlock. */
             Interlock.Ready(WaveformIq.GetTimestamp());
@@ -245,8 +242,7 @@ private:
     UPDATER_int PublishCapturedSamples;
 
     /* Statistics for the captured waveforms. */
-    STATISTICS StatsX;
-    STATISTICS StatsY;
+    XY_STATISTICS StatsXY;
 
     /* EPICS interlock. */
     INTERLOCK Interlock;

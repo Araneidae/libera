@@ -57,3 +57,15 @@ private:
     int Frequency;
     int I, Q, Mag, Phase;
 };
+
+
+class XY_STATISTICS
+{
+public:
+    XY_STATISTICS(const char *Group, XYQS_WAVEFORMS &Waveform);
+    void Update();
+
+private:
+    STATISTICS StatsX;
+    STATISTICS StatsY;
+};

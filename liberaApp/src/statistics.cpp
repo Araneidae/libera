@@ -177,3 +177,17 @@ void STATISTICS::Update()
     UpdateStats();
     UpdateTune();
 }
+
+
+XY_STATISTICS::XY_STATISTICS(const char *Group, XYQS_WAVEFORMS &Waveform) :
+    StatsX(Group, "X", Waveform, FIELD_X),
+    StatsY(Group, "Y", Waveform, FIELD_Y)
+{
+}
+
+
+void XY_STATISTICS::Update()
+{
+    StatsX.Update();
+    StatsY.Update();
+}

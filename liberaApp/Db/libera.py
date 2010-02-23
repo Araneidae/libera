@@ -121,8 +121,8 @@ def Booster():
     UnsetChannelName()
 
 
-# Statistics for FR waveforms
-def FreeRunningStats(axis):
+# Statistics for waveforms
+def WaveformStats(axis):
     return [
         aIn('MEAN%s' % axis, -1e4, 1e4, 1e-3, 
             PREC = 2, EGU = 'um', 
@@ -162,6 +162,11 @@ def TuneStats(axis, tune_scale):
         DESC = 'Tune frequency to detect on %s' % axis)
     return tune_stats
 
+def StatsXY(tune_scale):
+    return \
+        WaveformStats('X') + WaveformStats('Y') + \
+        TuneStats('X', tune_scale) + TuneStats('Y', tune_scale)
+
 
 # Free running short (typically 2048) turn-by-turn buffer.  
 def FreeRunning():
@@ -173,9 +178,9 @@ def FreeRunning():
 
     # In this mode we provide all the available data: raw IQ, buttons,
     # computed positions and statistics.
-    Trigger(True, IQ_wf(LENGTH) + ABCD_wf(LENGTH) + XYQS_wf(LENGTH) +
-        FreeRunningStats('X') + FreeRunningStats('Y') +
-        TuneStats('X', TUNE_SCALE) + TuneStats('Y', TUNE_SCALE))
+    Trigger(True,
+        IQ_wf(LENGTH) + ABCD_wf(LENGTH) + XYQS_wf(LENGTH) +
+        StatsXY(TUNE_SCALE))
     
     # Trigger capture offset
     longOut('DELAY', DESC = 'Trigger capture offset')
