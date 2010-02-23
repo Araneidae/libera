@@ -43,6 +43,7 @@
 #include "events.h"
 #include "convert.h"
 #include "waveform.h"
+#include "statistics.h"
 
 #include "turnByTurn.h"
 
@@ -58,6 +59,7 @@ public:
         WindowIq(WindowWaveformLength),
         WindowAbcd(WindowWaveformLength),
         WindowXyqs(WindowWaveformLength),
+        StatsXY("TT", WindowXyqs),
         LongTrigger(false)
     {
         WindowOffset = 0;
@@ -235,6 +237,7 @@ private:
         WindowIq.CaptureFrom(LongWaveform, WindowOffset);
         WindowAbcd.CaptureCordic(WindowIq);
         WindowXyqs.CaptureConvert(WindowAbcd);
+        StatsXY.Update();
 
         /* Let EPICS know there's stuff to read. */
         Interlock.Ready(LongWaveform.GetTimestamp());
@@ -254,6 +257,7 @@ private:
     IQ_WAVEFORMS WindowIq;
     ABCD_WAVEFORMS WindowAbcd;
     XYQS_WAVEFORMS WindowXyqs;
+    XY_STATISTICS StatsXY;
 
     /* Trigger for long waveform capture and EPICS interlock for updating the
      * window waaveforms. */

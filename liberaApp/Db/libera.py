@@ -151,7 +151,7 @@ def TuneStats(axis):
             EGU  = 'nm', PREC = 2,
             DESC = 'Q component of %s tune' % axis),
         aIn('TUNEMAG%s' % axis, 0, 1e6, tune_scale,
-            EGU  = 'nm', PREC = 1,
+            EGU  = 'nm', PREC = 2,
             DESC = 'Magnitude of %s tune' % axis),
         aIn('TUNEPH%s' % axis, -180, +180, 360 * 2**-32,
             EGU  = 'deg', PREC = 1,
@@ -260,6 +260,8 @@ def TurnByTurn():
         ABCD_wf(WINDOW_LENGTH) +
         # Computed positions
         XYQS_wf(WINDOW_LENGTH) +
+        # Statistics
+        StatsXY() +
         [offset])
 
     UnsetChannelName()

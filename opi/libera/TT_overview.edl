@@ -638,3 +638,29 @@ value {
 autoSize
 endObjectProperties
 
+# (Related Display)
+object relatedDisplayClass
+beginObjectProperties
+major 4
+minor 2
+release 0
+x 440
+y 688
+w 104
+h 24
+fgColor index 43
+bgColor index 3
+topShadowColor index 1
+botShadowColor index 11
+font "helvetica-bold-r-12.0"
+buttonLabel "Statistics"
+numPvs 4
+numDsps 1
+displayFileName {
+  0 "libera/statistics.edl"
+}
+symbols {
+  0 "device=$(device),mode=TT"
+}
+endObjectProperties
+
