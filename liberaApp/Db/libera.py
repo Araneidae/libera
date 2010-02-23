@@ -141,7 +141,8 @@ def WaveformStats(axis):
             DESC = 'Peak to peak %s FR' % axis)]
 
 # Computed tune statistics
-def TuneStats(axis, tune_scale):
+def TuneStats(axis):
+    tune_scale = 2**-11
     tune_stats = [
         aIn('TUNEI%s' % axis, 0, 1e6, tune_scale,
             EGU  = 'nm', PREC = 2,
@@ -162,16 +163,15 @@ def TuneStats(axis, tune_scale):
         DESC = 'Tune frequency to detect on %s' % axis)
     return tune_stats
 
-def StatsXY(tune_scale):
+def StatsXY():
     return \
         WaveformStats('X') + WaveformStats('Y') + \
-        TuneStats('X', tune_scale) + TuneStats('Y', tune_scale)
+        TuneStats('X') + TuneStats('Y')
 
 
 # Free running short (typically 2048) turn-by-turn buffer.  
 def FreeRunning():
     LENGTH = Parameter('FR_LENGTH')
-    TUNE_SCALE = Parameter('TUNE_SCALE')    # 1 / LENGTH
     
     SetChannelName('FR')
     Enable()
@@ -179,8 +179,7 @@ def FreeRunning():
     # In this mode we provide all the available data: raw IQ, buttons,
     # computed positions and statistics.
     Trigger(True,
-        IQ_wf(LENGTH) + ABCD_wf(LENGTH) + XYQS_wf(LENGTH) +
-        StatsXY(TUNE_SCALE))
+        IQ_wf(LENGTH) + ABCD_wf(LENGTH) + XYQS_wf(LENGTH) + StatsXY())
     
     # Trigger capture offset
     longOut('DELAY', DESC = 'Trigger capture offset')

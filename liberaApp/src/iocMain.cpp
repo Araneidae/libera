@@ -546,7 +546,6 @@ static bool LoadDatabases()
         DB_("%d", "FR_LENGTH",      FreeRunLength)  &&
         DB_("%d", "SC_IQ_LENGTH",   ConditioningIQlength())  &&
         DB_("%d", "ATTEN_COUNT",    MaximumAttenuation() + 1)  &&
-        DB_("%g", "TUNE_SCALE",     1. / FreeRunLength)  &&
         
         LOAD_RECORDS_("db/libera.db")  &&
         IF_(Version2FpgaPresent, LOAD_RECORDS_("db/libera-2.0.db"))  &&

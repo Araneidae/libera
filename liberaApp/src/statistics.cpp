@@ -147,21 +147,22 @@ void STATISTICS::UpdateTune()
             int cos, sin;
             cos_sin(angle, cos, sin);
 
-            /* To avoid too much loss of precision during accumulation we
-             * use a comfortable number of bits. */
+            /* We can avoid overflow during accumulation by discarding 17 bit:
+             * this is guaranteed safe for lengths no more than 2^17.  This
+             * leaves us with a residue of 2^13, but we'll want to keep a
+             * factor of 2 for CORDIC_SCALE, and a further factor of 2 to
+             * convert a single frequency measurement into a properly scaled
+             * magnitude, leaving a residue of 2^11. */
             int data = GetField(i) - Mean;
-            TotalI += ((int64_t) data * cos) >> 16;
-            TotalQ += ((int64_t) data * sin) >> 16;
+            TotalI += ((int64_t) data * cos) >> 17;
+            TotalQ += ((int64_t) data * sin) >> 17;
             angle += Frequency;
         }
 
-        /* The shifts above and below add up to 28: this is 2 less than
-         * the excess scaling factor 2^30 in the IQ waveform, leaving a
-         * factor of 2 for CORDIC_SCALE, and a further factor of 2 to
-         * convert a single frequency measurement into a properly scaled
-         * magnitude. */
-        I = clip(TotalI >> 12);
-        Q = clip(TotalQ >> 12);
+        /* The residual scaling factor of 2^11 mentioned above is retained as
+         * the scaling factor for the resulting floating point numbers. */
+        I = clip(TotalI / length);
+        Q = clip(TotalQ / length);
 
         Mag = MulUU(CordicMagnitude(I, Q), CORDIC_SCALE);
         Phase = lround(atan2(Q, I) * M_2_32 / M_PI / 2.);
