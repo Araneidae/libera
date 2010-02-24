@@ -33,8 +33,6 @@ pre-built distribution.
 
 `CHANGES.{txt,html}`:: Records the change history of this driver.
 
-`PROBLEMS`:: Known problems in this release (rather out of date.)
-
 
 This release of the Libera EPICS driver provides the following functionality:
 
@@ -83,7 +81,7 @@ where:
 
 <device>:: is normally derived from the host name of the EPICS IOC, but can
     be configured to any string at startup.  
-<group>:: is the major function (`FT` = "First Turn", etc.)
+<group>:: is the major function (`FT` = ``First Turn'', etc.)
 <record>:: is the remainder of the record name as specified below.
 
 In the list of records below we use a number of abbreviations:
@@ -101,14 +99,17 @@ beam position monitor buttons.
 <positions>:: refers to four names, `X`, `Y`, `Q`, `S` referring to the
 computed electron beam position (`X`,`Y`), a skew factor (`Q`) and the total
 beam intensity (`S`).  The intensity `S` is in arbitrary units, normally
-scaled to 0.5822*2^31 full scale; the positions are in nm for waveforms and in
+scaled to 0.5822*2^31^ full scale; the positions are in nm for waveforms and in
 mm for single points.  The skew factor is unscaled with maximum value +-1.
 
-<axis>:: refers to the two names, `X`, `Y` only.  Generally used for
-statistics calculations and so forth.
+<axis>:: refers to the two names, `X`, `Y` only.
 
 ...`_S`:: Records of the form <name>`_S` are used to write values into the
-driver.  Most of these written values are remembered over IOC restart.   
+driver.  Many of these written values are remembered over IOC restart, these
+are all marked with a * in the list below.
++
+The persistent variables are stored between restarts in the file
+`/opt/state/`<device>`.state`.
 
 The following documents all of the Libera EPICS records used in the operation
 of Libera.
@@ -148,11 +149,11 @@ Button values integrated within the window specified by `OFF` and `LEN`.
 <positions>::
 Position data derived from <buttons>, in mm.
 
-`OFF_S`, `LEN_S`::
+`OFF_S`\*, `LEN_S`*::
 These two fields determine the window within `WF`<buttons> used to
 compute the integrated <buttons> values.
 
-`ENABLE_S`::
+`ENABLE_S`*::
 If set to Disabled then `FT` processing will not occur.
 
 `CHARGE`::
@@ -171,10 +172,10 @@ Free Running (<group> = FR):
 
 `DELAY_S`::
 Configures the delay in samples from the trigger to the first captured
-point.  A negative delay can be used for "pretriggering", ie to
+point.  A negative delay can be used for ``pretriggering'', ie to
 capture turn by turn data before the trigger.
 
-`ENABLE_S`::
+`ENABLE_S`*::
 If set to Disabled then `FR` processing will not occur.
 
 `MEAN`<axis>, `STD`<axis>, `MIN`<axis>, `MAX`<axis>, `PP`<axis>::
@@ -239,6 +240,9 @@ Clears the currently averaged waveforms and restarts a fresh round of
 averaging.  Note that writing to `AVERAGE_S` also has the same effect as
 processing this PV.
 
+// Internal PVs:
+// TUNEFANX, TUNEFANY::
+
 
 
 Turn by Turn (<group> = TT):
@@ -274,6 +278,12 @@ default (and maximum) value is returned by `MAXLENGTH`, with default value
 Waveforms of up to `LENGTH_S` points read from the internal captured long
 waveform using the specified `OFFSET` and `LENGTH`.
 
+`MEAN`<axis>, `STD`<axis>, `MIN`<axis>, `MAX`<axis>, `PP`<axis>::
+Waveform statistics, as for `FR`, measured over the current window.
+
+`TUNE`<axis>`_S`, `TUNEI`<axis>, `TUNEQ`<axis>, `TUNEMAG`<axis>, `TUNEPH`<axis>::
+Tune response, as for `FR`, measured over the current window.
+
 `DELAY_S`::
 Just as for `FR:DELAY_S`, allows the delay from trigger to sampled data
 to be configured.
@@ -286,13 +296,13 @@ Take care with decimated data: due to a device driver bug it is possible to
 make Libera hang if `CAPLEN_S` is set to values much larger than 32,000.
 
 `DOREFRESH_S`::
-When this is set to 1 (``Update Data'') every time a full turn-by-turn
+When this is set to 1, (``Update Data'') every time a full turn-by-turn
 waveform is captured the windowed waveforms are also updated.  Unfortunately
-when capturing large waveforms (`CAPLEN_S` > `LENGTH_S`) this can result in
+when capturing large waveforms (+CAPLEN_S+ > +LENGTH_S+) this can result in
 wasted processing time as first window is often simply discarded.
 +
 As an optimisation this PV can be set to 0 (``Stale Data''): in this case the
-windowed waveforms will only update when `OFFSET_S` is processed.  Note that
+windowed waveforms will only update when +OFFSET_S+ is processed.  Note that
 processing a full 131072 point window takes about 1 second.
 
 
@@ -305,7 +315,7 @@ Triggering:
 
 - Write desired capture length to `CAPLEN_S`
 - Write 0 to `READY` (either use ``put with callback'' or else wait for
-  `READY` == 0).
+  +READY+ == 0).
 - Write 1 to `ARM`
 - Wait until `READY` == 1
 
@@ -313,7 +323,7 @@ Reading:
 
 - Write <offset> to `OFFSET_S`
 - Either use ``put with callback'' for the write above, or wait until
-`OFFSET` == <offset>  
++OFFSET+ == <offset>  
 - Read desired waveforms
 
 If `CAPLEN` > `LENGTH_S` then the reading process should be repeated with
@@ -321,11 +331,13 @@ If `CAPLEN` > `LENGTH_S` then the reading process should be repeated with
 waveform has been retrieved.
 
 The maximum window readout length of `MAXLENGTH` can be be modified at IOC
-start time by editing the configuration setting `IOC_TT_WINDOW` in
-`/etc/sysconfig/epics_ioc`.
+start time by editing the configuration setting `IOC_TT_WINDOW` in the
+`epics_ioc` configuration file (installed in one of the directories
+`/etc/sysconfig`, `/etc/defaults`, `/etc/libera` depending on target
+architecture).
 
 // Internal PVs:
-// FANA, REARM::
+// FANA, REARM, TUNEFANX, TUNEFANY::
 
 
 Booster (<group> = BN):
@@ -334,14 +346,13 @@ Booster (<group> = BN):
 `WF`<iq>, `WF`<buttons>, `WF`<positions>::
 Decimated waveforms reduced from turn-by-turn frequency by a factor
 of 64, updated on each trigger.  The length of each waveform is equal
-to 16 times the value `IOC_BN_LENGTH`, as defined in
- `/etc/sysconfig/epics_ioc`.
+to 16 times the value `IOC_BN_LENGTH`, as defined in `epics_ioc`.
 
 `WFS`<positions>::
 Decimated waveforms reduced from turn-by-turn frequency by a factor of
 1024, equal in length to `IOC_BN_LENGTH`.
 
-`ENABLE_S`::
+`ENABLE_S`*::
 If set to Disabled then `BN` processing will not occur.
 
 `AXIS`, `AXISS`::
@@ -379,7 +390,7 @@ Postmortem (<group> = PM):
 16384 point postmortem waveforms of turn-by-turn data captured up to
 the point of the postmortem trigger.
 
-`X_OFFSET`, `X_OFL`, `Y_OFFSET`, `Y_OFL`, `ADC_OFFSET`, `ADC_OFL`::
+<axis>`_OFFSET`, <axis>`_OFL`, `ADC_OFFSET`, `ADC_OFL`::
 Offset of the first turn in the waveform buffer where the selected
 interlock overflow event occurred (X position, Y position or ADC
 reading), together with a flag to indicate whether the overflow was
@@ -400,26 +411,26 @@ the `WF`<iq> waveforms.  The bits are numbered (from lsb to msb) thus:
 +
 The remaining four bits repeat the same sequence.
 
-`MODE_S`, `REARM_S`, `READY`::
+`MODE_S`*, `REARM_S`, `READY`::
 Postmortem triggering can be configured for one-shot triggering if desired by
 setting `MODE_S` to ``One Shot''.  In this mode `READY` indicates whether PM
 trigger will be captured, and `REARM_S` must be processed to re-enable capture
 once a postmortem has been captured.
 
-`OFFSET_S`::
+`OFFSET_S`*::
 If a version 2 driver is installed then the postmortem trigger delay can be
 configured.
 
 If a version 2 FPGA is installed then postmortem triggering can be configured
-from multiple sources.
+from multiple sources:
 
-`SOURCE_S`::
+`SOURCE_S`*::
 Configures the postmortem trigger source, can be one of ``External'' for
 normal triggering from the hardware PM trigger, ``Interlock'' to trigger on
 an interlock drop event, or ``Settings'' to trigger on the trigger settings
 below.
 
-`MAXX_S`, `MINX_S`, `MAXY_S`, `MINY_S`, `TIME_S`, `OVER_S`, `OVER_PC_S`::
+`MAX`<axis>`_S`\*, `MIN`<axis>`_S`\*, `TIME_S`\*, `OVER_S`*, `OVER_PC_S`::
 These settings are the same as the correspong `IL` interlock settings, and
 configure the operation of the internally generated postmortem trigger when
 `SOURCE_S` is set to ``Settings''.  These settings are not designed for
@@ -433,7 +444,7 @@ Triggered Mean Sum (<group> = MS):
 The following PVs provide access to current averaged between triggers.  This
 is only available with a version 2 FPGA.
 
-`ENABLE_S`::
+`ENABLE_S`*::
 Enables processing of mean sum calculations.  The calculations are low cost,
 so there is little reason to disable this.
 
@@ -459,29 +470,29 @@ closed (unless `OVERFLOW_S` is also set to Enabled to enable overflow
 detection).  When set to Enabled the interlock output is only active
 while the beam position lies within the interlock window.
 
-`IOFF_S`, `ION_S`::
+`IOFF_S`\*, `ION_S`*::
 Interlock checking is automatically disabled when the observed current
 (as reported through `SA:CURRENT`) is below `IOFF_S`, and is automatically
 enabled when the current is above `ION_S`.  This function overrides
 `ENABLE_S`, but is overridden by the global `CF:ENABLED_S` setting.
 
-`MINX_S`, `MAXX_S`, `MINY_S`, `MAXY_S`::
+`MIN`<axis>`_S`\*, `MAX`<axis>`_S`*::
 Interlock window: when the interlock is enabled the interlock output
-is closed ("active") so long as the beam position lies within this
+is closed (``active'') so long as the beam position lies within this
 window. 
 
-`OVER_S`, `OVER_PC_S`, `TIME_S`::
+`OVER_S`\*, `OVER_PC_S`, `TIME_S`*::
 ADC overflow detection parameters: the interlock is dropped if the ADC
 input exceeds value `OVER` for at least `TIME` samples.  The overflow
 threshold can be set as a 16 bit number (using `OVER_S`) or as a
 percentage of full scale (using `OVER_PC_S`).
 
-`IIRK_S`::
+`IIRK_S`*::
 This is a one pole IIR filter applied to ADC readings before ADC
 overflow detection is applied.  The coefficient K corresponds to a
 pole at 1-2^-K^ per sample for K in the range 0..6.
 
-`OVERFLOW_S`::
+`OVERFLOW_S`*::
 This can be set to Enabled to enable ADC overflow detection even when
 the interlock is otherwise disabled.
 
@@ -489,7 +500,7 @@ the interlock is otherwise disabled.
 `STATE` records whether the interlock is currently dropped or has been
 dropped within the last 0.5 seconds.  
 
-`HOLDOFF_S`, `IHOLDOFF_S`::
+`HOLDOFF_S`\*, `IHOLDOFF_S`*::
 When the attenuator setting is changed there is normally a small
 glitch in position which can unfortunately cause the interlock to be
 lost.  These two settings are used to control a window during which
@@ -511,86 +522,88 @@ has been recorded.
 // CHK_REASON, RAW_REASON, POKE::
 
 `TEST_S`::
-Setting this PV to "Interlock Test" will unconditionally force the
-interlock output to be open.  This overrides the action of `ENABLE_S`.
+Setting this PV to ``Interlock Test'' will unconditionally force the
+interlock output to be open.  This overrides the action of +ENABLE_S+.
 
 
 Configuration (<group> = CF):
 -----------------------------
 
-`ENABLED_S`::
-Configures whether the BPM is "enabled."  If disabled then position
+`ENABLED_S`*::
+Configures whether the BPM is ``enabled''.  If disabled then position
 interlock checking is disabled.
 
-`DIAG_S`::
+`DIAG_S`*::
 Configures button or stripline orientation.  This affects the
 calculation of X and Y positions from A, B, C, D button readings.
 Note that the fast feedback data stream is not affected by this and
-assumes the "Diagonal" orientation: this also applies to interlock
+assumes the ``Diagonal'' orientation: this also applies to interlock
 checking.
 
-`KX_S`, `KY_S`::
+`K`<axis>`_S`*::
 Scaling factors in mm.  These are determined by the physical geometry
 of the button or stripline pickups.  At Diamond typical values are
 17mm for the transfer path striplines and 10.6mm and 11mm (horizontal
 and vertical) for the booster buttons.  
 
-`Q_0_S`::
+`Q_0_S`*::
 This is used to set the zero offset for the ``skew'' measurement.  Large
 deviations from the zero point are a good diagnostic of electrical or button
 faults, as the skew does not normally change by much during normal beam
 movements.
 
-`BBA_X_S`, `BBA_Y_S`, `BCD_X_S`, `BCD_Y_S`, `GOLDEN_X_S`, `GOLDEN_Y_S`::
+
+`BBA_`<axis>`_S`*, `BCD_`<axis>`_S`, `GOLDEN_`<axis>`_S`::
 Offsets on the position reported by the BPM are divided into three
 stages.  First it is assumed that the nominal centre of the BPM will
-be discovered by a process of "beam based alignment": this produces
-offsets that should be written into the `BBA_`... PVs.
+be discovered by a process of ``beam based alignment'': this produces
+offsets that should be written into the +BBA_+... PVs.
 +
 Note, however, that both changes to beam current and attenuator
 settings will result in perceived movement of the beam: this is
-compensated for by "beam current dependent" offsets.  These are
-designed to be written into the `BCD_`... PVs.
+compensated for by ``beam current dependent'' offsets.  These are
+designed to be written into the +BCD_+... PVs.
 +
 Finally, if it is desired to introduce local bumps or other
 deviations from the nominal beam orbit, to ensure that the positions
 reported by the BPMs are purely errors (this helps with feedback
 correction, for example), the `GOLDEN_`... PVs are designed to be
 programmed with the value of such offsets.
++
+Note that only the `BBA` offsets are persistent between Libera restarts.
 
-`G0_S`, `G1_S`, `G2_S`, `G3_S`::
+`G0_S`\*, `G1_S`\*, `G2_S`\*, `G3_S`*::
 Gain offsets can be set for individual RF channels to compensate for
 channel imbalances within Libera.  This is only useful in `FT` mode, and
 is not recommended.
 
-`AUTOSW_S`::
-Controls automatic cycling of switches with DSC (Digital Signal
-Conditioning), for sub-kHz position measurements, or fixed switch
-positions for high frequency measurements.
+`AUTOSW_S`*::
+Controls automatic cycling of switches with ``signal conditioning'', for
+sub-kHz position measurements, or fixed switch positions for high frequency
+measurements.
 
-`TRIGSW_S`, `DELAYSW_S`::
+`TRIGSW_S`\*, `DELAYSW_S`*::
 These control the synchronisation of the multiplexing switch.  If
-`TRIGSW_S` is set to "External" then the switch rotation will be
-synchronised to the external machine clock, in which case `DELAYSW_S`
+`TRIGSW_S` is set to ``External'' then the switch rotation will be
+synchronised to the external machine clock, in which case +DELAYSW_S+
 can be used to configure the delay from machine clock to rotation (in
 sample clock units).
 
-`SETSW_S`::
-Switch position to use when `AUTOSW_S` is set to "Fixed".
+`SETSW_S`*::
+Switch position to use when `AUTOSW_S` is set to ``Fixed''.
 
 `PERM`::
 Switch permutations: when `AUTOSW_S` is set to Manual this can be
 used to convert the `FT:RAW`<channel> readings into buttons according to
 the rule 
 +
-value at <button> = `FT:RAW`<`FT:PERM` [<button>] + 1>  (`A`=0, ... `D`=4)
+value at <button> = `FT:RAW`<`FT:PERM` [<button>] + 1>  (`A`=0, ... `D`=3)
 
-`DSC_S`::
-Configures the operation of the "digital signal conditioning" (DSC) 
-daemon: this controls channel gains during automatic rotation of the
-multiplexing switch.
+`DSC_S`*::
+Configures the operation of ``signal conditioning'' processing: this controls
+channel gains during automatic rotation of the multiplexing switch.
 
-`ATTEN_S`, `ATTEN:DISP_S`::
+`ATTEN_S`\*, `ATTEN:DISP_S`*::
 These two settings are added together to control the attenuator setting in dB.
 The final setting can be a value between 0 and 62dB for Libera Electron or
 between 0 and 31dB for Libera Brilliance.  
@@ -605,7 +618,7 @@ characteristics can be accounted for by setting individual offsets into
 `ATTEN:DISP_S`.  This is particularly useful if Electron and Brilliance
 Liberas are mixed on the same system.
 
-`ATTEN:OFFSET_S`::
+`ATTEN:OFFSET_S`*::
 Waveform of corrections for attenuator settings, one entry for each
 possible attenuator setting (63 for Libera Electron, 32 for Libera
 Brilliance).  Affects `SA:POWER`, `SA:CURRENT` and `CF:ATTEN:TRUE`
@@ -616,7 +629,7 @@ This reports the set attenuation taking into account the programmed
 attenuation, the configured displacement, clipping to a valid value, and the
 offset waveform.
 
-`ISCALE_S`::
+`ISCALE_S`*::
 Nominal beam current at 0dBm input power as seen by Libera.  This is
 used to compute `SA:CURRENT` and `FT:CHARGE`.
 
@@ -625,16 +638,16 @@ For certain machine physics investigations it can be helpful to turn off the
 notch filters in the fast feedback stream.  Note that fast feedback will not
 work properly when this is disabled!
 
-`TRIGDLY_S`::
+`TRIGDLY_S`*::
 This can be used to generate an internal delay on the Libera trigger, and can
 be set to any number between 0 and 2047.  The delay is in Libera sample
 clocks, or steps of approximately 8ns.  This setting is not particulary
 useful.
 
-`ATTEN:AGC_S`, `ATTEN:AGC:UP_S`, `ATTEN:AGC:DN_S`::
+`ATTEN:AGC_S`\*, `ATTEN:AGC:UP_S`\*, `ATTEN:AGC:DN_S`*::
 If `ATTEN:AGC_S` is set to ``AGC on'' then a simple form of automatic gain
 control is enabled: this will only work on a version of Libera with a working
-`SA:MAXADC` reading.
++SA:MAXADC+ reading.
 +
 Every 100ms the field `SA:MAXADC_PC` is compared with `ATTEN:AGC:UP_S` and
 `ATTEN:AGC:DN_S`.  If the reading is too high then the attenuator setting
@@ -646,7 +659,7 @@ configured limits.
 The following configuration options are only available if a version 2.0 or
 higher FPGA is loaded.
 
-`SR:ENABLE_S`::
+`SR:ENABLE_S`*::
 The ``spike removal'' feature removes some of the switching transients from
 the fast feedback stream before down filtering -- this can significantly
 reduce the impact of switching artifacts.  This PV controls whether this
@@ -655,7 +668,7 @@ feature is enabled.
 Note that although spike removal is performed on turn by turn data, it does
 not affect the normal turn by turn waveforms (`FR`, `TT`, `PM`, `BN`).
 
-`SR:AVESTOP_S`, `SR:AVEWIN_S`, `SR:SPIKEST_S`, `SR:SPIKEWIN_S`::
+`SR:AVESTOP_S`\*, `SR:AVEWIN_S`\*, `SR:SPIKEST_S`\*, `SR:SPIKEWIN_S`*::
 These settings control the operation of spike removal.
 
 `SR:DEBUGWF`::
@@ -667,22 +680,22 @@ it or set its `.SCAN` field to a suitable value.
 Clock (<group> = CK):
 ---------------------
 
-`TIMESTAMP_S`::
+`TIMESTAMP_S`*::
 Libera provides an internal system clock synchronised to an external
 1MHz reference which can be used to provide precision timestamps.  If
-this PV is set to "System time" then this will be used, otherwise the
+this PV is set to ``System time'' then this will be used, otherwise the
 Linux system time (which should be synchronised by NTP) is used.
 
-`DETUNE_S`::
+`DETUNE_S`*::
 This controls the detuning of the sample clock away from a precise
 integer multiple of the machine clock.  A substantial detune (in the
 order of 100 or more) is recommended to avoid harmonic beating.  A
 detune of 1 translates to a frequency shift of approximately 10Hz.
 
-`IFOFF_S`::
+`IFOFF_S`*::
 This should be left set to zero.
 
-`PHASE_S`::
+`PHASE_S`*::
 This controls the phase of the filter reducing raw sampled waveforms
 down to turn-by-turn data relative to the machine clock -- but only
 when `DETUNE_S` is equal to zero, of course!  
@@ -714,7 +727,7 @@ to use NTP time.
 `MC_LOCK`, `SC_LOCK`::
 Records whether the machine clock (`MC_LOCK`) or system timestamp clock
 (`SC_LOCK`) is currently locked to the external reference.  The machine
-clock will report "Slewing" if the phase error is larger than 1 sample
+clock will report ``Slewing'' if the phase error is larger than 1 sample
 clock, but lock is not lost in this case.
 
 `MC_SYNC`, `SC_SYNC`::
@@ -812,7 +825,7 @@ daemon.
 `TEMP` is the sensor actually monitored by the health daemon, and is either
 `TEMP_MB` on Libera Electron, or `TEMP_RF1` on Libera Brilliance.
 
-`SETTEMP_S`::
+`SETTEMP_S`*::
 The health daemon has a very limit range of fan speeds available to it, so in
 practice it can only be expected to stabilise the temperature close to the
 natural target temperature.  This PV sets the target temperature for the
@@ -856,7 +869,7 @@ percent are reported with minor and major severity EPICS alarms
 respectively, and `VHEALTH` aggregates the state of all voltages (except
 for `VOLT2` which is unused).
 
-`HEALTHD_S`::
+`HEALTHD_S`*::
 This provides control over the sensor monitoring and the health daemon, and
 has three possible settings:
 +
@@ -908,14 +921,14 @@ all over the last 10 seconds.
 Signal Conditioning (<group> = SC):
 -----------------------------------
 
-`CIIR_S`::
+`CIIR_S`*::
 Filter coefficient for one pole IIR for application of channel
 compensation change.
 
-`INTERVAL_S`::
+`INTERVAL_S`*::
 Interval in seconds between signal conditioning computations.
 
-`MAXDEV_S`::
+`MAXDEV_S`*::
 Maximum allowed deviation of signal for conditioning processing as a
 percentage of minimum signal level.
 
@@ -935,7 +948,7 @@ measured variance on each channel.
 `IQDIGEST`, `WF`<iq>, `SETCOMP_S`, `COMP`, `LASTCOMP`::
 Internal PVs for develoment and diagnostic use.
 
-`TRIGGERED_S`, `TRIGDELAY_S`::
+`TRIGGERED_S`\*, `TRIGDELAY_S`*::
 If required the data captured for signal conditioning can be synchronised to
 the external trigger (in which case `TRIGDELAY_S` determines the delay between
 the trigger point and the captured data).  With triggering not enabled data is
@@ -949,7 +962,7 @@ Communication Controller (<group> = FF):
 These PVs control the Diamond Fast Feedback Communication Controller, and are
 only enabled if the controller is detected by the EPICS driver on startup.  
 
-`BPMID_S`::
+`BPMID_S`*::
 Configures the communication controller ID for this Libera.  Each node on
 the network must have a unique ID in the range 0 to 255.
 
@@ -960,7 +973,7 @@ Total number of nodes on the network detected by this Libera.
 Selects the data to be transmitted by this Libera: should normally be
 ``Positions'', but ``Timestamps'' can be selected for network debugging.
 
-`FRAMELEN_S`::
+`FRAMELEN_S`*::
 Duration of communication phase in communication control clock cycles
 (106.25MHz).  Incoming packets are ignored outside this period: a value
 between 5000 and 9000 is normally appropriate, depending on network topology.

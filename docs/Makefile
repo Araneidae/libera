@@ -10,7 +10,7 @@ ASCIIDOC = /home/mga83/local/bin/asciidoc
 	docbook2pdf $<
 
 
-DOCUMENTS = libera CHANGES
+DOCUMENTS = libera CHANGES process
 
 default: check-pv-docs $(patsubst %, %.html, $(DOCUMENTS))
 

@@ -3,16 +3,17 @@ EPICS driver.  See the attached file COPYING for licensing (in brief, GPL v2).
 
 Documentation is in the docs directory:
 
-CHANGES.txt
+CHANGES.{txt,html}
     Log of changes to this software.
 
 BUILD.txt
-    Detailed build and installation instructions.  Unfortunately this hasn't
-    yet been updated for targeting Libera 2.00, which requires a different
-    compiler -- use the binary distribution if this is an issue.
+    Detailed build and installation instructions.
 
 INSTALL.txt
     Installation instructions for binary distribution.
 
-libera.txt
+libera.{txt,html}
     Detailed description of functionality provided by the EPICS driver.
+
+process.{txt,html}
+    Internal documentation for Diamond's software process.

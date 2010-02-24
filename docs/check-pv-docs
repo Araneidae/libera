@@ -17,7 +17,6 @@ sed -r '
     /^.*DONE$/d                 #   and done records
     /^.*TRIGFAN.*$/d            # Trigger and
     /^.*FANOUT[0-9]*$/d         #   normal fanout records
-    /^.*TUNEFAN[XY]$/d          #   and tune fanout
     /^.*_C$/d                   # In-Out
     /^.*_R$/d' |                #  loopback records
 sort >"$TEMP_ROOT"/pvs.txt
@@ -37,6 +36,7 @@ sed -nr '
             s///                    # Discard the ::
             s:^// ::                # Use asciidoc comments for hidden PVs
             s/`//g                  # Discard the ` characters
+            s/\\?\*//g              # Discard persistent variable marker
         :1
             # This loop adds the group identification in front of each PV
             G                       # Pull group from hold space
