@@ -1,6 +1,18 @@
 Change history of Libera EPICS Driver development
 =================================================
 
+2010/02/24 Version 2.05.3
+-------------------------
+Add to calculations performed on FR and TT waveforms, one bug fix.
+
+ - Support averaging FR waveforms to increase the noise to signal ratio for
+   repetitive beam responses synchronised to the trigger.
+ - Support tune response measurement PVs for both FR and TT waveforms, and
+   add simple statistics measurement to TT as well as FR.
+ - Update the documentation.
+ - Fix bug in Epics and IOC Restart functions when low on memory.
+
+
 2010/01/04 Version 2.05.2
 -------------------------
 Incremental changes, a little more monitoring, some bug fixes.
