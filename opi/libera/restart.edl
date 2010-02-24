@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 541
-y 91
+x 542
+y 92
 w 472
 h 193
 font "helvetica-medium-r-16.0"
@@ -191,10 +191,9 @@ font "helvetica-bold-r-12.0"
 buttonLabel "Login"
 numCmds 1
 command {
-  0 "gnome-terminal -e\"ssh root@$(device)\" -t\"$(device)\""
+  0 "gnome-terminal -e\"ssh -x root@$(device)\" -t\"$(device)\""
 }
 endObjectProperties
-
 
 # (Shell Command)
 object shellCmdClass
@@ -218,3 +217,4 @@ command {
 }
 includeHelpIcon
 endObjectProperties
+
