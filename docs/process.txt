@@ -17,7 +17,7 @@ Versioned releases of Libera EPICS driver.  Note that since around version
 corresponding Instrumentation Technology releases, but with our own extra
 sub-version numbering.
 
-`/dls_sw/proc/R3.14.9/ioc/Libera`, `/dls_sw/proc/R3.14.11/ioc/Libera`::
+`/dls_sw/prod/R3.14.9/ioc/Libera`, `/dls_sw/prod/R3.14.11/ioc/Libera`::
 Currently all official releases of the Libera IOC are under these two
 directories.  Releases up to and including 2.00.0 are stored under `R3.14.9`,
 releases 2.05 and onwards under `R3.14.11`.
@@ -92,7 +92,7 @@ pick up the new Libera screens.  This is done by running the following
 command (where `$VERSION` is the new driver version string).
 +
 ----
-configure-ioc e -f DI-EBPM-gui-dir /dls_sw/proc/R3.14.11/ioc/Libera/$VERSION
+configure-ioc e -f DI-EBPM-gui-dir /dls_sw/prod/R3.14.11/ioc/Libera/$VERSION
 ----
 
 
