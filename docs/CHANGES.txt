@@ -1,7 +1,7 @@
 Change history of Libera EPICS Driver development
 =================================================
 
-2010/02/24 Version 2.05.3
+2010/03/03 Version 2.05.3
 -------------------------
 Add to calculations performed on FR and TT waveforms, one bug fix.
 
@@ -11,6 +11,8 @@ Add to calculations performed on FR and TT waveforms, one bug fix.
    add simple statistics measurement to TT as well as FR.
  - Update the documentation.
  - Fix bug in Epics and IOC Restart functions when low on memory.
+ - Install separate Brilliance and Electron scaling factors for estimated
+   power calculation.
 
 
 2010/01/04 Version 2.05.2
