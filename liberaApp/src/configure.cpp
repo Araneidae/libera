@@ -223,7 +223,7 @@ static bool InitialiseSpikeRemoval()
 
 static bool NotchFilterEnabled = true;
 
-static NOTCH_FILTER DisabledNotchFilter = { 0x1FFFF, 0, 0, 0, 0 };
+static NOTCH_FILTER DisabledNotchFilters[2];
 static NOTCH_FILTER NotchFilters[2];
 
 #define NOTCH_FILTER_FILENAME   "/opt/lib/notch%d"
@@ -238,8 +238,8 @@ static void SetNotchFilterEnable()
     }
     else
     {
-        WriteNotchFilter(0, DisabledNotchFilter);
-        WriteNotchFilter(1, DisabledNotchFilter);
+        WriteNotchFilter(0, DisabledNotchFilters[0]);
+        WriteNotchFilter(1, DisabledNotchFilters[1]);
     }
 }
 
@@ -249,6 +249,7 @@ static bool InitialiseNotchFilterEnable()
     bool Ok = true;
     for (int filter_index = 0; Ok && filter_index < 2; filter_index++)
     {
+        int *Filter = NotchFilters[filter_index];
         char FilterFileName[80];
         sprintf(FilterFileName, NOTCH_FILTER_FILENAME, filter_index + 1);
 
@@ -268,7 +269,7 @@ static bool InitialiseNotchFilterEnable()
             for (int i = 0; Ok && i < 5; i ++)
             {
                 char * End;
-                NotchFilters[filter_index][i] = strtoul(String, &End, 0);
+                Filter[i] = strtoul(String, &End, 0);
                 errno = 0;
                 Ok = TEST_OK(End > String);
                 String = End;
@@ -276,6 +277,26 @@ static bool InitialiseNotchFilterEnable()
         }
         if (Input != -1)
             close(Input);
+
+        if (Ok)
+        {
+            /* After successfully loading NotchFilters[filter_index] compute
+             * the corresponding disabled filter.  This should have the same
+             * DC response as the original filter, computed as
+             *
+             *      2^17 * sum(numerator) / sum(denominator)
+             *
+             * where numerator is coefficients 0,1,2 and denominator is
+             * coefficients 1,2 together with a constant factor of 2^17. */
+            int numerator = Filter[0] + Filter[1] + Filter[2];
+            int denominator = 0x20000 + Filter[3] + Filter[4];
+            int *Disabled = DisabledNotchFilters[filter_index];
+            int response = (int) ((0x20000LL * numerator) / denominator);
+            if (response >= 0x20000)
+                response = 0x1FFFF;
+            memset(Disabled, 0, sizeof(NOTCH_FILTER));
+            Disabled[0] = response;
+        }
     }
     return Ok;
 }
