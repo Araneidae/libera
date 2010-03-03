@@ -49,6 +49,9 @@ timestamps()
 case "$1" in
     start)
         echo -n "Starting EPICS"
+        # Sanity check in case bad install or wrong FPGA.
+        check_instrument_type
+        
         if [ -e /var/run/ioc.pid ]; then
             echo -n " - already running?"
             print_status failure

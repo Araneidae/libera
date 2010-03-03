@@ -76,6 +76,10 @@ case "$1" in
         /opt/bin/fpga_init $NCLK_ADC > /dev/null
         evaluate_retval
 
+        # Check that the FPGA architecture matches our configured architecture.
+        # If not we really shouldn't proceed.
+        check_instrument_type
+
         # If gigabit ethernet Fast Feedback is enabled and we have the
         # appropriate files, initialise the controller: this isn't supported
         # by the EPICS driver yet.

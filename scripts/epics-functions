@@ -100,3 +100,45 @@ detect_brilliance()
         [ -e /proc/sys/dev/sensors/adm1023-i2c-0-18 ]
     fi
 }
+
+
+# This routine probes the FPGA registers to try and identify the instrument
+# type.  There is, unfortunately, some overlap with the functionality in
+# compute-options as these process occur at different times.
+probe_instrument_type()
+{
+    local feature=$(read_register 0x1C)
+    local id=$(((feature >> 28) & 0xF))
+    local type=$(((feature >> 24) & 0xF))
+    case $id,$type in
+        0,0)    echo -n ELECTRON ;;
+        0,1)    echo -n BRILLIANCE ;;
+        0,2)    echo -n PHOTON ;;
+        *)      echo -n "UNKNOWN:$id,$type"
+                return 1 ;;
+    esac
+}
+
+
+# Checks that the instrument type (as recorded in the feature register) is
+# compatible with the configured INST_TYPE variable.
+check_instrument_type()
+{
+    local detected="$(probe_instrument_type)"
+    [ "$INST_TYPE" = "$detected" ]  ||
+        Error "Instrument $detected detected but $INST_TYPE is installed"
+}
+
+
+# This function probes the Libera hardware, returning a string recording the
+# detected hardware type.
+probe_libera()
+{
+    # We detect a Libera Photon by the absence of the temperature sensor on
+    # I2C node 18.  This can only occur on a system with sysfs.
+    if [ ! -d /sys -o -e /sys/bus/i2c/devices/0-0018 ]; then
+        detect_brilliance  &&  echo -n BRILLIANCE  ||  echo -n ELECTRON
+    else
+        echo -n PHOTON
+    fi
+}

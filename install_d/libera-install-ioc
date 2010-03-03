@@ -38,6 +38,7 @@
 # Set the EPICS_ARCH and CONFIGDIR variables
 SOURCE="$(cd "$(dirname "$0")"/..; pwd)"
 . "$SOURCE"/scripts/architecture
+. "$SOURCE"/scripts/epics-functions
 
 LOCATIONS="$(cat "$SOURCE"/install_d/locations)"
 
@@ -49,7 +50,8 @@ AUTOSTART=false
 STARTNOW=false
 REMOUNT_RW=false
 NOTCH_FLAG=
-while getopts 'ftlaswnh' option; do
+INST_TYPE="$(probe_libera)"
+while getopts 'ftlaswnT:h' option; do
     case "$option" in
     f)  TARGET=final ;;
     t)  TARGET=test ;;
@@ -59,6 +61,7 @@ while getopts 'ftlaswnh' option; do
     s)  STARTNOW=true ;;
     w)  REMOUNT_RW=true ;;
     n)  NOTCH_FLAG=-f ;;
+    T)  INST_TYPE="$OPTARG" ;;
     h)  echo -n 'Usage: libera-install-ioc <options>'
         if [ -n "$LOCATIONS" ]; then echo ' <location>'; else echo; fi
         cat <<'EOF'
@@ -69,6 +72,8 @@ where <options> includes
     -s  Start IOC after installation
     -w  Remount ro rootfs rw if necessary
     -n  Force rewriting of notch filter files, even if already present
+    -T: Force instrument type in case autodetection fails.
+        Don't use this option!
 EOF
         [ -n "$LOCATIONS" ]  &&  cat <<EOF
 and <location> is a two character location code used to configure location
@@ -171,6 +176,7 @@ if [ $TARGET == final ]; then
     for dir in dbd db bin/$EPICS_ARCH scripts; do
         cp -r "$SOURCE/$dir" "$IOC_TARGET/$dir"
     done
+    cp "$SOURCE/runioc" "$IOC_TARGET"
 else
     # Compute EPICS and IOC paths relative to this directory.  
     IOC_TARGET="$SOURCE"
@@ -188,13 +194,15 @@ mkdir -p "$STATE_DIR"
     echo "LIBERA_IOC='$IOC_TARGET'"
     echo "EPICS_ARCH=$EPICS_ARCH"
     echo "ROOTFS_ARCH=$ROOTFS_ARCH"
+    echo "INST_TYPE=$INST_TYPE"
     # We want to process three types of lines appropriately:
-    #  1. Lines starting $LOCATION_IOC_... are translated to IOC_...
+    #  1. Lines starting $LOCATION_IOC_... or ${INST_TYPE}_ are translated
+    #     to IOC_...
     #  2. Lines starting XX_IOC_... are discarded
     #  3. Lines starting IOC_ are passed through unchanged
     #  4. All other lines are discarded
     sed -r '
-        s/^'"$LOCATION"'_(IOC_)/\1/
+        s/^('"$LOCATION"'|'"$INST_TYPE"')_IOC_/IOC_/
         /^IOC_/! d
         ' "$SOURCE"/install_d/CONFIG
     # If libera autostart is configured then add the appropriate entry

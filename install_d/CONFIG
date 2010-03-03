@@ -90,8 +90,15 @@ IOC_FR_LENGTH=2048
 # significant figures in these values, and the same settings should serve for
 # all Liberas with the same filter chain configuration.  Changing the
 # configured DDC filters will change the SA value.
-IOC_S0_SA=99400000
-IOC_S0_FT=2342000
+#
+# An annoying complication is that the settings for Electron and Brilliance
+# are very different, so we have both here and the appropriate one is
+# selected during installation from the computed instrument type
+ELECTRON_IOC_S0_SA=99400000
+ELECTRON_IOC_S0_FT=2342000
+
+BRILLIANCE_IOC_S0_SA=12000000
+BRILLIANCE_IOC_S0_FT=320000
 
 
 # By default the IOC monitors the local NTP daemon (through the SNTP RFC 2030
