@@ -45,4 +45,4 @@ PYTHON = dls-python2.4
 # path.
 #    Note: if the IOC builder is not installed, please place the prebuilt .db
 # files in the liberaApp/Db directory to avoid any need to invoke this.
-IOCBUILDER = 1.8
+IOCBUILDER = 2.3

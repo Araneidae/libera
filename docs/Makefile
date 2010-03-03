@@ -1,4 +1,4 @@
-ASCIIDOC = /home/mga83/local/bin/asciidoc
+ASCIIDOC = asciidoc
 
 %.html: %.txt
 	$(ASCIIDOC) $<

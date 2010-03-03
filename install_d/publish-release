@@ -107,7 +107,7 @@ PATH=$PATH:/dls_sw/tools/bin
 cd "$PROD_ROOT"  &&
 svn co "\$SVN_ROOT/$RELEASE_PATH/$VERSION"  &&
 cd $VERSION  &&
-make >build.log 2>build.log.err
+{ make && make -C docs; } >build.log 2>build.log.err
 EOF
 mv .$RELEASE_JOB $RELEASE_JOB  &&
 echo Job $RELEASE_JOB scheduled for build  ||
