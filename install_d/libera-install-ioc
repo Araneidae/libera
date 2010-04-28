@@ -173,9 +173,13 @@ if [ $TARGET == final ]; then
     # Copy over all the runtime files.
     umask 22  
     mkdir -p "$IOC_TARGET" "$IOC_TARGET"/bin
-    for dir in dbd db bin/$EPICS_ARCH scripts; do
+    for dir in dbd db bin/$EPICS_ARCH; do
         cp -r "$SOURCE/$dir" "$IOC_TARGET/$dir"
     done
+    # To avoid copying .svn files scripts needs some extra care.
+    mkdir "$IOC_TARGET/scripts"
+    cp "$SOURCE/scripts"/* "$IOC_TARGET/scripts"
+
     cp "$SOURCE/runioc" "$IOC_TARGET"
 else
     # Compute EPICS and IOC paths relative to this directory.  
