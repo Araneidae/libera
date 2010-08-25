@@ -3,7 +3,7 @@
 # Script to check for undocumented PVs.
 
 TEMP_ROOT="$(mktemp -d /tmp/check-pv-docs.XXXXXX)"
-trap 'rm -rf "$TEMP_ROOT"' EXIT
+# trap 'rm -rf "$TEMP_ROOT"' EXIT
 
 LIBERA="$(cd "$(dirname "$0")"/..; pwd)"
 

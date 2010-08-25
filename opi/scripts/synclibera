@@ -27,7 +27,7 @@ BS_BPMS = \
 SR_BPMS = \
     ['SR%02dC-DI-EBPM-%02d' % (cell + 1, num + 1)
         for cell in range(24) for num in range(7)] + \
-    ['SR21C-DI-EBPM-08']
+    ['SR21C-DI-EBPM-08','SR13S-DI-EBPM-01','SR13S-DI-EBPM-02']
 
 TS_BPMS = ['TS-DI-EBPM-%02d' % (num + 1) for num in range(8)]
 
