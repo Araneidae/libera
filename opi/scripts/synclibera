@@ -1,3 +1,4 @@
+#!/dls_sw/prod/tools/RHEL5/bin/dls-python2.6
 #!/usr/bin/env dls-python2.4
 
 import sys
@@ -6,7 +7,7 @@ import optparse
 import datetime
 
 from pkg_resources import require
-require("cothread==1.5")
+require('cothread==1.16')
 # sys.path.append('/home/mga83/epics/cothread/build/lib.linux-i686-2.4')
 from cothread import catools, Sleep
 
@@ -27,7 +28,9 @@ BS_BPMS = \
 SR_BPMS = \
     ['SR%02dC-DI-EBPM-%02d' % (cell + 1, num + 1)
         for cell in range(24) for num in range(7)] + \
-    ['SR21C-DI-EBPM-08','SR13S-DI-EBPM-01','SR13S-DI-EBPM-02']
+    ['SR21C-DI-EBPM-08'] + \
+    ['SR%02dS-DI-EBPM-%02d' % (cell, num)
+        for cell in [9, 10, 13] for num in [1, 2]]
 
 TS_BPMS = ['TS-DI-EBPM-%02d' % (num + 1) for num in range(8)]
 
@@ -196,7 +199,8 @@ def CheckSystemClocks(bpms, evrs, trigger):
     caput(PVs(evrs, 'TRIG:MODE'), 'Normal')
     
     good_bpms, bad_bpms = AnalyseTimes(
-        'Time', bpms, [mcl.datetime for mcl in mcls],
+        'Time', bpms, [
+            datetime.datetime.fromtimestamp(mcl.timestamp) for mcl in mcls],
         margin = datetime.timedelta(0))
 #     # Put all bad bpms back to NTP time, leave the good ones with system
 #     # time.
