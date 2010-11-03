@@ -271,8 +271,7 @@ static void ReadTemperature(const char * sensor, int *result)
 {
     /* Annoyingly the format of the temperature readout depends on which
      * system version we're using! */
-    ParseFile(sensor, 1,
-        UseSys ? "%d" : "%*d %*d %d", result);
+    ParseFile(sensor, 1, UseSys ? "%d" : "%*d %*d %d", result);
     if (UseSys)
         *result /= 1000;
 }
