@@ -60,6 +60,7 @@ bool DlsFpgaFeatures;
 bool MafFeaturePresent;
 bool ItechMaxAdcPresent;
 bool Version2FpgaPresent;
+bool SecondaryInterlock;
 #ifdef __EBPP_H_2
 bool Version2Driver = true;
 #else
@@ -201,6 +202,7 @@ static ENV_MAP<bool> EnvironmentBools[] = {
     { "OPT_MAF",        "MAF",      &MafFeaturePresent },
     { "ITECH_MAX_ADC",  "ITMAXADC", &ItechMaxAdcPresent },
     { "FPGA_2_SUPPORT", "FPGA2",    &Version2FpgaPresent },
+    { "SECONDARY_ILK",  "ILK2",     &SecondaryInterlock },
 };
 
 
@@ -245,7 +247,7 @@ static bool convert_stringin(const char * string, EPICS_STRING &value)
 static bool convert_longin(const char * string, int &value)
 {
     char *end;
-    value = strtol(string, &end, 0);
+    value = strtol(string, &end, 10);
     return string < end  &&  *end == '\0';
 }
 

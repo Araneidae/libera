@@ -161,6 +161,19 @@ bool WriteInterlockParameters(
     int overflow_limit, int overflow_dur,
     // Gain limit (dBm) for gain-dependent interlock.
     int gain_limit);
+bool WriteSecondaryInterlockParameters(
+    int Xlow2, int Xhigh2, int Ylow2, int Yhigh2);
+
+/* Returns the interlock status word with the following immediate values:
+ *
+ *  bit 0   IL X position out of limit
+ *  bit 1   IL Y position out of limit
+ *  bit 2   Attenuator settings high
+ *  bit 3   Filtered ADC overflow
+ *  bit 4   Raw ADC overflow
+ *  bit 5   Secondory interlock window selected
+ */
+bool ReadInterlockStatus(uint32_t &status);
 
 
 /* Sets calibration paramters for calculating (X,Y) from (A,B,C,D). */

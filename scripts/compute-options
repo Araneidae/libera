@@ -140,7 +140,10 @@ export FPGA_ITECH=$(read_register    0x1C)
 # DLS feature register if bit 23 of i-Tech register set
 #
 #   Bits    Description
-#   0-30    Reserved for future expansion
+#   0       Identifies version 2+ FPGA features (spike removal, mean sum and
+#           postmortem triggers).
+#   1       Extra secondary interlock limit controls
+#   2-30    Reserved for future expansion
 #   31      Must be 1 for DLS feature identification
 
 # Let's do a bit of guessing at the FPGA version.  In pre-1.60 FPGAs
@@ -175,12 +178,14 @@ set_var OPT_DLS_FPGA $((
 set_var ITECH_MAX_ADC $((($(read_register 0x8004) & ~1) != 0))
 if [ $OPT_DLS_FPGA = 1 ]; then
     set_var FPGA_2_SUPPORT $(((FPGA_CUSTOMER & 1) != 0))
+    set_var SECONDARY_ILK $(((FPGA_CUSTOMER & (1 << 1)) != 0))
 else
     # Alas, the MAX_ADC register seems the only safe probe we have available
     # for identifying a 2.00+ FPGA.  The FA_NSUMS register (0x1c024) is a
     # promising alternative ... but it only updates on trigger, so can be zero
     # on a fresh FPGA.
     set_var FPGA_2_SUPPORT $ITECH_MAX_ADC
+    set_var SECONDARY_ILK 0
 fi
 
 # The DLS Fast feedback controller is available if DLS FPAG present or the

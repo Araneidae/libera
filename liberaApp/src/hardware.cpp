@@ -86,11 +86,20 @@
 #define REGISTER_SR_DEBUG       (FA_OFFSET + 0x044) // Debug register
 #define REGISTER_SR_BUFFER      (FA_OFFSET + 0x800) // Debug buffer
 
+/* Interlock status register. */
+#define REGISTER_ILK_STATUS     0x14024004
+
 /* Postmortem trigger position limit registers. */
 #define REGISTER_PM_MINX        0x14024020  // PM trigger min X limit
 #define REGISTER_PM_MAXX        0x14024024  // PM trigger max X limit
 #define REGISTER_PM_MINY        0x14024028  // PM trigger min Y limit
 #define REGISTER_PM_MAXY        0x1402402C  // PM trigger max Y limit
+
+/* Secondary interlock control registers. */
+#define REGISTER_ILK_XLOW2      0x14024030
+#define REGISTER_ILK_XHIGH2     0x14024034
+#define REGISTER_ILK_YLOW2      0x14024038
+#define REGISTER_ILK_YHIGH2     0x1402403C
 
 
 /* This bit is set in the ITECH register to enable DLS extensions. */
@@ -262,7 +271,6 @@ static bool WriteRawRegister(
 }
 
 
-#if 0
 static bool ReadRawRegister(uint32_t Address, uint32_t &Value)
 {
     uint32_t * Register = MapRawRegister(Address);
@@ -275,7 +283,6 @@ static bool ReadRawRegister(uint32_t Address, uint32_t &Value)
         return true;
     }
 }
-#endif
 
 
 
@@ -338,6 +345,39 @@ bool WriteInterlockParameters(
             WriteRawRegister(REGISTER_ADC_OVERFLOW, overflow_limit))  &&
 #endif
         true);
+}
+
+
+bool WriteSecondaryInterlockParameters(
+    int Xlow2, int Xhigh2, int Ylow2, int Yhigh2)
+{
+#ifdef RAW_REGISTER
+    if (SecondaryInterlock)
+        return LOCKED(
+            WriteRawRegister(REGISTER_ILK_XLOW2,  Xlow2)  &&
+            WriteRawRegister(REGISTER_ILK_XHIGH2, Xhigh2)  &&
+            WriteRawRegister(REGISTER_ILK_YLOW2,  Ylow2)  &&
+            WriteRawRegister(REGISTER_ILK_YHIGH2, Yhigh2));
+    else
+#endif
+        return false;
+}
+
+
+bool ReadInterlockStatus(uint32_t &status)
+{
+#ifdef RAW_REGISTER
+    if (ReadRawRegister(REGISTER_ILK_STATUS, status))
+    {
+        if (!SecondaryInterlock)
+            /* If secondary interlock support is not present then the interlock
+             * window selection bit in this register needs to be ignored. */
+            status &= ~(1 << 5);
+        return true;
+    }
+    else
+#endif
+        return false;
 }
 
 

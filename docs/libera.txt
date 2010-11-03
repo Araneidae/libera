@@ -481,6 +481,12 @@ Interlock window: when the interlock is enabled the interlock output
 is closed (``active'') so long as the beam position lies within this
 window.
 
+`MIN`<axis>`2_S`\*, `MAX`<axis>`2_S`*, `WINDOW`::
+Secondary interlock window settings, only meaningful if `VE:ILK2` indicates
+that secondary interlock support is present in the FPGA.  In this case an
+external hardware signal (received on RS232 port #2) determines which interlock
+window is in force, and `WINDOW` indicates this.
+
 `OVER_S`\*, `OVER_PC_S`, `TIME_S`*::
 ADC overflow detection parameters: the interlock is dropped if the ADC
 input exceeds value `OVER` for at least `TIME` samples.  The overflow
@@ -793,15 +799,11 @@ These three PVs monitor the status of the NTP client running on Libera.
 `NTPSTAT` can be one of the following values:
 +
 --
-``Not monitored''::
-NTP monitoring has been disabled
-``No NTP server''::
-We don't appear to be running an NTP client at all
-``No Sync''::
-The local NTP client isn't synchronised to an NTP server.  (This can mean that
-synchronisation is in progress, this can take up to 20 minutes.)
-``Synchronised''::
-Libera is correctly synchronised to an NTP server.
+``Not monitored'':: NTP monitoring has been disabled
+``No NTP server'':: We don't appear to be running an NTP client at all
+``No Sync'':: The local NTP client isn't synchronised to an NTP server.  (This
+can mean that synchronisation is in progress, this can take up to 20 minutes.)
+``Synchronised'':: Libera is correctly synchronised to an NTP server.
 --
 +
 `STRATUM` records the distance of Libera (in server hops) from the NTP
@@ -1194,6 +1196,10 @@ trigger control.  Actually mirrors `ABI` = 3.
 `FPGA2`::
 Detects Libera 2.00+ version of FPGA, required for a number of more recent
 useful features.
+
+`ILK2`::
+Detects secondary interlock window support (DLS only feature), used for
+alternative interlock window with hardware selection.
 
 
 

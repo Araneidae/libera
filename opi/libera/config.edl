@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 387
-y 201
+x 390
+y 204
 w 473
 h 567
 font "helvetica-medium-r-16.0"
@@ -163,7 +163,7 @@ endObjectProperties
 object activeXTextDspClass
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 48
 y 64
@@ -229,7 +229,7 @@ endObjectProperties
 object activeXTextDspClass
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 160
 y 64
@@ -276,7 +276,7 @@ endObjectProperties
 object activeXTextDspClass
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 48
 y 88
@@ -323,7 +323,7 @@ endObjectProperties
 object activeXTextDspClass
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 48
 y 280
@@ -369,7 +369,7 @@ endObjectProperties
 object activeXTextDspClass
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 160
 y 280
@@ -415,7 +415,7 @@ endObjectProperties
 object activeXTextDspClass
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 48
 y 304
@@ -461,7 +461,7 @@ endObjectProperties
 object activeXTextDspClass
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 160
 y 304
@@ -520,7 +520,7 @@ endObjectProperties
 object activeXTextDspClass
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 152
 y 168
@@ -567,7 +567,7 @@ endObjectProperties
 object activeXTextDspClass
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 72
 y 168
@@ -735,12 +735,12 @@ endObjectProperties
 object activeXTextDspClass
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
-x 312
+x 272
 y 96
-w 64
-h 20
+w 56
+h 24
 controlPv "$(device):IL:MINX_S"
 font "helvetica-medium-r-14.0"
 fontAlign "right"
@@ -762,12 +762,12 @@ endObjectProperties
 object activeXTextDspClass
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
-x 392
+x 336
 y 96
-w 64
-h 20
+w 56
+h 24
 controlPv "$(device):IL:MAXX_S"
 font "helvetica-medium-r-14.0"
 fontAlign "right"
@@ -809,12 +809,12 @@ endObjectProperties
 object activeXTextDspClass
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
-x 312
+x 272
 y 120
-w 64
-h 20
+w 56
+h 24
 controlPv "$(device):IL:MINY_S"
 font "helvetica-medium-r-14.0"
 fontAlign "right"
@@ -836,12 +836,12 @@ endObjectProperties
 object activeXTextDspClass
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
-x 392
+x 336
 y 120
-w 64
-h 20
+w 56
+h 24
 controlPv "$(device):IL:MAXY_S"
 font "helvetica-medium-r-14.0"
 fontAlign "right"
@@ -1013,7 +1013,7 @@ endObjectProperties
 object activeXTextDspClass
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 328
 y 208
@@ -1060,7 +1060,7 @@ endObjectProperties
 object activeXTextDspClass
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 352
 y 232
@@ -1107,7 +1107,7 @@ endObjectProperties
 object activeXTextDspClass
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 312
 y 144
@@ -1212,7 +1212,7 @@ endObjectProperties
 object activeXTextDspClass
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 368
 y 400
@@ -1259,7 +1259,7 @@ endObjectProperties
 object activeXTextDspClass
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 368
 y 448
@@ -1374,7 +1374,7 @@ endObjectProperties
 object activeXTextDspClass
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 136
 y 504
@@ -1560,7 +1560,7 @@ endObjectProperties
 object activeXTextDspClass
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 368
 y 424
@@ -1660,7 +1660,7 @@ endObjectProperties
 object activeXTextDspClass
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 152
 y 192
@@ -1687,7 +1687,7 @@ endObjectProperties
 object activeXTextDspClass
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 72
 y 192
@@ -1734,7 +1734,7 @@ endObjectProperties
 object activeXTextDspClass
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 152
 y 216
@@ -1761,7 +1761,7 @@ endObjectProperties
 object activeXTextDspClass
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 72
 y 216
@@ -1808,7 +1808,7 @@ endObjectProperties
 object activeXTextDspClass
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 392
 y 144
@@ -1932,7 +1932,7 @@ endObjectProperties
 object activeXTextDspClass
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 408
 y 208
@@ -2004,7 +2004,7 @@ endObjectProperties
 object xyGraphClass
 beginObjectProperties
 major 4
-minor 5
+minor 6
 release 0
 # Geometry
 x 408
@@ -2113,7 +2113,7 @@ endObjectProperties
 object activeXTextDspClass
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 424
 y 232
@@ -2186,7 +2186,7 @@ endObjectProperties
 object activeXTextDspClass
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 424
 y 450
@@ -2231,7 +2231,7 @@ endObjectProperties
 object activeXTextDspClass
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 368
 y 472
@@ -2441,5 +2441,57 @@ value {
   "on"
 }
 autoSize
+endObjectProperties
+
+# (Related Display)
+object relatedDisplayClass
+beginObjectProperties
+major 4
+minor 2
+release 0
+x 400
+y 116
+w 56
+h 22
+fgColor index 43
+bgColor index 3
+topShadowColor index 1
+botShadowColor index 11
+font "helvetica-bold-r-12.0"
+buttonLabel "Second"
+numPvs 4
+numDsps 1
+displayFileName {
+  0 "libera/secondary.edl"
+}
+symbols {
+  0 "device=$(device)"
+}
+endObjectProperties
+
+# (Text Control)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 5
+release 0
+x 400
+y 96
+w 80
+h 14
+controlPv "$(device):IL:WINDOW"
+font "helvetica-medium-r-12.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+autoHeight
+limitsFromDb
+nullColor index 0
+smartRefresh
+fastUpdate
+useHexPrefix
+newPos
+objType "controls"
+noExecuteClipMask
 endObjectProperties
 

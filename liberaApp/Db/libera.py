@@ -425,6 +425,14 @@ def Interlock():
 
     # Common shared interlock settings
     InterlockSettings()
+    # Extra secondary interlock settings
+    aOut('MINX2', -5, 5, EGU = 'mm', DESC = 'Secondary interlock min X')
+    aOut('MAXX2', -5, 5, EGU = 'mm', DESC = 'Secondary interlock max X')
+    aOut('MINY2', -5, 5, EGU = 'mm', DESC = 'Secondary interlock min Y')
+    aOut('MAXY2', -5, 5, EGU = 'mm', DESC = 'Secondary interlock max Y')
+    mbbIn('WINDOW', ('Primary', 0), ('Secondary', 1),
+        SCAN = '.1 second',
+        DESC = 'Currently active interlock')
 
     # Interlock control state.  This tracks the internal state, but can also
     # be reset externally.
@@ -963,6 +971,7 @@ def Versions():
     boolin('MAF',       'Boxcard filter present')
     boolin('ITMAXADC',  'i-Tech MAX ADC register')
     boolin('FPGA2',     'Libera 2.00+ FPGA features')
+    boolin('ILK2',      'Secondary interlock control')
     boolin('DRIVER2',   'Libera 2.00+ driver features')
 
     UnsetChannelName()

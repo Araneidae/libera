@@ -31,6 +31,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <string.h>
 #include <stddef.h>
 #include <pthread.h>
@@ -44,7 +45,6 @@
 #include "trigger.h"
 #include "events.h"
 #include "convert.h"
-//#include "configure.h"
 
 #include "interlock.h"
 
@@ -64,6 +64,11 @@ static int MinX = -1000000;     // +- 1 mm
 static int MaxX =  1000000;
 static int MinY = -1000000;
 static int MaxY =  1000000;
+/* Secondary interlock window. */
+static int MinX2 = -1000000;     // +- 1 mm
+static int MaxX2 =  1000000;
+static int MinY2 = -1000000;
+static int MaxY2 =  1000000;
 /* Interlock position offset: these need to adjust the position of the window
  * to take account of Golden Orbit offsets. */
 static int OffsetX = 0;
@@ -158,9 +163,12 @@ static void Unlock(void *) { TEST_0(pthread_mutex_unlock(&InterlockMutex)); }
 static void WriteInterlockState()
 {
     if (InterlockTestMode)
+    {
         /* In interlock test mode we unconditionally force the interlock to
          * be dropped by writing an impossible window and overflow limit. */
         WriteInterlockParameters(LIBERA_ILK_ENABLE, 0, 0, 0, 0, 1, 1, 0);
+        WriteSecondaryInterlockParameters(0, 0, 0, 0);
+    }
     else
     {
         LIBERA_ILKMODE InterlockMode;
@@ -192,6 +200,8 @@ static void WriteInterlockState()
             InterlockMode,
             MinX - OffsetX, MaxX - OffsetX, MinY - OffsetY, MaxY - OffsetY,
             OverflowLimit, OverflowTime, 0);
+        WriteSecondaryInterlockParameters(
+            MinX2 - OffsetX, MaxX2 - OffsetX, MinY2 - OffsetY, MaxY2 - OffsetY);
     }
 }
 
@@ -345,6 +355,16 @@ private:
 };
 
 
+static bool ReadInterlockWindow(int &window)
+{
+    uint32_t status;
+    bool ok = ReadInterlockStatus(status);
+    if (ok)
+        window = (status >> 5) & 1;
+    return ok;
+}
+
+
 static void SetInterlockIIR_K()
 {
     WriteInterlockIIR_K(InterlockIIR_K);
@@ -353,11 +373,15 @@ static void SetInterlockIIR_K()
 
 bool InitialiseInterlock()
 {
-    /* Interlock window. */
+    /* Interlock window plus secondary interlock. */
     PUBLISH_INTERLOCK(ao,  "IL:MINX",     MinX);
     PUBLISH_INTERLOCK(ao,  "IL:MAXX",     MaxX);
     PUBLISH_INTERLOCK(ao,  "IL:MINY",     MinY);
     PUBLISH_INTERLOCK(ao,  "IL:MAXY",     MaxY);
+    PUBLISH_INTERLOCK(ao,  "IL:MINX2",    MinX2);
+    PUBLISH_INTERLOCK(ao,  "IL:MAXX2",    MaxX2);
+    PUBLISH_INTERLOCK(ao,  "IL:MINY2",    MinY2);
+    PUBLISH_INTERLOCK(ao,  "IL:MAXY2",    MaxY2);
     /* Current threshold at which the interlock is automatically triggered. */
     PUBLISH_INTERLOCK(ao,  "IL:ION",      InterlockAutoOnCurrent);
     PUBLISH_INTERLOCK(ao,  "IL:IOFF",     InterlockAutoOffCurrent);
@@ -368,6 +392,7 @@ bool InitialiseInterlock()
     /* Interlock testing. */
     PUBLISH_FUNCTION_OUT(bo,  "IL:TEST",
         InterlockTestMode, LockedWriteInterlockState);
+    PUBLISH_FUNCTION_IN(mbbi, "IL:WINDOW", ReadInterlockWindow);
 
     /* The interlock enable is dynamic state. */
     EnableReadback = PUBLISH_READBACK(bi, bo, "IL:ENABLE",
