@@ -345,7 +345,7 @@ private:
 };
 
 
-void SetInterlockIIR_K()
+static void SetInterlockIIR_K()
 {
     WriteInterlockIIR_K(InterlockIIR_K);
 }

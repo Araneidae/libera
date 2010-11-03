@@ -39,7 +39,6 @@
 
 #include <epicsVersion.h>
 
-#include "test_error.h"
 #include "device.h"
 #include "publish.h"
 #include "hardware.h"

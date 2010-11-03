@@ -222,7 +222,7 @@ static uint32_t * MapRawRegister(uint32_t Address)
         return NULL;
     }
     else
-        return (uint32_t *)(MemMap + (Address & OsPageMask));
+        return (uint32_t *)(void*)(MemMap + (Address & OsPageMask));
 }
 
 static void UnmapRawRegister(uint32_t *MappedAddress)
@@ -667,8 +667,8 @@ static bool WriteAttenuatorState(int Offset)
          * attenuators per channel. */
         uint8_t Atten1 = Attenuation / 2;
         uint8_t Atten2 = Attenuation - Atten1;
-        uint8_t OneWord[4] = { Atten2, Atten1, Atten2, Atten1 };
-        AttenuatorWords[1] = AttenuatorWords[0] = *(int*)OneWord;
+        AttenuatorWords[1] = AttenuatorWords[0] =
+            (Atten1 << 24) | (Atten2 << 16) | (Atten1 << 8) | Atten2;
     }
     return WriteDscWords(Offset, AttenuatorWords, sizeof(AttenuatorWords));
 }
@@ -963,7 +963,7 @@ static int rem(int a, int b)
 }
 
 #define FA_REG(base, address) \
-    ((uint32_t *) ((char *) base + address - FA_OFFSET))
+    ((uint32_t *) (void *) ((char *) base + address - FA_OFFSET))
 
 bool WriteSpikeRemovalSettings(
     bool Enable, int AverageWindow, int AverageStop,

@@ -201,7 +201,7 @@ size_t WAVEFORMS<T>::Read(size_t Field, int * Target, size_t Length) const
     char * Source = ((char *) Data) + Field;
     for (size_t i = 0; i < Length; i ++)
     {
-        Target[i] = *(int *) Source;
+        Target[i] = *(int *) (void *) Source;
         Source += sizeof(T);
     }
     return Length;
@@ -218,7 +218,7 @@ void WAVEFORMS<T>::Write(size_t Field, const int * Source, size_t Length)
     char * Target = ((char *) Data) + Field;
     for (size_t i = 0; i < Length; i ++)
     {
-        *(int*)Target = Source[i];
+        *(int*)(void *) Target = Source[i];
         Target += sizeof(T);
     }
     ActiveLength = Length;

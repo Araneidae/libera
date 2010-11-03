@@ -284,7 +284,7 @@ I_WAVEFORM::I_WAVEFORM(epicsEnum16 Type) :
 
 bool I_WAVEFORM::BindRecord(dbCommon * p)
 {
-    waveformRecord * pr = (waveformRecord *) p;
+    waveformRecord * pr = (waveformRecord *) (void *) p;
     /* Check that the types match. */
     if (pr->ftvl == Type)
         return true;

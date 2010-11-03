@@ -305,7 +305,7 @@ static bool InitialiseNotchFilterEnable()
 /****************************************************************************/
 /*                                                                          */
 
-void SetBpmEnabled()
+static void SetBpmEnabled()
 {
     /* At the moment the only things affected by the ENABLED flag are the
      * overall system health (managed in the EPICS database) and the

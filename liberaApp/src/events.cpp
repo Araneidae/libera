@@ -58,7 +58,7 @@
 
 /* Special case processing for merging event parameters. */
 
-int MergeParameters(
+static int MergeParameters(
     int EventId, bool MergeRequired, int OldParameter, int NewParameter)
 {
     switch (EventId)

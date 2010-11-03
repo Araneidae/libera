@@ -152,11 +152,11 @@ static bool MapFastFeedbackMemory()
             DevMem, FF_CONTROL_ADDRESS & ~PageMask));
     if (Ok)
     {
-        ConfigSpace = (FF_CONFIG_SPACE *)
+        ConfigSpace = (FF_CONFIG_SPACE *) (void *)
             ((char *) FF_AddressSpaceMem + (FF_BASE_ADDRESS & PageMask));
-        StatusSpace = (FF_STATUS_SPACE *)
+        StatusSpace = (FF_STATUS_SPACE *) (void *)
             ((char *) ConfigSpace + FF_STATUS_OFFSET);
-        ControlSpace = (volatile FF_CONTROL_SPACE *)
+        ControlSpace = (volatile FF_CONTROL_SPACE *) (void *)
             ((char *) FF_ControlSpaceMem + (FF_CONTROL_ADDRESS & PageMask));
     }
         
