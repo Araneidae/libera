@@ -157,9 +157,11 @@ if [ $FPGA_OLD = 1 ]; then
     FPGA_ITECH=0
 fi
 
-# Clean up some of our values.  We do this after old FPGA detection, as that
-# needed raw values.
-FPGA_FA_DEC=$((FPGA_FA_DEC & 0xFFFF))
+# Compute the correct decimation values.  We do this after old FPGA detection,
+# as that needed raw values.
+export FPGA_FA_CIC=$((FPGA_FA_DEC >> 16))
+export FPGA_FA_FIR=$((FPGA_FA_DEC & 0xFFFF))
+FPGA_FA_DEC=$((FPGA_FA_CIC * FPGA_FA_FIR))
 FPGA_DDC_DEC=$((FPGA_DDC_DEC & 0xFFFF))
 
 # If the instrument id is wrong then something is horribly off!

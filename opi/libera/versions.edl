@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 484
-y 203
+x 485
+y 204
 w 392
 h 584
 font "helvetica-medium-r-14.0"
@@ -888,7 +888,7 @@ minor 5
 release 0
 x 168
 y 384
-w 168
+w 40
 h 16
 controlPv "$(device):VE:FADEC"
 format "decimal"
@@ -1506,6 +1506,97 @@ bgColor index 0
 useDisplayBg
 value {
   "Secondary interlock?"
+}
+autoSize
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 5
+release 0
+x 232
+y 384
+w 40
+h 16
+controlPv "$(device):VE:FACIC"
+format "decimal"
+font "helvetica-medium-r-14.0"
+fontAlign "right"
+fgColor index 14
+bgColor index 4
+useDisplayBg
+autoHeight
+limitsFromDb
+nullColor index 0
+useHexPrefix
+newPos
+objType "monitors"
+noExecuteClipMask
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 5
+release 0
+x 296
+y 384
+w 40
+h 16
+controlPv "$(device):VE:FAFIR"
+format "decimal"
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 4
+useDisplayBg
+autoHeight
+limitsFromDb
+nullColor index 0
+useHexPrefix
+newPos
+objType "monitors"
+noExecuteClipMask
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 216
+y 384
+w 9
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "="
+}
+autoSize
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 280
+y 384
+w 7
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "x"
 }
 autoSize
 endObjectProperties

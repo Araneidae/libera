@@ -956,6 +956,8 @@ def Versions():
     longin('BUILDNO',   'FPGA build number register')
     longin('CUSTID',    'FPGA customer id register')
     longin('DDCDEC',    'Libera samples per turn')
+    longin('FACIC',     'FA CIC decimation factor')
+    longin('FAFIR',     'FA FIR decimation factor')
     longin('FADEC',     'Turns per FA update')
     longin('CUSTOMER',  'Customer feature register')
     longin('ITECH',     'i-Tech feature register')

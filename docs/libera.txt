@@ -1128,9 +1128,11 @@ Number of samples per machine revolution.  The sample clock runs at
 approximately 110MHz, with the precise value chosen to match the target
 machine and satisfy signal processing constraints.
 
-`FADEC`::
-Turns per FA update.  Typically a fast feedback update occurs every 100us and
-so `DDCDEC`*`FADEC` is approximately 10,000.
+`FADEC`, `FACIC`, `FAFIR`::
+`FADEC` records the number of turns per FA update.  Typically a fast feedback
+update occurs every 100us and so `DDCDEC`*`FADEC` is approximately 10,000.
+The decimation to FA rate is a two stage process, and the counts of the CIC
+and FIR stages are recorded as `FACIC` and `FAFIR` respectively.
 
 `CUSTOMER`::
 Customer feature register.  This is used to identify customer specific FPGA

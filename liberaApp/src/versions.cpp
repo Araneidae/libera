@@ -187,6 +187,8 @@ static ENV_MAP<int> EnvironmentInts[] = {
     { "FPGA_BUILD_NO",  "BUILDNO" },
     { "FPGA_CUST_ID",   "CUSTID",   &CustomerId },
     { "FPGA_DDC_DEC",   "DDCDEC",   &DecimationFactor },
+    { "FPGA_FA_CIC",    "FACIC" },
+    { "FPGA_FA_FIR",    "FAFIR" },
     { "FPGA_FA_DEC",    "FADEC" },
     { "FPGA_CUSTOMER",  "CUSTOMER" },
     { "FPGA_ITECH",     "ITECH" },
