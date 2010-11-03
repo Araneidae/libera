@@ -35,7 +35,6 @@
 # Pick up the Libera and IOC specific configuration parameters.
 . $CONFIGDIR/libera
 . $CONFIGDIR/epics_ioc
-. "$LIBERA_IOC"/scripts/epics-functions
 
 
 # ----------------------------------------------------------------------------
@@ -55,8 +54,9 @@ IocParameter()
 # ----------------------------------------------------------------------------
 
 # Use the ioc home directory as the startup directory.
-cd "$LIBERA_IOC"
-BIN_DIR="$LIBERA_IOC"/bin/$EPICS_ARCH
+cd "$(dirname "$0")"/..
+. scripts/epics-functions
+BIN_DIR=bin/$EPICS_ARCH
 
 
 export EPICS_CA_MAX_ARRAY_BYTES=1000000
@@ -134,7 +134,7 @@ IocParameter -f $FREV
 
 
 # Interpret the environment and configuration.
-. "$LIBERA_IOC"/scripts/compute-options
+. scripts/compute-options
 
 # Discover the list of temporary filesystems we need to keep an eye on.  We
 # use echo to create a space separated list.
