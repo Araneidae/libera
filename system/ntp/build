@@ -68,4 +68,4 @@ cd "$HERE"  &&
 cp "$NTP_DIR/ntpd/ntpd" "$INSTALL_DIR/usr/sbin"  &&
 cp "install-ntpd"       "$INSTALL_DIR"  &&
 cp "ntpd"               "$INSTALL_DIR/etc/init.d"  &&
-cp "ntp.conf"           "$INSTALL_DIR/etc"  
+cp "ntp.conf"           "$INSTALL_DIR/etc"

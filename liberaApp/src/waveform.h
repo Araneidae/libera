@@ -91,7 +91,7 @@ typedef COMPLEX_WAVEFORM    complex_WAVEFORM;
         Publish_waveform(Name, Wrapper); \
         Wrapper; \
     } )
-            
+
 
 
 
@@ -117,11 +117,11 @@ public:
     /* Publishes all of the fields associated with this waveform to EPICS
      * using the given prefix. */
     void Publish(const char * Prefix, const char *SubName="WF") const;
-    
+
     /* This changes the active length of the waveform: all other operations
      * will then operate only on the initial segment of length NewLength. */
     void SetLength(size_t NewLength);
-    
+
     /* Interrogate the set length of this waveform: this is the desired
      * length as set through the EPICS interface. */
     size_t GetLength() const { return CurrentLength; }
@@ -144,7 +144,7 @@ public:
     /* Overwrites a single column in the waveform, setting the active length
      * to the number of points written. */
     void Write(size_t Field, const int * Source, size_t Length);
-    
+
     /* Capture a waveform by copying from an existing instance of the same
      * waveform. */
     void CaptureFrom(const WAVEFORMS<T> & Source, size_t Offset);
@@ -157,7 +157,7 @@ public:
      * sensibly be read. */
     T * Waveform() const { return Data; }
 
-    
+
 protected:
     void PublishColumn(
         const char * Prefix, const char * Name, size_t Field) const;
@@ -169,7 +169,7 @@ protected:
      *
      * CurrentLength records how long a waveform we will try to capture,
      * while active length records how much has successfully been captured. */
-    
+
     /* The maximum waveform size: space actually allocated. */
     const size_t WaveformSize;
     /* The requested current working length. */
@@ -199,7 +199,7 @@ class IQ_WAVEFORMS : public WAVEFORMS<IQ_ROW>
 public:
     IQ_WAVEFORMS(size_t Length, bool FullSize=false) :
         WAVEFORMS<IQ_ROW>(Length, FullSize) { }
-    
+
     /* Capture the currently selected active length of waveform from the data
      * source.  Possible decimations are 1 or 64, as determined by the FPGA. */
     void Capture(int Decimation = 1, int Offset = 0);

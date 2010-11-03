@@ -112,7 +112,7 @@ static void UpdatePllState()
     SendPllCommand("mo%d", SampleClockDetune);
     SendPllCommand("mp%d", PhaseOffset);
     SendPllCommand("n%d",  IfClockDetune + SampleClockDetune);
-    
+
     SendPllCommand("mv%d", Verbose);
     SendPllCommand("sv%d", Verbose);
     SendPllCommand("mc%d", EnableOpenLoop);
@@ -165,7 +165,7 @@ public:
         /* Try to open the file. */
         if (!Ok()  &&  !Open(Timeout))
             return false;
-        
+
         /* Read from the pipe until either there's a line in the buffer or
          * we time out. */
         char * newline;
@@ -199,7 +199,7 @@ public:
             else
                 InPointer += Read;
         }
-        
+
         /* Copy one line of the read result back to the caller. */
         *newline++ = '\0';
         strncpy(Line, Buffer, LineLength);
@@ -211,7 +211,7 @@ public:
         InPointer = Residue;
         return true;
     }
-    
+
 private:
     const char * FileName;      // Name of file to open
     const int BufferLength;     // Length of allocated buffer
@@ -235,7 +235,7 @@ public:
         DacSetting = 0;
         PhaseError = 0;
         FrequencyError = 0;
-        
+
         char Prefix[20];
         sprintf(Prefix, "CK:%s_", Clock);
         Publish_mbbi  (Concat(Prefix, "LOCK"),    State);
@@ -280,7 +280,7 @@ public:
         State = 0;
         Synchronised = false;
         StatusInterlock.Ready();
-        
+
         VerboseInterlock.Wait();
         DacSetting = 0;
         PhaseError = 0;
@@ -292,20 +292,20 @@ public:
     {
         return Synchronised == SYNC_SYNCHRONISED;
     }
-    
+
 private:
     CLOCK_MONITOR();
-    
+
     bool SetDac(int NewDac)
     {
         if (EnableOpenLoop)
             SendPllCommand("%cd%d", PrefixId, NewDac);
         return EnableOpenLoop;
     }
-    
+
 
     const char PrefixId;
-        
+
     int State;
     int Synchronised;
     int DacSetting;
@@ -333,7 +333,7 @@ public:
     {
         return SC_monitor->IsSynchronised();
     }
-    
+
 
 private:
     /* Decodes a single status line read from clockPll and ensures that
@@ -366,11 +366,11 @@ private:
         MC_monitor->ProcessStatusError();
         SC_monitor->ProcessStatusError();
     }
-    
+
     void Thread()
     {
         StartupOk();
-        
+
         GETLINE PllStatus(CLOCK_PLL_STATUS_FIFO, 128);
         while (Running())
         {
@@ -404,14 +404,14 @@ public:
         NtpTimeString[0] = '\0';
         SystemTimeString[0] = '\0';
         MissedEventCount = 0;
-        
+
         /* Publishing the interlock will also make MCL and MCH fields
          * available with machine clock information. */
         Interlock.Publish("CK", true, "TIME", "TIME_DONE");
         Publish_stringin("CK:TIME_NTP", NtpTimeString);
         Publish_stringin("CK:TIME_SC", SystemTimeString);
         Publish_longin("CK:MISSED", MissedEventCount);
-        
+
         RegisterTriggerEvent(*this, PRIORITY_TICK);
     }
 
@@ -419,7 +419,7 @@ public:
     {
         Timestamp_ = Timestamp;
     }
-    
+
 private:
 
     void FormatTimeString(struct timespec st, EPICS_STRING &String)
@@ -440,11 +440,11 @@ private:
             1900 + Tm.tm_year, Tm.tm_mon + 1, Tm.tm_mday,
             Tm.tm_hour, Tm.tm_min, Tm.tm_sec, usec);
     }
-    
+
     void OnEvent(int MissedEvents)
     {
         Interlock.Wait();
-        
+
         /* The only way to get a timestamp from this trigger is to read some
          * triggered data.  Read the least possible amount right now! */
         LIBERA_ROW OneRow;
@@ -499,14 +499,14 @@ public:
     {
         SystemClockSynchronising = false;
         MachineClockSynchronising = false;
-        
+
         PUBLISH_METHOD_ACTION("CK:SC_SYNC", SynchroniseSystemClock);
         PUBLISH_METHOD_ACTION("CK:MC_SYNC", SynchroniseMachineClock);
-        
+
         RegisterTriggerSetEvent(*this, PRIORITY_SYNC);
     }
-    
-    
+
+
 private:
     /* This thread runs until shutdown.  Normally it has nothing to do, but
      * during clock synchronisation it sets the clock so that clock
@@ -519,7 +519,7 @@ private:
         {
             /* Wait for synchronisation request. */
             signal.Wait();
-            
+
             while (SystemClockSynchronising)
             {
                 struct timespec NewTime;
@@ -554,7 +554,7 @@ private:
         SystemClockSynchronising = true;
         SendPllCommand("ss%d", SYNC_TRACKING);
         THREAD_UNLOCK();
-        
+
         signal.Signal();
         return true;
     }
@@ -595,7 +595,7 @@ private:
         THREAD_UNLOCK();
         signal.Signal();
     }
-    
+
 
     bool MachineClockSynchronising;
     bool SystemClockSynchronising;
@@ -617,24 +617,24 @@ static TICK_TRIGGER * TickTrigger = NULL;
 
 bool InitialiseTimestamps()
 {
-    PUBLISH_CONFIGURATION(longout, "CK:DETUNE", 
+    PUBLISH_CONFIGURATION(longout, "CK:DETUNE",
         SampleClockDetune, UpdatePllState);
-    PUBLISH_CONFIGURATION(longout, "CK:IFOFF", 
+    PUBLISH_CONFIGURATION(longout, "CK:IFOFF",
         IfClockDetune, UpdatePllState);
-    PUBLISH_CONFIGURATION(longout, "CK:PHASE", 
+    PUBLISH_CONFIGURATION(longout, "CK:PHASE",
         PhaseOffset, UpdatePllState);
     PUBLISH_CONFIGURATION(bo, "CK:TIMESTAMP", UseSystemTime, NULL_ACTION);
     PUBLISH_FUNCTION_OUT(bo, "CK:VERBOSE", Verbose, UpdatePllState);
 
     /* Open loop direct DAC control. */
     PUBLISH_FUNCTION_OUT(bo, "CK:OPEN_LOOP",  EnableOpenLoop, UpdatePllState);
-    
+
     TickTrigger = new TICK_TRIGGER();
-    
+
     SynchroniseThread = new SYNCHRONISE_CLOCKS;
     if (!SynchroniseThread->StartThread())
         return false;
-    
+
     PllMonitorThread = new CLOCK_PLL_MONITOR;
     if (!PllMonitorThread->StartThread())
         return false;

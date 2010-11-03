@@ -49,15 +49,15 @@ void print_error(const char * Message, const char * FileName, int LineNumber);
  *      Computes expression, typically of the form
  *          result = function(arguments)
  *      and reports an error message if the result is -1.
- *  
+ *
  *  TEST_NULL(expression)
  *      Reports an error message if expression is NULL.
- *  
+ *
  *  TEST_0(expression)
  *      Computes expression and reports an error message if the expressionnn
  *      is non zero.  This is designed for use with the pthread_ family of
  *      functions, and the expression is assigned to errno if non zero.
- *  
+ *
  *  TEST_OK(expression)
  *      Reports an error message if the expression is false.
  */
@@ -67,7 +67,7 @@ void print_error(const char * Message, const char * FileName, int LineNumber);
  * test to perform on expression.
  *
  * The natural way to write this is:
- * 
+ *
  *  #define TEST_(COND, expr) \
  *      (unlikely(!COND(expr)) ? \
  *          print_error(#expr, __FILE__, __LINE__), false : true)

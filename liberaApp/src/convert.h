@@ -43,12 +43,12 @@
  * positions as well total intensity S and a "skew" factor Q.
  *
  * All arithmetic is done with 32 bit integers and with attention paid at all
- * times to performance: these conversions are performed *frequently*! 
+ * times to performance: these conversions are performed *frequently*!
  * The final X,Y values are written in units of nm: this gives both an
  * adequate dynamic range (several metres!) and precision.
- * 
+ *
  * The generic data processing chain consists of the following steps:
- * 
+ *
  *         Cordic       Convert          Scale
  *      IQ ------> ABCD ------> XYSQ(nm) -----> XYSQ(mm)
  *

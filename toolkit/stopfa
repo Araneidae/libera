@@ -1,6 +1,6 @@
 #!/bin/sh
 cd "$(dirname "$0")"
 
-echo Stopping FAI 
+echo Stopping FAI
 ./caputall SR FF:STOP_S Stop
 

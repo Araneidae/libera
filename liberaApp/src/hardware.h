@@ -49,7 +49,7 @@
 
 /* A row of "data on demand" Libera data consists of eight integers
  * containing quadrature data (cos/sin pairs) for each of the four buttons
- * thus: 
+ * thus:
  *      0, 1    A * (cos,sin)
  *      2, 3    B * (cos,sin)
  *      4, 5    C * (cos,sin)
@@ -201,7 +201,7 @@ typedef uint8_t SWITCH_SEQUENCE[MAX_SWITCH_SEQUENCE];
 /* A phase and amplitude compensation array C takes four uncompensated channel
  * inputs X[i] and produces four compensated channel outputs Y[i] via a two
  * tap filter computing
- * 
+ *
  *      Y[i]_t = C[i][0] * X[i]_t  +  C[i][1] * X[i]_{t-1}  .
  *
  * Values in the array are signed 18 bit values scaled with 1.0 = 0x10000, so
@@ -213,9 +213,9 @@ typedef PHASE_ENTRY PHASE_ARRAY[CHANNEL_COUNT];
 /* A demultiplexing array P takes four raw ADC channel inputs X[i] and
  * produces four demultiplexed (and possibly crosstalk compensated) button
  * outputs Z[j] via the matrix multiplication
- * 
+ *
  *      Z[j] = SUM_i P[j][i] * Y[i]  .
- *      
+ *
  * Values in the array are signed 18 bit values. */
 typedef int DEMUX_ARRAY[BUTTON_COUNT][CHANNEL_COUNT];
 

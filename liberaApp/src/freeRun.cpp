@@ -72,7 +72,7 @@ public:
         StopWhenDone = false;
         UpdateAll = false;
         GotEpicsLock = false;
-        
+
         /* Publish all the waveforms and the interlock. */
         WaveformIq.Publish("FR");
         WaveformAbcd.Publish("FR");
@@ -88,7 +88,7 @@ public:
 
         Interlock.Publish("FR", true);
         Enable.Publish("FR");
-        
+
         /* Announce our interest in the trigger. */
         RegisterTriggerEvent(*this, PRIORITY_FR);
     }
@@ -97,10 +97,10 @@ public:
 private:
     FREE_RUN();
 
-    
+
     /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
     /* Event handling.                                                       */
-    
+
     /* This code is called, possibly indirectly, in response to a trigger
      * event to read and process a First Turn waveform.  The waveform is read
      * and all associated values are computed. */
@@ -121,7 +121,7 @@ private:
          * affects FR processing, this is the behaviour we want. */
         if (!GotEpicsLock)
             Interlock.Wait();
-        
+
         WaveformIq.Capture(1, CaptureOffset);
         if (AccumulateWaveform())
         {
@@ -135,14 +135,14 @@ private:
         }
         else
             GotEpicsLock = true;
-        
+
         PublishCapturedSamples.Write(CapturedSamples);
     }
 
 
     /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
     /* Waveform averaging.                                                   */
-    
+
     bool SetAverageBits(int _AverageBits)
     {
         THREAD_LOCK(this);
@@ -216,14 +216,14 @@ private:
             CapturedSamples = 1;
             PublishUpdate = true;
         }
-        
+
         THREAD_UNLOCK();
         return PublishUpdate;
     }
 
-    
+
     const int WaveformLength;
-    
+
     /* Captured and processed waveforms: these three blocks of waveforms are
      * all published to EPICS. */
     IQ_WAVEFORMS WaveformIq;
@@ -232,7 +232,7 @@ private:
 
     /* Offset from trigger of capture. */
     int CaptureOffset;
-    
+
     /* Averaging control. */
     int AverageBits;            // Log2 number of samples to average
     int CapturedSamples;        // Number of samples captured so far

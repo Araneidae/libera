@@ -102,8 +102,8 @@ def XYQS_(prec, suffix=''):
             DESC = '%s relative skew' % channel),
         longIn('S' + suffix, MDEL = -1,
             DESC = '%s total button intensity' % channel)]
-        
-        
+
+
 
 def Enable(**fields):
     return boolOut('ENABLE', 'Disabled', 'Enabled',
@@ -117,7 +117,7 @@ def Trigger(MC, positions, TRIG='TRIG', DONE='DONE'):
             longIn('MCL', EGU='turns', DESC = 'Revolution clock (low)'),
             longIn('MCH', EGU='turns', DESC = 'Revolution clock (high)')]
 
-    
+
     # The DONE record must be processed after all other triggered records are
     # processed: this is used as an interlock to synchronise with the Libera
     # driver.
@@ -130,7 +130,7 @@ def Trigger(MC, positions, TRIG='TRIG', DONE='DONE'):
     for record in positions:
         record.TSEL = trigger.TIME
 
-        
+
 __all__ = support.__all__ + iocbuilder.__all__ + [
     'MAX_INT', 'MAX_mm', 'MAX_nm', 'MAX_S',
     'KB', 'MB',

@@ -129,7 +129,7 @@ me know.
 
 2008/07/14 Version 1.46.4
 -------------------------
-Many changes in this release.  
+Many changes in this release.
 
 The following are important new features in this release:
 
@@ -165,7 +165,7 @@ README file for details.
    to add a negligible amount of time to processing.
       Note that this filter is currently hard wired and relies on the
    intermediate frequency being close to 1/4 sample frequency.
- - Add `FT:WF`<`X`,`Y`,`Q`,`S`> and `FT:MAXS` pvs to provide an estimate of 
+ - Add `FT:WF`<`X`,`Y`,`Q`,`S`> and `FT:MAXS` pvs to provide an estimate of
    ``intra-turn'' beam position.
  - Change all screens from arial to helvetica fonts.  The Helvetica font has
    the virtue of having fixed pitch digits.
@@ -184,7 +184,7 @@ README file for details.
 2007/09/27 Version 1.46.1
 -------------------------
 Support for Libera 1.46 driver.  Note that this version will not work
-correctly with earlier versions of the driver.  
+correctly with earlier versions of the driver.
 
 The only change is to track an incompatible change in the driver interface.
 
@@ -194,7 +194,7 @@ The only change is to track an incompatible change in the driver interface.
 More complete support for iTech Libera 1.40 and 1.42 driver.
 
 This release has been developed and tested using gcc 3.4.5 with glibc 2.3.6.
-Switching to this compiler and library has had two effects: 
+Switching to this compiler and library has had two effects:
 
  - overall stability of Libera is improved; but at a cost:
  - turn by turn operation is much less stable.  See `PROBLEMS` for details.
@@ -210,12 +210,12 @@ Major changes:
     `BCD_X,_Y`:: ``Beam Current Dependent'' offset, initialised to 0 on reboot
     `GOLDEN_X,_Y`:: Special purpose local offsets (for bumps, etc), 0 on reboot
  - Control over DSC (``Digital Signal Conditioning'') is now available
-   through a new configuration PV. 
+   through a new configuration PV.
  - Control over switch triggering, both selection of trigger source (internal
    or external) and trigger delay (when using external trigger).
  - Control over the clock is more refined and the machine clock tracking
    algorithm is now 'much' more stable.  The clock control PVs have moved to a
-   separate PV group.  
+   separate PV group.
  - Machine clock synchronisation is now separated from system clock
    synchronisation, and in this release system clock synchronisation is not
    actually required.
@@ -253,7 +253,7 @@ Significant changes:
 
 Minor changes:
 
- - Fix bash compatibility bug introduced in `/etc/init.d/epics` script in 
+ - Fix bash compatibility bug introduced in `/etc/init.d/epics` script in
    0.6.3.
  - Version numbering now changed to track Libera driver version numbers.
 
@@ -290,14 +290,14 @@ Minor changes:
 
 2006/08/17 Version 0.6.1
 ------------------------
-Works with Libera 1.21 
+Works with Libera 1.21
 
 Significant changes:
 
  - Automatic switching and DSC (digital signal conditioning) can now be
    switched on or off.  This should normally be on when accurate slow
    acquisition (and fast feedback) data is required, and should be off for
-   first turn and turn by turn data. 
+   first turn and turn by turn data.
  - The machine protection interlock can now be controlled and configured.
  - Slow acquisition mode now estimates beam current.
  - First turn now estimates charge in measured bunch train.
@@ -382,12 +382,12 @@ The following incompatible changes with the previous release should be noted:
 
  - The file `/etc/sysconfig/epics_ioc` now contains important startup
    configuration information which must be provided before the IOC will start.
-   
+
  - The loading of initial configuration has changed.  `IOC_STATE_PATH` should
    be defined appropriately and an initial configuration can be written
    through the EPICS interface.
 
 
 2006/02/06 Version 0.2
-----------------------  
+----------------------
 First published release, supporting Libera 0.92-2 driver only.

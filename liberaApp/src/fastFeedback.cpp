@@ -73,7 +73,7 @@ struct FF_CONFIG_SPACE          // At FF_BASE_ADDRESS (14028000)
 struct FF_STATUS_SPACE          // At FF_BASE_ADDRESS + FF_STATUS_OFFSET
 {
     int FirmwareVersion;                // VERSION
-    int SystemStatus;                   // 
+    int SystemStatus;                   //
     int LinkPartner[4];                 // :PARTNER
     int LinkUp;                         // :UP
     int TimeFrameCounter;               // TIMEFRAME
@@ -142,7 +142,7 @@ static bool MapFastFeedbackMemory()
 {
     const int PageSize = getpagesize();         // 0x1000
     const int PageMask = PageSize - 1;          // 0x0FFF
-    bool Ok = 
+    bool Ok =
         TEST_IO(DevMem = open("/dev/mem", O_RDWR | O_SYNC))  &&
         TEST_IO(FF_AddressSpaceMem = mmap(
             0, PageSize, PROT_READ | PROT_WRITE, MAP_SHARED,
@@ -159,7 +159,7 @@ static bool MapFastFeedbackMemory()
         ControlSpace = (volatile FF_CONTROL_SPACE *) (void *)
             ((char *) FF_ControlSpaceMem + (FF_CONTROL_ADDRESS & PageMask));
     }
-        
+
     return Ok;
 }
 
@@ -196,8 +196,8 @@ static void ProcessRead()
 inline static int ControlValue(bool Handshake)
 {
     return
-        (Handshake << 0) | 
-        (DataSourceSelect << 1) | 
+        (Handshake << 0) |
+        (DataSourceSelect << 1) |
         (GlobalEnable << 3);
 }
 
@@ -256,7 +256,7 @@ bool InitialiseFastFeedback()
     /* If fast feedback was not detected, don't do anything at all. */
     if (!FastFeedbackFeature)
         return true;
-    
+
     if (!MapFastFeedbackMemory())
         return false;
 
@@ -282,16 +282,16 @@ bool InitialiseFastFeedback()
 
     /* Sensible defaults for frame length. */
     ConfigSpace->TimerFrameCountDown = 6000;
-    
-    PUBLISH_CONFIGURATION(longout, "FF:BPMID", 
+
+    PUBLISH_CONFIGURATION(longout, "FF:BPMID",
         ConfigSpace->BpmId, ProcessWrite);
-    PUBLISH_CONFIGURATION(longout, "FF:FRAMELEN", 
+    PUBLISH_CONFIGURATION(longout, "FF:FRAMELEN",
         ConfigSpace->TimerFrameCountDown, ProcessWrite);
 
     for (int i = 0; i < 4; i ++)
     {
-        char Link[32]; 
-        sprintf(Link, "FF:LINK%d:", i + 1); 
+        char Link[32];
+        sprintf(Link, "FF:LINK%d:", i + 1);
         PUBLISH_FUNCTION_OUT(bo,   Concat(Link, "ENABLE"),
             LinkEnable[i], ProcessWrite);
         PUBLISH_FUNCTION_OUT(mbbo, Concat(Link, "LOOPBACK"),
@@ -305,6 +305,6 @@ bool InitialiseFastFeedback()
 
     /* Initialise the FPGA by writing the current configuration. */
     ProcessWrite();
-    
+
     return true;
 }

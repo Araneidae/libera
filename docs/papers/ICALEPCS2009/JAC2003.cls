@@ -4,12 +4,12 @@
 %% software for Accelerator Conferences
 %%
 %% See the JACo Website for more information
-%% 
+%%
 %%       http://www.cern.ch/accelconf/
 %%
 
 %  Special thanks to John Jowett and Michel Goossens from CERN and
-%  Martin Comyn at TRIUMF for their significant contributions to 
+%  Martin Comyn at TRIUMF for their significant contributions to
 %  this class file over the period 1996 to 2000.
 %                                                 John Poole
 %                                                 March 2000
@@ -66,7 +66,7 @@
 %%  Using Times fonts produces a Uniform, compact document
 %%  suitable for the Acrobat Software and printable anywhere.
 %%
-%%  In a 'modern' TeX installation 
+%%  In a 'modern' TeX installation
 %%  e.g TeXLive Version 3 or later (more information on the JACo Website)
 %%  one can use the following command
 %%
@@ -85,10 +85,10 @@
 \typeout{Itemize, Enumerate and Description environments are compact versions}
 \typeout{------------------------------------------------------------------------}
 \typeout{ }
- 
+
 %
 % DIMENSION OF TEXT:
- 
+
 \setlength{\textheight}{241mm}
 \setlength{\textwidth}{170mm}
 \setlength{\topmargin}{23mm}
@@ -97,12 +97,12 @@
 \setlength{\evensidemargin}{20mm}
 \setlength{\columnsep}{5mm}
 
- 
+
 \hoffset -25.4mm
 \voffset -25.4mm
- 
+
 \columnseprule 0pt      %    Width of rule between columns.
- 
+
 % Use Michel Goossens' dense lists
 % Prevent infinite loops
 
@@ -120,11 +120,11 @@
 \renewcommand{\bottomfraction}{.95}
 \renewcommand{\textfraction}{0.1}
 \renewcommand{\floatpagefraction}{0.8}
- 
+
 \def\@oddhead{}\def\@evenhead{}
 \def\@oddfoot{}
 \def\@evenfoot{\@oddfoot}
- 
+
 %-----------------------------------------------------------------------
 % We acknowledge the borrowing of the clever part of
 % Steven Gildea's definition of \section
@@ -132,7 +132,7 @@
 %
 % \section is tricky because we want to both support \section* and have
 % the section title uppercased.
- 
+
 \def\section{\secdef\@sectionb\@sections}
 \def\@sectionb[#1]#2{\@sections{#2}}
 \def\@sections#1{\@startsection {section}{1}{\z@}
@@ -144,7 +144,7 @@
 %
 %\def\section{\@startsection {section}{1}{\z@}{2.8ex plus 0.8ex minus.1ex}
 %                          {1.5ex plus .2ex}{\large\bf\boldmath\centering}}
- 
+
 \def\subsection{\@startsection{subsection}{2}{\z@}{2.6ex plus .8ex minus
    .17ex}{1.2ex plus .17ex}{\large\it}}
 \def\subsubsection{\@startsection{subsubsection}{3}{\parindent}
@@ -154,12 +154,12 @@
 \def\subparagraph{\@startsection
      {subparagraph}{4}{\parindent}{2.25ex plus .7ex minus
      .17ex}{-1em}{\normalsize\bf}}
- 
+
 \setcounter{secnumdepth}{0}
- 
+
 % This definition of \maketitle taken from article.sty, and has been
 % somewhat modified.
- 
+
 \def\maketitle{\par
  \begingroup
    \def\thefootnote{\fnsymbol{footnote}}
@@ -172,30 +172,30 @@
  \let\maketitle\relax
  \let\@maketitle\relax
  \gdef\@thanks{}\gdef\@author{}\gdef\@title{}\let\thanks\relax}
- 
+
 \newlength{\titleblockheight}       % so user can change it if need be
 \setlength{\titleblockheight}{3.5cm}
- 
- 
+
+
 \def\@maketitle{\vbox to \titleblockheight {\hsize\textwidth
   \linewidth\hsize \vskip 3pt \centering
   {\Large\bf \@title \par}
   \vskip 2em                % Vertical space after title.
   {\large\begin{tabular}[t]{@{}c@{}}\@author \end{tabular}\par}
   \vfil}}
- 
- 
+
+
 % The \copyrightspace command is used to produce a blank space in the first
 % column where a copyright notice may go.  It works by producing a
 % blank footnote of the appropriate size.  Note that it should appear
 % after any \footnote commands that produce footnotes for the first
 % column.   Adjusted to leave just 1cm.
- 
+
 \def\copyrightspace{\footnotetext[0]{\mbox{}\vrule height 1cm width 0pt}}
- 
+
 \def\abstract{\subsection*{Abstract}}
 \def\endabstract{\par}
- 
+
 % Redefine to use smaller fonts
 \def\thebibliography#1{\setlength{\itemsep}{0pt}\setlength{\parsep}{0pt}
   \section*{REFERENCES\@mkboth
@@ -206,9 +206,9 @@
     \def\newblock{\hskip .11em plus .33em minus .07em}
     \sloppy\clubpenalty4000\widowpenalty4000
     \sfcode`\.=1000\relax}
- 
+
 \let\endthebibliography=\endlist
- 
+
 \twocolumn
 \sloppy
 \parindent 1em

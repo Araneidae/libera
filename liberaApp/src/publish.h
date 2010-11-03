@@ -100,20 +100,20 @@ DECLARE_PUBLISH_VAR_OUT(mbbo);
  * writing, and calls this function to implement the required EPICS support
  * interface. */
 template<class T, class R>
-class CLOSURE_IN : public I_READER<R> 
-{ 
-public: 
-    CLOSURE_IN(T&t, bool (T::*f)(R&)) : t(t), f(f) {} 
-    bool read(R& arg) { return (t.*f)(arg); } 
-private: 
-    T & t; 
-    bool (T::*f)(R&); 
+class CLOSURE_IN : public I_READER<R>
+{
+public:
+    CLOSURE_IN(T&t, bool (T::*f)(R&)) : t(t), f(f) {}
+    bool read(R& arg) { return (t.*f)(arg); }
+private:
+    T & t;
+    bool (T::*f)(R&);
 };
 
 template<class T, class R>
-class CLOSURE_OUT : public I_WRITER<R> 
-{ 
-public: 
+class CLOSURE_OUT : public I_WRITER<R>
+{
+public:
     CLOSURE_OUT(T&t, bool (T::*f)(R), bool (T::*i)(R&)) :
         t(t), i(i), f(f), u(NULL), v(NULL) {}
     CLOSURE_OUT(T&t, bool (T::*f)(R), R T::*v) :
@@ -140,9 +140,9 @@ public:
         }
         else
             return (t.*f)(arg);
-    } 
-private: 
-    T & t; 
+    }
+private:
+    T & t;
     bool (T::*i)(R&);
     bool (T::*f)(R);
     void (T::*u)();
@@ -204,12 +204,12 @@ private:
 
 template<class T>
 class WRAPPER_IN : public I_READER<T>
-{ 
-public: 
-    WRAPPER_IN(bool (*f)(T&)) : f(f) {} 
-    bool read(T &arg) { return (*f)(arg); } 
-private: 
-    bool (*const f)(T&); 
+{
+public:
+    WRAPPER_IN(bool (*f)(T&)) : f(f) {}
+    bool read(T &arg) { return (*f)(arg); }
+private:
+    bool (*const f)(T&);
 };
 
 
@@ -340,7 +340,7 @@ template<class T> class READBACK
 public:
     READBACK(T InitialValue, bool (*OnUpdate)(T));
     void Write(T NewValue);
-    
+
 private:
     bool UserUpdate(T NewValue);
     T Value;

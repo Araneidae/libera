@@ -1,5 +1,5 @@
 /* This file is part of the Libera EPICS Driver,
- * 
+ *
  * Copyright (C) 2007 Instrumentation Technologies
  * Copyright (C) 2009 Michael Abbott, Diamond Light Source Ltd.
  *
@@ -72,13 +72,13 @@
     if (value == -1) \
         value = use_rf_sensor ? class##_RF : class##_MB
 
-/* Default controller parameters when using RF board sensor. */ 
+/* Default controller parameters when using RF board sensor. */
 #define TARGET_TEMP_RF          49
 #define PANIC_TEMP_RF           80
 #define CONTROLLER_KP_RF        160
 #define CONTROLLER_KI_RF        100
 
-/* Default controller parameters when using motherboard sensor. */ 
+/* Default controller parameters when using motherboard sensor. */
 #define TARGET_TEMP_MB          42
 #define PANIC_TEMP_MB           70
 #define CONTROLLER_KP_MB        40
@@ -130,7 +130,7 @@ void print_error(const char * Message, const char * FileName, int LineNumber)
     const int MESSAGE_LENGTH = 512;
     int Error = errno;
     char ErrorMessage[MESSAGE_LENGTH];
-    
+
     int Count = snprintf(ErrorMessage, MESSAGE_LENGTH,
         "%s (%s, %d)", Message, FileName, LineNumber);
     if (errno != 0)
@@ -167,7 +167,7 @@ void log_message(int Priority, const char * Format, ...)
     va_start(args, Format);
     char Message[128];
     vsnprintf(Message, sizeof(Message), Format, args);
-    
+
     if (daemon_mode)
         syslog(Priority, "%s", Message);
     else
@@ -195,7 +195,7 @@ void ExitHandler(int signo)
     unlink(HEALTHD_COMMAND_FIFO);
 
     log_message(LOG_INFO, "Health daemon exiting");
-    
+
     /* Die NOW! */
     fclose(stdout);
     _exit(0);
@@ -416,7 +416,7 @@ static bool InitialiseController(void)
     log_message(LOG_INFO,
         "  panic action: %s",
         panic_action == NULL ? "not set" : panic_action);
-    
+
     return true;
 }
 
@@ -543,10 +543,10 @@ static bool ProcessOptions(int argc, char *argv[])
                 Usage(argv[0]);
                 return false;
                 break;
-                
+
             case 'n':   daemon_mode = false;    break;
             case 'x':   panic_action = optarg;  break;
-                
+
             case 'T':   case 'm':   case 'e':   case 't':   case 'v':
             case 'p':   case 'i':   case 'E':   case 'M':
                 if (!SetParameter(opt, optarg))
@@ -556,7 +556,7 @@ static bool ProcessOptions(int argc, char *argv[])
                     return false;
                 }
                 break;
-                
+
             default:
                 fprintf(stderr, "Try `%s -h` for help\n", argv[0]);
                 return false;
@@ -579,7 +579,7 @@ bool InitialiseExitHandler(void)
     struct sigaction AtExitHandler;
     AtExitHandler.sa_handler = ExitHandler;
     AtExitHandler.sa_flags = 0;
-    
+
     int PidFile = -1;
     char Pid[32];
     bool Ok =
@@ -590,7 +590,7 @@ bool InitialiseExitHandler(void)
         TEST_IO(sigaction(SIGINT,  &AtExitHandler, NULL))  &&
         TEST_IO(sigaction(SIGQUIT, &AtExitHandler, NULL))  &&
         TEST_IO(sigaction(SIGTERM, &AtExitHandler, NULL))  &&
-        
+
         /* Try to create a new PID file.  If it already exists then we'll
          * fail without any further fuss. */
         TEST_IO(PidFile = open(
@@ -616,7 +616,7 @@ bool InitialiseExitHandler(void)
 
 int main(int argc, char *argv[])
 {
-    bool Ok = 
+    bool Ok =
         /* Process command line arguments. */
         ProcessOptions(argc, argv)  &&
         /* Sort out shutdown handling and switch into daemon mode. */
@@ -628,11 +628,11 @@ int main(int argc, char *argv[])
         /* Initialise the controller, check for fan sensors and controls. */
         InitialiseController()  &&
         InitialiseCommandLoop();
-        
+
     /* Finally, if all is well, run the feedback control loop. */
     if (Ok)
         RunControlLoop();
-    
+
     /* If we get up here then forcibly clean up any dangling resources.  Note
      * that this never returns. */
     ExitHandler(0);

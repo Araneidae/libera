@@ -36,13 +36,13 @@
  * The original Cordic paper is:
  *      Volder, J.E., 1959; "The CORDIC Trigonometric Computing Technique",
  *      IRE Transactions on Electronic Computers, V.  EC-8, No. 3, pp. 330-334
- * 
+ *
  * Other sources for the Cordic algorithm can be found at:
- * 
+ *
  * http://www.dspguru.com/info/faqs/cordic.htm
  *      This page includes an overview of the algorithm.  Most of the web
  *      links are dead, however.
- *      
+ *
  * http://www.andraka.com/cordic.htm
  *      Contains a preprint of the paper "A survey of CORDIC algorithms for
  *      FPGA based computers", Ray Andraka, 1998.
@@ -51,7 +51,7 @@
  *
  * Note that variants of the Cordic algorithm can be used to compute the
  * trigonometric and hyperbolic functions as well as their inverses.
- *      
+ *
  *
  * The Cordic algorithm written here iteratively computes the magnitude of a
  * vector (x,y) using simple arithmetic and shifts: this is therefore well
@@ -67,7 +67,7 @@
  *              0 <= y_1 <= x_1
  *
  *      Iterative step (for n >= 1):
- *              x_{n+1} = x_n + y_n/2^n 
+ *              x_{n+1} = x_n + y_n/2^n
  *              y_{n+1} = |y_n - x_n/2^n|
  *
  * At each step it is easy to calculate that
@@ -87,7 +87,7 @@
  *              0 <= y_n <= 2 * 2^-n * x_n .
  *
  * It is then also easy to see that the relative error, which we can define
- * as 
+ * as
  *
  *            sqrt(x_n^2 + y_n^2) - x_n       (    (x_n)2)
  *      e_n = ------------------------- = sqrt(1 + (---) ) - 1 ,
@@ -125,7 +125,7 @@ int CordicMagnitude(int x, int y)
      * the initial condition 0<=x_0, 0<=y_0 is sufficient to ensure that
      * 0 <= y_1 <= x_1 after one iteration of the loop.  However doing this
      * adds an extra factor of sqrt(2) to the result, which would force the
-     * scaling above to be by a factor of 4 instead of 2.  We get another 
+     * scaling above to be by a factor of 4 instead of 2.  We get another
      * half bit of result this way and the adjustment below is marginally
      * cheaper than an extra iteration. */
     if (y > x)
@@ -143,10 +143,10 @@ int CordicMagnitude(int x, int y)
      *    but this is at the the heart of why the CORDIC algorithm works so
      *    well.
      * 2. So long as we start with x>=y and take a = (1/2, 1/4, 1/8, ...)
-     *    then the magnitude of y will rapidly go to zero. 
+     *    then the magnitude of y will rapidly go to zero.
      *
      * The basic loop to implement this is of the following form:
-     * 
+     *
      *  for (int i = 1; i <= ITERATIONS; i ++)
      *  {
      *      int oldy = y;
@@ -165,7 +165,7 @@ int CordicMagnitude(int x, int y)
      * improvement of 63% over the loop above, giving a running time for this
      * routine of approximately 135ns.
      *    The following optimisations have been implemented here:
-     *    
+     *
      * Loop Unrolling:
      *    This is the most obvious optimisation with the biggest saving, and
      *    has saved over 50% of execution time (185ns).

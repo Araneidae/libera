@@ -42,7 +42,7 @@ public:
      * involves calling the vritual method ReadValue ... which isn't
      * available until after the constructor has finished. */
     bool Initialise(const char *Name);
-    
+
     /* Marks the persistent state as dirty, forcing a write on the next
      * occasion. */
     static void MarkDirty();

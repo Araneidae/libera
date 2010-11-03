@@ -23,7 +23,7 @@ def LoadUiFile(filename, cls):
     (stdout, stderr) = pyuic.communicate()
     if pyuic.returncode != 0:
         raise Exception(stderr)
-        
+
     ns = {}
     exec stdout in ns
     globals()[cls] = ns[cls]
@@ -60,10 +60,10 @@ def BuildGraph(fig, *sliders):
 # class Slider:
 #     def __init__(self, initial, min, max, OnUpdate):
 #         self.slider = qt.QScrollBar()
-# 
+#
 #     def Value(self):
 #         return self.initial # translated
-# 
+#
 #     def Update(self)
 
 
@@ -118,7 +118,7 @@ class Line:
 class TestGraph:
     def __init__(self):
         self.lines = []
-        
+
         # draw line
         self.fig = pylab.figure()
 
@@ -145,7 +145,7 @@ class TestGraph:
         for i in range(3):
             self.AddLine(self.PoleN(i))
 #            self.AddLine(self.PoleN(i), '.')
-        
+
         self.AddLine(self.Zeros, 'o')
         pylab.axis([0.7, 1.1, -0.4, 0.4])
 
@@ -160,7 +160,7 @@ class TestGraph:
 
         pylab.subplot(2,2,4)
         self.AddLine(self.Controller)
-        
+
         self.top = BuildGraph(self.fig, *self.sliders)
 
 
@@ -186,7 +186,7 @@ class TestGraph:
         qt.QObject.connect(
             Slider.slider, qt.SIGNAL("valueChanged(int)"),
             Slider.Update)
-        
+
         return Slider
 
 #         class Slider:
@@ -195,10 +195,10 @@ class TestGraph:
 #                 return ...
 #             def Update(sself):
 #                 self.UpdateLines()
-# 
+#
 #         return Slider()
 
-        
+
 
     def UpdateValues(self):
         # From root positions compute the corresponding actual roots
@@ -208,13 +208,13 @@ class TestGraph:
 
         self.BasePoles = array([r0, r1, r1.conjugate()])
         self.R = poly1d(poly(self.BasePoles))
-        
+
         self.A = poly1d([1, -1]) * poly1d([1, -self.beta])
         self.B = (self.R - poly1d([1, -1]) * self.A) / self.alpha
         print self.B
 
-# 
-#         
+#
+#
 #         self.b = array([self.b0, self.b1, self.b2])
 #         print 'alpha = %(alpha)g, beta = %(beta)g, b = %(b)s' \
 #             % self.__dict__,
@@ -224,7 +224,7 @@ class TestGraph:
 
         self.PoleArray = self.PoleTrajectories()
 
-        
+
     def UpdateLines(self):
         self.UpdateValues()
         for line in self.lines:
@@ -239,7 +239,7 @@ class TestGraph:
         poles = empty((3, n-1), dtype = complex)
         for i, alpha in enumerate(linspace(0, 0.1, n)[1:]):
             R = poly1d([1, -1]) * self.A + alpha * self.B
-            poles[:,i] = sorted(roots(R), key = imag) 
+            poles[:,i] = sorted(roots(R), key = imag)
         return poles
 
     def PoleN(self, n):
@@ -247,10 +247,10 @@ class TestGraph:
             return self.PoleArray[n].real, self.PoleArray[n].imag
         return PoleArray
 
-    
+
     def Poles(self):
         return self.BasePoles.real, self.BasePoles.imag
-        
+
         poles = roots(self.R)
         print poles
         print max(abs(poles))

@@ -30,7 +30,7 @@
 import sys
 from math import *
 
-from support import * 
+from support import *
 from iocbuilder import *
 
 
@@ -41,7 +41,7 @@ def FastFeedback():
     SetChannelName('FF')
 
     longIn('VERSION', PINI = 'YES', DESC = 'FPGA firmware version')
-    
+
     inputs = [
         longIn('TIMEFRAME',    DESC = 'Timeframe counter'),
         longIn('PROCESS_TIME', DESC = 'Total communication time'),
@@ -73,10 +73,10 @@ def FastFeedback():
         mbbOut('LINK%d:LOOPBACK' % i,
             ('No loopback', 0), ('Serial', 1), ('Parallel', 2),
             DESC = 'Rocket IO loopback')
-    
+
     longOut('BPMID', 0, MAX_ID, DESC = 'BPM id')
     longOut('FRAMELEN', DESC = 'Timeframe length')
-    
+
     # CR 1 - position or time
     boolOut('DATA_SELECT', 'Positions', 'Timestamps',
         DESC = 'Position data select')
@@ -85,7 +85,7 @@ def FastFeedback():
     boolOut('START', 'Start', DESC = 'Start fast feedback')
 
     UnsetChannelName()
-    
+
 
 FastFeedback()
 

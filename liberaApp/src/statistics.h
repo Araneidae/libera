@@ -36,16 +36,16 @@ public:
         XYQS_WAVEFORMS &Waveform, int Field);
 
     void Update();
-    
+
 private:
     STATISTICS();
 
     void UpdateStats();
     void UpdateTune();
-    
+
     size_t GetLength() { return Waveform.GetLength(); }
     int GetField(int i) { return GET_FIELD(Waveform, i, Field, int); }
-    
+
 
     XYQS_WAVEFORMS &Waveform;
     const int Field;

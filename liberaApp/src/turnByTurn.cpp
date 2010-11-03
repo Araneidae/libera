@@ -71,7 +71,7 @@ public:
         LongWaveform.SetLength(WindowLength);
         /* Don't trigger until asked to. */
         Armed = false;
-        
+
         /* Publish the PVs associated with Turn by Turn data. */
 
         /* Two waveforms providing access to the raw I and Q turn by turn
@@ -99,7 +99,7 @@ public:
 
         /* Turn by turn triggering is rather complicated, and needs to occur
          * in two stages.  The idea is that only a single shot of turn by
-         * turn data is captured, and then segments of it are read out. 
+         * turn data is captured, and then segments of it are read out.
          *     Capturing a full waveform is done by writing 1 to the ARM
          * record and then waiting for READY to be signalled: this indicates
          * that a waveform has been read into memory. */
@@ -136,10 +136,10 @@ public:
         }
     }
 
-    
+
 private:
     TURN_BY_TURN();     // Needed for PUBLISH_METHOD hacks: see ID<>
-    
+
     /* Waveform length control.  This can be dynamically changed through the
      * EPICS interface. */
     bool SetCaptureLength(int Length)
@@ -179,7 +179,7 @@ private:
             return false;
         }
     }
-    
+
     bool SetWindowLength(int Length)
     {
         if (0 < Length  &&  Length <= WindowWaveformLength)
@@ -201,7 +201,7 @@ private:
             return false;
         }
     }
-    
+
     bool GetCapturedLength(int &Length)
     {
         Length = LongWaveform.WorkingLength();
@@ -242,7 +242,7 @@ private:
         /* Let EPICS know there's stuff to read. */
         Interlock.Ready(LongWaveform.GetTimestamp());
     }
-    
+
 
     const int LongWaveformLength;
     const int WindowWaveformLength;
@@ -263,7 +263,7 @@ private:
      * window waaveforms. */
     TRIGGER LongTrigger;
     INTERLOCK Interlock;
-    
+
     /* This flag is set to enable long waveform capture on the next trigger.
      * It will then be reset, ensuring that only one capture occurs per
      * arming request. */

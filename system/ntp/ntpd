@@ -19,7 +19,7 @@ case "$1" in
                 print_status warning
             fi
         done
-        
+
         echo -n Starting ntpd
         ntpd -g
         evaluate_retval

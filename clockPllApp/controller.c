@@ -1,5 +1,5 @@
 /* This file is part of the Libera EPICS Driver,
- * 
+ *
  * Copyright (C) 2008-2009  Michael Abbott, Diamond Light Source Ltd.
  *
  * The Libera EPICS Driver is free software; you can redistribute it and/or
@@ -28,7 +28,7 @@
  */
 
 /* Unified PLL controller framework.
- * 
+ *
  * The following routines implement a fairly generic PLL controller framework
  * designed to control both the Libera machine and system clocks.  The design
  * is based around a cascaded sequence of controllers of increasing depths
@@ -114,7 +114,7 @@ static void UpdateClockState(
     Controller->PhaseLocked = PhaseLocked;
     if (! PhaseLocked)
         DropSynchronisation(Controller, "phase lock lost");
-    
+
     /* The frequency error is determined by comparing the actual clock advance
      * with the expected nominal advance. */
     libera_hw_time_t ClockFrequency = Controller->Clock - OldClock;
@@ -184,7 +184,7 @@ static bool UpdateClock(
             /* Once we're synchronised and narrow phase lock is found restore
              * the narrow phase error limit. */
             Controller->Slewing = false;
-        
+
         libera_hw_time_t OldClock = Controller->Clock;
         if (GetClock(Controller))
             /* Note that we only need to update the internal state if we
@@ -222,7 +222,7 @@ static void ReportState(CONTROLLER *Controller)
         Controller->WasSynchronised != Controller->Synchronised  ||
         Controller->ReportAge > Controller->StatusReportInterval)
     {
-        WriteStatus("%cs%d %d\n", 
+        WriteStatus("%cs%d %d\n",
             Controller->status_prefix,
             Controller->CurrentStage,
             Controller->Synchronised);
@@ -306,7 +306,7 @@ int run_FF(CONTROLLER *Controller, const void *Context)
 int run_PI(CONTROLLER *Controller, const void *Context)
 {
     const PI_PARAMS * Params = (const PI_PARAMS *) Context;
-    
+
     /* Integrated error: we run a simple PI controller. */
     int tI = 0;
     /* Smoothed squared error for lock detection. */
@@ -314,7 +314,7 @@ int run_PI(CONTROLLER *Controller, const void *Context)
     /* All DAC computations will be offsets from the nominal DAC set on
      * entry. */
     int nominal_dac = Controller->Dac;
-    
+
     /* Initialise the DAC history buffer with our initial DAC reading so that
      * at least we start with something sensible.  However, this should all be
      * swept out by the time we read this. */
@@ -331,7 +331,7 @@ int run_PI(CONTROLLER *Controller, const void *Context)
         ADD_TO_HISTORY(dac_history, target_dac);
 
         /* If the DAC hits the limits we have a problem.  If we let the
-         * integrator continue to run then we end up overcompensating, and 
+         * integrator continue to run then we end up overcompensating, and
          * then oscillating for ages afterwards. If, on the other hand, we
          * simply reset the integrater then we can oscillate forever if we
          * bounce off the limits.  Thus here we simply don't integrate this
@@ -341,7 +341,7 @@ int run_PI(CONTROLLER *Controller, const void *Context)
 
         SetDAC(Controller, target_dac);
         ReportState(Controller);
-        
+
         if (abs(Controller->PhaseError) > Params->MaximumPhaseError)
             /* If the phase error grows too large give up trying to hold the
              * locked phase and hand control back to the frequency seeking
@@ -376,7 +376,7 @@ int run_PI(CONTROLLER *Controller, const void *Context)
 int run_IIR(CONTROLLER *Controller, const void *Context)
 {
     const IIR_PARAMS * Params = (const IIR_PARAMS *) Context;
-    
+
     /* IIR: we have to keep a history of the last N terms and corrections
      * where N is the order of the filter.  Initialise the history to 0, it's
      * the best we can do! */
@@ -484,7 +484,7 @@ static void run_stages(CONTROLLER *Controller)
             Controller->CurrentStage = 1;
         else if (Controller->CurrentStage > Controller->StageCount)
             Controller->CurrentStage = Controller->StageCount;
-    } 
+    }
 }
 
 
@@ -493,7 +493,7 @@ static void run_stages(CONTROLLER *Controller)
 static void* run_controller(void *Context)
 {
     CONTROLLER *Controller = (CONTROLLER *) Context;
-    
+
     /* We take a very simple minded approach to interlocking between the
      * command interpreter and the controller threads: all commands are
      * interpreted under the lock, and the controller holds the lock except
@@ -501,7 +501,7 @@ static void* run_controller(void *Context)
      * analysis, and simply works.
      *    So here we start things off by capturing the lock. */
     TEST_0(pthread_mutex_lock(&Controller->Interlock));
-    
+
     while (true)
     {
         /* First try to capture the clock. */
@@ -690,11 +690,11 @@ bool spawn_controller(CONTROLLER *Controller)
     Controller->OpenLoop = false;
     Controller->Verbose = false;
     Controller->StatusReportInterval = 10;
-    
+
     Controller->WasPhaseLocked = false;
     Controller->PreviousStage = 0;
     Controller->ReportAge = 0;
-    
+
     Controller->Synchronised = SYNC_NO_SYNC;
     Controller->WasSynchronised = SYNC_NO_SYNC;
     Controller->Slewing = false;

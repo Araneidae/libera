@@ -1,5 +1,5 @@
 /* This file is part of the Libera EPICS Driver,
- * 
+ *
  * Copyright (C) 2008-2009  Michael Abbott, Diamond Light Source Ltd.
  *
  * The Libera EPICS Driver is free software; you can redistribute it and/or
@@ -53,7 +53,7 @@ typedef struct CONTROLLER
 {
     /*************************************************************************/
     /* The following parameters must be specified to define the controller.  */
-    
+
     /* Clock definition parameters. */
     unsigned int prescale;      // Nominal phase advance per tick
     int frequency_offset;       // Extra phase advance (frequency shift)
@@ -74,10 +74,10 @@ typedef struct CONTROLLER
     void (*NotifyDriver)(
         libera_hw_time_t Frequency, libera_hw_time_t Phase, bool PhaseLocked);
 
-    
+
     /*************************************************************************/
     /* The following variables are private to the controller.                */
-    
+
     /* Controller state control. */
     bool ClockOk;               // True iff last reading of clock was ok
     bool OpenLoop;              // Controls open loop behaviour
@@ -104,7 +104,7 @@ typedef struct CONTROLLER
     pthread_mutex_t Interlock;  // Interlock between commands and control
 
     /* End of controller private variables.                                  */
-    
+
 
     /*************************************************************************/
     /* The following parameters must be specified to define the controller.  */
@@ -158,10 +158,10 @@ typedef struct
      *         B  + B z   + ... + B z     B z  + B z   + ... + B
      *          0    1             N       0      1             N
      *  F(z) = ------------------------ = ----------------------- ,
-     *                 -1            -N     N      N-1      
-     *          1 + A z   + ... + A z      z  + A z   + ... + A 
+     *                 -1            -N     N      N-1
+     *          1 + A z   + ... + A z      z  + A z   + ... + A
      *               1             N             1             N
-     * 
+     *
      * hence the description as an N-pole filter. */
     struct { float B, A; } Filter[];
 } IIR_PARAMS;

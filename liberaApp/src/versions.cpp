@@ -293,10 +293,10 @@ bool InitialiseVersions(void)
 #else
         "unknown library");
 #endif
-    
+
     Publish_stringin("VERSION",     VersionString);
     Publish_stringin("BUILD",       BuildDate);
-    
+
     Publish_stringin("VE:VERSION",  VersionString);
     Publish_stringin("VE:BUILD",    BuildDate);
     Publish_stringin("VE:EPICS",    EpicsVersion);
@@ -304,10 +304,10 @@ bool InitialiseVersions(void)
     Publish_stringin("VE:COMPILER", CompilerVersion);
     Publish_stringin("VE:LIBRARY",  LibraryVersion);
     Publish_bi      ("VE:DRIVER2",  Version2Driver);
-    
+
     PUBLISH_ACTION("REBOOT",        DoReboot);
     PUBLISH_ACTION("RESTART",       DoRestart);
-    
+
     bool Ok =
         PUBLISH_ENV_MAP(stringin,   EnvironmentStrings)  &&
         PUBLISH_ENV_MAP(longin,     EnvironmentInts)  &&

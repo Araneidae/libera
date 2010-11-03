@@ -48,7 +48,7 @@
 
 
 
-    
+
 /*****************************************************************************/
 /*                                                                           */
 /*                         Event Processing Thread                           */
@@ -181,8 +181,8 @@ public:
         printf("Unhandled event %d (%d) ignored\n", EventId, EventParameter);
     }
 
-    
-    
+
+
 private:
     void Thread()
     {
@@ -192,7 +192,7 @@ private:
         {
             /* Wait for something to happen. */
             signal.Wait();
-            
+
             /* Work through each event in turn, dispatching it.  This is
              * slighly back to front, as the association between events and
              * handlers is imperfect: but simplicity wins here. */
@@ -209,7 +209,7 @@ private:
                     Parameter = Event.Parameter;
                     Event.Occurred = false;
                     THREAD_UNLOCK();
-                    
+
                     /* Finally dispatch this event to all interested
                      * handlers -- if it actually occurred! */
                     if (Occurred)
@@ -229,7 +229,7 @@ private:
 
 #ifdef UNSAFE_PTHREAD_CANCEL
     /* We can't rely on the normal pthread_cancel() for thread termination
-     * (as it can have the sorry side effect of breaking the Libera driver) 
+     * (as it can have the sorry side effect of breaking the Libera driver)
      * -- but it is often sufficient to simply wake the thread up again. */
     void OnTerminate()
     {
@@ -243,13 +243,13 @@ private:
     enum {
         EVENT_TABLE_SIZE = 5,   // Number of distinct event ids handled
     };
-    
+
     /* Table of events by event id: this is used to record the status of each
      * event. */
     struct EVENT_TABLE
     {
         bool Valid;             // Set if this entry is valid
-        int EventId;            // Associated event 
+        int EventId;            // Associated event
         bool Occurred;          // Whether this event has occurred
         int Parameter;          // Merged event parameter
     };
@@ -262,7 +262,7 @@ private:
         I_EVENT * Handler;      // Handler interface to call
     };
 
-    
+
     EVENT_TABLE EventTable[EVENT_TABLE_SIZE];
     HANDLER_TABLE HandlerTable[HANDLER_TABLE_SIZE];
     SEMAPHORE signal;
@@ -290,7 +290,7 @@ class EVENT_RECEIVER : public THREAD
 {
 public:
     EVENT_RECEIVER() : THREAD("EVENT_RECEIVER") {}
-    
+
 private:
     /* We connect directly to the event source and dispatch our events
      * ourselves.  The events are processed in a separate thread to ensure

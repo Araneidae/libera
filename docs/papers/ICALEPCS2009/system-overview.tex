@@ -2,29 +2,29 @@
 {
 % Draws the ADC symbol at the current position
 \newgraphescape{a}#1{
-    []!{\save   \xygraph{ 
+    []!{\save   \xygraph{
         []="o"              % Remember origin on entry
         !{+0;+<1em,0em>:} % Set appropriate scaling
         !~-{@[thicker]@{-}}     % Thicker lines
         "o"[l(2)u]="a"[d]-[ur]-[r(2.5)]-[dd]="b"-[l(2.5)]-[ul]
         !~-{@{-}}               % and back to normal
-        "o"*{\text{#1}} 
-    } \restore} 
+        "o"*{\text{#1}}
+    } \restore}
     % Put origin at point of entry and combine with opposite corners
-    !{"o"."a"."b"} 
+    !{"o"."a"."b"}
 }
 % Draws a box with a formula inside it at the current position
 \newgraphescape{t}#1{
-    []!{\save   \xygraph{ 
+    []!{\save   \xygraph{
         []="o"
         !{+0;+<1em,0em>:}
         !~-{@[thicker]@{-}}     % Thicker lines
         "o"[l(1.75)u]="a"-[r(3.5)]-[d(2)]="b"-[l(3.5)]-[u(2)]
         !~-{@{-}}               % and back to normal
-        "o"*{#1} 
-    } \restore} 
+        "o"*{#1}
+    } \restore}
     % Put origin at point of entry and combine with opposite corners
-    !{"o"."a"."b"} 
+    !{"o"."a"."b"}
 }
 % Labels a row with the arguments set in a two column table
 \newgraphescape{l}#1{
@@ -47,7 +47,7 @@
 % The figure itself
 \hfill\xygraph{
     []!{0;<3pc,0pc>:<0pc,2.2pc>::}
-    % 
+    %
     % Label the columns of the diagra
     [ll] !s{\textbf{Buttons}}
     [r(2.5)] !s{\textbf{FPGA Processing}}
@@ -57,24 +57,24 @@
     % CK label
     [rrr]="ck" !l{CK & Clock control} \\[u(.2)]
     %
-    % Draws the button block assembly 
-    [ll]="z" !{\save\xygraph{ 
-        !{+0;+<0.5em,0em>:} 
+    % Draws the button block assembly
+    [ll]="z" !{\save\xygraph{
+        !{+0;+<0.5em,0em>:}
 %        !~-{@[thicker]@{-}}     % Thicker lines
-        !bul !bur !bdr !bdl 
+        !bul !bur !bdr !bdl
         "z"[u(2)l(3)]="a" "z"[d(2)r(3)]="c" !{"a"."c"*\frm<1em>{-}}
     } \restore}
     !{"z"."a"."c"}="buttons"
     % followed by the ADC
-    && !a{ADC}="adc"  
+    && !a{ADC}="adc"
     %
     % Sample frequency data feed
-    "buttons"-"adc"-[r]="nadc":[rr]^{f_S \approx 117\,\text{MHz}} 
+    "buttons"-"adc"-[r]="nadc":[rr]^{f_S \approx 117\,\text{MHz}}
     !l{FT & 1024\,pt waveform + scalars on trigger (5\,Hz)}
     \\[d(.2)]
     %
     % Turn by turn data feed
-    !t{\div 220}="d220"-[r]="n220":[rr]^{f_R \approx 533\,\text{kHz}} 
+    !t{\div 220}="d220"-[r]="n220":[rr]^{f_R \approx 533\,\text{kHz}}
     !l{
         FR & 2048\,pt waveform on trigger (5\,Hz) \\
         TT & Up to 524,288\,pt waveform on demand \\
@@ -121,10 +121,10 @@
     %
     % More complicated bendy corners
     %    This is rather horrible really
-    "nadc"!{\ar@{-} 
+    "nadc"!{\ar@{-}
         `d/4pt -(0,.6) `^d-(2,0)!/r4pt/ `^r-(0,.6)!/u4pt/ "d220" }
     "n220"!{\ar@{-}
-        `d/4pt -(0,.6) `^d-(2,0)!/r4pt/ -(0,.6)="b64" 
+        `d/4pt -(0,.6) `^d-(2,0)!/r4pt/ -(0,.6)="b64"
         `^r-(0,1.6)!/u4pt/ "d53"}
     "b64"-"d64"
     "n53"!{\ar@{-}

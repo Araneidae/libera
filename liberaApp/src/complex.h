@@ -31,7 +31,7 @@
 
 /* We use the C++ complex types: one of the few cases where the C++ type
  * system works really nicely -- almost as if it was designed for it ;) */
-#include <complex>      
+#include <complex>
 
 /* The type REAL identifies the underlying floating point type of the complex
  * numbers that we use. */

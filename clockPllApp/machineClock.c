@@ -1,5 +1,5 @@
 /* This file is part of the Libera EPICS Driver,
- * 
+ *
  * Copyright (C) 2006-2009 Michael Abbott, Diamond Light Source Ltd.
  *
  * The Libera EPICS Driver is free software; you can redistribute it and/or
@@ -140,13 +140,13 @@ static void NotifyMachineClockDriver(
  *            1 + F(z)G(z)   (z-1)A + a B
  *
  * There are several goals to meet when designing the control filter:
- * 
+ *
  *  1. the long term DC response (phase drift) must be zero.  This corresponds
  *     to requiring that A(1) = 0
  *
  *  2. the system PHI must be stable.  This corresponds to requiring that all
  *     of the roots of the polynomial
- *    
+ *
  *      R(z) = (z-1) A(z) + a B(z)
  *
  *     lie within the unit circle |z| < 1.
@@ -177,10 +177,10 @@ static FF_PARAMS FF_params = { .FK = 20 };
 
 /* Coarse PI controller.  Holds the phase strongly, but tends to overcorrect
  * due to the large controller gain. */
-static PI_PARAMS PI_params = 
+static PI_PARAMS PI_params =
 {
     .KP = 20,
-    .KI = 9, 
+    .KI = 9,
     .IIR = 0.15,
     // Need to allow for large slews of the machine clock during
     // synchronisation: the maximum possible slew is one fast feedback
@@ -190,7 +190,7 @@ static PI_PARAMS PI_params =
 
 /* Slow IIR controller. */
 #define BETA 0.8
-static IIR_PARAMS IIR_params = 
+static IIR_PARAMS IIR_params =
 {
     .Order = 2,
     .Dither = 0.0,
@@ -203,7 +203,7 @@ static CONTROLLER MC_Controller =
 {
     .frequency_offset = 0,
     .phase_offset = 0,
-    .max_normal_phase_error = 100, 
+    .max_normal_phase_error = 100,
     .max_slew_phase_error = 30000,  // Allow large error during sync slew
 
     .name = "MC",
@@ -270,8 +270,8 @@ bool InitialiseMachineClock(MC_PARAMETERS *Params)
     ddc_decimation = Params->Decimation;
     MC_Controller.prescale = Params->Prescale * Params->Decimation;
 
-    unsigned int init_locked = false;    
-    return 
+    unsigned int init_locked = false;
+    return
         /* Enable machine clock trigger events. */
         TEST_IO(ioctl(event_fd,
             LIBERA_EVENT_ENABLE_MC_TRIG, TRIGGER_BIT(6)))  &&

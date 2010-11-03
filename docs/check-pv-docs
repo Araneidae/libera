@@ -63,27 +63,27 @@ sed -nr '
 sed -r '
     # <channel> -> 1 2 3 4
     /^(.*)<channel>(.*)$/s//\11\2\n\12\2\n\13\2\n\14\2/
-    
+
     # <iq> -> AI AQ BI BQ CI CQ DI DQ
     /^(.*)<iq>(.*)$/{
         s//\1AI\2\n\1AQ\2\n\1BI\2\n\1BQ\2\n\1CI\2\n\1CQ\2\n\1DI\2\n\1DQ\2/}
-        
+
     # <buttons> -> A B C D
     /^(.*)<buttons>(.*)$/s//\1A\2\n\1B\2\n\1C\2\n\1D\2/
-    
+
     # <positions> -> X Y Q S
     /^(.*)<positions>(.*)$/s//\1X\2\n\1Y\2\n\1Q\2\n\1S\2/
 
     # <axis> -> X Y
     /^(.*)<axis>(.*)$/s//\1X\2\n\1Y\2/
-    
+
     # <fan> -> 1 2
     /^(.*)<fan>(.*)$/s//\11\2\n\12\2/
-    
+
     # <1-8> -> 1 2 3 4 5 6 7 8              (voltage enumerations)
     /^(.*)<1-8>(.*)$/{
         s//\11\2\n\12\2\n\13\2\n\14\2\n\15\2\n\16\2\n\17\2\n\18\2/}
-        
+
     # <link> -> LINK1 LINK2 LINK3 LINK4     (communication controller links)
     /^(.*)<link>(.*)$/{
         s//\1LINK1\2\n\1LINK2\2\n\1LINK3\2\n\1LINK4\2/}

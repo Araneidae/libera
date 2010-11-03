@@ -67,7 +67,7 @@ template<class T>
 SIMPLE_WAVEFORM<T>::SIMPLE_WAVEFORM(
     int TypeMark, size_t EpicsPointSize, size_t WaveformLength,
     T * ExternalWaveform) :
-    
+
     I_WAVEFORM(TypeMark),
     /* An EPICS point may be smaller than T -- in particular, a waveform of
      * complex numbers is stored as two REALs per value -- and so we need to
@@ -84,7 +84,7 @@ SIMPLE_WAVEFORM<T>::SIMPLE_WAVEFORM(
 
 template<class T>
 bool SIMPLE_WAVEFORM<T>::process(
-    void *array, size_t length, size_t &new_length) 
+    void *array, size_t length, size_t &new_length)
 {
     if (length > WaveformLength)  length = WaveformLength;
     memcpy(array, Waveform, EpicsPointSize * length);
@@ -148,7 +148,7 @@ public:
         NewLength = Waveforms.Read(Field, (int*) Array, MaxLength);
         return NewLength > 0;
     }
-    
+
 private:
     const WAVEFORMS<T> & Waveforms;
     const size_t Field;
@@ -214,7 +214,7 @@ void WAVEFORMS<T>::Write(size_t Field, const int * Source, size_t Length)
     /* Make sure we don't try to write more than we have room for. */
     if (Length > CurrentLength)
         Length = CurrentLength;
-        
+
     char * Target = ((char *) Data) + Field;
     for (size_t i = 0; i < Length; i ++)
     {
@@ -336,7 +336,7 @@ void ABCD_WAVEFORMS::PublishRaw(const char * Prefix) const
     PUBLISH_COLUMN("3", C);
     PUBLISH_COLUMN("4", D);
 }
-    
+
 void ABCD_WAVEFORMS::CaptureCordic(const IQ_WAVEFORMS & Source)
 {
     ActiveLength = Source.CaptureLength(0, CurrentLength);

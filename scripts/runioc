@@ -73,7 +73,7 @@ while getopts 'd:nflh' option; do
     n)  IocParameter -n  ;;
     f)  rm -f "$PIDFILE" ;;
     l)  RESTART_LMTD=1 ;;
-    h)  cat <<'EOF' 
+    h)  cat <<'EOF'
 Usage: runioc [options]
     -d <device>:  use supplied device name instead of hostname
     -n            run non-interactive without an IOC shell

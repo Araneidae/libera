@@ -49,13 +49,13 @@ F_IF = 2 * pi * (936 % 220) / 220
 
 class Monitor:
     IQ_names = ['WF%s%s' % (b, i) for b in 'ABCD' for i in 'IQ']
-    
+
     def __init__(self, ioc):
         self.ioc = ioc
-        
+
         self.values = {}
         self.stamps = set()
-        
+
         self.monitor('DONE', self.Done)
         self.monitor('COMP')
 
@@ -69,7 +69,7 @@ class Monitor:
                 self.stamps.add(value.dbr.stamp)
         catools.camonitor(
             '%s:SC:%s' % (self.ioc, pv), action, datatype = datatype)
-            
+
 
     def Done(self, value):
         self.stamps.add(value.dbr.stamp)
@@ -114,7 +114,7 @@ class Monitor:
         pylab.subplot(2,3,2)
         plot_array(180/pi * aIQ)
         pylab.title('IQ phases')
-        
+
         pylab.subplot(2,3,3)
         plot_complex(mean(nIQ, 1), plot_circle=True, blob='o')
         pylab.axis('equal')
@@ -134,9 +134,9 @@ class Monitor:
                 plot_complex(array([1/C[k]]), blob='ro')
 
         pylab.draw()
-            
-    
-    
+
+
+
 if __name__ == '__main__':
     if len(sys.argv) not in [2, 3]:
         print 'Usage: %s <ioc> [<png-file>]' % sys.argv[0]
@@ -147,7 +147,7 @@ if __name__ == '__main__':
     pylab.ioff()
     pylab.figure()
     pylab.show()
-    
+
     Monitor(sys.argv[1])
 #    green.start_gui()
     thread.exec_loop()

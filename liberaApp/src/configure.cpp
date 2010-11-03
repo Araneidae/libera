@@ -102,7 +102,7 @@ static bool UpdateAutoSwitch(bool NewSwitchState)
 {
     AutoSwitchState = NewSwitchState;
     SwitchReadback->Write(AutoSwitchState);
-    
+
     if (!AutoSwitchState  &&  ScState == SC_MODE_AUTO)
         /* The switches cannot be switched away from automatic mode without
          * first turning signal conditioning off. */
@@ -117,7 +117,7 @@ static bool UpdateSc(int NewScState)
 {
     ScState = NewScState;
     ScReadback->Write(ScState);
-    
+
     if (ScState == SC_MODE_AUTO)
         UpdateAutoSwitch(true);
     WriteScMode((SC_MODE) ScState);
@@ -206,7 +206,7 @@ static bool InitialiseSpikeRemoval()
     PUBLISH_SPIKE(longout, "SPIKEWIN",  SpikeWindow);
 
     new SPIKE_DEBUG("CF:SR:DEBUGWF");
-    
+
     UpdateSpikeRemoval();
     return true;
 }
@@ -322,7 +322,7 @@ bool InitialiseConfigure()
         IF_(Version2FpgaPresent, InitialiseSpikeRemoval());
     if (!Ok)
         return false;
-    
+
     /* Master enable flag.  Disabling this has little practical effect on BPM
      * outputs (apart from disabling interlock), but is available as a global
      * PV for BPM management. */
@@ -330,12 +330,12 @@ bool InitialiseConfigure()
 
     SwitchReadback = PUBLISH_READBACK_CONFIGURATION(bi, bo, "CF:AUTOSW",
         AutoSwitchState, UpdateAutoSwitch);
-    PUBLISH_CONFIGURATION(longout, "CF:SETSW", 
+    PUBLISH_CONFIGURATION(longout, "CF:SETSW",
         ManualSwitch, UpdateManualSwitch);
     Publish_waveform("CF:PERM", Permutation);
-    PUBLISH_CONFIGURATION(bo, "CF:TRIGSW", 
+    PUBLISH_CONFIGURATION(bo, "CF:TRIGSW",
         ExternalSwitchTrigger, UpdateSwitchTrigger);
-    PUBLISH_CONFIGURATION(longout, "CF:DELAYSW", 
+    PUBLISH_CONFIGURATION(longout, "CF:DELAYSW",
         SwitchTriggerDelay, UpdateSwitchTriggerDelay);
     ScReadback = PUBLISH_READBACK_CONFIGURATION(mbbi, mbbo, "CF:DSC",
         ScState, UpdateSc);
@@ -344,7 +344,7 @@ bool InitialiseConfigure()
 
     PUBLISH_FUNCTION_OUT(bo, "CF:NOTCHEN",
         NotchFilterEnabled, SetNotchFilterEnable);
-    
+
     /* Write the initial state to the hardware and initialise everything that
      * needs initialising. */
     UpdateAutoSwitch(AutoSwitchState);

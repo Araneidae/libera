@@ -196,7 +196,7 @@ public:
      * types and refuse to accept EPICS connections with an unexpected record
      * type. */
     I_WAVEFORM(epicsEnum16 Type);
-    
+
     bool BindRecord(dbCommon * pr);
 
 private:
@@ -215,7 +215,7 @@ private:
  * methods for publishing an I_<record> interface by name. */
 #define DECLARE_PUBLISH(record) \
     void Publish_##record(const char * Name, I_##record & Record)
-    
+
 
 /* Declaration of Publish_<record> methods for each supported record type.
  * Every visible PV should be made available through a call to the appropriate

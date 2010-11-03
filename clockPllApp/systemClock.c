@@ -1,5 +1,5 @@
 /* This file is part of the Libera EPICS Driver,
- * 
+ *
  * Copyright (C) 2008-2009  Michael Abbott, Diamond Light Source Ltd.
  *
  * The Libera EPICS Driver is free software; you can redistribute it and/or
@@ -82,17 +82,17 @@ static FF_PARAMS FF_params = { .FK = 15 };
 
 /* Coarse PI controller.  Holds the phase strongly, but tends to overcorrect
  * due to the large controller gain. */
-static PI_PARAMS PI_params = 
+static PI_PARAMS PI_params =
 {
     .KP = 12,
-    .KI = 5, 
-    .IIR = 0.15, 
+    .KI = 5,
+    .IIR = 0.15,
     .MaximumPhaseError = 100    // Slewing the system clock doesn't happen
 };
 
 /* Slow IIR controller. */
 #define BETA 0.8
-static IIR_PARAMS IIR_params = 
+static IIR_PARAMS IIR_params =
 {
     .Order = 2,
     .Dither = 0.0,
@@ -136,7 +136,7 @@ void SystemClockCommand(char *Command)
 bool InitialiseSystemClock()
 {
     unsigned int init_locked = false;
-    return 
+    return
         /* Enable machine clock trigger events. */
         TEST_IO(ioctl(event_fd,
             LIBERA_EVENT_ENABLE_SC_TRIG, TRIGGER_BIT(5)))  &&

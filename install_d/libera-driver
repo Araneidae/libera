@@ -153,7 +153,7 @@ case "$1" in
         sleep 1
         $0 start
         ;;
-        
+
     *)  echo "Usage: $0 {start|stop|restart}"
         exit 1
         ;;

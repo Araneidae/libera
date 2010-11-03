@@ -9,7 +9,7 @@ URL="http://www.cs.diamond.ac.uk/cgi-bin/wiki.cgi/Libera_opi_$1"
 firefox -new-window "$URL" &
 
 # from qt import *
-# 
+#
 # class Help(QTextBrowser):
 #     def __init__(self, url, parent = None):
 #         QTextBrowser.__init__(self, parent)
@@ -17,12 +17,12 @@ firefox -new-window "$URL" &
 #         self.setSource(url)
 #         self.setCaption("HTML Help")
 #         self.resize(400, 1000)
-# 
-# 
-# 
+#
+#
+#
 # q = QApplication([])
 # QObject.connect(q, SIGNAL('lastWindowClosed()'), q.quit)
-# 
+#
 # #h = Help('<h1>Hello</h1>')
 # URL = 'http://www.cs.diamond.ac.uk/docs/docshome/python_docs/tex/Doc/html/dls/dls.html'
 # h = Help(URL)

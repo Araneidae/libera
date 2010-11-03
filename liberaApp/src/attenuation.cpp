@@ -119,7 +119,7 @@ public:
         for (; i < max_length; i ++)
             farray[i] = (float) AttenuatorOffsets[i] / DB_SCALE;
         new_length = max_length;
-        
+
         PERSISTENT_BASE::MarkDirty();
         on_update();
         return true;
@@ -133,7 +133,7 @@ public:
         length = AttenuatorCount;
         return true;
     }
-    
+
 private:
     const size_t AttenuatorCount;
     void (*on_update)();
@@ -243,7 +243,7 @@ int ComputeScaledCurrent(const PMFP & IntensityScale, int Intensity)
 bool InitialiseAttenuation()
 {
     PUBLISH_CONFIGURATION(ao, "CF:ISCALE", CurrentScale, UpdateCurrentScale);
-    
+
     AttenReadback = PUBLISH_READBACK_CONFIGURATION(
         longin, longout, "CF:ATTEN",
         SelectedAttenuation, SelectNewAttenuation);

@@ -39,7 +39,7 @@ set -e
 #     healthd               Startup script installed in /etc/init.d
 #     locations             List of machine locations (eg SR/BO)
 #     make-notch-filters    Script to create notch filters
-#     libera-install-fpga   
+#     libera-install-fpga
 #     libera-install-ioc    Script to install libera IOC on target
 INSTALL_FILES='
     CONFIG
@@ -52,19 +52,19 @@ INSTALL_FILES='
     libera-install-ioc'
 
 
-SOURCE="$(cd "$(dirname "$0")"/..; pwd)"  
-. "$SOURCE"/install_d/CONFIG  
+SOURCE="$(cd "$(dirname "$0")"/..; pwd)"
+. "$SOURCE"/install_d/CONFIG
 if (($# > 0)); then
     INSTALL_HOST="$1"
     FPGA_SOURCE="$2"
 else
     : ${INSTALL_HOST:?Local installation path not defined}
-fi  
+fi
 
 
 # Erase everything in the target directory: start from scratch on each
 # install.
-TARGET="$INSTALL_HOST"/ioc  
+TARGET="$INSTALL_HOST"/ioc
 rm -rf "$TARGET"
 mkdir -p "$TARGET"
 
@@ -114,4 +114,4 @@ if [ -n "$FPGA_SOURCE" ]; then
 fi
 
 
-echo IOC installed in "$TARGET". 
+echo IOC installed in "$TARGET".

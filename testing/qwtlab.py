@@ -48,9 +48,9 @@ def resetzoom():
                               QwtPicker.DragSelection,
                               QwtPicker.AlwaysOff,
                               _qwt_axes.canvas())
-    
+
     _qwt_zoom.setRubberBandPen(QPen(Qt.gray))
-    
+
 def plot(*curves):
     commands = {
         "r": lambda c: c.setPen(QPen(Qt.red)),
@@ -61,7 +61,7 @@ def plot(*curves):
         "y": lambda c: c.setPen(QPen(Qt.yellow)),
         ":": lambda c: c.pen().setStyle(Qt.DotLine)
     }
-    
+
     newplot = not hasattr(_qwt_axes, "cs")
     if newplot:
         _qwt_axes.cs = []
@@ -87,17 +87,17 @@ def plot(*curves):
                                   QwtPicker.DragSelection,
                                   QwtPicker.AlwaysOff,
                                   _qwt_axes.canvas())
-        
+
         _qwt_zoom.setRubberBandPen(QPen(Qt.gray))
 
 
 
 def plotarray2(ar):
     colours = 'kbgr'
-    
+
     t = arange(ar.shape[1])
     plot(*[(t, a, c) for a, c in zip(ar, colours)])
-    
+
 
 __all__ = [
     "axes", "axis", "yaxis", "xaxis", "xlabel", "ylabel",

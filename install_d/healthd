@@ -96,11 +96,11 @@ case "$1" in
             # Choose temperature sensor and target according to whether
             # Brilliance or Electron RF hardware is detected.
             OPTS="-m$MAX_MB_TEMP -e$MAX_RF_TEMP $IOC_HEALTHD_OPTS"
-            
+
             if [ -z "$IOC_HEALTHD_PANIC" ]; then
                 "$HEALTHD" $OPTS
             else
-                "$HEALTHD" -x"$IOC_HEALTHD_PANIC" $OPTS 
+                "$HEALTHD" -x"$IOC_HEALTHD_PANIC" $OPTS
             fi
             evaluate_retval
         fi

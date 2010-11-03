@@ -11,8 +11,8 @@ Building this software depends on the following components:
    Different toolchain versions are needed for these two incompatible
    architectures.
 
- * EPICS 3.14 base.  This version of the software has been developed using 
-   version 3.14.11 of EPICS, which can be downloaded from 
+ * EPICS 3.14 base.  This version of the software has been developed using
+   version 3.14.11 of EPICS, which can be downloaded from
         http://www.aps.anl.gov/epics/base/R3-14/11.php
    For versions 3.14.6, 3.14.7 and 3.14.8.2 the included patches
    will need to be applied to ensure that linux-arm support is provided.
@@ -55,7 +55,7 @@ The $INSTALL_TARGET directory on the target machine is assumed to contain the
 same files as $INSTALL_HOST.  It is assumed in this document that this is done
 through an NFS mount on Libera, for example /mnt/nfs/Libera.
 
-INSTALL_TARGET  Where to find installation files on Libera.  
+INSTALL_TARGET  Where to find installation files on Libera.
 
 Other symbols:
 
@@ -68,7 +68,7 @@ The instructions below assume that you have already extracted
 libera-epics-$EPICS_VERSION.tgz into $LIBERA_EPICS.
 
 When running make the environment variable EPICS_HOST_ARCH will be assumed to
-be set thus: 
+be set thus:
     $ export EPICS_HOST_ARCH=linux-x86
 This is used by the Epics environment to determine which build configuration
 to use.
@@ -119,7 +119,7 @@ The following process worked well for me:
 
 1.  Download http://kegel.com/crosstool/crosstool-0.43.tar.gz and unzip.
 
-2.  Change into the crosstool directory and run the commands below.  
+2.  Change into the crosstool directory and run the commands below.
 
     $ set -aex
     $ # These directories need to already exist
@@ -138,8 +138,8 @@ The following process worked well for me:
     any source files needed.  The resulting compiler toolchain will appear
     in $RESULT_TOP/gcc-3.4.5-glibc-2.3.6 .
 
-3.  Remember 
-        ARM_GCC=$RESULT_TOP/gcc-3.4.5-glibc-2.3.6/arm-linux 
+3.  Remember
+        ARM_GCC=$RESULT_TOP/gcc-3.4.5-glibc-2.3.6/arm-linux
         ARM_GCC_PREFIX=arm-linux
     for the next step.
 
@@ -149,7 +149,7 @@ Obtaining gcc 3.4.4/glibc 2.3.6 for ARM EABI
 
 I have not attempted to build this toolchain (as work at Diamond continues
 with a newer generation, see below), but it can be extracted from
-    scratchbox-toolchain-arm-linux-cs344-2.3_1.0.4_i386.deb  
+    scratchbox-toolchain-arm-linux-cs344-2.3_1.0.4_i386.deb
 which can be downloaded from
     http://scratchbox.org/debian/dists/stable/main/binary-i386/
 
@@ -162,7 +162,7 @@ Building gcc 4.3.2/glibc 2.7 for ARM EABI
 -----------------------------------------
 
 This was built using a modified version of the arm-unknown-linux-gnueabi
-sample from crosstool-NG, which can be downloaded from 
+sample from crosstool-NG, which can be downloaded from
     http://ymorin.is-a-geek.org/dokuwiki/projects/crosstool
 
 
@@ -178,7 +178,7 @@ linux-arm_el (EABI).  Call this ARM_ARCH in the instructions below.
 
 1.  Install a suitable cross compiler as described above.  Let ARM_GCC
     be the root of the compiler and ARM_GCC_PREFIX be the cross-compiler
-    prefix, so that GCC is available as $ARM_GCC/bin/$ARM_GCC_PREFIX-gcc.  
+    prefix, so that GCC is available as $ARM_GCC/bin/$ARM_GCC_PREFIX-gcc.
 
 2.  Extract EPICS from
         http://www.aps.anl.gov/epics/download/base/baseR$EPICS_VERSION.tar.gz
@@ -195,18 +195,18 @@ linux-arm_el (EABI).  Call this ARM_ARCH in the instructions below.
 4.  Unless $ARM_GCC is /usr you will need to tell EPICS where to find
     its cross compiler by editing the site configuration file
         $EPICS_BASE/configure/os/CONFIG_SITE.linux-x86.$ARM_ARCH
-    and defining 
+    and defining
         GNU_DIR = <expansion of ARM_GCC>
         GNU_TARGET = <expansion of ARM_GCC_PREFIX>
 
 5.  Make sure that linux-arm is included as a cross compiler target
     architecture, by editing
         $EPICS_BASE/configure/CONFIG_SITE
-    and defining 
+    and defining
         CROSS_COMPILER_TARGET_ARCHS = $ARM_ARCH
     Multiple target architectures can be supported by EPICS and defined on
     this line, but the Libera driver will only use the linux-arm and
-    linux-arm_el targets. 
+    linux-arm_el targets.
 
 6.  Run make from $EPICS_BASE.  This will take a while...
         $ cd $EPICS_BASE
@@ -347,7 +347,7 @@ Test Installation
 
 Final Installation
 ------------------
-    
+
     In this mode of installation the run-time files are copied to standard
     locations on Libera.  This mode is recommended for production use.
 
@@ -379,7 +379,7 @@ file /var/log/ioc.
 
 
 Note that the IOC will take the IOC device name from the configured hostname,
-thus for example if 
+thus for example if
     # hostname
 returns
     TS-DI-EBPM-01

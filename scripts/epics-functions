@@ -94,7 +94,7 @@ detect_brilliance()
     # The test is very simple: the Brilliance RF board uses an adm1023
     # temperature sensor, while the motherboard uses max1617 family sensors.
     if [ -d /sys ]; then
-        [ -e /sys/bus/i2c/devices/0-0018 ] && 
+        [ -e /sys/bus/i2c/devices/0-0018 ] &&
         [ "$(cat /sys/bus/i2c/devices/0-0018/name)" = adm1023 ]
     else
         [ -e /proc/sys/dev/sensors/adm1023-i2c-0-18 ]

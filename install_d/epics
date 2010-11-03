@@ -51,7 +51,7 @@ case "$1" in
         echo -n "Starting EPICS"
         # Sanity check in case bad install or wrong FPGA.
         check_instrument_type
-        
+
         if [ -e /var/run/ioc.pid ]; then
             echo -n " - already running?"
             print_status failure
@@ -81,7 +81,7 @@ case "$1" in
             kill -9 "$(cat /var/run/ioc.pid)"  &&
             echo >&2 'IOC killed forcibly!'
         fi
-        
+
         # Make sure that the ioc.pid file doesn't stay around, otherwise if
         # the ioc dies without removing its pid file we can never restart
         # without manual intervention.

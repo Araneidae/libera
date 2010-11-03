@@ -488,14 +488,14 @@ static bool UdpExchange(
     if (Ok)
     {
         size_t sent;
-        
+
         fd_set rx_ready;
         FD_ZERO(&rx_ready);
         FD_SET(sock, &rx_ready);
         struct timeval timeout;
         timeout.tv_sec = 0;
         timeout.tv_usec = 1000 * timeout_ms;
-            
+
         int sel;
         Ok =
             TEST_IO(connect(sock,
@@ -508,10 +508,10 @@ static bool UdpExchange(
             /* Read can fail, and we don't actually want to log this. */
             DO_(rx = recv(sock, rx_buffer, *rx_length, 0))  &&
             rx != -1;
-        
+
         TEST_IO(close(sock));
     }
-    
+
     *rx_length = Ok ? rx : 0;
     return Ok;
 }
@@ -606,18 +606,18 @@ public:
     {
         Interlock.Publish("SE");
     }
-    
+
 private:
     void Thread()
     {
         StartupOk();
-        
+
         while (Running())
         {
             Interlock.Wait();
             ProcessSensors();
             Interlock.Ready();
-            
+
             sleep(SENSORS_POLL_INTERVAL);
         }
     }
@@ -675,7 +675,7 @@ static void SetTargetTemperature()
 bool InitialiseSensors(bool _MonitorNtp)
 {
     MonitorNtp = _MonitorNtp;
-    
+
     /* Figure out where to read our fan and temperature sensors: under Linux
      * 2.6 we read from the /sys file system, but under 2.4 we read from /proc
      * instead. */

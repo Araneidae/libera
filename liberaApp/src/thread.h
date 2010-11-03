@@ -72,11 +72,11 @@ protected:
     /* Sends a signal to this thread. */
     void Kill(int sig);
 
-    
+
 private:
     static void * StaticThread(void * Context);
     void ThreadInit();
-    
+
     bool ThreadRunning;         // Used to request thread termination
     /* Thread id of this thread. */
     pthread_t ThreadId;
@@ -106,7 +106,7 @@ public:
     /* Signal that semaphore is ready: returns the previous state of the
      * ready flag. */
     bool Signal();
-    
+
 private:
     void Lock();
     static void Unlock(void *arg);

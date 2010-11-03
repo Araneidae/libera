@@ -61,7 +61,7 @@
  * byte table, so the cache impact should be small, and four 32x32->64 bit
  * multiplies (or five if LAST_BIT is set).  This routine takes around 140ns
  * (or 180ns if LAST_BIT is set).
- * 
+ *
  * The algorithm uses two rounds of Newton-Raphson to solve the equation
  *
  *      1/x - D = 0
@@ -210,7 +210,7 @@ unsigned int Denormalise(unsigned int X, int shift)
  *                         b
  *            ~~ log a + ------
  *                  2    a ln 2
- *                  
+ *
  * The values log_2 a and 1/(a ln 2) are precomputed.  The offsets on A and B
  * used to calculate a and be are used to reduce the maximum value of b to
  * 2^(n+1), thus reducing the residual error. */
@@ -358,7 +358,7 @@ unsigned int from_dB(int X, int &shift)
  * represents a complete rotation), with three bits of administration needed:
  *
  *  octet: in alternating octets we can compute using the formulae
- *  
+ *
  *      cos(x) = sin(pi/2 - x)
  *      sin(x) = sin(pi/2 - x)
  *
@@ -383,7 +383,7 @@ void cos_sin(int angle_in, int &c_out, int &s_out)
     if (angle_in & 0x20000000)
         angle = - angle;
     angle &= 0x3FFFFFFF;
-    
+
     /* Split angle into index and residue. */
     int shift = 32 - COS_SIN_N - 3;
     int index = ((angle + (1 << (shift - 1))) >> shift);

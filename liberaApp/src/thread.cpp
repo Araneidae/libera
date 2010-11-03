@@ -89,7 +89,7 @@ bool SEMAPHORE::WaitFor(int milliseconds)
         target.tv_sec += 1;
         target.tv_nsec -= S_NS;
     }
-    
+
     return WaitUntil(target);
 }
 

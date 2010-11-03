@@ -1,7 +1,7 @@
 TOP=..
 include $(TOP)/configure/CONFIG
 
-USR_CFLAGS += -march=armv5te 
+USR_CFLAGS += -march=armv5te
 USR_CFLAGS += -std=gnu99
 USR_CFLAGS += -Werror -Wall -Wextra -Wno-unused-parameter
 

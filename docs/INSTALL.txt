@@ -2,7 +2,7 @@ This binary distribution of the Libera Electron Beam Position Monitor EPICS
 driver contains the following directories:
 
 ioc
-    This is the complete installation ready to be deployed on the target 
+    This is the complete installation ready to be deployed on the target
     system.  See instructions below for installation.
 
 docs

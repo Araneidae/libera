@@ -58,7 +58,7 @@ This document.
 
 
 Releasing the Libera EPICS driver
----------------------------------  
+---------------------------------
 
 To create a new release of the Libera EPICS driver the following process
 should be followed:
@@ -245,7 +245,7 @@ restarted while the NFS server was unavailable or unreachable, frequently
 because the network rack in that CIA wasn't yet turn on.
 
 * Recovering the NFS mounts.  This should be simply a matter of running the
-command 
+command
 +
 ----
 /etc/init.d/mount-extra start
@@ -258,7 +258,7 @@ on each affected Libera and re-running the mount test command above.
 +
 This step is straightforward once the preparation above has been done.
 Simply run the following two commands, where `$INSTALL` is either
-`/mnt/prod/R3.14.11/ioc/Libera/$VERSION` or 
+`/mnt/prod/R3.14.11/ioc/Libera/$VERSION` or
 `/mnt/work/R3.14.11/ioc/Libera/ioc`:
 +
 ----
@@ -301,7 +301,7 @@ The addresses `TS-DI-EBPM-01` to `TS-DI-EBPM-07` are assigned positions in the
 test rack.
 
 
-Moving Libera from Lab to Synchrotron Building 
+Moving Libera from Lab to Synchrotron Building
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Here it is very important to determine the state of the machine being moved

@@ -3,7 +3,7 @@ function getmany(component,pv,values);
 srlist = 1:24;
 numlist = 1:7;
 npoints = 0;
-    
+
 pvs={};
 for m=srlist
     for n=numlist

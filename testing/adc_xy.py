@@ -30,12 +30,12 @@ class Monitor:
 
     def on_update_perm(self, value):
         self.permutation[:] = value
-        
+
     def on_update_raw(self, value, index):
         self.raw[index] = value
         self.updated[index] = True
         self.timestamps[index] = value.timestamp
-        
+
         if self.updated.all() and self.permutation.any():
             timestamp = self.timestamps[0]
             if (self.timestamps == timestamp).all():
@@ -114,7 +114,7 @@ def RawToButton(raw, permutation):
 K_X = 21.6
 K_Y = 14.6
 K = numpy.array([K_X, K_Y])
-    
+
 
 def ButtonToXY(buttons):
     s = buttons.sum(0)
@@ -125,7 +125,7 @@ def ButtonToXY(buttons):
     xy = numpy.dot(xym, buttons) / s
     xy[s[None, :].repeat(2,0) < maxs/2] = numpy.nan
     return K[:, None] * xy
-    
+
 
 def ProcessRaw(raw, permutation, timestamp):
     buttons = RawToButton(raw, permutation)
@@ -133,10 +133,10 @@ def ProcessRaw(raw, permutation, timestamp):
 
     xy = ButtonToXY(buttons)
     plot_xy.plot(xy)
-    
+
     pylab.draw()
 
-        
+
 cothread.iqt()
 
 ioc = sys.argv[1]

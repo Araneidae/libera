@@ -125,7 +125,7 @@ bool ENABLE::write(bool NewValue)
     return true;
 }
 
-    
+
 
 /*****************************************************************************/
 /*                                                                           */
@@ -169,7 +169,7 @@ public:
             pthread_cleanup_pop(true);
         }
     }
-    
+
 private:
     /* This hook routine is called repeatedly through the EPICS
      * initialisation process: however, we're only interested in the very
@@ -244,7 +244,7 @@ void INTERLOCK::Publish(
     if (TrigName == NULL)  TrigName = "TRIG";
     if (DoneName == NULL)  DoneName = "DONE";
     Name = Concat(Prefix, ":", DoneName);
-    
+
     Publish_bi(Concat(Prefix, ":", TrigName), Trigger);
     PUBLISH_METHOD_OUT(longout, Name, ReportDone, Value);
 
@@ -263,7 +263,7 @@ void INTERLOCK::Ready(const LIBERA_TIMESTAMP &Timestamp)
     else
     {
         /* Give the trigger the true timestamp, and update our internal
-         * machine clock. */ 
+         * machine clock. */
         Trigger.Ready(&Timestamp.st);
         /* Return the machine clock in two pieces.  Because EPICS longs are
          * signed, we truncate both parts to 31 bits each. */

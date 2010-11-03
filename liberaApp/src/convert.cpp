@@ -62,7 +62,7 @@
  * without causing numerical overflow later on in the processing chain! */
 
 static int K_X = 10 * K_SCALE;  // 10mm: largely reasonable defaults
-static int K_Y = 10 * K_SCALE;  
+static int K_Y = 10 * K_SCALE;
 
 /* Electron beam zero point offsets.  These are used to adjust the nominal
  * zero point returned.  These are stored in nm.
@@ -105,9 +105,9 @@ static int ChannelGain[4] =
 /* This flag determines the beam orientation: either diagonal or vertical.
  * Note that the Z axis (or S, as accelerator physicists call it) is *into*
  * the page, and X points out of the ring.
- * 
+ *
  *       ^ Y        A                   A       B
- *       |      D   *   B                   *    
+ *       |      D   *   B                   *
  * X <---+-         C                   D       C
  *       |
  *              Vertical                Diagonal
@@ -150,7 +150,7 @@ void IQtoABCD(const IQ_ROW *IQ, ABCD_ROW *ABCD, int Count)
 /* Computes K * M / S without loss of precision.  We use our knowledge of the
  * arguments to do this work as efficiently as possible.  The algorithm
  * computes:
- * 
+ *
  *      position = K M / S
  *
  *                  shift
@@ -194,7 +194,7 @@ static int DeltaToPosition(int K, int M, int InvS, int shift)
  * we can write
  *
  *              Vertical                        Diagonal
- *              
+ *
  *              A = I * (1 + Y/K)               A = I * (1 + X/K + Y/K)
  *              B = I * (1 - X/K)               B = I * (1 - X/K + Y/K)
  *              C = I * (1 - Y/K)               C = I * (1 - X/K - Y/K)
@@ -202,7 +202,7 @@ static int DeltaToPosition(int K, int M, int InvS, int shift)
  *
  * where I is proportional to beam intensity and we are neglecting terms of
  * order X^2, Y^2 and XY.  Given this model we can calculate
- * 
+ *
  *      S = A + B + C + D = 4 * I
  *      Q = A - B + C - D = 0
  *              D_X = D - B = 2*I*X/K           D_X = A - B - C + D = 4*I*X/K
@@ -304,7 +304,7 @@ bool InitialiseConvert()
 
     PUBLISH_CALIBRATION("CF:KX", K_X);
     PUBLISH_CALIBRATION("CF:KY", K_Y);
-    
+
     PUBLISH_CONFIGURATION(ao, "CF:Q_0", Q_0, NULL_ACTION);
 
     /* Position offset control.  This is decomposed into three parts: BBA,

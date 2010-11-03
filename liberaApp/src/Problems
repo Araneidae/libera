@@ -1,6 +1,6 @@
 Current problems
 
- - Events are being missed. 
+ - Events are being missed.
 Not too often, but often enough worry about.  Perhaps the events thread
 wants to run at a higher priority: which would be a good idea anyway.
 
@@ -11,6 +11,6 @@ There is a new user option USE_POSIX_THREAD_PRIORITY_SCHEDULING in the
 CONFIG_SITE configure file for using POSIX thread priority scheduling. For now
 the default value is NO. This has only been tested on a few versions of linux.
 On linux, in order, to use real time priorities the option must be set to YES
-and the ioc must be started with root privilages. 
+and the ioc must be started with root privilages.
 
 (From http://www.aps.anl.gov/epics/base/R3-14/8-docs/RELEASE_NOTES.html )

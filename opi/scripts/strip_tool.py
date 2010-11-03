@@ -23,7 +23,7 @@ Examples:
 '''
     sys.exit(0);
 
-    
+
 Channels = ['%s:%s' % (BPM, pattern % channel) for channel in channels]
 
 # Read the current values of the channels
@@ -64,6 +64,6 @@ try:
         print >>sys.stderr, 'StripTool returned', retcode
 except OSError, e:
     print >>sys.stderr, 'Execution failed:', e
-    
+
 # remove the temporary file
 config.close()

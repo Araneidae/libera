@@ -6,7 +6,7 @@ if __name__ == '__main__':
 
     import os
     os.environ.setdefault('EPICS_CA_MAX_ARRAY_BYTES', '1000000')
-    
+
 
 from cothread import *
 from cothread.catools import *
@@ -34,7 +34,7 @@ def BlockGet(pvs, total_length, window_length, set_offset):
     ready = Event()
 
     timestamp = [None]
-    
+
     offset = 0
     capture_length = min(window_length, total_length)
     set_offset(offset)
@@ -55,8 +55,8 @@ def BlockGet(pvs, total_length, window_length, set_offset):
         seen[index] = True
         if all(seen):
             ready.Signal()
-    
-                
+
+
     subscriptions = camonitor(pvs, OnUpdate,
         format = FORMAT_TIME, all_updates = True)
     ready.Wait()
@@ -67,7 +67,7 @@ def BlockGet(pvs, total_length, window_length, set_offset):
         capture_length = min(window_length, total_length - offset)
         set_offset(offset)
         ready.Wait()
-    
+
     for subscription in subscriptions:
         subscription.close()
 
@@ -115,11 +115,11 @@ def GetIq(ioc, request_length):
                 count = min(captured - offset, window_length))
             wfs[:, offset : offset + window_length] = array(a).reshape(8, -1)
             offset += window_length
-            
+
     duration = time.time() - start
     print 'took', duration, 'seconds'
 #     times = [wf.timestamp for wf in wfs]
-#     
+#
 #     for t in times[1:]:  assert t == times[0]
 
     wfs.shape = (4, 2, -1)
@@ -132,4 +132,4 @@ if __name__ == '__main__':
     iqs = GetIq(argv[1], int(argv[2]))
 #    iq = GetIq(argv[1], int(argv[2]))
     print [(iq.shape, iq.dtype) for iq in iqs]
-    
+

@@ -46,7 +46,7 @@
 #       This is more accurate than asking dpkg, but less reliable.  Still,
 #       most of the time it'll be good enough.
 #
-#   read_version <module> <pattern> 
+#   read_version <module> <pattern>
 #
 read_version()
 {
@@ -168,7 +168,7 @@ IID=$(((FPGA_ITECH >> 28) & 0xF))
 # the top bit set in the customer feature register.
 set_var OPT_DLS_FPGA $((
     (FPGA_ITECH & (1<<23)) != 0  &&  (FPGA_CUSTOMER & (1 << 31)) != 0))
-    
+
 # Check for newer FPGA by probing the i-Tech MAX_ADC register -- this will
 # read non-zero on a 2.00 and later FPGA.  On earlier FPGAs this aliases to
 # the IRQ status, but fortunately it's enough to ignore the bottom bit.
@@ -204,7 +204,7 @@ fi
 set_var OPT_GBETH $(((FPGA_ITECH & 0x8) != 0))
 
 # We now have enough information to make a reasonable estimate of the FPGA
-# version. 
+# version.
 if [ $OPT_DLS_FPGA = 1 ]; then
     set_var FPGA_VERSION "DLS-$FF_VERSION"
 elif [ $FPGA_OLD = 1 ]; then
@@ -222,7 +222,7 @@ set_var OPT_BR $((
     (!FPGA_OLD  &&  (((FPGA_ITECH >> 24) & 0xF) == 1))  ||
     (FPGA_OLD  &&  (FPGA_BUILD_NO == 0x10))))
 # For FPGAs with brilliance before version 2 we have to invert and scale the
-# attenuators. 
+# attenuators.
 set_var OPT_OLD_BR $((OPT_BR  &&  FPGA_2_SUPPORT == 0))
 
 # Check for weird hard-wired boxcar DDC filter.

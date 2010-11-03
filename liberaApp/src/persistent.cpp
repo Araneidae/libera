@@ -62,7 +62,7 @@ bool CheckStateChanged()
         PersistentDirty = false;
         return true;
     }
-    
+
     for (PERSISTENT_BASE * Entry = PersistentList; Entry != NULL;
          Entry = Entry->Next)
         if (Entry->ValueChanged())
@@ -99,7 +99,7 @@ static void WriteStateFile()
 {
     if (RemountRootfs)
         system("mount -o remount,rw /");
-    
+
     char BackupFileName[strlen(StateFileName) + strlen(BACKUP) + 1];
     strcpy(BackupFileName, StateFileName);
     strcat(BackupFileName, BACKUP);
@@ -115,7 +115,7 @@ static void WriteStateFile()
         if (Ok)
             TEST_IO(rename(BackupFileName, StateFileName));
     }
-    
+
     if (RemountRootfs)
         system("mount -o remount,ro /");
 }
@@ -174,7 +174,7 @@ bool PERSISTENT_BASE::Initialise(const char *SetName)
     /* Add this entry onto the list of persistent entities. */
     Next = PersistentList;
     PersistentList = this;
-    
+
     return Initialised;
 }
 
@@ -304,7 +304,7 @@ bool PERSISTENT_WAVEFORM<int>::ReadValue(const char * String)
     /* Read the waveform into an intermediate buffer in case reading it fails
      * for some reason. */
     int Buffer[Length];
-    
+
     char * end;
     bool Ok = true;
     for (size_t i = 0;  Ok  &&  i < Length; i ++)
@@ -336,7 +336,7 @@ class TIMER_THREAD: public THREAD
 {
 public:
     TIMER_THREAD() : THREAD("TIMER_THREAD") {}
-    
+
 private:
     void Thread()
     {

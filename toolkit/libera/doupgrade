@@ -35,7 +35,7 @@ RDATE_SERVER=172.23.199.1
 
 
 # These files are overwritten by the upgrade process, but need to be
-# preserved. 
+# preserved.
 SAVE_FILES="network libera nic-config/ifcfg-eth0"
 
 cd /

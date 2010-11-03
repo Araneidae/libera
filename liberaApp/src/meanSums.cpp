@@ -58,10 +58,10 @@ public:
         Publish_ai("MS:MEANI", MeanCurrent);
         Publish_ai("MS:DELTAI", MeanCurrentDelta);
         Publish_ai("MS:MEANP", MeanPower);
-        
+
         Interlock.Publish("MS", true);
         Enable.Publish("MS");
-        
+
         /* Announce our interest in the postmortem event. */
         RegisterTriggerEvent(*this, PRIORITY_MS);
 
@@ -73,7 +73,7 @@ public:
         MeanPower = 0;
     }
 
-    
+
 private:
     void OnEvent(int Missed)
     {
@@ -88,7 +88,7 @@ private:
         PowerAndCurrentFromS(MeanSum/4, MeanPower, MeanCurrent);
         MeanSumDelta = MeanSum - LastMeanSum;
         MeanCurrentDelta = MeanCurrent - LastMeanCurrent;
-        
+
         /* Let EPICS know there's stuff to read. */
         LIBERA_TIMESTAMP Timestamp;
         GetTriggerTimestamp(Timestamp);

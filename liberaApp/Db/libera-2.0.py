@@ -49,10 +49,10 @@ def MeanSum():
         ])
     UnsetChannelName()
 
-    
+
 def SpikeRemoval():
     SPIKE_DEBUG_BUFLEN = 128
-    
+
     SetChannelName('CF:SR')
     boolOut('ENABLE', 'Disabled', 'Enabled',
         DESC = 'Enable FA spike removal')
@@ -68,13 +68,13 @@ def SpikeRemoval():
 
     debugwf = Waveform('DEBUGWF', SPIKE_DEBUG_BUFLEN,
         DESC = 'Spike removal debug data')
-    
+
     UnsetChannelName()
-    
+
 
 def PmTriggering():
     pass
-    
+
 
 # Finally generate and output the supported records.
 

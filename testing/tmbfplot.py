@@ -18,7 +18,7 @@ from dls.ca2.catools import *
 class Gui(QWidget):
 
     "Make GUI with toolbar and plot window"
-    
+
     def __init__(self):
         QWidget.__init__(self)
         self.setCaption("TMBF")
@@ -35,12 +35,12 @@ class Gui(QWidget):
         toolbar.layout().addStretch()
         combo.insertStrList(["X PLANE", "Y PLANE"])
         QObject.connect(combo, SIGNAL("activated(int)"), self.on_activated)
-    
+
     def on_activated(self, num):
         num = num + 1
         store_.switch("SR21C-DI-TMBF-%02d:ADC_MINBUF_R" % num)
         calc_.switch("SR21C-DI-TMBF-%02d:ADC_MAXBUF_R" % num)
-    
+
 def calc(name):
     "calculates difference and plots"
     while True:

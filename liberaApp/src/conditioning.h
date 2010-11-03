@@ -36,7 +36,7 @@ void WriteManualSwitches(int ManualSwitch);
 enum SC_MODE {
     SC_MODE_FIXED,  // Use current signal conditioning setting
     SC_MODE_UNITY,  // Don't correct signal: pass through unchanged
-    SC_MODE_AUTO    // Automatic signal conditioning. 
+    SC_MODE_AUTO    // Automatic signal conditioning.
 };
 void WriteScMode(SC_MODE ScMode);
 

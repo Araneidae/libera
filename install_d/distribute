@@ -69,7 +69,7 @@ LIBERA_VERSION=Libera-"$VERSION"
 TEMP_ROOT="$(mktemp -d /tmp/distribute-libera.XXXXXX)"
 trap 'rm -rf "$TEMP_ROOT"' EXIT
 
-# Grab a pristine version of what we want to release.  
+# Grab a pristine version of what we want to release.
 cd "$TEMP_ROOT"
 svn export -q "$SVN_SOURCE" "$LIBERA_VERSION"
 cd "$LIBERA_VERSION"
@@ -110,6 +110,6 @@ if ((BINARY)); then
     mkdir "$INSTALL_DIR"/docs
     cp docs/*.txt docs/*.html "$INSTALL_DIR"/docs
     ln -s docs/INSTALL.txt "$INSTALL_DIR"
-    
+
     tar czf "$INSTALL_TAR" -C "$TEMP_ROOT" "$INSTALL"
 fi

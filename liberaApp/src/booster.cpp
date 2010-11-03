@@ -80,7 +80,7 @@ public:
         float RampDuration = 1024 * 1e3 * ShortWaveformLength / FRev;
         FillAxis(LongAxis,  LongWaveformLength,  RampDuration);
         FillAxis(ShortAxis, ShortWaveformLength, RampDuration);
-        
+
         /* Publish the PVs associated with Booster data. */
         LongIq.Publish("BN");
         LongAbcd.Publish("BN");
@@ -107,7 +107,7 @@ public:
         /* Ignore events if not enabled. */
         if (!Enable.Enabled())
             return;
-        
+
         Interlock.Wait();
 
         LongIq.Capture(DECIMATION);
@@ -118,7 +118,7 @@ public:
         Interlock.Ready(LongIq.GetTimestamp());
     }
 
-    
+
 private:
     void ProcessShortWaveforms()
     {

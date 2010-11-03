@@ -19,7 +19,7 @@
 \newcommand{\XYSQ}{\XY, \SQ}
 \newcommand{\ABCD}{\id{A}, \id{B}, \id{C}, \id{D}}
 \newcommand{\ABCDIQ}{%
-  \id{AI}, \id{AQ}, \id{BI}, \id{BQ}, 
+  \id{AI}, \id{AQ}, \id{BI}, \id{BQ},
   \id{CI}, \id{CQ}, \id{DI}, \id{DQ}}
 
 
@@ -41,7 +41,7 @@
 \section{Overview}
 
 This note documents the requirements for EPICS support for the Libera
-electron beam position monitoring system.  
+electron beam position monitoring system.
 
 Note that this document is out of date and should only be treated as a
 historical document.
@@ -91,7 +91,7 @@ be calculated as
 \id{A} &= \sqrt{\id{AI}^2+\id{AQ}^2} &
 \id{B} &= \sqrt{\id{BI}^2+\id{BQ}^2} \\
 \id{C} &= \sqrt{\id{CI}^2+\id{CQ}^2} &
-\id{D} &= \sqrt{\id{DI}^2+\id{DQ}^2} 
+\id{D} &= \sqrt{\id{DI}^2+\id{DQ}^2}
 \enspace.
 \end{align*}
 
@@ -100,10 +100,10 @@ supplemented by a signal strength value \id{S} and a ``quality
 factor'' \id{Q}.  These are calculated thus:
 \begin{align*}
 \id{S} &= \id{A} + \id{B} + \id{C} + \id{D}  &
-\id{X} &= 
+\id{X} &=
     K_X \times (\id{A} - \id{B} - \id{C} + \id{D}) / \id{S} - X_0 \\
 \id{Q} &= (\id{A} - \id{B} + \id{C} - \id{D}) / \id{S} &
-\id{Y} &= 
+\id{Y} &=
     K_Y \times (\id{A} + \id{B} - \id{C} - \id{D}) / \id{S} - Y_0
 \enspace.
 \end{align*}
@@ -182,7 +182,7 @@ Thus we will provide the following through EPICS.
 \item
   Averaged positions from the start, middle and end of the booster
   cycle: again, \XYSQ{} would be provided as single points for each
-  time. 
+  time.
 \item
   Tune measurement.  In this mode a single full turn-by-turn waveform
   would be captured in its entirety from a single booster cycle and
@@ -225,7 +225,7 @@ The following functionality is provided through EPICS:
   Tune measurement.  In response to a trigger a long waveform of at
   least 25,000 points will be captured at turn-by-turn and made
   available for subsequent readout.  It should be possible to use a
-  subArray record to provide access to the entire waveform.  
+  subArray record to provide access to the entire waveform.
 
   This requirement can be unified with booster tune measurement.
 \item
@@ -279,7 +279,7 @@ TUNE & Tune Measurement & & \checkmark &  \checkmark \\
 RAMP & Booster Ramp & & \checkmark & \\
 10HZ & Storage 10Hz & & & \checkmark \\
 FAST & Fast Feedback & & & \checkmark \\
-CT & Control \& Miscellaneous  & \checkmark &  \checkmark &  \checkmark 
+CT & Control \& Miscellaneous  & \checkmark &  \checkmark &  \checkmark
 \end{tabular}
 \end{figure}
 
@@ -319,7 +319,7 @@ beam immediately after a trigger.
 \subsection{Tune Measurement \texttt{:TUNE:}}
 
 These records provide access to long triggered waveforms at
-turn-by-turn sample rates. 
+turn-by-turn sample rates.
 
 \begin{epics}
 \entry{\id{LEN}}{longout}

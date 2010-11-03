@@ -53,7 +53,7 @@ li_lookup = [
 li_string = li_lookup[li]
 
 ppoll_s = 2 ** float(ppoll)
-precision_us = 1e6 * 2 ** float(precision) 
+precision_us = 1e6 * 2 ** float(precision)
 rootdelay_ms = 1e3 * float(rootdelay) / 2**16
 rootdispersion_ms = 1e3 * float(rootdispersion) / 2**16
 reftime_ts = print_ntp_date(reftime)

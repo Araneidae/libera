@@ -109,7 +109,7 @@ class Libera(Device):
             # Check for a description, make a report if none given.
             if 'DESC' not in fields:
                 print 'No description for', ChannelName
-                
+
             return record
 
     @classmethod
@@ -138,16 +138,16 @@ def aIn(name, LOPR, HOPR,
         ESLO=1e-6, EGU='', PREC=0, EOFF=0, MDEL=-1, **fields):
     return Libera.ai(name,
         MDEL = MDEL,
-        ESLO = ESLO,  EOFF = EOFF,  LINR = 'LINEAR', 
-        LOPR = LOPR,  HOPR = HOPR,  EGUL = LOPR,  EGUF = HOPR,  
+        ESLO = ESLO,  EOFF = EOFF,  LINR = 'LINEAR',
+        LOPR = LOPR,  HOPR = HOPR,  EGUL = LOPR,  EGUF = HOPR,
         EGU = EGU,  PREC = PREC,
         **fields)
 
 def aOut(name, DRVL, DRVH, ESLO=1e-6, EOFF=0, PREC=4, **fields):
     return Libera.ao(name + '_S', address=name,
-        OMSL = 'supervisory', 
+        OMSL = 'supervisory',
         ESLO = ESLO,  EOFF = EOFF,  LINR = 'LINEAR',
-        PREC = PREC,  
+        PREC = PREC,
         DRVL = DRVL,  DRVH = DRVH,
         EGUL = DRVL,  EGUF = DRVH,
         **fields)
@@ -158,7 +158,7 @@ def boolIn(name, ZNAM=None, ONAM=None, **fields):
 
 def boolOut(name, ZNAM=None, ONAM=None, **fields):
     return Libera.bo(name + '_S', address=name,
-        OMSL = 'supervisory', 
+        OMSL = 'supervisory',
         ZNAM = ZNAM, ONAM = ONAM, **fields)
 
 
@@ -188,12 +188,12 @@ def process_mbb_values(fields, option_values):
             fields[prefix + 'SV'] = severity
     for prefix, value in zip(_mbbPrefixes, option_values):
         process_value(fields, prefix, *value)
-        
+
 def mbbOut(name, *option_values, **fields):
     process_mbb_values(fields, option_values)
     return Libera.mbbo(name + '_S', address=name,
         OMSL = 'supervisory', **fields)
-    
+
 def mbbIn(name, *option_values, **fields):
     process_mbb_values(fields, option_values)
     return Libera.mbbi(name, **fields)
@@ -201,10 +201,10 @@ def mbbIn(name, *option_values, **fields):
 
 def stringIn(name, **fields):
     return Libera.stringin(name, **fields)
-    
+
 
 def Waveform(name, length, FTVL='LONG', **fields):
-    return Libera.waveform(name, 
+    return Libera.waveform(name,
         SCAN = 'Passive',
         NELM = length,
         FTVL = FTVL,

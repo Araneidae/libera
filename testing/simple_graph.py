@@ -77,7 +77,7 @@ def plot_complex(data, plot_circle=False, blob='x'):
     if plot_circle:
         circle = r*exp(1j*linspace(0, 2*pi, 1000))
         pylab.plot(circle.real, circle.imag, ':')
-        
+
 
 
 def find(v):
@@ -118,9 +118,9 @@ def GetIq(ioc, length):
             for button in 'ABCD' for iq in 'IQ'],
         timeout = 5, datatype = catools.dbr_time_long)
     times = [wf.dbr.stamp for wf in wfs]
-    
+
     for t in times[1:]:  assert t == times[0]
-    
+
     raw_iq = array([wf.dbr.value for wf in wfs])
     raw_iq = reshape(raw_iq[:, 0:length], (4, 2, length))
     return raw_iq[:, 0, :] + 1j * raw_iq[:, 1, :], raw_iq[0, 0, :] & 1
@@ -128,7 +128,7 @@ def GetIq(ioc, length):
 
 def geo_mean(data, axis=0):
     return product(data**(1./shape(data)[axis]), axis)
-    
+
 
 def ReadRawData(ioc, sw_count):
 #     # First ensure the DSC is operating with unit gains and the switches are
@@ -213,7 +213,7 @@ def DoTest(ioc, switches=switches):
     subplot(3, 3, 7)
     plot_complex(ms)
     axis('equal')
-    
+
     subplot(3, 3, 8)
     plot_complex(geo_mean(ms, 1))
     m = mean(ms, 1)
@@ -285,7 +285,7 @@ def Truncate(iq):
 def DigestWaveform(iq, markers, truncate=False, sw_offset=6):
     '''Emulates the computation of the IQ digest as done by the SC process.'''
     sw_offset = 10  # Number of samples to skip over at start of cycle
-    
+
     # Find the switch marker positions.  These are encoded into the least
     # significant bit of the WFAI data
     markers = find(diff(markers[:-cycle_len]) > 0) + 1
@@ -294,7 +294,7 @@ def DigestWaveform(iq, markers, truncate=False, sw_offset=6):
     # Hack to IQ data to emulate truncation in true SC implementation.
     if truncate:
         iq = Truncate(iq)
-    
+
     # Now reshape and chop iq to bring all the waveforms for the same switch
     # position together.  From each marker we extract 320 points, chopped
     # into 40 points per switch position.
@@ -358,10 +358,10 @@ def NewDigestWaveform(iq, markers, truncate=False, sw_offset=6):
     mbb = exp(- 1j * bb)
     # Apply the compensation to every point
     riqc = riq * mbb
-    
+
 #    riqc = riq
 
-    
+
 
 #     var = mean(
 #         abs(riqc - mean(riqc, 2)[:,:,newaxis])**2)
@@ -397,8 +397,8 @@ def PlotSpikes(ioc, interval=1):
         plot_array(180/pi*unwrap(angle(sp.reshape((32,40)))))
 #        asleep(interval)
         pylab.draw()
-    
-    
+
+
 
 
 def DecompensateDigest(digest, compensation):
@@ -416,7 +416,7 @@ def DecompensateDigest(digest, compensation):
     # perms[switches] returns an (8,4) array with entries p[n,b] as required.
     p = perms[switches]
     return digest / compensation[p]
-    
+
 
 def EstimateX(decompensated):
     '''Given a decompensated digest U[n,b] returns an estimate for X
@@ -438,7 +438,7 @@ def ChannelGains(U, X):
 
 def RelativeAngles(X):
     return (180/pi*(X[1:] - X[0]) + 180) % 360 - 180
-    
+
 
 def AbsAngleMean(X, axis=0):
     '''Returns mean of X with magnitude and angle averaged separately.'''
@@ -467,7 +467,7 @@ def ProcessDigest(U):
 
     return X, C, Z
 
-    
+
 def ReadChannelGains(ioc):
     '''Performs all the work of reading the current channel gains.'''
 
@@ -502,7 +502,7 @@ def ReadErrors(ioc):
     X, C, Z = ProcessDigest(DecompensateDigest(digest, compensation))
     rC = repeat(C[NewAxis,:], 8, axis=0)
     return (Z - rC) / rC, X
-    
+
 
 
 def PlotErrors(ioc):
@@ -511,7 +511,7 @@ def PlotErrors(ioc):
         clf()
         plot_complex(Z-repeat(C[NewAxis,:], 8, axis=0))
         time.sleep(1)
-    
+
 
 def DoTestSC(ioc):
     '''Reads the SC data and tries to replicate the calculation.'''
@@ -568,10 +568,10 @@ def caPutArray(pv, a):
         '/dls_sw/epics/R3.14.8.2/base/bin/linux-x86/caput',
         pv, len(a), ' '.join(map(str, a))))
 
-    
+
 Last_K = ones((8, 4), dtype=complex)
 
-    
+
 def WriteCompensation(ioc, K):
     '''Writes a new compensation matrix K to ioc.  The format of K is
         K[n,c]
@@ -579,7 +579,7 @@ def WriteCompensation(ioc, K):
     '''
 
     # The components of the two pole iir corresponding to multiplication by
-    # x+iy at frequency f are (x + y/tan(f), - y/tan(f)).  
+    # x+iy at frequency f are (x + y/tan(f), - y/tan(f)).
     iir = int_(round_(0x10000 * array(
         [real(K) + imag(K)/tan(f_if), - imag(K)/sin(f_if)])))
 
@@ -587,7 +587,7 @@ def WriteCompensation(ioc, K):
     full_iir = int_(array([0x10000 * ones(sh), zeros(sh)]))
     full_iir[:, switches, :] = iir
 
-    # Make sure we don't overflow the compensator: 18 bits signed. 
+    # Make sure we don't overflow the compensator: 18 bits signed.
     assert all(abs(full_iir) < 2**17)
 
     # Transform into the correct form required for output.  The computed iir
@@ -603,7 +603,7 @@ def WriteCompensation(ioc, K):
     global Last_K
     Last_K = K
 
-        
+
 
 p = perms[switches]
 n = arange(len(switches))
@@ -640,7 +640,7 @@ def GlobalCompensate(Y, K):
 #     X_ = mean(Z, 0)
 #     # C^[c] = mean(n; Z[n,q[n,c]] / X_[q[n,c]])
 #     return mean(Z[nq] / X_[q], 0)
-    
+
 
 def ChannelGains(Y, K):
     # Z[n,b] = Y[n,b] / K[n,p[n,b]]
@@ -649,20 +649,20 @@ def ChannelGains(Y, K):
     X_ = mean(Z, 0)
     # C^[c] = mean(n; Z[n,q[n,c]] / X_[q[n,c]])
     return mean(Z[nq] / X_[q], 0)
-    
+
 
 # def ChannelCompensate(Y, K):
 #     '''Input: Y[n,b], K[n,c].
 #     Output: K'[n,c].
 #     '''
-# 
+#
 #     # Z[n,c] = Y[n, q[n,c]] / K[n, c]
 #     Z = Y[nq] / K
 #     # X^[b] = mean(n; Z[n, p[n,b]])
 #     X_ = mean(Z[np], 0)
 #     # C^[n,c] = Z[n,c] / X_[q[n,c]]
 #     C_ = Z / X_[q]
-# 
+#
 #     s = mean(abs(C_))
 #     K_ = s / C_
 #     return K_
@@ -677,22 +677,22 @@ def ChannelCompensate(Y, K):
 
     Z = Y / K
     K_ = mean(Z, 0) / Z
-    K_ /= mean(abs(K_)) 
-    
+    K_ /= mean(abs(K_))
+
     return K_[nq]
-    
+
 
 # def ItechAbsCompensate(Y, K):
 #     # Y^ = |Y|
 #     Y = abs(Y)
 #     # K^[n,b] = |K[n, p[n,b]]|
 #     K = abs(K[np])
-# 
+#
 #     # G[b] = geo(n; Y^[n,b])
 #     G = geo_mean(Y, 0)
 #     # H[b] = geo(n; K^[n,b])
 #     H = geo_mean(K, 0)
-#     
+#
 #     K_ = K * G / (Y * H)
 #     return K_[nq]
 
@@ -708,7 +708,7 @@ def AbsCompensate(Y, K):
 #     K = angle(K[np])
 #     Z = Y - K
 #     K_ = mean(Z, 0) - Z
-# 
+#
 #     return exp(1j * K_[nq])
 
 
@@ -724,7 +724,7 @@ def AngleCompensate(Y, K):
     K_ = X - angle(Z)
 
     return K_[nq]
-    
+
 
 
 
@@ -738,7 +738,7 @@ def AngleCompensate(Y, K):
 def ExperimentalCompensate(Y, K):
     Z = Y / K[np]
     K_abs = geo_mean(abs(Z), 0) / abs(Z)
-    
+
     # The geometric mean has an error of 1/N turns, while the arithmetic mean
     # is in the right quadrant but is less precise numerically.
     alpha = mean(angle(Z), 0)
@@ -747,10 +747,10 @@ def ExperimentalCompensate(Y, K):
     K_arg = X - angle(Z)
 
     K_ = cis(K_abs, K_arg)
-    
+
     return K_[nq]
 
-    
+
 
 def ExperimentalCompensate(Y, K):
     Z = Y / K[np]
@@ -760,27 +760,27 @@ def ExperimentalCompensate(Y, K):
     X = cis(X_abs, X_arg)
 
     K_ = X / Z
-    
+
     return K_[nq]
 
-    
+
 
 def ExperimentalCompensate2(Y, K):
     Z = Y / K[np]
     X = geo_mean(Z, 0)
     K_ = X / Z
 
-    
+
     # The geometric mean has an error of 1/N turns, while the arithmetic mean
     # is in the right quadrant but is less precise numerically.
     alpha = angle(X)
     beta  = angle(mean(Z, 0))
     k = pi/4 * round_(4/pi * (alpha - beta))
     K_ *= exp(-1j * k)
-    
+
     return K_[nq]
 
-    
+
 
 ResetIIR = True
 IIR_K = None
@@ -803,18 +803,18 @@ def ManualCondition(ioc, oldK=None, resetIIR=False):
     except AssertionError:
         print 'GetIq failed'
         return
-        
+
     Y, d = DigestWaveform(iq, m)
 
     print 'Deviation %.2f %%' % (100 * d)
     if d > 0.02:
-        print '  Deviation too high' 
+        print '  Deviation too high'
         return
 
     if oldK is None:
         oldK = Last_K
 
-        
+
 #    K = GlobalCompensate(Y, oldK)
 #    K = ChannelCompensate(Y, oldK)
 #    K = ItechAbsCompensate(Y, oldK)
@@ -830,7 +830,7 @@ def ManualCondition(ioc, oldK=None, resetIIR=False):
     C = 1/mean(K, 0)
 #    niq = iq / mean(iq, 1)[:, newaxis]
     niq = iq / mean(iq)
-    
+
     pylab.clf()
 
     pylab.subplot(2,3,1)
@@ -840,14 +840,14 @@ def ManualCondition(ioc, oldK=None, resetIIR=False):
     pylab.subplot(2,3,2)
     plot_array(180/pi*unwrap(angle(niq / mean(niq, 1)[:, newaxis])))
     pylab.title('IQ phases')
-    
+
     pylab.subplot(2,3,3)
 #     pylab.plot(180/pi*unwrap(angle(mean(niq, 1))), 'o')
 #     pylab.xlim(-0.5, 3.5)
     plot_complex(mean(niq, 1), plot_circle=True, blob='o')
     pylab.axis('equal')
     pylab.title('IQ relative phase')
-    
+
     pylab.subplot(2,2,3)
     plot_complex(K, True)
 #    plot_complex(mean(C, 0) / mean(abs(C)), blob='o')
@@ -877,7 +877,7 @@ def ManualCondition(ioc, oldK=None, resetIIR=False):
 
 def RunConditioningMonitor(ioc, interval=1):
     WriteCompensation(ioc, Last_K)
-    
+
     from qt import qApp, SIGNAL
     qApp.connect(qApp, SIGNAL('lastWindowClosed()'), qApp.quit)
     pylab.figure()
@@ -902,15 +902,15 @@ import qwtlab
 
 class Monitor:
     IQ_names = ['WF%s%s' % (b, i) for b in 'ABCD' for i in 'IQ']
-    
+
     def __init__(self, axes, ioc):
         self.axes = axes
         self.ioc = ioc
 #         self.i = 0
-        
+
         self.values = {}
         self.stamps = set()
-        
+
         self.monitor('DONE', self.Done)
         self.monitor('COMP')
 
@@ -924,7 +924,7 @@ class Monitor:
                 self.stamps.add(value.dbr.stamp)
         catools.camonitor(
             '%s:SC:%s' % (self.ioc, pv), action, datatype = datatype)
-            
+
 
     def Done(self, value):
         self.stamps.add(value.dbr.stamp)
@@ -967,7 +967,7 @@ class Monitor:
         aIQ = unwrap(angle(nIQ / mean(nIQ, 1)[:, newaxis]))
         qwtlab.axes(self.axes[1])
         qwtlab.plotarray2(180/pi * aIQ)
-        
+
 
 
 
@@ -981,8 +981,8 @@ def MakeAxes():
     ax.extend([qwt.QwtPlot(grid) for i in range(4)])
 
     return vbox, ax
-    
-    
+
+
 def MakeAxes_():
     grid = qt.QGrid(2, qt.Qt.Horizontal)
     ax = [qwt.QwtPlot(grid) for i in range(3)]
@@ -997,17 +997,17 @@ def MakeAxes_():
     layout = qt.QGridLayout(widget, 2, 2)
     for n, a in enumerate(ax):
         layout.addWidget(a, n / 2, n % 2)
-        
+
 
     return widget, ax
-    
-    
+
+
 def MakeAxes_():
     main = qt.QWidget()
     layout = qt.QGridLayout(main)
-    
+
     ax = [qwt.QwtPlot(main) for i in range(8)]
-    
+
     for n, a in enumerate(ax[:3]):
         layout.addWidget(a, 0, n)
     layout.addWidget(ax[3], 1, 0)
@@ -1022,9 +1022,9 @@ def MakeAxes_():
 #     layout.setRowStretch(1, 1)
 
     return main, ax
-    
-    
-    
+
+
+
 if __name__ == '__main__':
     if len(sys.argv) not in [2, 3]:
         print 'Usage: %s <ioc> [<png-file>]' % sys.argv[0]
@@ -1032,25 +1032,25 @@ if __name__ == '__main__':
 
 
     q = qt.QApplication([])
-        
+
     qt.qApp.connect(qt.qApp, qt.SIGNAL('lastWindowClosed()'), qt.qApp.quit)
 
 #     grid = qt.QGrid(2, qt.Qt.Horizontal)
 #     ax = [qwt.QwtPlot(grid) for i in range(3)]
-#     
-#     
+#
+#
 #     grid.show()
 
-    
+
     top, ax = MakeAxes()
     top.show()
     Monitor(ax, sys.argv[1])
 
 #     ax[0].blah = 'testing'
 #     print ax[0].blah
-    
+
     green.start_gui()
-    
+
 #     Monitor(sys.argv[1])
 #     catools.install_sleep(green.co_sleep)
 #     while True:

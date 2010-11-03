@@ -80,7 +80,7 @@ All Libera EPICS records follow a uniform naming convention of the form
 where:
 
 <device>:: is normally derived from the host name of the EPICS IOC, but can
-    be configured to any string at startup.  
+    be configured to any string at startup.
 <group>:: is the major function (`FT` = ``First Turn'', etc.)
 <record>:: is the remainder of the record name as specified below.
 
@@ -290,7 +290,7 @@ to be configured.
 
 `DECIMATION_S`::
 This can be set to ``1:1'' or ``1:64'' -- in the latter case FPGA decimated
-data will be captured at one point per 64 turns.  
+data will be captured at one point per 64 turns.
 +
 Take care with decimated data: due to a device driver bug it is possible to
 make Libera hang if `CAPLEN_S` is set to values much larger than 32,000.
@@ -323,7 +323,7 @@ Reading:
 
 - Write <offset> to `OFFSET_S`
 - Either use ``put with callback'' for the write above, or wait until
-+OFFSET+ == <offset>  
++OFFSET+ == <offset>
 - Read desired waveforms
 
 If `CAPLEN` > `LENGTH_S` then the reading process should be repeated with
@@ -479,7 +479,7 @@ enabled when the current is above `ION_S`.  This function overrides
 `MIN`<axis>`_S`\*, `MAX`<axis>`_S`*::
 Interlock window: when the interlock is enabled the interlock output
 is closed (``active'') so long as the beam position lies within this
-window. 
+window.
 
 `OVER_S`\*, `OVER_PC_S`, `TIME_S`*::
 ADC overflow detection parameters: the interlock is dropped if the ADC
@@ -498,7 +498,7 @@ the interlock is otherwise disabled.
 
 `STATE`::
 `STATE` records whether the interlock is currently dropped or has been
-dropped within the last 0.5 seconds.  
+dropped within the last 0.5 seconds.
 
 `HOLDOFF_S`\*, `IHOLDOFF_S`*::
 When the attenuator setting is changed there is normally a small
@@ -508,7 +508,7 @@ the interlock is disabled after the attenuator setting is changed.
 The units are in 1/10 second.
 
 `REASON`::
-When an interlock check is reported this PV records the interlock 
+When an interlock check is reported this PV records the interlock
 reason bits with the following meanings:
 +
     1 => overflow in X
@@ -544,7 +544,7 @@ checking.
 Scaling factors in mm.  These are determined by the physical geometry
 of the button or stripline pickups.  At Diamond typical values are
 17mm for the transfer path striplines and 10.6mm and 11mm (horizontal
-and vertical) for the booster buttons.  
+and vertical) for the booster buttons.
 
 `Q_0_S`*::
 This is used to set the zero offset for the ``skew'' measurement.  Large
@@ -595,7 +595,7 @@ Switch position to use when `AUTOSW_S` is set to ``Fixed''.
 `PERM`::
 Switch permutations: when `AUTOSW_S` is set to Manual this can be
 used to convert the `FT:RAW`<channel> readings into buttons according to
-the rule 
+the rule
 +
 value at <button> = `FT:RAW`<`FT:PERM` [<button>] + 1>  (`A`=0, ... `D`=3)
 
@@ -606,11 +606,11 @@ channel gains during automatic rotation of the multiplexing switch.
 `ATTEN_S`\*, `ATTEN:DISP_S`*::
 These two settings are added together to control the attenuator setting in dB.
 The final setting can be a value between 0 and 62dB for Libera Electron or
-between 0 and 31dB for Libera Brilliance.  
+between 0 and 31dB for Libera Brilliance.
 +
 The `ATTEN:DISP_S` setting can be set to any value between -62 and +62, while
 `ATTEN_S` is limited to the range 0 to 62 -- true attenuator settings will be
-clipped to the range supported by the machine.  
+clipped to the range supported by the machine.
 +
 These two settings are designed so that the same global attenuator setting
 can be written to `ATTEN_S` on all Liberas on a machine and individual Libera
@@ -622,7 +622,7 @@ Liberas are mixed on the same system.
 Waveform of corrections for attenuator settings, one entry for each
 possible attenuator setting (63 for Libera Electron, 32 for Libera
 Brilliance).  Affects `SA:POWER`, `SA:CURRENT` and `CF:ATTEN:TRUE`
-calculations. 
+calculations.
 
 `ATTEN:TRUE`::
 This reports the set attenuation taking into account the programmed
@@ -698,7 +698,7 @@ This should be left set to zero.
 `PHASE_S`*::
 This controls the phase of the filter reducing raw sampled waveforms
 down to turn-by-turn data relative to the machine clock -- but only
-when `DETUNE_S` is equal to zero, of course!  
+when `DETUNE_S` is equal to zero, of course!
 
 `MC_SYNC_S`::
 Processing this PV enables global machine clock synchronisation: on
@@ -716,13 +716,13 @@ the external trigger.
 For this to work correctly two assumptions need to be satisfied:
 firstly, the external trigger is assumed to occur on the true start of
 the second; secondly, the local Linux system timestamp must already be
-accurate to with a few 100ms (this can be achieved using NTP).  
+accurate to with a few 100ms (this can be achieved using NTP).
 +
 Note: a 1Hz trigger can be used for system clock synchronisation.
 Note also, however, that the current implementation of the system time
-clock does not hold synchronisation long enough for this 
+clock does not hold synchronisation long enough for this
 synchronisation to be worth doing, instead `TIMESTAMP_S` should be set
-to use NTP time. 
+to use NTP time.
 
 `MC_LOCK`, `SC_LOCK`::
 Records whether the machine clock (`MC_LOCK`) or system timestamp clock
@@ -741,7 +741,7 @@ synchronisation over restarts of the EPICS IOC.
 `MC_DAC`, `SC_DAC`::
 Readback of the currently machine and system clock VCXO settings.
 This is very sensitive to both temperature and frequency changes, and
-can provide a useful diagnostic. 
+can provide a useful diagnostic.
 
 `MC_PHASE_E`, `SC_PHASE_E`::
 Current machine and system clock phase errors.  During normal
@@ -793,14 +793,14 @@ These three PVs monitor the status of the NTP client running on Libera.
 `NTPSTAT` can be one of the following values:
 +
 --
-``Not monitored''::  
+``Not monitored''::
 NTP monitoring has been disabled
-``No NTP server''::  
+``No NTP server''::
 We don't appear to be running an NTP client at all
-``No Sync'':: 
+``No Sync''::
 The local NTP client isn't synchronised to an NTP server.  (This can mean that
 synchronisation is in progress, this can take up to 20 minutes.)
-``Synchronised'':: 
+``Synchronised''::
 Libera is correctly synchronised to an NTP server.
 --
 +
@@ -876,7 +876,7 @@ has three possible settings:
 Healthd On;;
 In this case the health daemon operates normally, maintaining fan speeds to
 try and keep the selected temperature sensor at the temperature set by
-`SETTEMP_S`. 
+`SETTEMP_S`.
 
 Healthd Off;;
 For very sensitive operation in a temperature stabilised environment is often
@@ -960,7 +960,7 @@ Communication Controller (<group> = FF):
 ----------------------------------------
 
 These PVs control the Diamond Fast Feedback Communication Controller, and are
-only enabled if the controller is detected by the EPICS driver on startup.  
+only enabled if the controller is detected by the EPICS driver on startup.
 
 `BPMID_S`*::
 Configures the communication controller ID for this Libera.  Each node on
@@ -1030,7 +1030,7 @@ tables.
 Hard Errors include (1) RX Buffer Status error which indicates if an
 overflow/underflow error has occurred on internal RocketIO RX buffers, (2)
 Realignment error which indicates whenever the serial data is realigned from
-a comma character in the data stream. 
+a comma character in the data stream.
 
 // The following internal PV is not documented:
 // PROCESS_S::
@@ -1165,7 +1165,7 @@ in this register are recognised by the EPICS driver:
 `BR`, `BRHW`::
 Libera Brillance detected.  `BR` is set if the Libera Brilliance FPGA is
 configured and `BRHW` if the Brilliance RF board is detected.  It is a serious
-error if these two do not match!  
+error if these two do not match!
 
 `OLDBR`::
 This detects a compatibility mode required for correct operation of Brilliance

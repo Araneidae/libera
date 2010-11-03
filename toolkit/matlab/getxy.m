@@ -30,17 +30,17 @@ while read < captured;
     % At each stage capture no more than the remaining data required, and no
     % more than the available capture window.
     window = min(l, captured - read);
-    if window < l; 
+    if window < l;
         lcaPut([name ':TT:LENGTH_S'], window);
         while lcaGet([name ':TT:LENGTH_S']) ~= window; end
     end
-            
+
     lcaPut([name ':TT:OFFSET_S'], read);
     while lcaGet([name ':TT:OFFSET']) ~= read; end
-        
+
     xy(read+1:read+window, 1) = GetXyWf(name, 'X', window);
     xy(read+1:read+window, 2) = GetXyWf(name, 'Y', window);
-    
+
     read = read + window;
 end
 

@@ -55,7 +55,7 @@ def MaxAdc(Name = 'MAXADC'):
         LOPR = 0,   HOPR = 100,
         PREC = 1,   EGU  = '%')
     return [maxadc, maxadc_pc]
-    
+
 
 # First turn snapshot records.  Access to position data immediately following
 # the trigger for use on transfer paths and during injection.
@@ -76,7 +76,7 @@ def FirstTurn():
         RAW_ADC(LONG_LENGTH) +
         [maxadc, maxadc_pc, charge, max_S] +
         # ADC data reduced by 1/4 by recombination
-        ABCD_wf(SHORT_LENGTH) + XYQS_wf(SHORT_LENGTH) + 
+        ABCD_wf(SHORT_LENGTH) + XYQS_wf(SHORT_LENGTH) +
         # Buttons and positions computed within selected window
         ABCD_() + XYQS_(2))
 
@@ -100,10 +100,10 @@ def Booster():
 
     SetChannelName('BN')
     Enable()
-    
-    Trigger(True, 
+
+    Trigger(True,
         # IQ data
-        IQ_wf(LONG_LENGTH) + 
+        IQ_wf(LONG_LENGTH) +
         # Raw decimated /64 button values
         ABCD_wf(LONG_LENGTH) +
         # Decimated /64 positions
@@ -124,19 +124,19 @@ def Booster():
 # Statistics for waveforms
 def WaveformStats(axis):
     return [
-        aIn('MEAN%s' % axis, -1e4, 1e4, 1e-3, 
-            PREC = 2, EGU = 'um', 
+        aIn('MEAN%s' % axis, -1e4, 1e4, 1e-3,
+            PREC = 2, EGU = 'um',
             DESC = 'Mean %s FR position' % axis),
         aIn('STD%s' % axis, 0, 1e4, 1e-3,
-            PREC = 2, EGU = 'um', 
+            PREC = 2, EGU = 'um',
             DESC = 'Standard dev. %s FR position' % axis),
-        aIn('MIN%s' % axis, -1e4, 1e4, 1e-3, 
+        aIn('MIN%s' % axis, -1e4, 1e4, 1e-3,
             PREC = 2, EGU = 'um',
             DESC = 'Minimum %s FR position' % axis),
-        aIn('MAX%s' % axis, -1e4, 1e4, 1e-3, 
+        aIn('MAX%s' % axis, -1e4, 1e4, 1e-3,
             PREC = 2, EGU = 'um',
             DESC = 'Maximum %s FR position' % axis),
-        aIn('PP%s' % axis, 0, 2e4, 1e-3, 
+        aIn('PP%s' % axis, 0, 2e4, 1e-3,
             PREC = 2, EGU = 'um',
             DESC = 'Peak to peak %s FR' % axis)]
 
@@ -156,7 +156,7 @@ def TuneStats(axis):
         aIn('TUNEPH%s' % axis, -180, +180, 360 * 2**-32,
             EGU  = 'deg', PREC = 1,
             DESC = 'Phase of %s tune' % axis)]
-    
+
     aOut('TUNE%s' % axis, 0, 0.5, 2**-32,
         PREC = 5,
         FLNK = create_fanout('TUNEFAN%s' % axis, *tune_stats),
@@ -169,10 +169,10 @@ def StatsXY():
         TuneStats('X') + TuneStats('Y')
 
 
-# Free running short (typically 2048) turn-by-turn buffer.  
+# Free running short (typically 2048) turn-by-turn buffer.
 def FreeRunning():
     LENGTH = Parameter('FR_LENGTH')
-    
+
     SetChannelName('FR')
     Enable()
 
@@ -180,10 +180,10 @@ def FreeRunning():
     # computed positions and statistics.
     Trigger(True,
         IQ_wf(LENGTH) + ABCD_wf(LENGTH) + XYQS_wf(LENGTH) + StatsXY())
-    
+
     # Trigger capture offset
     longOut('DELAY', DESC = 'Trigger capture offset')
-    
+
     # Average length
     longOut('AVERAGE', 0, 16,
         DESC = 'Average samples as power of 2')
@@ -194,9 +194,9 @@ def FreeRunning():
         DESC = 'Update waveforms during averaging?')
     longIn('SAMPLES', SCAN = 'I/O Intr',
         DESC = 'Accumulated samples in average')
-    
+
     UnsetChannelName()
-        
+
 
 # Turn-by-turn snapshot records.  Access to long waveforms captured on
 # request.  Typically used for tune measurements.  Up to 200,000 points can
@@ -204,9 +204,9 @@ def FreeRunning():
 def TurnByTurn():
     LONG_LENGTH   = Parameter('TT_LONG')
     WINDOW_LENGTH = Parameter('TT_WINDOW')
-    
+
     SetChannelName('TT')
-    
+
     # Number of points successfully captured by the last trigger.
     captured = longIn('CAPTURED', 0, LONG_LENGTH,
         DESC = 'TT points captured')
@@ -219,7 +219,7 @@ def TurnByTurn():
     ready = boolIn('READY', 'No waveform', 'Waveform ready',
         DESC = 'Waveform captured',
         SCAN = 'I/O Intr', PINI = 'YES')
-        
+
     # When the ready record makes a transition into the ready state re-enable
     # the arm record by setting it to zero.
     rearm = records.calcout('REARM',
@@ -253,9 +253,9 @@ def TurnByTurn():
     boolOut('DOREFRESH', 'Stale Data', 'Update Data',
         DESC = 'Update displayed data on trigger')
 
-    Trigger(True, 
+    Trigger(True,
         # Raw I and Q values
-        IQ_wf(WINDOW_LENGTH) + 
+        IQ_wf(WINDOW_LENGTH) +
         # Button values
         ABCD_wf(WINDOW_LENGTH) +
         # Computed positions
@@ -266,7 +266,7 @@ def TurnByTurn():
 
     UnsetChannelName()
 
-    
+
 # Slow acquisition: position updates at 10Hz.
 def SlowAcquisition():
     SetChannelName('SA')
@@ -282,7 +282,7 @@ def SlowAcquisition():
 # ----------------------------------------------------------------------------
 #           Configuration
 # ----------------------------------------------------------------------------
-        
+
 
 # Configuration control records.  Used for setting button or stripline
 # geometry and a variety of other configuration settings.
@@ -291,7 +291,7 @@ def Config():
     # Brilliance.
     ATTEN_COUNT = Parameter('ATTEN_COUNT')
     MAX_ATTEN = 62
-    
+
     SetChannelName('CF')
 
     # Control enabling of this BPM.
@@ -319,7 +319,7 @@ def Config():
     aOut('BCD_Y',    -16, 16, EGU = 'mm', DESC = 'Current dependent Y origin')
     aOut('GOLDEN_X', -16, 16, EGU = 'mm', DESC = 'Golden orbit X origin')
     aOut('GOLDEN_Y', -16, 16, EGU = 'mm', DESC = 'Golden orbit Y origin')
-    
+
     # Channel gain settings.  Only applies to first turn mode.
     aOut('G0', 0, 1.5,  ESLO = 2**-30, DESC = 'Channel 0 gain adjustment')
     aOut('G1', 0, 1.5,  ESLO = 2**-30, DESC = 'Channel 1 gain adjustment')
@@ -338,14 +338,14 @@ def Config():
     boolOut('TRIGSW', 'Internal', 'External',
         DESC = 'Switching trigger source')
     longOut('DELAYSW', 0, DESC = 'Switches trigger delay')
-    
+
     # DSC control
     mbbInOut('DSC',
         ('Fixed gains', 0),     # Use last good DSC settings
         ('Unity gains', 1),     # Disable DSC, use fixed gains
         ('Automatic', 2),       # Run DSC
         DESC = 'Digital Signal Conditioning')
-    
+
     # Control attenuation.  This is now a bit involved:
     #
     #   ATTEN:TRUE = ATTEN + ATTEN:DISP + ATTEN:OFFSET[ATTEN + ATTEN:DISP]
@@ -368,7 +368,7 @@ def Config():
     longOut('ATTEN:DISP', -MAX_ATTEN, MAX_ATTEN, EGU = 'dB',
         FLNK = true_atten,
         DESC = 'Attenuator displacement')
-    
+
     boolOut('ATTEN:AGC', 'AGC off', 'AGC on',
         DESC = 'Enables attenuator AGC')
     longOut('ATTEN:AGC:DN', 0, 100, '%',
@@ -377,7 +377,7 @@ def Config():
         DESC = 'AGC raise threshold')
 
     # Scaling factor for conversion to bunch charge and stored current.
-    aOut('ISCALE', 0, 20000, 
+    aOut('ISCALE', 0, 20000,
         DESC = 'Input current at 0dBm power',
         EGU  = 'mA', ESLO = 1e-5, PREC = 1)
 
@@ -406,13 +406,13 @@ def InterlockSettings():
         DESC = 'ADC overflow threshold')
     overflow_pc = records.ao('OVER_PC_S',
         DESC = 'ADC overflow threshold (%)',
-        OMSL = 'supervisory', DTYP = 'Raw Soft Channel', 
+        OMSL = 'supervisory', DTYP = 'Raw Soft Channel',
         OUT  = PP(overflow),
         EGUL = 0,   EGUF = 100,   EGU  = '%', PREC = 1,
         DRVL = 0,           DRVH = 100.*(MAX_ADC-1.)/MAX_ADC,
         LINR = 'LINEAR',    ESLO = 100./MAX_ADC)
     overflow.FLNK = records.ao('OVER_C',
-        OMSL = 'closed_loop', DTYP = 'Raw Soft Channel', 
+        OMSL = 'closed_loop', DTYP = 'Raw Soft Channel',
         DOL  = overflow,    OUT  = overflow_pc,
         DRVL = 0,           DRVH = MAX_ADC - 1,
         LINR = 'LINEAR',    ESLO = MAX_ADC/100.,
@@ -445,14 +445,14 @@ def Interlock():
     # enabled and configured.
     boolOut('OVERFLOW', 'Disabled', 'Enabled',
         DESC = 'Enable ADC overflow detect')
-    
+
 
     # Interlock holdoff delay
     longOut('HOLDOFF',  0, 1000, DESC = 'Interlock holdoff delay')
     longOut('IHOLDOFF', 0, 1000, DESC = 'Current holdoff delay')
     # IIR constant
     longOut('IIRK', 0, 6, DESC = 'Interlock IIR constant')
-    
+
     # Interlock state.  This is a bit nasty: we get repeated triggers on TRIG
     # while the interlock is active (ie, reporting signal bad).  The record
     # POKE simply acts to relay the trigger state to STATE, which
@@ -474,7 +474,7 @@ def Interlock():
         INPA = state,       CALC = 'A',     OOPT = 'When Zero',
         DOPT = 'Use OCAL',  OCAL = 'B',     INPB = raw_reason,
         OUT  = PP(reason))
-    
+
     Trigger(False, [raw_reason, reason_check, poke])
 
     interlock_test = boolOut('TEST', 'Normal', 'Interlock Test',
@@ -482,7 +482,7 @@ def Interlock():
         VAL  = 0,   PINI = 'YES',
         DESC = 'Drop interlock for testing')
     ExtraHealthRecords.append(CP(interlock_test))
-    
+
     UnsetChannelName()
 
 
@@ -496,7 +496,7 @@ def Postmortem():
                 DESC = '%s overflow offset' % name),
             boolIn('%s_OFL' % name, 'No overflow', 'Overflowed',
                 DESC = '%s overflow occurred' % name)]
-    
+
     SetChannelName('PM')
 
     # Retrigger control.
@@ -514,7 +514,7 @@ def Postmortem():
         Overflow('X') + Overflow('Y') + Overflow('ADC') +
         [Waveform('FLAGS', LENGTH, 'UCHAR',
             DESC = 'Interlock overflow flags'), ready])
-    
+
     # Special postmortem configuration control.  These correspond to
     # interlock PVs, but can be used for separate control of PM events (but
     # only if FPGA 2 support is loaded).
@@ -522,9 +522,9 @@ def Postmortem():
         DESC = 'Postmortem trigger source')
     longOut('OFFSET', DESC = 'PM trigger offset')
     InterlockSettings()
-    
+
     UnsetChannelName()
-        
+
 
 # Compensation matrices are all up to 8x4x2 -- 8 (or 4) switch positions, 4
 # channels, and two values for each channel.
@@ -532,7 +532,7 @@ COMP_MAT_SIZE = 8 * 4 * 2
 
 def Conditioning():
     SC_IQ_LENGTH = Parameter('SC_IQ_LENGTH')
-    
+
     SetChannelName('SC')
 
     # Configuration values
@@ -566,17 +566,17 @@ def Conditioning():
             aIn('DEV', 0, 200,
                 PREC = 1, EGU  = '%',
                 DESC = 'Relative signal deviation'),
-            
+
             # Digest of the IQ_wf() data reduced to one complex value per
             # button and switch position pair.
             Waveform('IQDIGEST', 8*4*2, FTVL = 'DOUBLE',
                 DESC = 'Raw digest of IQ data'),
             # Compensation matrix used to generate the IQ_wf() array
-            Waveform('LASTCOMP', COMP_MAT_SIZE, 
+            Waveform('LASTCOMP', COMP_MAT_SIZE,
                 DESC = 'Last channel compensation'),
             # Current compensation matrix: will be copied to LASTCOMP the
             # next time SC processes.
-            Waveform('COMP', COMP_MAT_SIZE, 
+            Waveform('COMP', COMP_MAT_SIZE,
                 DESC = 'Current channel compensation'),
         ] + [
             aIn('PHASE%s' % button, -180, 180,
@@ -591,16 +591,16 @@ def Conditioning():
                     PREC = 3, EGU  = 'deg',
                     DESC = 'Channel %s phase shift' % channel),
                 aIn('C%sMAG' % channel, 0.8, 1.2,
-                    PREC = 5, 
+                    PREC = 5,
                     DESC = 'Channel %s gain' % channel),
                 aIn('C%sVAR' % channel, 0, 0.1,
-                    PREC = 4, 
+                    PREC = 4,
                     DESC = 'Channel %s variance' % channel),
         ] + IQ_wf(SC_IQ_LENGTH))
-    
+
     UnsetChannelName()
-    
-    
+
+
 # -----------------------------------------------------------------------------
 
 
@@ -609,7 +609,7 @@ def AggregateSeverity(name, description, recs):
     '''Aggregates the severity of all the given records into a single record.
     The value of the record is constant, but its SEVR value reflects the
     maximum severity of all of the given records.'''
-    
+
     assert len(recs) <= 12, 'Too many records to aggregate'
     return records.calc(name,
         CALC = 1, DESC = description,
@@ -638,7 +638,7 @@ def ClockStatus(id, name):
             DESC = '%s clock sync state' % name)]
     Trigger(False, health,
         TRIG = '%s_S_TRIG' % id, DONE = '%s_S_DONE' % id)
-    
+
     detail = [
         longIn('%s_DAC' % id, 0, 65535,
             DESC = '%s clock DAC setting' % name),
@@ -650,9 +650,9 @@ def ClockStatus(id, name):
         TRIG = '%s_V_TRIG' % id, DONE = '%s_V_DONE' % id)
 
     return health
-    
 
-    
+
+
 # Clock configuation control records.  Used for managing clocks and
 # synchronisation.
 def Clock():
@@ -665,7 +665,7 @@ def Clock():
     longOut('DETUNE', -1000, 1000, DESC = 'Sample clock detune')
     longOut('IFOFF',  -1000, 1000, DESC = 'IF clock detune')
     longOut('PHASE', DESC = 'Phase offset')
-    
+
     # Commands for clock synchronisation
     boolOut('MC_SYNC', 'Synchronise', None, DESC = 'Synchronise machine clock')
     boolOut('SC_SYNC', 'Synchronise', None, DESC = 'Synchronise system clock')
@@ -715,7 +715,7 @@ def Clock():
     create_dfanout('RESET_CNTRS',
         tick_count, total_missed,
         VAL = 0,    PINI = 'YES',   DESC = 'Reset tick loss counters')
-    
+
     # This trigger receives the normal machine trigger.
     Trigger(True, [
             tick_reset, tick_count,
@@ -723,7 +723,7 @@ def Clock():
             stringIn('TIME_NTP', DESC = 'NTP time'),
             stringIn('TIME_SC',  DESC = 'System clock time')],
         TRIG = 'TIME', DONE = 'TIME_DONE')
-    
+
     # Generate the clock monitoring records.
     mc_health = ClockStatus('MC', 'Machine')
     sc_health = ClockStatus('SC', 'System')
@@ -745,13 +745,13 @@ def Clock():
             DESC = 'NTP stratum level'),
         stringIn('SERVER', DESC = 'Synchronised NTP server')]
 
-    
+
     clock_health = AggregateSeverity('HEALTH', 'Clock status',
         map(CP, mc_health + sc_health + [ntp_health, tick]))
 
     UnsetChannelName()
 
-    
+
 def Voltages():
     '''Prepares records for all the eight voltage readouts.  Two values are
     returned: all records generated, in the correct order for scan processing,
@@ -785,7 +785,7 @@ def Voltages():
         VoltageSensor(7, 'PMC -12V power supply',       -12.2),
         VoltageSensor(8, 'Attenuators & switches ctrl', -5.09)]
 
-    
+
     health = AggregateSeverity('VOLTSOK', 'Voltage health', voltages)
     health_display = records.mbbi('VHEALTH',
         DESC = 'Voltage health display',
@@ -795,7 +795,7 @@ def Voltages():
         TWVL = 2,   TWST = 'Fault')
 
     return voltages + [health, health_display], health
-    
+
 
 # Extra health records can be accumulated onto this list
 ExtraHealthRecords = []
@@ -873,11 +873,11 @@ def Sensors():
             DESC = 'Total system up time'),
         aIn('EPICSUP', 0, 24*3600*5, 1./3600, 'h', 2,
             DESC = 'Time since EPICS started'),
-        
+
         # Channel access counters
         longIn('CAPVS',  DESC = 'Number of connected PVs'),
         longIn('CACLNT', DESC = 'Number of connected clients'),
-        
+
         # Network statistics
         aIn('NWBRX', 0, 1e4, 1e-4, 'kB/s', 3,
             DESC = 'Kilobytes received per second'),
@@ -898,11 +898,11 @@ def Sensors():
         'TEMPMON', 'Temperature monitoring', temp_monitors + [enable])
     all_health = AggregateSeverity('HEALTH', 'Aggregated health',
         alarmsensors + ExtraHealthRecords + [temp_health])
-    
+
     Trigger(False,
         temp_monitors + alarmsensors + voltages + ntp_monitors + extras +
         [fan_health, temp_health, all_health])
-            
+
     UnsetChannelName()
 
     # Mirror the health record for backwards compatibility.
@@ -920,10 +920,10 @@ def Versions():
 
     string('VERSION',   'Libera EPICS driver version')
     string('BUILD',     'EPICS driver build date')
-    
+
     boolOut('REBOOT',  'Reboot',  DESC = 'Reboot Libera IOC')
     boolOut('RESTART', 'Restart', DESC = 'Restart EPICS driver')
-    
+
     SetChannelName('VE')
 
     # These are internally generated by Libera
@@ -967,10 +967,10 @@ def Versions():
 
     UnsetChannelName()
 
-    
+
 
 # Finally generate and output the supported records.
-    
+
 FirstTurn()         # FT - one position from somewhere within a 100us window
 Booster()           # BN - 1024:1 (and 64:1) decimated waveforms
 FreeRunning()       # FR - turn by turn, updating on every trigger

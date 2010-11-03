@@ -45,7 +45,7 @@ function purge_temp_files()
     sed '/last message repeated/d' /var/log/messages >/var/log/messages.new
     mv /var/log/messages.new /var/log/messages
     echo $(date '+%b %d %X') Log files purged >>/var/log/messages
-    
+
     /etc/init.d/sysklogd start
 }
 
@@ -60,14 +60,14 @@ case "$1" in
             evaluate_retval
         fi
         ;;
-        
+
     stop)
         echo -n "Stopping temporary file daemon"
         [ -e $PID_FILE ] && kill "$(cat $PID_FILE)"
         evaluate_retval
         rm -f $PID_FILE
         ;;
-        
+
     restart)
         "$0" stop
         "$0" start

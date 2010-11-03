@@ -1,5 +1,5 @@
 /* This file is part of the Libera EPICS Driver,
- * 
+ *
  * Copyright (C) 2008-2009  Michael Abbott, Diamond Light Source Ltd.
  *
  * The Libera EPICS Driver is free software; you can redistribute it and/or
@@ -81,7 +81,7 @@ void print_error(const char * Message, const char * FileName, int LineNumber)
     const int MESSAGE_LENGTH = 512;
     int Error = errno;
     char ErrorMessage[MESSAGE_LENGTH];
-    
+
     int Count = snprintf(ErrorMessage, MESSAGE_LENGTH,
         "%s (%s, %d)", Message, FileName, LineNumber);
     if (errno != 0)
@@ -115,7 +115,7 @@ void log_message(int Priority, const char * Format, ...)
     va_start(args, Format);
     char Message[128];
     vsnprintf(Message, sizeof(Message), Format, args);
-    
+
     if (daemon_mode)
         syslog(Priority, "%s", Message);
     else
@@ -215,7 +215,7 @@ void WriteStatus(const char *Format, ...)
     va_start(args, Format);
     char Message[128];
     vsnprintf(Message, sizeof(Message), Format, args);
-    
+
     /* It turns out that although POSIX specifies that write is thread safe,
      * in fact this is not to be relied on, so we write under a lock.  The
      * story is here: http://lwn.net/Articles/180387/ and the referenced
@@ -290,7 +290,7 @@ bool InitialiseExitHandler()
     struct sigaction AtExitHandler;
     AtExitHandler.sa_handler = ExitHandler;
     AtExitHandler.sa_flags = 0;
-    
+
     int PidFile;
     char Pid[32];
     return
@@ -301,7 +301,7 @@ bool InitialiseExitHandler()
         TEST_IO(sigaction(SIGINT,  &AtExitHandler, NULL))  &&
         TEST_IO(sigaction(SIGQUIT, &AtExitHandler, NULL))  &&
         TEST_IO(sigaction(SIGTERM, &AtExitHandler, NULL))  &&
-        
+
         /* Try to create a new PID file.  If it already exists then we'll
          * fail without any further fuss. */
         TEST_IO(PidFile = open(
@@ -342,7 +342,7 @@ int main(int argc, char *argv[])
 
         /* Finally run the command status loop.  This shouldn't return. */
         RunCommandLoop();
-    
+
     /* If we get up here then forcibly clean up any dangling resources.  Note
      * that this never returns. */
     ExitHandler(0);

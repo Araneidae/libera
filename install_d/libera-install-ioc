@@ -171,7 +171,7 @@ if [ $TARGET == final ]; then
     # Hard-wired target on local file system
     IOC_TARGET=/opt/ioc
     # Copy over all the runtime files.
-    umask 22  
+    umask 22
     mkdir -p "$IOC_TARGET" "$IOC_TARGET"/bin
     for dir in dbd db bin/$EPICS_ARCH; do
         cp -r "$SOURCE/$dir" "$IOC_TARGET/$dir"
@@ -182,7 +182,7 @@ if [ $TARGET == final ]; then
 
     cp "$SOURCE/runioc" "$IOC_TARGET"
 else
-    # Compute EPICS and IOC paths relative to this directory.  
+    # Compute EPICS and IOC paths relative to this directory.
     IOC_TARGET="$SOURCE"
 fi
 
@@ -225,7 +225,7 @@ done
 # Configure autostart as required.  First clear out any existing autostart
 # method, then install the chosen one.  Either we start epics separately from
 # libera, or we invite the libera script to start/stop us at the same time.
-rm -f $CONFIGDIR/libera-server  
+rm -f $CONFIGDIR/libera-server
 rm -f /etc/init.d/libera-server
 # Do our best to remove all prior traces from rc*.d without accidentially
 # removing anything else!

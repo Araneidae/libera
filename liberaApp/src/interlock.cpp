@@ -35,7 +35,7 @@
 #include <stddef.h>
 #include <pthread.h>
 #include <stdint.h>
- 
+
 #include "device.h"
 #include "persistent.h"
 #include "publish.h"
@@ -53,7 +53,7 @@
  * updated and then UpdateInterlock() is called to ensure the interlock state
  * is correctly managed. */
 #define PUBLISH_INTERLOCK(record, Name, Value) \
-    PUBLISH_CONFIGURATION(record, Name, Value, LockedWriteInterlockState) 
+    PUBLISH_CONFIGURATION(record, Name, Value, LockedWriteInterlockState)
 
 
 
@@ -254,7 +254,7 @@ static bool LockedUpdateInterlockEnable(bool SetEnable)
 void NotifyInterlockCurrent(int Current)
 {
     LOCK();
-    
+
     CurrentCurrent = Current;
     if (InterlockHoldoff > 0)
         /* Count off the interlock holdoff.  Ignore the current during this
@@ -286,7 +286,7 @@ void HoldoffInterlock()
         /* Interlock is not currently enabled, so all we need to watch out
          * for is the current spike. */
         InterlockHoldoff = CurrentHoldoffCount;
-    
+
     WriteInterlockState();
     UNLOCK();
 }
@@ -324,11 +324,11 @@ void NotifyInterlockOffset(int NewOffsetX, int NewOffsetY)
 class INTERLOCK_EVENT : public I_EVENT
 {
 public:
-    INTERLOCK_EVENT() 
+    INTERLOCK_EVENT()
     {
         Publish_longin("IL:RAW_REASON", InterlockReason);
         Interlock.Publish("IL");
-        
+
         RegisterInterlockEvent(*this, PRIORITY_IL);
     }
 
@@ -338,7 +338,7 @@ public:
         InterlockReason = ReasonMask;
         Interlock.Ready();
     }
-    
+
 private:
     int InterlockReason;
     INTERLOCK Interlock;
@@ -373,13 +373,13 @@ bool InitialiseInterlock()
     EnableReadback = PUBLISH_READBACK(bi, bo, "IL:ENABLE",
         false, LockedUpdateInterlockEnable);
 
-    PUBLISH_CONFIGURATION(longout, "IL:HOLDOFF", 
+    PUBLISH_CONFIGURATION(longout, "IL:HOLDOFF",
         InterlockHoldoffCount, NULL_ACTION);
-    PUBLISH_CONFIGURATION(longout, "IL:IHOLDOFF", 
+    PUBLISH_CONFIGURATION(longout, "IL:IHOLDOFF",
         CurrentHoldoffCount, NULL_ACTION);
     PUBLISH_CONFIGURATION(longout, "IL:IIRK",
         InterlockIIR_K, SetInterlockIIR_K);
-    
+
     new INTERLOCK_EVENT();
 
     SetInterlockIIR_K();

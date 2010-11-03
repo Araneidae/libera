@@ -195,7 +195,7 @@ public:
             ioscanpvt = newIoscanpvt;
         }
     }
-    
+
     /* Callback routine called (possibly in signal handler context, or in an
      * arbitrary thread) to notify that I/O Intr processing should occur. */
     bool IoIntr()
@@ -217,7 +217,7 @@ public:
 
     inline I_RECORD * GetRecord() { return & iRecord; }
 
-    
+
 private:
     I_RECORD & iRecord;
     IOSCANPVT ioscanpvt;
@@ -305,16 +305,16 @@ bool I_WAVEFORM::BindRecord(dbCommon * p)
 /* Common I/O Intr scanning support: uses the fact that pr->dpvt always
  * contains the appropriate GetIoInt implementation. */
 
-static long get_ioint_(int, dbCommon *pr, IOSCANPVT *pIoscanpvt) 
-{ 
-    RECORD_BASE * base = (RECORD_BASE *) pr->dpvt; 
-    if (base == NULL) 
-        return ERROR; 
-    else 
-    {       
-        base->GetIoInt(pIoscanpvt); 
-        return OK; 
-    } 
+static long get_ioint_(int, dbCommon *pr, IOSCANPVT *pIoscanpvt)
+{
+    RECORD_BASE * base = (RECORD_BASE *) pr->dpvt;
+    if (base == NULL)
+        return ERROR;
+    else
+    {
+        base->GetIoInt(pIoscanpvt);
+        return OK;
+    }
 }
 
 
@@ -363,7 +363,7 @@ static void SetTimestamp(dbCommon *pr, struct timespec &Timestamp)
 static void post_init_record_out(dbCommon *pr, I_RECORD *iRecord)
 {
     (void) recGblSetSevr(pr, READ_ALARM, iRecord->AlarmStatus());
-    recGblResetAlarms(pr); 
+    recGblResetAlarms(pr);
     struct timespec Timestamp;
     if (!iRecord->GetTimestamp(Timestamp))
         /* If the record doesn't have its own timestamp then synthesise one
@@ -471,10 +471,10 @@ static void post_process(dbCommon *pr, epicsEnum16 nsta, I_RECORD *iRecord)
 
 #define DEFINE_DEFAULT_READ(record) \
     INIT_RECORD(record, inp, inp) \
-    DEFINE_DEFAULT_PROCESS(record, read,  read, READ) 
+    DEFINE_DEFAULT_PROCESS(record, read,  read, READ)
 #define DEFINE_DEFAULT_WRITE(record) \
     INIT_RECORD(record, out, out) \
-    DEFINE_DEFAULT_PROCESS(record, write, _do_write, WRITE) 
+    DEFINE_DEFAULT_PROCESS(record, write, _do_write, WRITE)
 
 
 #define DEFINE_DEVICE(record, length, args...) \

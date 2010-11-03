@@ -306,7 +306,7 @@ static void TerminateLibera()
     TerminateSignalConditioning();
     TerminatePersistentState();
     TerminateSensors();
-        
+
     /* On orderly shutdown remove the pid file if we created it.  Do this
      * last of all. */
     if (PidFileName != NULL)
@@ -373,7 +373,7 @@ static bool ParseConfigInt(char *optarg)
         printf("Configuration value not a number: \"%s=%s\"\n", optarg, eq);
         return false;
     }
-    
+
     /* Figure out who it belongs to! */
     for (size_t i = 0; i < ARRAY_SIZE(Lookup); i ++)
     {
@@ -510,7 +510,7 @@ static bool AddDbParameter(
     va_start(args, Format);
     int Output = vsnprintf(Destination, Length, FullFormat, args);
     va_end(args);
-    
+
     if (Output < Length)
     {
         Destination += Output;
@@ -546,7 +546,7 @@ static bool LoadDatabases()
         DB_("%d", "FR_LENGTH",      FreeRunLength)  &&
         DB_("%d", "SC_IQ_LENGTH",   ConditioningIQlength())  &&
         DB_("%d", "ATTEN_COUNT",    MaximumAttenuation() + 1)  &&
-        
+
         LOAD_RECORDS_("db/libera.db")  &&
         IF_(Version2FpgaPresent, LOAD_RECORDS_("db/libera-2.0.db"))  &&
         IF_(FastFeedbackFeature, LOAD_RECORDS_("db/fastFeedback.db"))  &&
@@ -603,7 +603,7 @@ int main(int argc, char *argv[])
     /* Configure stdout for line buffered output so log file entries appear
      * immediately. */
     setvbuf(stdout, NULL, _IOLBF, 0);
-    
+
     /* Consume any option arguments and start the driver. */
     bool Ok =
         ProcessOptions(argc, argv)  &&
@@ -644,15 +644,15 @@ int main(int argc, char *argv[])
     /* There is some unpleasantness happening behind the scenes, almost
      * certainly inside the EPICS library, causing our shutdown to be untidy
      * -- can, for example, get the message:
-     *      
+     *
      *      terminate called without an active exception
      *
      * which then aborts us.  As this message always occurs *after* main()
      * returns it's due to some atexit(3) function, almost certainly a static
      * destructor.  This message comes from
-     * 
+     *
      *      gcc-4.3.2/libstdc++-v3/libsupc++/vterminate.cc
-     *      
+     *
      * To avoid this nonsense, we just pull the plug here: OS cleanup is good
      * enough for us, I'm pretty sure.
      *

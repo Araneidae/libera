@@ -13,7 +13,7 @@ while getopts 'asl:r:wh' option; do
     l)  NAME_LIST="$OPTARG" ;;
     r)  LOG_EXT="$OPTARG"  ;;
     w)  WAIT='| cat' ;;
-    h)  cat <<'EOF' 
+    h)  cat <<'EOF'
 Usage: liberas [-a] <pattern> [<command>]
 Sends a command to all matching liberas.
     -a          send command asynchronously (the default)

@@ -66,11 +66,11 @@ static void InitialisePowerAndCurrent(int S0_SA)
 
 /* Computes power and current from the observed S value, the attenuator
  * setting and the current scaling factor thus:
- * 
+ *
  *          P = 20 log S + A - P_0
- *          
+ *
  *          I = K_M * K_A * S
- *          
+ *
  *                  (A-P_0)/20
  *          K_A = 10
  *
@@ -125,7 +125,7 @@ private:
                 PowerAndCurrentFromS(XYQS.S, Power, Current);
                 MaxAdc = ReadMaxAdc();
                 Interlock.Ready();
-                
+
                 NotifyInterlockCurrent(Current);
                 NotifyMaxAdc(MaxAdc);
             }

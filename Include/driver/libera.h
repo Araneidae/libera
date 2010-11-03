@@ -55,10 +55,10 @@
 
 
 /* Libera 64-bit time storage type. Used for (L)MT & (L)ST */
-typedef uint64_t libera_hw_time_t; 
+typedef uint64_t libera_hw_time_t;
 
 /* Libera userland timing pair, MT & ST */
-typedef struct 
+typedef struct
 {
     struct timespec  st;    // System Time
     libera_hw_time_t mt;    // Machine Time
@@ -66,7 +66,7 @@ typedef struct
 
 /* Libera High resolution userland timing pair, MT + D & ST */
 #pragma pack(4)
-typedef struct 
+typedef struct
 {
     struct timespec  st;
     libera_hw_time_t mt;
@@ -75,7 +75,7 @@ typedef struct
 #pragma pack()
 
 /** Libera event structure */
-typedef struct 
+typedef struct
 {
     int32_t id;             // Event ID
     int32_t param;          // Event specific parameter
@@ -131,9 +131,9 @@ enum {
     LIBERA_EVENT_SET_ST = _IOW('e', 4, libera_HRtimestamp_t),
     /* Set machine clock time (on next trigger). */
     LIBERA_EVENT_SET_MT = _IOW('e', 5, libera_HRtimestamp_t),
-    /* Read next raw system clock event. */    
+    /* Read next raw system clock event. */
     LIBERA_EVENT_GET_SC_TRIGGER_9 = _IOR('e', 9, libera_hw_time_t),
-    /* Read next raw machine time event. */    
+    /* Read next raw machine time event. */
     LIBERA_EVENT_GET_MC_TRIGGER_10 = _IOR('e', 11, libera_hw_time_t),
     /* Notify machine clock parameters to driver. */
     LIBERA_EVENT_SET_FLMC = _IOW('e', 12, uint32_t),

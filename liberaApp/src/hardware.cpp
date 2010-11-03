@@ -109,7 +109,7 @@ void print_error(const char * Message, const char * FileName, int LineNumber)
     const int MESSAGE_LENGTH = 512;
     int Error = errno;
     char ErrorMessage[MESSAGE_LENGTH];
-    
+
     int Count = snprintf(ErrorMessage, MESSAGE_LENGTH,
         "%s (%s, %d)", Message, FileName, LineNumber);
     if (errno != 0)
@@ -436,7 +436,7 @@ size_t ReadPostmortem(
         TEST_IO(ioctl(DevEvent, LIBERA_EVENT_ACQ_PM))  &&
         TEST_IO(Read = read(DevPm, Data, ReadSize))  &&
         TEST_IO(ioctl(DevPm, LIBERA_IOC_GET_PM_TSTAMP, &Timestamp)));
-    
+
     return Ok  &&  Read != -1  ?  Read / sizeof(LIBERA_ROW)  :  0;
 }
 
@@ -464,7 +464,7 @@ bool ReadSlowAcquisition(ABCD_ROW &ButtonData, XYQS_ROW &PositionData)
 {
     libera_atom_sa_t Result;
     int Read = 0;
-    bool Ok = 
+    bool Ok =
         TEST_IO(Read = read(DevSa, &Result, sizeof(libera_atom_sa_t)))  &&
         TEST_OK(Read == sizeof(libera_atom_sa_t));
     if (Ok)
@@ -522,7 +522,7 @@ int ReadEvents(libera_event_t Events[], int MaxEventCount)
 
 /* General control registers. */
 #define DSC_DOUBLE_BUFFER       0xC024  // Double buffer control register
-                                      
+
 #define DSC_FILTER_DELAY        0xC028  // Analogue to digitial filter delay
 #define DSC_HISTORY_MARKER      0xC030  // History marker origin and delay
 #define DSC_INTERLOCK_IIR_K     0xC034  // Interlock IIR coefficient
@@ -606,7 +606,7 @@ static bool ReadDscWords(int offset, void *words, int length)
     /* Correct for DSC device base address. */
     offset -= DSC_DEVICE_OFFSET;
     int Read;
-    return 
+    return
         TEST_IO(lseek(DevDsc, offset, SEEK_SET))  &&
         TEST_IO(Read = read(DevDsc, words, length))  &&
         TEST_OK(Read == length);
@@ -647,7 +647,7 @@ static bool WriteDscWord(int offset, int word)
 static bool WriteAttenuatorState(int Offset)
 {
     CHECK_DIRTY(Attenuation);
-        
+
     int AttenuatorWords[2];
     if (LiberaBrilliance)
     {
@@ -692,7 +692,7 @@ static bool WriteHistoryMark()
 static bool WriteSwitchesState(int Offset)
 {
     CHECK_DIRTY(SwitchPattern);
-    
+
     /* Two switches per byte.  Pack the switches. */
     uint8_t Template[MAX_SWITCH_SEQUENCE/2];
     for (unsigned int i = 0; i < sizeof(Template); i++)
@@ -817,13 +817,13 @@ void WritePhaseArray(int Switch, const PHASE_ARRAY Array)
  *      i = input channel index
  *      j = output button index
  * then the target address (as an index into an integer array) for
- * Array[j][i] has the following pattern: 
+ * Array[j][i] has the following pattern:
  *
  *  bit:    7    6     5    4  ..  1     0
  *      --+--------+------+----------+------+
  *        | j[1:0] | i[1] |  n[3:0]  | i[0] |
  *      --+--------+------+----------+------+ */
- 
+
 void WriteDemuxArray(int Switch, const DEMUX_ARRAY Array)
 {
     LOCK();
@@ -980,7 +980,7 @@ bool WriteSpikeRemovalSettings(
         AverageStop = rem(AverageStop, TurnsPerSwitch);
         SpikeStart  = rem(SpikeStart,  TurnsPerSwitch);
     }
-    
+
 #if defined(RAW_REGISTER)
     /* Write directly to the hardware in preference to using the driver. */
     uint32_t * FA_area;
@@ -994,10 +994,10 @@ bool WriteSpikeRemovalSettings(
     *FA_REG(FA_area, REGISTER_SR_SPIKE_START) = SpikeStart;
     *FA_REG(FA_area, REGISTER_SR_SPIKE_WIN)   = SpikeWindow;
     UNLOCK();
-    
+
     UnmapRawRegister(FA_area);
     return true;
-    
+
 #elif defined(__EBPP_H_2)
     int EnableInt = Enable;
     return LOCKED(
@@ -1006,7 +1006,7 @@ bool WriteSpikeRemovalSettings(
         WriteCfgValue(LIBERA_CFG_SR_AVERAGING_STOP, AverageStop)  &&
         WriteCfgValue(LIBERA_CFG_SR_START,          SpikeStart)  &&
         WriteCfgValue(LIBERA_CFG_SR_WINDOW,         SpikeWindow));
-    
+
 #else
     return TEST_OK(false);
 #endif
@@ -1030,7 +1030,7 @@ bool ReadSpikeRemovalBuffer(int Buffer[SPIKE_DEBUG_BUFLEN])
     memcpy(Buffer, FA_REG(FA_area, REGISTER_SR_BUFFER),
         SPIKE_DEBUG_BUFLEN * sizeof(int));
     UNLOCK();
-    
+
     UnmapRawRegister(FA_area);
     return true;
 }
@@ -1056,7 +1056,7 @@ bool WritePmTriggerParameters(
         overflow_limit =
             ((overflow_limit >> AdcExcessBits) << 16) |
             ((overflow_limit * overflow_limit) >> 16);
-    
+
     return LOCKED(
         WriteRawRegister(REGISTER_TRIG_DELAY, source << 14, 0x0000C000)  &&
         WriteRawRegister(REGISTER_PM_MINX, Xlow)  &&
@@ -1073,7 +1073,7 @@ bool WriteNotchFilter(int index, NOTCH_FILTER Filter)
     uint32_t WriteNotchAddress = 0x1401C018 + 4*index;
     uint32_t * WriteNotch = NULL;
     errno = 0;
-    bool Ok = 
+    bool Ok =
         TEST_OK((index & 1) == index)  &&
         TEST_NULL(WriteNotch = MapRawRegister(WriteNotchAddress));
     if (Ok)
@@ -1128,17 +1128,17 @@ static bool EnableMaxAdc()
 bool InitialiseHardware(int _TurnsPerSwitch)
 {
     TurnsPerSwitch = _TurnsPerSwitch;
-    
+
 #ifdef RAW_REGISTER
     OsPageSize = getpagesize();
     OsPageMask = OsPageSize - 1;
 #endif
-    
+
     /* If the LiberaBrilliance flag is set then the ADC is 16 bits, otherwise
      * we're operating an older Libera with 12 bits.  We actually record and
      * use the excess bits which need to be handled specially. */
     AdcExcessBits = 16 - (LiberaBrilliance ? 16 : 12);
-    
+
     return
         /* Open all the devices we're going to need. */
         TEST_IO(DevCfg   = open("/dev/libera.cfg",   O_RDWR))  &&

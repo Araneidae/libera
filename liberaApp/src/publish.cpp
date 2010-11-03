@@ -104,7 +104,7 @@ private:
     { \
         Publish_##record(Name, \
             *new PUBLISH_READ<TYPEOF(record)>(Variable, Name)); \
-    } 
+    }
 
 
 
@@ -138,7 +138,7 @@ private:
     { \
         Publish_##record(Name, \
             *new PUBLISH_WRITE<TYPEOF(record)>(Variable)); \
-    } 
+    }
 
 
 /* For EPICS strings we need to treat things slightly differently as C++
@@ -227,7 +227,7 @@ template class UPDATER<int>;
 
 template<class T>
     READBACK<T>::READBACK(T InitialValue, bool (*OnUpdate)(T)) :
-    
+
     OnUpdate(OnUpdate),
     Writer(Value),
     Reader(*this, &READBACK<T>::UserUpdate, &READBACK<T>::Value)

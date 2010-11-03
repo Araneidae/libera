@@ -97,7 +97,7 @@ static int Maximum(EXTRACTED_ADC &Data)
     }
     return Maximum;
 }
-    
+
 
 /* Extracts the raw data from an ADC data block and publishes it to the given
  * waveform.  The data is sign extended and transposed for convenience in
@@ -204,13 +204,13 @@ public:
          * microseconds.  This is used to annotate waveforms. */
         FillAxis(AxisScale, SHORT_ADC_LENGTH,
             1e6 * ADC_LENGTH / (RevolutionFrequency * DecimationFactor));
-        
+
         /* Now initialise the persistence of these and initialise the length
          * state accordingly. */
         Persistent("FT:OFF", Offset);
         Persistent("FT:LEN", Length);
         SetLength(Length);
-        
+
         /* Computed button totals and associated button values. */
         RawAdc.PublishRaw("FT");
         Adc.Publish("FT");
@@ -252,7 +252,7 @@ public:
         /* Ignore events if not enabled. */
         if (!Enable.Enabled())
             return;
-        
+
         Interlock.Wait();
 
         /* Read and process the ADC waveform into ABCD values and extract the
@@ -274,10 +274,10 @@ public:
         Interlock.Ready(Timestamp);
     }
 
-    
+
 private:
     FIRST_TURN();
-    
+
     /* Performs the fairly complex processing required to convert a raw ADC
      * waveform into published waveform and button values.  We perform the
      * following stages of processing:
@@ -301,12 +301,12 @@ private:
         const PERMUTATION &Permutation = SwitchPermutation();
         ADC_DATA RawData;
         ReadAdcWaveform(RawData);
-        
+
         /* Extract into arrays, sign extend, transpose and publish. */
         EXTRACTED_ADC Extracted;
         ExtractRawData(RawData, Extracted, RawAdc);
         MaxAdc = Maximum(Extracted);
-        
+
         /* Now work through each column and condense it, gain correct, and
          * publish it. */
         int RawCharge = 0;
@@ -323,7 +323,7 @@ private:
             CondenseAdcData(Extracted[Channel], Condensed);
             GainCorrect(Channel, Condensed, SHORT_ADC_LENGTH);
             Adc.Write(Field, Condensed, SHORT_ADC_LENGTH);
-            
+
             /* Also update the appropriate field of the ABCD structure.  Note
              * that we use different algorithms for computing button
              * intensities and estimating the charge: it turns out that
@@ -338,7 +338,7 @@ private:
     }
 
 
-    
+
     /* Function for computing the total charge (in arbitrary units) coming
      * into a button.
      *     The calculation here is similar in spirit to the calculation done in
@@ -425,7 +425,7 @@ private:
     void ThresholdXYQS()
     {
         XYQS_ROW * Waveform = WaveformXYQS.Waveform();
-        
+
         /* First compute MaxS. */
         MaxS = 0;
         for (int i = 0; i < SHORT_ADC_LENGTH; i ++)
@@ -482,7 +482,7 @@ private:
     /* Control variables for averaging defining the offset into processed ADC
      * buffer and the length of the averaging window. */
     int Offset, Length;
-    
+
     /* Computed state.  The button values are integrated from the selection of
      * points, and the appropriate elements are published to epics. */
     ABCD_WAVEFORMS RawAdc;
@@ -509,7 +509,7 @@ private:
     /* Scaling constant for charge.
      *
      * If we write the charge as
-     * 
+     *
      *          /
      *      Q = | I dt = SUM I(S/S_0) Dt
      *          /
@@ -520,7 +520,7 @@ private:
      * also write
      *
      *      Q = I(Dt/S_0, SUM S)
-     *  
+     *
      * The units of I are 10nA, ie 10^-8 A and we'll display Q in units of
      * 10^-15 Coulombs (so giving a full scale range of 2 microculombs).
      * Thus we have:
@@ -532,7 +532,7 @@ private:
      * and thus
      *
      *      K = 10 / (117 * S_0)
-     *      
+     *
      * and we can compute
      *
      *      Q = I(K, SUM S)  .

@@ -78,7 +78,7 @@ for loc in bo sr; do
                 final)
                     if ! [ -e "$TARGET/$f" ]; then
                         echo Installing "$f" in /opt/lib
-                        cp "$f" "$TARGET"  
+                        cp "$f" "$TARGET"
                     fi
                     ln -fs "$f" "$TARGET"/main_diamond_$loc.bin
                     ;;

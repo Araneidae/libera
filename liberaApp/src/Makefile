@@ -87,7 +87,7 @@ ioc_SRCS += versions.cpp        # Version identification
 ioc_SRCS += iocMain.cpp         # Ioc startup and configuration
 
 
-ioc_LIBS += $(EPICS_BASE_IOC_LIBS) 
+ioc_LIBS += $(EPICS_BASE_IOC_LIBS)
 
 # Point to the shared include directory
 USR_INCLUDES += -I$(TOP)/Include
@@ -109,6 +109,6 @@ firstTurn.o: filter-header.h
 
 
 # Force versions to be rebuilt every time so that the build date and time is
-# current. 
+# current.
 versions.o: FORCE
 FORCE:

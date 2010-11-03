@@ -29,7 +29,7 @@ IOC_LOG=/var/log/ioc
 # Where to put core dumps
 #IOC_CORE=/mnt/nfs/testing/cores
 
-# Location where the IOC will look for its persistent state.  
+# Location where the IOC will look for its persistent state.
 IOC_STATE_PATH=/opt/state
 # Set this to 1 to enable remounting the rootfs every time the state file is
 # written.  This is really not a great idea, by the way -- it would be *much*
@@ -68,7 +68,7 @@ IOC_FR_LENGTH=2048
 
 # The following two parameters are used to configure the internal scaling
 # used by Libera to convert measured signal intensities into power, current
-# and charge.  
+# and charge.
 #    Both numbers are designed to be measured with 0dBm continuous wave RF
 # inputs into all four buttons with attenuation set to 45dB
 #

@@ -77,13 +77,13 @@ static const uint8_t BrillianceSwitchSequence[4] = { 15, 0, 9, 6 };
  * four binary cross-bar switches where each individual switch
  *
  *        +----+
- *    a --+ s  +-- c   is either connected straight through, a-c and b-d 
+ *    a --+ s  +-- c   is either connected straight through, a-c and b-d
  *    b --+  i +-- d   (when s_i=0) or crossed over (a-d, b-c, s_i=1).
  *        +----+
  *
  *   Button                       Channel     Bit sequence:
  *    E  B                         E  B
- *           +----+       +----+              
+ *           +----+       +----+
  *    A  D --+ s  +-------+ s  +-- 3  1       Electron:
  *    B  A --+  0 +--   --+  2 +-- 0  0           s  s  s  s
  *           +----+  \ /  +----+                   0  1  2  3
@@ -299,12 +299,12 @@ static int ComputePrescale(int TurnsPerSwitch, int SwitchCycles)
  *  1. Cross bar switching of button inputs: each of four RF channels is
  *     selected to process each of the button inputs.  After a complete round
  *     of switching, all button inputs are processed through all channels.
- *     
+ *
  *  2. RF channel processing: controlled amplification and attenuation
  *     together with narrow band filtering.
- *     
+ *
  *  3. ADC conversion (this feed is measured directly by FT processing).
- *  
+ *
  *  5. Amplitude and phase compensation on the raw ADC readings: this is done
  *     by separate two tap filters on each of the four demultiplexed button
  *     inputs, with a separate set of filters defined for each channel.
@@ -320,7 +320,7 @@ class CONDITIONING : public LOCKED_THREAD, I_EVENT
 public:
     CONDITIONING(REAL f_if, int TurnsPerSwitch, int SwitchCycles) :
         LOCKED_THREAD("Conditioning"),
-        
+
         cotan_if(1.0/tan(f_if)),
         cosec_if(1.0/sin(f_if)),
         m_cis_if(exp(-I*f_if)),
@@ -352,7 +352,7 @@ public:
         Persistent("SC:INTERVAL", ConditioningInterval);
         Persistent("SC:TRIGGERED", TriggeredOperation);
         Persistent("SC:TRIGDELAY", TriggeredDelay);
-        
+
         Publish_ao("SC:MAXDEV",   MaximumDeviationThreshold);
         Publish_ao("SC:CIIR",     ChannelIIRFactor);
         Publish_ao("SC:INTERVAL", ConditioningInterval);
@@ -414,7 +414,7 @@ public:
      * queue.
      *     However, in this case we really don't care! */
 
-    
+
     /* Writes the selected switch sequence. */
     bool LockedWriteSwitches(const SWITCH_SEQUENCE Switches, size_t Length)
     {
@@ -442,7 +442,7 @@ public:
                     signal.Signal();
                 Enabled = true;
                 break;
-                
+
             case SC_MODE_UNITY:
                 /* Special processing for switching into UNITY mode: in this
                  * case we revert the compensation matrices.  As we're
@@ -452,7 +452,7 @@ public:
                 SetUnityCompensation();
                 HoldoffInterlock();
                 CommitDscState();
-                
+
                 Enabled = false;
                 break;
 
@@ -463,7 +463,7 @@ public:
                 WritePhaseCompensation(CurrentCompensation);
                 HoldoffInterlock();
                 CommitDscState();
-                
+
                 Enabled = false;
                 break;
         }
@@ -493,11 +493,11 @@ public:
     }
 
     int GetSampleSize() { return SampleSize; }
-    
-    
+
+
 private:
     CONDITIONING();
-    
+
     /* The following basic datatypes are used for processing.  We distinguish
      * the two arrays BUTTONS and CHANNELS as an important discipline for
      * keeping track, though in fact one is just a permutation of the other. */
@@ -524,7 +524,7 @@ private:
         SC_OK           // SC working normally
     };
 
-    
+
 
     /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
     /*                       Phase Compensation Matrices                     */
@@ -538,7 +538,7 @@ private:
      *    We make the conversion on the assumption that we're dealing with a
      * narrow band signal at the machine intermediate frequency.  Then the
      * effect of a two pole filter
-     * 
+     *
      *                   -1
      *      F = a  + a  z
      *           0    1
@@ -550,7 +550,7 @@ private:
      *              0    1
      *
      * If we equate this to the desired compensation K=x+iy then we simply
-     * need to solve for 
+     * need to solve for
      *
      *      F(w) = x + i y  ,
      *
@@ -559,7 +559,7 @@ private:
      *                 cos w
      *      a  = x + y ----- = x + y cot w
      *       0         sin w
-     *       
+     *
      *               y
      *      a  = - ----- = - y csc w
      *       1     sin w
@@ -658,7 +658,7 @@ private:
             Parent(Parent)
         {
         }
-        
+
     private:
         bool process(void *array, size_t max_length, size_t &new_length)
         {
@@ -681,13 +681,13 @@ private:
 
         CONDITIONING &Parent;
     };
-    
+
 
     /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
     /*                         Signal Processing Core                        */
     /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-    
+
     /* Signal conditioning reading needs to run concurrently with existing
      * data capture, so to avoid interference we need to open a separate
      * device handle. */
@@ -787,7 +787,7 @@ private:
         return true;
     }
 
-    
+
     /* Given the raw inferred input signals this computes the angles and
      * updates the appropriate fields. */
     void UpdateSignalIn(const BUTTONS_REAL &Xarg)
@@ -812,7 +812,7 @@ private:
             for (int ix = 0; ix < SwitchSequenceLength; ix ++)
                 Mean += K[ix][c];
             Mean /= SwitchSequenceLength;
-            
+
             /* The channel value is the reciprocal of the channel
              * compensation, of course, so we take this into account. */
             ChannelPhase[c] = aiPhase(- arg(Mean));
@@ -924,7 +924,7 @@ private:
     }
 
 
-    
+
     /* To avoid rapid changes of outputs we normally run all compensation
      * values through a simple IIR filter.  However this can be reset at any
      * time by setting the ResetChannelIIR flag: this is done whenever the
@@ -1015,7 +1015,7 @@ private:
         return Result;
     }
 
-    
+
     void Thread()
     {
         THREAD_LOCK(this);
@@ -1027,7 +1027,7 @@ private:
         ResetCurrentCompensation();
         CommitDscState();
         THREAD_UNLOCK();
-        
+
         if (!TEST_IO(DevDd = open("/dev/libera.dd", O_RDONLY)))
             /* Returning early causes error return. */
             return;
@@ -1044,19 +1044,19 @@ private:
                 trigger.Wait();
 
             Interlock.Wait();
-            
+
             THREAD_LOCK(this);
             if (Enabled)
                 ConditioningStatus = ProcessSignalConditioning();
             else
                 ConditioningStatus = SC_OFF;
             THREAD_UNLOCK();
-            
+
             Interlock.Ready();
         }
     }
 
-    
+
     void OnEvent(int)
     {
         trigger.Signal();
@@ -1079,7 +1079,7 @@ private:
     /*                      Conditioning Thread Variables                    */
     /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-    
+
     /* A handful of constants derived from the machine intermediate frequency
      * and used for phase compensation calculation. */
     const REAL cotan_if;    // cotangent of IF
@@ -1123,7 +1123,7 @@ private:
     int ChannelPhase[CHANNEL_COUNT];
     int ChannelMag[CHANNEL_COUNT];
     int ChannelVariance[CHANNEL_COUNT];
-    
+
     /* Set to reset the channel IIR: reset on initialisation, when entering
      * UNITY mode and when changing attenuation. */
     bool ResetChannelIIR;
@@ -1143,7 +1143,7 @@ private:
     /* Phase compensation array used when reading current waveform: published
      * to EPICS for diagnostics and research. */
     PHASE_ARRAY_LIST OldPhaseArray;
-    
+
     /* Writing to this waveform allows the phase array to be written directly
      * -- obviously for expermentation only! */
     WRITE_PHASE_ARRAY EpicsWritePhaseArray;
@@ -1267,7 +1267,7 @@ bool InitialiseSignalConditioning(
     int Harmonic, int TurnsPerSwitch, int SwitchCycles)
 {
     iocshRegister(&SCdebugFuncDef, SCdebug);
-    
+
     /* Select the appropriate switches and initialise the demultiplexor
      * array. */
     if (LiberaBrilliance)
@@ -1282,7 +1282,7 @@ bool InitialiseSignalConditioning(
         SwitchSequenceLength = ARRAY_SIZE(ElectronSwitchSequence);
         PermutationLookup = ElectronPermutationLookup;
     }
-    
+
     /* Start the conditioning thread.  The intermediate frequency needs to be
      * in radians per sample. */
     REAL f_if = 2 * M_PI *

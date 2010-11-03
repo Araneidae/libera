@@ -64,18 +64,18 @@ inline unsigned int clz_64(uint64_t x)
  * "early clobber" to force them to be distinct from both inputs. */
 inline unsigned int MulUU(unsigned int x, unsigned int y)
 {
-    unsigned int result, temp; 
+    unsigned int result, temp;
     __asm__("umull   %1, %0, %2, %3" :
-        "=&r"(result), "=&r"(temp) : "r"(x), "r"(y)); 
-    return result; 
+        "=&r"(result), "=&r"(temp) : "r"(x), "r"(y));
+    return result;
 }
 
 inline int MulSS(int x, int y)
 {
-    unsigned int result, temp; 
+    unsigned int result, temp;
     __asm__("smull   %1, %0, %2, %3" :
-        "=&r"(result), "=&r"(temp) : "r"(x), "r"(y)); 
-    return result; 
+        "=&r"(result), "=&r"(temp) : "r"(x), "r"(y));
+    return result;
 }
 
 
@@ -91,7 +91,7 @@ inline int MulSS(int x, int y)
  *      x*y_ = x*y0 + s*x*2^31 = x*y + s*x*2^32
  * and so we can use unsigned multiplication to compute
  *      x*y = x*y_ - s*x*2^32 .
- *      
+ *
  * If it is known that x < 2^31 (and so cannot be mistaken for a signed
  * value) then it will be faster to use MulSS instead. */
 inline int MulUS(unsigned int x, int y)
@@ -176,7 +176,7 @@ unsigned int Reciprocal(unsigned int X, int &shift);
  *               -27
  *      log X = 2   log2(X) + 16.
  *         2
- *         
+ *
  * Output is clipped in response to extreme inputs. */
 int log2(unsigned int X);
 
@@ -191,7 +191,7 @@ int log2(unsigned int X);
  *                       -27         -27
  *                 s 16 2   X   s + 2   X + 16
  *      exp2(X) = 2 2  2     = 2
- *      
+ *
  * or
  *       X    -s      27           -s-16      27
  *      2  = 2  exp2(2  (X-16)) = 2     exp2(2  X)
@@ -254,7 +254,7 @@ public:
         Value = InitialValue;
         Shift = InitialShift;
     }
-    
+
     inline PMFP(const PMFP &Copy)
     {
         Value = Copy.Value;
@@ -282,7 +282,7 @@ public:
         unsigned int NewValue = MulUUshift(Value, Multiplier.Value, NewShift);
         return PMFP(NewValue, NewShift);
     }
-        
+
     inline PMFP operator/(const PMFP &Divisor) const
     {
         int NewShift = Shift - Divisor.Shift;
@@ -298,7 +298,7 @@ public:
         return PMFP(NewValue, NewShift);
     }
 
-    
+
     /* This one is rather tricky: here we construct a PMFP instance from any
      * function which returns a value and a shift (for example, exp2). */
     template<class T> inline PMFP(

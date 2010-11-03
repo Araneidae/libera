@@ -106,7 +106,7 @@ public:
         PUBLISH_CONFIGURATION(
             mbbo, "PM:SOURCE", TriggerSource, SetTriggerSource);
         RealSetTriggerSource(TriggerSource);
-        
+
         /* Announce our interest in the postmortem event. */
         Interlock.Publish("PM", true);
         RegisterPostmortemEvent(*this, PRIORITY_PM);
@@ -133,18 +133,18 @@ public:
         CanRetrigger = true;
     }
 
-    
+
 private:
     bool RearmTrigger()
     {
         CanRetrigger = true;
         return true;
     }
-    
+
     void OnEvent(int Missed)
     {
         /* We could log missed triggers here, but that's not such a good idea,
-         * as the log file tends to fill up! 
+         * as the log file tends to fill up!
         if (Missed > 0)
             printf("%d PM trigger(s) missed\n", Missed);
          */
@@ -153,7 +153,7 @@ private:
          * just silently ignore this trigger. */
         if (!CanRetrigger)
             return;
-        
+
         /* Wait for EPICS to be ready. */
         Interlock.Wait();
 
@@ -190,7 +190,7 @@ private:
                 flag |= (Row[i][j] & 1) << j;
             flags[i] = flag;
         }
-        
+
         /* Extract the offset and overflow marks. */
         FindOverflow(1, ADC_offset, ADC_overflow);
         FindOverflow(2, X_offset,   X_overflow);
@@ -215,7 +215,7 @@ private:
         }
     }
 
-    
+
     /* Captured and processed waveforms: these three blocks of waveforms are
      * all published to EPICS. */
     IQ_WAVEFORMS WaveformIq;

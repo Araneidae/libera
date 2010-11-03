@@ -57,7 +57,7 @@ Options:
     -S          Deploy to storage ring
     -L<target>  Deploy to lab: specify SR or BR for target
     If no target flag is specified then -IS is assumed.
-    
+
     -t      Install from configured test directory instead of release directory
     -d      Specify release directory (default is /mnt/nfs/Libera)
 EOF
@@ -74,7 +74,7 @@ if ((INJECTOR==0 && STORAGE==0)) && [ -z "$LAB" ]; then
 fi
 
 if ((TEST_INSTALL)); then
-    TARGET=/mnt/nfs/testing    
+    TARGET=/mnt/nfs/testing
 else
     VERSION="${1?Version to deploy}"
     TARGET="$VERSION_DIR/$VERSION"
@@ -105,7 +105,7 @@ function do_deploy()
 
     "$LIBERAS" "$PATTERN" /etc/init.d/libera stop
     "$LIBERAS" "$PATTERN" "$INSTALL_"ioc  -l$TF "$LOCATION"
-    "$LIBERAS" "$PATTERN" "$INSTALL_"fpga -$TF 
+    "$LIBERAS" "$PATTERN" "$INSTALL_"fpga -$TF
     "$LIBERAS" "$PATTERN" /etc/init.d/libera start
 
     # Also need to check for over-full machines: liberas 'df / | tail -n1'
