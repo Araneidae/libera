@@ -299,6 +299,15 @@ static void ReadTemperatureRF2(const char * sensor, int *result)
 
 static void ReadHealth()
 {
+    /* In case any of our reads fail, start by setting everything to zero,
+     * which is generally an alarm condition. */
+    memset(SystemVoltages, 0, sizeof(SystemVoltages));
+    memset(FanSpeeds, 0, sizeof(FanSpeeds));
+    memset(FanSetSpeeds, 0, sizeof(FanSetSpeeds));
+    RfTemperature1 = 0;
+    RfTemperature2 = 0;
+    MbTemperature = 0;
+
     if (LiberaBrilliance)
     {
         /* Only read the RF sensors if we're running Brilliance, as otherwise
