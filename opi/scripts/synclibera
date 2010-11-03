@@ -1,5 +1,4 @@
 #!/dls_sw/prod/tools/RHEL5/bin/dls-python2.6
-#!/usr/bin/env dls-python2.4
 
 import sys
 import os.path
@@ -7,8 +6,7 @@ import optparse
 import datetime
 
 from pkg_resources import require
-require('cothread==1.16')
-# sys.path.append('/home/mga83/epics/cothread/build/lib.linux-i686-2.4')
+require('cothread==1.17')
 from cothread import catools, Sleep
 
 
@@ -16,11 +14,11 @@ from cothread import catools, Sleep
 # We have three separate synchronisation groups: LB, BS and TS.
 
 LB_BPMS = \
-    ['LB-DI-EBPM-%02d' % (num + 1) for num in range(7)] + \
-    ['BR%02dC-DI-EBPM-%02d' %
-        (cell + 1, 1 + (5*cell + (cell+1)//2 + num - 3) % 22)
-        for cell in range(4)
-        for num in range(5 + (cell+1) % 2)]
+    ['LB-DI-EBPM-%02d' % (num + 1) for num in range(7)]
+
+BR_BPMS = \
+    ['BR%02dC-DI-EBPM-%02d' % (((2*n + 6) // 11) % 4 + 1, n + 1)
+        for n in range(22)]
 
 BS_BPMS = \
     ['BS-DI-EBPM-%02d' % (num + 1) for num in range(7)]
@@ -86,10 +84,12 @@ def GetActiveEvrs(evrs):
     print 'Checking active EVRs'
     return GetActivePVs(evrs, 'TRIG:MODE')
 
-def GetFeedbackBpms(AllBpms):
+# Returns groups of active bpms in each of the three feedback areas: BR, SR, TS.
+def GetFeedbackBpms(ActiveBpms):
     print 'Checking BPMs for FF support'
-    return GetActivePVs(AllBpms, 'FF:VERSION')
-
+    return [
+        GetActivePVs(ActiveBpms & set(group), 'FF:VERSION')
+        for group in (BR_BPMS, SR_BPMS, TS_BPMS)]
 
 
 def GlobalSystemTrigger():
@@ -112,7 +112,7 @@ class LabMachineTrigger:
         caput(['TS-DI-EVR-01:TRIG:MODE'], 'Synchronised')
     def Enable(self):
         caput(['TS-DI-EVR-01:TRIG:MODE'], 'Normal')
-    
+
 
 def SynchroniseSystemClocks(bpms, evrs, trigger):
     # First put all EVRs into Synchronised mode
@@ -121,20 +121,20 @@ def SynchroniseSystemClocks(bpms, evrs, trigger):
     caput(PVs(evrs, 'TRIG:MODE'), 'Synchronised')
     CheckReadbacks(evrs, 'TRIG:MODE', 'Synchronised')
     Sleep(5)
-    
+
     print '  Enabling SC trigger'
     caput(PVs(bpms, 'CK:SC_SYNC_S'), 0)
     Sleep(2)
     CheckReadbacks(bpms, 'CK:SC_SYNC', 'Waiting Trigger')
-    
+
     print '  Triggering SC synchronisation'
     trigger()
     Sleep(5)
-    
+
     print '  Restoring Normal mode'
     caput(PVs(evrs, 'TRIG:MODE'), 'Normal')
 
-    
+
 
 def SynchroniseMachineClocks(bpms, triggers):
     print 'Synchronising machine clocks'
@@ -143,12 +143,12 @@ def SynchroniseMachineClocks(bpms, triggers):
     print '  Disabling events'
     triggers.Disable()
     Sleep(5)
-    
+
     print '  Arming MC trigger'
     caput(PVs(bpms, 'CK:MC_SYNC_S'), 0)
     Sleep(5)
     CheckReadbacks(bpms, 'CK:MC_SYNC', 'Waiting Trigger')
-    
+
     print '  Triggering MC synchronisation'
     triggers.Enable()
     Sleep(2)
@@ -160,19 +160,19 @@ def FindCommonValue(values):
         if value not in d:
             d[value] = 0
         d[value] += 1
-        
+
     c = 0
     for value, count in d.iteritems():
         if count > c:
             v = value
             c = count
     return v
-        
+
 
 def AnalyseTimes(location, bpms, times, margin = 0):
     common_time = FindCommonValue(times)
     print '%s:' % location, common_time
-    
+
     good_bpms = []
     bad_bpms = []
     for bpm, time in zip(bpms, times):
@@ -183,7 +183,7 @@ def AnalyseTimes(location, bpms, times, margin = 0):
             good_bpms.append(bpm)
     return good_bpms, bad_bpms
 
-        
+
 
 def CheckSystemClocks(bpms, evrs, trigger):
     print 'Checking system clocks'
@@ -197,7 +197,7 @@ def CheckSystemClocks(bpms, evrs, trigger):
     mcls = caget(PVs(bpms, 'CK:MCL'), format = catools.FORMAT_TIME)
     print '  Restoring Normal mode'
     caput(PVs(evrs, 'TRIG:MODE'), 'Normal')
-    
+
     good_bpms, bad_bpms = AnalyseTimes(
         'Time', bpms, [
             datetime.datetime.fromtimestamp(mcl.timestamp) for mcl in mcls],
@@ -210,7 +210,7 @@ def CheckSystemClocks(bpms, evrs, trigger):
     # time for now.
     caput(PVs(bpms, 'CK:TIMESTAMP_S'), 'NTP time')
 
-    
+
 def CheckMachineClocks(lb_bpms, bs_bpms, sr_bpms, ts_bpms, evrs, trigger):
     print 'Checking machine clocks'
     print '  Disabling events'
@@ -231,31 +231,17 @@ def CheckMachineClocks(lb_bpms, bs_bpms, sr_bpms, ts_bpms, evrs, trigger):
                 [mcl + 2**31 * mch
                     for mcl, mch in zip(mcls, mchs)],
                 margin = 1)
-    
+
     print '  Restoring event processing'
     caput(PVs(evrs, 'TRIG:MODE'), 'Normal')
 
 
-# Temporary workaround: refresh the fast feedback configuration which
-# unfortunately gets reset when doing a machine clock synchronisation!
-def RefreshFastFeedback(ActiveBpms):
-    ActiveBpms = set(ActiveBpms)
 
-    # Assign ids to all BPMs as follows:
-    #   In SR assign SR1-1 to SR24-7 ids 1 to 168 in sequence
-    #   SR21-8 is assigned 169
-    #   Arbitrarily assign numbers to LB+BS
-    #   In TS assign ids 1 to 7 in sequence
-    Bpms, Ids = zip(*[(bpm, id+1)
-        for id, bpm in
-            list(enumerate(SR_BPMS)) +
-            list(enumerate(LB_BPMS + BS_BPMS)) +
-            list(enumerate(TS_BPMS))
-        if bpm in ActiveBpms])
-    catools.caput(PVs(Bpms, 'FF:BPMID_S'), Ids, timeout = 5)
+# The fast feedback BPMs are grouped into three groups for checking, but we
+# synchronise them all together.
+def RestartFastFeedback(groups, triggers):
+    Bpms = [bpm for group in groups for bpm in group]
 
-    
-def RestartFastFeedback(Bpms, triggers):
     print 'Resynchronising Fast Feedback'
     caput(PVs(Bpms, 'FF:STOP_S'), 0)
     triggers.Disable()
@@ -265,13 +251,16 @@ def RestartFastFeedback(Bpms, triggers):
     Sleep(3)
     triggers.Enable()
     Sleep(2)
-    nodes = caget(PVs(Bpms, 'FF:BPM_COUNT'))
-    common_nodes = FindCommonValue(nodes)
-    print 'Fast feedback: %s nodes' % common_nodes
-    for bpm, n in zip(Bpms, nodes):
-        if n != common_nodes:
-            print ' ', bpm, n
-    
+
+    for name, group in zip(('BR', 'SR', 'TS'), groups):
+        if group:
+            nodes = caget(PVs(group, 'FF:BPM_COUNT'))
+            common_nodes = FindCommonValue(nodes)
+            print 'Fast feedback %s: %s nodes' % (name, common_nodes)
+            for bpm, n in zip(group, nodes):
+                if n != common_nodes:
+                    print ' ', bpm, n
+
 
 def parseArgs():
     parser = optparse.OptionParser(
@@ -335,13 +324,13 @@ def main():
         AllEvrs = []
         Triggers = [BS_TRIG]
         if options.LBS:
-            AllBpms.extend(LB_BPMS + BS_BPMS)
+            AllBpms.extend(LB_BPMS + BR_BPMS + BS_BPMS)
             AllEvrs.extend(LB_EVRS + BS_EVRS)
             Triggers.append(LB_TRIG)
         if options.SR:
             AllBpms.extend(SR_BPMS)
             AllEvrs.extend(SR_EVRS)
-        
+
         SystemTrigger  = GlobalSystemTrigger
         MachineTrigger = GlobalMachineTrigger(Triggers)
 
@@ -350,25 +339,24 @@ def main():
     SetActiveBpms = set(ActiveBpms)
 
     FeedbackBpms = GetFeedbackBpms(
-        SetActiveBpms & (set(SR_BPMS) | set(TS_BPMS)))
-    
+        SetActiveBpms & (set(BR_BPMS + SR_BPMS + TS_BPMS)))
+
     if not options.test_only:
         if options.system:
             SynchroniseSystemClocks(ActiveBpms, ActiveEvrs, SystemTrigger)
         if options.machine:
             SynchroniseMachineClocks(ActiveBpms, MachineTrigger)
-            RefreshFastFeedback(FeedbackBpms)
 
         if not options.no_test:
             print 'Pausing before test'
             Sleep(5.0)
-            
+
     if not options.no_test:
         if options.system:
             CheckSystemClocks(ActiveBpms, ActiveEvrs, SystemTrigger)
         if options.machine:
             CheckMachineClocks(
-                SetActiveBpms & set(LB_BPMS),
+                SetActiveBpms & set(LB_BPMS + BR_BPMS),
                 SetActiveBpms & set(BS_BPMS),
                 SetActiveBpms & set(SR_BPMS),
                 SetActiveBpms & set(TS_BPMS),
@@ -376,7 +364,7 @@ def main():
 
     if options.SyncFF:
         RestartFastFeedback(FeedbackBpms, MachineTrigger)
-        
-    
+
+
 if __name__ == '__main__':
     main()
