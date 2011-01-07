@@ -18,7 +18,7 @@ LB_BPMS = \
 
 BR_BPMS = \
     ['BR%02dC-DI-EBPM-%02d' % (((2*n + 6) // 11) % 4 + 1, n + 1)
-        for n in range(22)]
+        for n in range(23)]
 
 BS_BPMS = \
     ['BS-DI-EBPM-%02d' % (num + 1) for num in range(7)]
