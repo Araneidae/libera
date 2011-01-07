@@ -142,6 +142,7 @@ static void DetachProcess(const char *Process, const char *const argv[])
 
 static void DoReboot()
 {
+    printf("Libera reboot requested\n");
     const char * Args[] = { "/sbin/reboot", NULL };
     DetachProcess(Args[0], Args);
 }
@@ -149,6 +150,7 @@ static void DoReboot()
 
 static void DoRestart()
 {
+    printf("EPICS IOC restart requested\n");
     const char * Args[] = { "/etc/init.d/epics", "restart", NULL };
     DetachProcess(Args[0], Args);
 }
