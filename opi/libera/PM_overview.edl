@@ -3,9 +3,9 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 636
-y 65
-w 588
+x 739
+y 271
+w 584
 h 696
 font "helvetica-medium-r-18.0"
 ctlFont "helvetica-medium-r-18.0"
@@ -49,7 +49,7 @@ endObjectProperties
 object xyGraphClass
 beginObjectProperties
 major 4
-minor 5
+minor 6
 release 0
 # Geometry
 x 8
@@ -96,7 +96,7 @@ endObjectProperties
 object xyGraphClass
 beginObjectProperties
 major 4
-minor 5
+minor 6
 release 0
 # Geometry
 x 8
@@ -144,7 +144,7 @@ endObjectProperties
 object xyGraphClass
 beginObjectProperties
 major 4
-minor 5
+minor 6
 release 0
 # Geometry
 x 8
@@ -197,7 +197,7 @@ release 0
 x 440
 y 664
 w 64
-h 24
+h 22
 fgColor index 43
 bgColor index 3
 topShadowColor index 1
@@ -223,7 +223,7 @@ release 0
 x 512
 y 664
 w 64
-h 24
+h 22
 fgColor index 25
 bgColor index 3
 topShadowColor index 1
@@ -262,7 +262,7 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 16
+x 8
 y 640
 w 73
 h 16
@@ -280,9 +280,9 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
-x 120
+x 112
 y 640
 w 72
 h 16
@@ -304,9 +304,9 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
-x 192
+x 168
 y 640
 w 72
 h 16
@@ -329,7 +329,7 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 16
+x 8
 y 656
 w 72
 h 16
@@ -347,9 +347,9 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
-x 120
+x 112
 y 656
 w 72
 h 16
@@ -371,9 +371,9 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
-x 192
+x 168
 y 656
 w 72
 h 16
@@ -396,7 +396,7 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 16
+x 8
 y 672
 w 94
 h 16
@@ -414,9 +414,9 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
-x 120
+x 112
 y 672
 w 72
 h 16
@@ -438,9 +438,9 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
-x 192
+x 168
 y 672
 w 72
 h 16
@@ -489,8 +489,8 @@ beginObjectProperties
 major 4
 minor 0
 release 0
-x 296
-y 664
+x 256
+y 640
 w 64
 h 24
 
@@ -502,10 +502,10 @@ beginObjectProperties
 major 4
 minor 2
 release 0
-x 296
-y 664
+x 256
+y 640
 w 64
-h 24
+h 22
 fgColor index 43
 bgColor index 3
 topShadowColor index 1
@@ -552,11 +552,11 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
-x 296
+x 328
 y 640
-w 112
+w 88
 h 16
 controlPv "$(device):PM:READY"
 font "helvetica-medium-r-14.0"
@@ -580,11 +580,11 @@ beginObjectProperties
 major 4
 minor 0
 release 0
-x 416
+x 424
 y 640
-w 64
+w 56
 h 22
-fgColor index 14
+fgColor index 25
 onColor index 4
 offColor index 4
 topShadowColor index 1
@@ -596,5 +596,31 @@ offLabel "Rearm"
 3d
 useEnumNumeric
 font "helvetica-bold-r-12.0"
+endObjectProperties
+
+# (Related Display)
+object relatedDisplayClass
+beginObjectProperties
+major 4
+minor 2
+release 0
+x 296
+y 664
+w 64
+h 24
+fgColor index 43
+bgColor index 3
+topShadowColor index 1
+botShadowColor index 11
+font "helvetica-bold-r-12.0"
+buttonLabel "FLAGS"
+numPvs 4
+numDsps 1
+displayFileName {
+  0 "libera/PM_flags.edl"
+}
+symbols {
+  0 "device=$(device)"
+}
 endObjectProperties
 
