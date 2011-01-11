@@ -61,6 +61,7 @@ BIN_DIR=bin/$EPICS_ARCH
 
 export EPICS_CA_MAX_ARRAY_BYTES=1000000
 export DEVICE="$(hostname)"
+DEVICE="${DEVICE%%.*}"        # `hostname -s` currently broken!
 
 
 PIDFILE=/var/run/ioc.pid
