@@ -425,9 +425,14 @@ static void post_process(dbCommon *pr, epicsEnum16 nsta, I_RECORD *iRecord)
     { \
         GET_RECORD(record, pr, iRecord); \
         pr->udf = ! ACTION_VALUE(record, iRecord->_do_init, pr->VAL(record)); \
+        record##_MLST(pr->mlst = pr->VAL(record)); \
         post_init_record_out((dbCommon*)pr, iRecord); \
         return OK; \
     }
+/* Tricksy macros to generate the mlst assignment only for those record types
+ * for which it is needed. */
+#define do_MLST(action) action
+#define no_MLST(action)
 
 
 
@@ -522,7 +527,6 @@ static void post_process(dbCommon *pr, epicsEnum16 nsta, I_RECORD *iRecord)
 
 /* Type adapters.  Some types need to be read directly, others need to be
  * read via the read adapter. */
-
 #define ACTION_longin     ACTION_DIRECT
 #define ACTION_longout    ACTION_DIRECT
 #define ACTION_ai         ACTION_DIRECT
@@ -534,6 +538,12 @@ static void post_process(dbCommon *pr, epicsEnum16 nsta, I_RECORD *iRecord)
 #define ACTION_mbbi       ACTION_ADAPTER
 #define ACTION_mbbo       ACTION_ADAPTER
 
+/* For each out record we define whether its MLST field is defined. */
+#define longout_MLST    do_MLST
+#define ao_MLST         do_MLST
+#define bo_MLST         do_MLST
+#define stringout_MLST  no_MLST
+#define mbbo_MLST       do_MLST
 
 
 /* Mostly we can use simple boilerplate for the process routines. */
