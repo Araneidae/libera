@@ -40,9 +40,12 @@
 #include <iocsh.h>
 #include <epicsThread.h>
 #include <dbAccess.h>
+#include <db_access.h>
 #include <caerr.h>
 #include <envDefs.h>
 #include <iocInit.h>
+#include <asDbLib.h>
+#include <asTrapWrite.h>
 
 #include "hardware.h"
 #include "firstTurn.h"
@@ -499,6 +502,89 @@ static bool ProcessOptions(int &argc, char ** &argv)
     } )
 
 
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                            IOC PV put logging                             */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+/* Alas dbGetField is rather rubbish at formatting floating point numbers, so we
+ * do that ourselves, but the rest formats ok. */
+static void FormatField(dbAddr *dbaddr, dbr_string_t *value)
+{
+#define FORMAT(type, format) \
+    do { \
+        type *raw = (type *) dbaddr->pfield; \
+        for (int i = 0; i < length; i ++) \
+            snprintf(value[i], sizeof(dbr_string_t), format, raw[i]); \
+    } while (0)
+
+    long length = dbaddr->no_elements;
+    switch (dbaddr->dbr_field_type)
+    {
+        case DBR_FLOAT:
+            FORMAT(dbr_float_t, "%.7g");
+            break;
+        case DBR_DOUBLE:
+            FORMAT(dbr_double_t, "%.15lg");
+            break;
+        default:
+            dbGetField(dbaddr, DBR_STRING, value, NULL, &length, NULL);
+            break;
+    }
+#undef FORMAT
+}
+
+static void PrintValue(dbr_string_t *value, int length)
+{
+    if (length == 1)
+        printf("%s", value[0]);
+    else
+    {
+        printf("[");
+        for (int i = 0; i < length; i ++)
+        {
+            if (i > 0)  printf(", ");
+            printf("%s", value[i]);
+        }
+        printf("]");
+    }
+}
+
+static void EpicsPvPutHook(asTrapWriteMessage *pmessage, int after)
+{
+    dbAddr *dbaddr = (dbAddr *) pmessage->serverSpecific;
+    long length = dbaddr->no_elements;
+    dbr_string_t *value = (dbr_string_t *) calloc(length, sizeof(dbr_string_t));
+    FormatField(dbaddr, value);
+
+    if (after)
+    {
+        /* Log the message after the event. */
+        dbr_string_t *old_value = (dbr_string_t *) pmessage->userPvt;
+        printf("%s@%s %s.%s ",
+            pmessage->userid, pmessage->hostid,
+            dbaddr->precord->name, dbaddr->pfldDes->name);
+        PrintValue(old_value, length);
+        printf(" -> ");
+        PrintValue(value, length);
+        printf("\n");
+
+        free(old_value);
+        free(value);
+    }
+    else
+        /* Just save the old value for logging after. */
+        pmessage->userPvt = value;
+}
+
+static bool HookLogging(void)
+{
+    asTrapWriteRegisterListener(EpicsPvPutHook);
+    return true;
+}
+
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
 static bool AddDbParameter(
     char *&Destination, int &Length, const char * Parameter,
     const char * Format, ...)
@@ -571,6 +657,7 @@ static bool SetPrompt()
     return true;
 }
 
+
 extern "C" int ioc_registerRecordDeviceDriver(struct dbBase *pdbbase);
 
 /* This implements the following st.cmd:
@@ -590,7 +677,9 @@ static bool StartIOC()
         TEST_EPICS(dbLoadDatabase((char *) "dbd/ioc.dbd", NULL, NULL))  &&
         TEST_EPICS(ioc_registerRecordDeviceDriver(pdbbase))  &&
         LoadDatabases()  &&
-        TEST_EPICS(iocInit());
+        TEST_EPICS(asSetFilename("db/access.acf"))  &&
+        TEST_EPICS(iocInit())  &&
+        HookLogging();
 }
 
 

@@ -14,6 +14,8 @@ DB += libera.db
 DB += libera-2.0.db
 DB += fastFeedback.db
 
+DB += access.acf
+
 
 #----------------------------------------------------
 # If <anyname>.db template is not named <anyname>*.template add
