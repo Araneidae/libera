@@ -80,6 +80,12 @@ def FastFeedback():
     # CR 1 - position or time
     boolOut('DATA_SELECT', 'Positions', 'Timestamps',
         DESC = 'Position data select')
+    # X and Y payload selection
+    payload_options = [(opt, val + 8) for val, opt in enumerate('ABCDSQXY')]
+    mbbOut('XPAYLOAD', *payload_options,
+        DESC = 'Payload selection for FA X')
+    mbbOut('YPAYLOAD', *payload_options,
+        DESC = 'Payload selection for FA Y')
 
     boolOut('STOP',  'Stop',  DESC = 'Stop fast feedback')
     boolOut('START', 'Start', DESC = 'Start fast feedback')

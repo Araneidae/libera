@@ -61,6 +61,7 @@ bool MafFeaturePresent;
 bool ItechMaxAdcPresent;
 bool Version2FpgaPresent;
 bool SecondaryInterlock;
+bool FAPayloadSelection;
 #ifdef __EBPP_H_2
 bool Version2Driver = true;
 #else
@@ -207,6 +208,7 @@ static ENV_MAP<bool> EnvironmentBools[] = {
     { "ITECH_MAX_ADC",  "ITMAXADC", &ItechMaxAdcPresent },
     { "FPGA_2_SUPPORT", "FPGA2",    &Version2FpgaPresent },
     { "SECONDARY_ILK",  "ILK2",     &SecondaryInterlock },
+    { "FA_PAYLOAD_SEL", "FAPAY",    &FAPayloadSelection },
 };
 
 

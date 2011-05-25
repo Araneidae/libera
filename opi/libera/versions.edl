@@ -3,10 +3,10 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 485
-y 204
+x 486
+y 205
 w 392
-h 584
+h 601
 font "helvetica-medium-r-14.0"
 ctlFont "helvetica-medium-r-14.0"
 btnFont "helvetica-bold-r-14.0"
@@ -35,7 +35,7 @@ release 0
 x 8
 y 40
 w 376
-h 504
+h 520
 lineColor index 14
 fill
 fillColor index 4
@@ -48,7 +48,7 @@ major 4
 minor 1
 release 0
 x 296
-y 552
+y 568
 w 88
 h 24
 fgColor index 25
@@ -1597,6 +1597,49 @@ bgColor index 0
 useDisplayBg
 value {
   "x"
+}
+autoSize
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 5
+release 0
+x 160
+y 536
+w 32
+h 16
+controlPv "$(device):VE:FAPAY"
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 4
+useDisplayBg
+autoHeight
+limitsFromDb
+nullColor index 0
+newPos
+objType "monitors"
+noExecuteClipMask
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 24
+y 536
+w 127
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "FA Payload Select?"
 }
 autoSize
 endObjectProperties

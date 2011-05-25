@@ -974,6 +974,7 @@ def Versions():
     boolin('ITMAXADC',  'i-Tech MAX ADC register')
     boolin('FPGA2',     'Libera 2.00+ FPGA features')
     boolin('ILK2',      'Secondary interlock control')
+    boolin('FAPAY',     'FA payload selection')
     boolin('DRIVER2',   'Libera 2.00+ driver features')
 
     UnsetChannelName()

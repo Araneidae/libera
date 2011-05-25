@@ -975,6 +975,11 @@ Total number of nodes on the network detected by this Libera.
 Selects the data to be transmitted by this Libera: should normally be
 ``Positions'', but ``Timestamps'' can be selected for network debugging.
 
+`XPAYLOAD_S`\*, `YPAYLOAD_S`*::
+If `VE:FAPAY` is set these PVs can be used to select the data transmitted as
+``Position'' data via the communication controller.  Possible values are ``A'',
+``B'', ``C'', ``D'', ``S'', ``Q'', ``X'', ``Y''.
+
 `FRAMELEN_S`*::
 Duration of communication phase in communication control clock cycles
 (106.25MHz).  Incoming packets are ignored outside this period: a value
@@ -1202,6 +1207,10 @@ useful features.
 `ILK2`::
 Detects secondary interlock window support (DLS only feature), used for
 alternative interlock window with hardware selection.
+
+`FAPAY`::
+Detects FA payload selection option, DLS only feature.  Enables selection of X
+and Y payloads for FA data.
 
 
 

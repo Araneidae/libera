@@ -105,6 +105,9 @@ struct FF_CONTROL_SPACE         // At FF_CONTROL_ADDRESS (1402A000)
     int ExternalTriggerStartMask;
     /* Write any value to this register to stop fast feedback clock. */
     int SoftwareStopControl;
+    /* This register can be used to select the communication controller payload,
+     * if the appropriate firmware is configured. */
+    int FAPayload;
 };
 
 
@@ -135,6 +138,7 @@ static bool DataSourceSelect = false;
 static bool GlobalEnable = true;
 static bool LinkEnable[4] = { true, true, true, true };
 static int LoopBack[4] = { 0, 0, 0, 0 };
+static int XPayload = 14, YPayload = 15;
 
 
 
@@ -233,6 +237,13 @@ static void WriteDataSourceSelect()
 }
 
 
+static void ProcessPayload()
+{
+    if (FAPayloadSelection)
+        ControlSpace->FAPayload = ((YPayload & 0xF) << 4) | (XPayload & 0xF);
+}
+
+
 /* Routines called to stop and start fast feedback. */
 
 static void StopFastFeedback()
@@ -299,12 +310,15 @@ bool InitialiseFastFeedback()
     }
     PUBLISH_FUNCTION_OUT(bo, "FF:DATA_SELECT",
         DataSourceSelect, WriteDataSourceSelect);
+    PUBLISH_CONFIGURATION(mbbo, "FF:XPAYLOAD", XPayload, ProcessPayload);
+    PUBLISH_CONFIGURATION(mbbo, "FF:YPAYLOAD", YPayload, ProcessPayload);
 
     PUBLISH_ACTION("FF:STOP",  StopFastFeedback);
     PUBLISH_ACTION("FF:START", StartFastFeedback);
 
     /* Initialise the FPGA by writing the current configuration. */
     ProcessWrite();
+    ProcessPayload();
 
     return true;
 }

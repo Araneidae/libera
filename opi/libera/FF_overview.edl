@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 112
-y 175
+x 113
+y 176
 w 549
 h 545
 font "helvetica-medium-r-8.0"
@@ -118,7 +118,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 120
 y 304
@@ -142,7 +142,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 224
 y 304
@@ -166,7 +166,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 328
 y 304
@@ -190,7 +190,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 432
 y 304
@@ -214,7 +214,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 432
 y 328
@@ -237,7 +237,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 328
 y 328
@@ -260,7 +260,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 224
 y 328
@@ -283,7 +283,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 120
 y 328
@@ -346,7 +346,7 @@ endObjectProperties
 object activeXTextDspClass
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 120
 y 104
@@ -656,7 +656,7 @@ endObjectProperties
 object activeXTextDspClass
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 120
 y 136
@@ -723,7 +723,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 432
 y 424
@@ -746,7 +746,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 328
 y 424
@@ -769,7 +769,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 224
 y 424
@@ -792,7 +792,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 120
 y 424
@@ -835,7 +835,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 432
 y 448
@@ -858,7 +858,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 328
 y 448
@@ -881,7 +881,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 224
 y 448
@@ -904,7 +904,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 120
 y 448
@@ -947,7 +947,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 432
 y 472
@@ -970,7 +970,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 328
 y 472
@@ -993,7 +993,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 224
 y 472
@@ -1016,7 +1016,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 120
 y 472
@@ -1059,7 +1059,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 136
 y 40
@@ -1104,7 +1104,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 432
 y 376
@@ -1127,7 +1127,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 328
 y 376
@@ -1150,7 +1150,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 224
 y 376
@@ -1173,7 +1173,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 120
 y 376
@@ -1255,7 +1255,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 264
 y 280
@@ -1279,7 +1279,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 480
 y 280
@@ -1541,7 +1541,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 4
+minor 5
 release 0
 x 328
 y 280
@@ -1602,5 +1602,123 @@ command {
   0 "libera-help FF_overview"
 }
 includeHelpIcon
+endObjectProperties
+
+# (Group)
+object activeGroupClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 312
+y 136
+w 216
+h 24
+
+beginGroup
+
+# (Menu Button)
+object activeMenuButtonClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 400
+y 136
+w 48
+h 24
+fgColor index 14
+bgColor index 3
+inconsistentColor index 0
+topShadowColor index 1
+botShadowColor index 11
+controlPv "$(device):FF:XPAYLOAD_S"
+font "helvetica-medium-r-12.0"
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 312
+y 136
+w 51
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "Payload"
+}
+autoSize
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 376
+y 136
+w 13
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "X:"
+}
+autoSize
+endObjectProperties
+
+# (Menu Button)
+object activeMenuButtonClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 480
+y 136
+w 48
+h 24
+fgColor index 14
+bgColor index 3
+inconsistentColor index 0
+topShadowColor index 1
+botShadowColor index 11
+controlPv "$(device):FF:YPAYLOAD_S"
+font "helvetica-medium-r-12.0"
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 456
+y 136
+w 12
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "Y:"
+}
+autoSize
+endObjectProperties
+
+endGroup
+
+visPv "$(device):VE:FAPAY"
+visMin "1"
+visMax "2"
 endObjectProperties
 
