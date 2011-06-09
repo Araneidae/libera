@@ -4,6 +4,9 @@ Epics driver for Libera Electron Beam Position Monitor (EBPM)
 .. This file is written in reStructuredText
 
 .. default-role:: literal
+
+..  The :id: role is just used to mark PV identifiers so that check-pv-docs can
+    identify that they've been documented.
 .. role:: id(literal)
 
 
@@ -331,15 +334,15 @@ Triggering:
 
 - Write desired capture length to `CAPLEN_S`
 - Write 0 to `READY` (either use "put with callback" or else wait for
-  `READY` == 0).
+  `READY` = 0).
 - Write 1 to `ARM`
-- Wait until `READY` == 1
+- Wait until `READY` = 1
 
 Reading:
 
 - Write <offset> to `OFFSET_S`
 - Either use "put with callback" for the write above, or wait until
-  `OFFSET` == <offset>
+  `OFFSET` = <offset>
 - Read desired waveforms
 
 If `CAPLEN` > `LENGTH_S` then the reading process should be repeated with
@@ -652,6 +655,28 @@ Configuration (<group> = CF)
     For certain machine physics investigations it can be helpful to turn off the
     notch filters in the fast feedback stream.  Note that fast feedback will not
     work properly when this is disabled!
+
+:id:`NOTCH1_S`, :id:`NOTCH2_S`
+    Five point waveforms providing direct access to the two notch filters in the
+    FA stream.  The programmed notch filter is
+
+        (a\ :sub:`0` + a\ :sub:`1` z\ :sup:`-1` + a\ :sub:`2` z\ :sup:`-2`) /
+        (2\ :sup:`17` + a\ :sub:`3` z\ :sup:`-1` + a\ :sub:`4` z\ :sup:`-2`)
+
+    where a\ :sub:`n` is the *n*\th coefficient of the waveform.  These filters
+    are initialised from the files `notch1` and `notch2` in the `/opt/lib`
+    directory on Libera.
+
+:id:`FIR_S`
+    Waveform for controlling the FA FIR decimation filter.  The length of this
+    filter is 3 times the FA FIR decimation, as indicated by `VE:FAFIR`.  For a
+    consistent power level the sum of the coefficents should be 2\ :sup:`17`.
+    This filter is initialised from the file `/opt/lib/polyphase_fir`.
+
+:id:`RESETFA_S`
+    When processed this resets the three FA filters `NOTCH1_S`, `NOTCH2_S` and
+    `FIR_S` to their original default values by reloading the corresponding
+    `/opt/lib` files.
 
 :id:`TRIGDLY_S`\*
     This can be used to generate an internal delay on the Libera trigger, and
