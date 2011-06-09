@@ -1,18 +1,21 @@
 Change history of Libera EPICS Driver development
 =================================================
 
+.. This file is written in reStructuredText
+.. default-role:: literal
+
 2010/03/03 Version 2.05.3
 -------------------------
 Add to calculations performed on FR and TT waveforms, one bug fix.
 
  - Support averaging FR waveforms to increase the noise to signal ratio for
    repetitive beam responses synchronised to the trigger.
- - Support tune response measurement PVs for both FR and TT waveforms, and
-   add simple statistics measurement to TT as well as FR.
+ - Support tune response measurement PVs for both FR and TT waveforms, and add
+   simple statistics measurement to TT as well as FR.
  - Update the documentation.
  - Fix bug in Epics and IOC Restart functions when low on memory.
- - Install separate Brilliance and Electron scaling factors for estimated
-   power calculation.
+ - Install separate Brilliance and Electron scaling factors for estimated power
+   calculation.
 
 
 2010/01/04 Version 2.05.2
@@ -23,19 +26,19 @@ Major changes in this release:
 
  - Fix fairly long standing bug in calculation of `FR:STDY`.  I'm afraid this
    calculation has been broken ever since it was released!
- - Add option for open loop operation to health daemon.  Also involves
-   renaming PV `SE:ENABLE_S` to `SE:HEALTHD_S`.
+ - Add option for open loop operation to health daemon.  Also involves renaming
+   PV `SE:ENABLE_S` to `SE:HEALTHD_S`.
  - Added network statistics monitoring PVs for displaying network and channel
    access activity.
  - Default turn-by-turn window size has been increased to 128K samples to
    increase readout speed, and a corresponding new control `TT:DOREFRESH_S`
-   allows for more efficient turn by turn capture.  Matlab functions `getxy`
-   and `getiq` in `toolkit/matlab` have been updated accordingly.
+   allows for more efficient turn by turn capture.  Matlab functions `getxy` and
+   `getiq` in `toolkit/matlab` have been updated accordingly.
 
 Other minor changes:
 
- - References to ``Fast Feedback'' now renamed to ``Communication
-   Controller'' in displays and documentation.
+ - References to "Fast Feedback" now renamed to "Communication Controller" in
+   displays and documentation.
  - Updated build instructions and updated ntp build script.
  - DLS architecture now reported as `DLS` and correctly recognised.
 
@@ -47,15 +50,15 @@ stepped to match current Libera release.
 
 The following major changes are in this release:
 
- - Support for simple (but rapid, 10dB/s) ``automatic gain control''.
+ - Support for simple (but rapid, 10dB/s) "automatic gain control".
  - Add support for internal postmortem triggers where supported by FPGA.
  - Add support for postmortem trigger offset where supported by driver.
  - Default release now based on EPICS 3.14.11
 
 Some minor changes:
 
- - Allow 25 minutes for NTP daemon to synchronise before reporting NTP status
-   in overall clock health: the standard health daemon can take this long.
+ - Allow 25 minutes for NTP daemon to synchronise before reporting NTP status in
+   overall clock health: the standard health daemon can take this long.
  - A few relics have been tidied up.
  - The PV documentation is now more complete.
  - Timestamps on FT records are now more accurate.
@@ -76,7 +79,8 @@ The following are the major changes in this release:
  - Automatically detects installation target and available system features,
    automatically makes approprate features available.
  - Support for new 2.00 functionality:
-   1. ``Mean Sum'': computation of average beam intensity between successive
+
+   1. "Mean Sum": computation of average beam intensity between successive
       triggers, useful for direct measurement of injection efficiency.
    2. Configuration of Spike Removal feature.
  - Support for attenuator offsets: help support mixture of Electron and
@@ -90,8 +94,8 @@ The following are the major changes in this release:
 
 The following minor changes and bug fixes are worth noting:
 
- - Fixed error in device link type which caused repeated broadcast requests
-   for unobtainable PVs.
+ - Fixed error in device link type which caused repeated broadcast requests for
+   unobtainable PVs.
  - Brilliance detection works correctly on older systems.
  - Fix dependency on `DECIMATION` value by reading it directly from the FPGA.
    This helps integration on newer versions of Libera.
@@ -105,26 +109,25 @@ The following minor changes and bug fixes are worth noting:
 ---------------------------
 Mostly minor changes since 1.46.4.
 
- - Add `CF:ATTEN_OFFSET_S` waveforms to correct for built in attenuator
-   offsets.
+ - Add `CF:ATTEN_OFFSET_S` waveforms to correct for built in attenuator offsets.
  - Code now compiles without warnings with gcc 4.2.4 -- this is in preparation
    for migration to a newer environment.
  - Pick up the number of turns per switch position (`NTBT`) so that signal
    conditioning works correctly.
  - Other minor bug fixes.
 
-There is also some preliminary support for Diamond specific FPGA features:
-these are detected by looking for bit 23 set in the ITECH feature register
-(FPGA register 0x1C) and bit 31 set in register 0x18.  At present the
-following features are enabled:
+There is also some preliminary support for Diamond specific FPGA features: these
+are detected by looking for bit 23 set in the ITECH feature register (FPGA
+register 0x1C) and bit 31 set in register 0x18.  At present the following
+features are enabled:
 
  - Continuous MAXADC detection: used to generate `SA:MAXADC`
  - Slow (turn by turn) ADC overflow detection configuration
 
 Note that if your Libera intermediate frequency (HARMONIC/DECIMATION mod 1) is
 far away from 1/4 (values of 1/5 or 1/3 may be problematic) then some of the
-first turn calculations may not work properly.  If you have this problem, let
-me know.
+first turn calculations may not work properly.  If you have this problem, let me
+know.
 
 
 2008/07/14 Version 1.46.4
@@ -133,24 +136,25 @@ Many changes in this release.
 
 The following are important new features in this release:
 
- - Support for Libera Brilliance and Linux 2.6 installation.  This driver
-   works with Libera 1.60 and 1.82 (though there has not been much testing on
-   these platforms).
+ - Support for Libera Brilliance and Linux 2.6 installation.  This driver works
+   with Libera 1.60 and 1.82 (though there has not been much testing on these
+   platforms).
 
 
 The following major changes will introduce incompatibilites:
 
- - The EPICS driver now completely replaces much of the preexising Libera
-   driver functionality.  Two changes in particular will be visible:
+ - The EPICS driver now completely replaces much of the preexising Libera driver
+   functionality.  Two changes in particular will be visible:
+
    1. The script used to start, stop or restart the Libera system is now
       `/etc/init.d/libera-driver` rather than libera (which is renamed by
       installation to `old-libera`, and can safely be removed).
    2. CSPI applications (such as the libera application) will no longer work.
- - ADC readings reported by FT processing are now scaled to 16 bit values.
-   This is designed for compatibility with Libera Brilliance.
+ - ADC readings reported by FT processing are now scaled to 16 bit values.  This
+   is designed for compatibility with Libera Brilliance.
 
-The following extra features are worth noting.  For more details see the
-README file for details.
+The following extra features are worth noting.  For more details see the README
+file for details.
 
  - New beam position statistics have been added to `FR` data.
  - Add new `IL:IIRK_S` configuration setting to control a filter in the ADC
@@ -158,33 +162,34 @@ README file for details.
  - Add new `IL:TEST_S` PV for testing the interlock.
  - Fix exceptionally long standing bug in Vertical mode calculation: if a
    non-zero origin is specified then all positions were returned as zero, due
-   to a `<<` vs `-` precedence error!
+   to a << vs - precedence error!
  - Add support for trigger offset to FR and TT waveforms.
  - Improve FT WF position calculations by using a proper 8 point filter for
    decimating raw ADC data down to display resolution.  This filter turns out
    to add a negligible amount of time to processing.
-      Note that this filter is currently hard wired and relies on the
-   intermediate frequency being close to 1/4 sample frequency.
- - Add `FT:WF`<`X`,`Y`,`Q`,`S`> and `FT:MAXS` pvs to provide an estimate of
-   ``intra-turn'' beam position.
+
+   Note that this filter is currently hard wired and relies on the intermediate
+   frequency being close to 1/4 sample frequency.
+ - Add `FT:WF` < `X`, `Y`, `Q`, `S`> and `FT:MAXS` pvs to provide an estimate of
+   "intra-turn" beam position.
  - Change all screens from arial to helvetica fonts.  The Helvetica font has
    the virtue of having fixed pitch digits.
- - Ensure that the DONE PV updates with a current timestamp.  To ensure that
-   its processing can be observed it is changed from a bo to a longout record.
+ - Ensure that the DONE PV updates with a current timestamp.  To ensure that its
+   processing can be observed it is changed from a bo to a longout record.
  - Revisit the power and charge calculations.  The key scaling parameter `S_0`
    is now a configuration parameter for each affected mode (SA and FT).
  - Implement interlock holdoff when changing signal conditioning.  Also means
    that we can reduce the default interlock holdoff interval.
  - Change first turn ADC readouts to return full 16 bit values.  In
-   pre-brilliance Libera we return zeros in the bottom four bits, in
-   Brilliance we return the full 16 bit ADC reading.
+   pre-brilliance Libera we return zeros in the bottom four bits, in Brilliance
+   we return the full 16 bit ADC reading.
  - Create new `SC` signal conditioning code to replace DSC daemon.
 
 
 2007/09/27 Version 1.46.1
 -------------------------
-Support for Libera 1.46 driver.  Note that this version will not work
-correctly with earlier versions of the driver.
+Support for Libera 1.46 driver.  Note that this version will not work correctly
+with earlier versions of the driver.
 
 The only change is to track an incompatible change in the driver interface.
 
@@ -201,16 +206,16 @@ Switching to this compiler and library has had two effects:
 
 Major changes:
 
- - Master BPM enable PV added.  This allows a BPM to be marked as ``disabled''
-   if it is returning unreliable positions.  The only direct effect on the
-   BPM is to disable operation of the interlock.
- - Significant changes to ``geometry'' configuration.  The simple beam offset
-   PVs X0 and Y0 have been replaced by three separate displacements:
-    `BBA_X,_Y`:: ``Beam Based Alignment'' offsets, persistent over reboots
-    `BCD_X,_Y`:: ``Beam Current Dependent'' offset, initialised to 0 on reboot
-    `GOLDEN_X,_Y`:: Special purpose local offsets (for bumps, etc), 0 on reboot
- - Control over DSC (``Digital Signal Conditioning'') is now available
-   through a new configuration PV.
+ - Master BPM enable PV added.  This allows a BPM to be marked as "disabled" if
+   it is returning unreliable positions.  The only direct effect on the BPM is
+   to disable operation of the interlock.
+ - Significant changes to "geometry" configuration.  The simple beam offset PVs
+   X0 and Y0 have been replaced by three separate displacements:
+   :`BBA_X,_Y`:     "Beam Based Alignment" offsets, persistent over reboots
+   :`BCD_X,_Y`:     "Beam Current Dependent" offset, initialised to 0 on reboot
+   :`GOLDEN_X,_Y`:  Special purpose local offsets (for bumps, etc), 0 on reboot
+ - Control over DSC ("Digital Signal Conditioning") is now available through a
+   new configuration PV.
  - Control over switch triggering, both selection of trigger source (internal
    or external) and trigger delay (when using external trigger).
  - Control over the clock is more refined and the machine clock tracking
@@ -219,8 +224,8 @@ Major changes:
  - Machine clock synchronisation is now separated from system clock
    synchronisation, and in this release system clock synchronisation is not
    actually required.
- - The position interlocking now automatically switches off when the current
-   is below a preset threshold, as well as switching on above a threshold.
+ - The position interlocking now automatically switches off when the current is
+   below a preset threshold, as well as switching on above a threshold.
  - Interlock reasons are now recorded.
  - Voltage monitoring now included in overall system health.
  - caRepeater now integrated into IOC, so now no need for separate EPICS
@@ -240,10 +245,9 @@ detailed installation instructions.
 -------------------------
 Preliminary release to support iTech Libera 1.40 driver.
 
-This is a stop-gap release to provide EPICS support for the 1.40 Libera
-driver: this release does not support any new Libera functionality.  A more
-fully featured release providing support for for 1.40 features will follow
-soon.
+This is a stop-gap release to provide EPICS support for the 1.40 Libera driver:
+this release does not support any new Libera functionality.  A more fully
+featured release providing support for for 1.40 features will follow soon.
 
 Significant changes:
 
@@ -253,8 +257,7 @@ Significant changes:
 
 Minor changes:
 
- - Fix bash compatibility bug introduced in `/etc/init.d/epics` script in
-   0.6.3.
+ - Fix bash compatibility bug introduced in `/etc/init.d/epics` script in 0.6.3.
  - Version numbering now changed to track Libera driver version numbers.
 
 
@@ -264,7 +267,7 @@ Minor changes from Version 0.6.1
 
 Significant changes:
 
- - Add control over lmtd to provide support for ``double detune'': this is
+ - Add control over lmtd to provide support for "double detune": this is
    designed to reduce interference from revolution frequency sidebands.
  - New PVs to remotely restart EPICS and remotely reboot the IOC.
  - Improve the calculation of FT:CHARGE.  The new algorithm is virtually
@@ -274,9 +277,8 @@ Significant changes:
 
 Minor changes:
 
- - Changed name of `FT:RAW` waveforms from <buttons> to <channel> to reflect
-   the fact that these waveforms do not follow the buttons as the switch
-   changes.
+ - Changed name of `FT:RAW` waveforms from <buttons> to <channel> to reflect the
+   fact that these waveforms do not follow the buttons as the switch changes.
  - New `EPICSUP` field to record EPICS IOC up time.
  - Diamond specific fast feedback support is present in this release, but not
    compiled in in the default configuration.
@@ -294,10 +296,10 @@ Works with Libera 1.21
 
 Significant changes:
 
- - Automatic switching and DSC (digital signal conditioning) can now be
-   switched on or off.  This should normally be on when accurate slow
-   acquisition (and fast feedback) data is required, and should be off for
-   first turn and turn by turn data.
+ - Automatic switching and DSC (digital signal conditioning) can now be switched
+   on or off.  This should normally be on when accurate slow acquisition (and
+   fast feedback) data is required, and should be off for first turn and turn by
+   turn data.
  - The machine protection interlock can now be controlled and configured.
  - Slow acquisition mode now estimates beam current.
  - First turn now estimates charge in measured bunch train.
@@ -321,36 +323,36 @@ Minor changes:
 Works with Libera 1.00 iTech drivers
 
 Note that the description of the installation process in `INSTALL` has changed:
-this release includes scripts to run on Libera to automate part of this
-install process.
+this release includes scripts to run on Libera to automate part of this install
+process.
 
 Significant changes:
 
- - New `HEALTH` record which collects together alarm severities for
-   temperature, fans and free memory.
- - New `TICK` record which records time since last processed trigger and
-   records an alarm status after 1 and 10 seconds.
- - Redefine orientation of vertical mode: button/stripline B is now deemed to
-   be in the negative X direction.  This makes the logic consistent with
+ - New `HEALTH` record which collects together alarm severities for temperature,
+   fans and free memory.
+ - New `TICK` record which records time since last processed trigger and records
+   an alarm status after 1 and 10 seconds.
+ - Redefine orientation of vertical mode: button/stripline B is now deemed to be
+   in the negative X direction.  This makes the logic consistent with
    conventions at Diamond.
- - Postmortem support now enabled: this seems to work ok with the latest
-   drivers from iTech.
+ - Postmortem support now enabled: this seems to work ok with the latest drivers
+   from iTech.
  - New `libera-install-ioc` and `libera-install-epics` scripts.  These can be
-   used to install the EPICS libraries and Libera EPICS driver on the IOC.
-   Note that the `INSTALL` instructions have changed to reflect this.
+   used to install the EPICS libraries and Libera EPICS driver on the IOC.  Note
+   that the `INSTALL` instructions have changed to reflect this.
  - `/etc/init.d/epics stop` script now copes if the driver has locked up and
    forcibly kills it if necessary.
  - EDM control screens now included in this distribution.
 
 Minor changes:
 
- - Temperature, fan and memory alarm limits defined.  Memory records `USED` and
-   `CACHE` withdrawn (still looking for a good measure of free memory).  Unused
-   `TEMP2` record also deleted.
- - Change implementation of interlocking with EPICS layer, used to rule out
-   the EPICS layer from any involvement with Libera lockups (it is clear now
-   that these occur in the iTech driver).
- - Remove rather arbitrary limits on `TT`, `TW`, `FR` and `BN` IOC
+ - Temperature, fan and memory alarm limits defined.  Memory records `USED`
+   and `CACHE` withdrawn (still looking for a good measure of free memory).
+   Unused `TEMP2` record also deleted.
+ - Change implementation of interlocking with EPICS layer, used to rule out the
+   EPICS layer from any involvement with Libera lockups (it is clear now that
+   these occur in the iTech driver).
+ - Removed rather arbitrary limits on `TT`, `TW`, `FR` and `BN` IOC
    configuration parameters: if the installer insists on killing the IOC by
    setting unreasonable values, be my guest.
 
@@ -383,9 +385,9 @@ The following incompatible changes with the previous release should be noted:
  - The file `/etc/sysconfig/epics_ioc` now contains important startup
    configuration information which must be provided before the IOC will start.
 
- - The loading of initial configuration has changed.  `IOC_STATE_PATH` should
-   be defined appropriately and an initial configuration can be written
-   through the EPICS interface.
+ - The loading of initial configuration has changed.  `IOC_STATE_PATH` should be
+   defined appropriately and an initial configuration can be written through the
+   EPICS interface.
 
 
 2006/02/06 Version 0.2

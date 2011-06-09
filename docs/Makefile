@@ -1,13 +1,7 @@
-ASCIIDOC = asciidoc
+RST2HTML = rst2html
 
-%.html: %.txt
-	$(ASCIIDOC) $<
-
-%.xml: %.txt
-	$(ASCIIDOC) -b docbook $<
-
-%.pdf: %.xml
-	docbook2pdf $<
+%.html: %.rst
+	$(RST2HTML) $< >$@
 
 
 DOCUMENTS = libera CHANGES process

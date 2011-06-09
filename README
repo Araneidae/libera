@@ -3,7 +3,7 @@ EPICS driver.  See the attached file COPYING for licensing (in brief, GPL v2).
 
 Documentation is in the docs directory:
 
-CHANGES.{txt,html}
+CHANGES.{rst,html}
     Log of changes to this software.
 
 BUILD.txt
@@ -12,8 +12,8 @@ BUILD.txt
 INSTALL.txt
     Installation instructions for binary distribution.
 
-libera.{txt,html}
+libera.{rst,html}
     Detailed description of functionality provided by the EPICS driver.
 
-process.{txt,html}
+process.{rst,html}
     Internal documentation for Diamond's software process.

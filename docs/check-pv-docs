@@ -22,23 +22,23 @@ sed -r '
 sort >"$TEMP_ROOT"/pvs.txt
 
 # Extract a list of all documented PVs
-cat "$LIBERA"/docs/libera.txt |
+cat "$LIBERA"/docs/libera.rst |
 sed -nr '
     # Each group is headed by a line of the form <group> = XX
-    /^.*<group> = (..).*:/{
+    /^.*<group> = (..)\)$/{
         s//\1/                      # Extract the group identifier
         h                           # ... and stash it in hold space
     }
     # Each PV documentation set consists of a line of comma separated PV
-    # descriptions with the line ending in ::
-    1,/\(no group\):$/{
-        /::$/{
-            s///                    # Discard the ::
-            s:^// ::                # Use asciidoc comments for hidden PVs
-            s/`//g                  # Discard the ` characters
-            s/\\?\*//g              # Discard persistent variable marker
+    # descriptions marked with :id:`id` together with possible extra markup
+    1,/\(no group\)$/{
+        /:id:/{
+            s/^.. //                # Remove any leading comment marker
+            s/\\(\*| )//g; s/\\//g  # Eliminate rst joining tricks and * mark
+            s/`//g; s/:id://g       # Discard all other markup
         :1
-            # This loop adds the group identification in front of each PV
+            # This loop adds the group identification in front of each PV and
+            # chops the line up at commas
             G                       # Pull group from hold space
             T                       # Reset group detection
             s/^(.*)\n(..)$/\2:\1/   # Move to start of line and detect group
@@ -51,15 +51,14 @@ sed -nr '
         }
     }
     # When we reach the no group section we need to treat this specially.
-    # Fortunately no line splitting tricks needed.
-    /\(no group\):/,${
-        /::$/{
-            s///
-            s/`//g
+    # Fortunately no line splitting or other special processing tricks needed.
+    /\(no group\)$/,${
+        /:id:/{
+            s/:id:`([^`]*)`/\1/
             p
         }
     }' |
-# Expand the special PV patterns.  These are all documented in libera.txt.
+# Expand the special PV patterns.  These are all documented in libera.rst.
 sed -r '
     # <channel> -> 1 2 3 4
     /^(.*)<channel>(.*)$/s//\11\2\n\12\2\n\13\2\n\14\2/
@@ -90,6 +89,5 @@ sed -r '
     ' |
 sort >"$TEMP_ROOT"/docs.txt
 
-# comm "$TEMP_ROOT"/pvs.txt "$TEMP_ROOT"/docs.txt
 diff "$TEMP_ROOT"/pvs.txt "$TEMP_ROOT"/docs.txt |
 sed -rn '/^<|^>/p'
