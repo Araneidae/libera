@@ -90,6 +90,15 @@ set_var()
 }
 
 
+# Computes a version string from a version number interpreting it as three
+# fields.
+version_string()
+{
+    local VER=$1
+    printf v%d.%02x.%d $((VER >> 12)) $(((VER >> 4) & 0xFF)) $((VER & 0xF))
+}
+
+
 # Basic target system information.
 export KERNEL_VERSION="$(uname -r)"
 export LIBC_VERSION="$(echo /lib/ld-*.so | sed 's/^.*-//;s/\.so$//')"
@@ -193,7 +202,7 @@ else
     set_var FA_PAYLOAD_SEL 0
 fi
 
-# The DLS Fast feedback controller is available if DLS FPAG present or the
+# The DLS Fast feedback controller is available if DLS FPGA present or the
 # iTech FF option is selected.
 set_var OPT_FF $((OPT_DLS_FPGA  ||  (FPGA_ITECH & (1 << 6)) != 0))
 # If FF option set then read the FF version
@@ -204,8 +213,7 @@ if [ $OPT_FF = 1 ]; then
     write_register 0x2a000 1
     write_register 0x2a000 0
     FF_VER=$(read_register 0x28c00)
-    set_var FF_VERSION $(printf v%d.%02x.%d \
-        $((FF_VER >> 12)) $(((FF_VER >> 4) & 0xFF)) $((FF_VER & 0xF)))
+    set_var FF_VERSION $(version_string $FF_VER)
 else
     set_var FF_VERSION No-FF
 fi
@@ -216,13 +224,21 @@ set_var OPT_GBETH $(((FPGA_ITECH & 0x8) != 0))
 # We now have enough information to make a reasonable estimate of the FPGA
 # version.
 if [ $OPT_DLS_FPGA = 1 ]; then
-    set_var FPGA_VERSION "DLS-$FF_VERSION"
+    if [ $FF_VER = $FPGA_BUILD_NO ]; then
+        set_var FPGA_VERSION "DLS-$FF_VERSION"
+    else
+        set_var FPGA_VERSION "DLS-$(version_string $FPGA_BUILD_NO)/$FF_VERSION"
+    fi
 elif [ $FPGA_OLD = 1 ]; then
     set_var FPGA_VERSION ITECH-v1.46
 elif [ $FPGA_2_SUPPORT = 0 ]; then
     set_var FPGA_VERSION ITECH-v1.80
 else
-    set_var FPGA_VERSION ITECH-v2.00+
+    if [ $OPT_FF = 1 ]; then
+        set_var FPGA_VERSION "ITECH-v2.00+/$FF_VERSION"
+    else
+        set_var FPGA_VERSION ITECH-v2.00+
+    fi
 fi
 
 

@@ -42,6 +42,8 @@ SOURCE="$(cd "$(dirname "$0")"/..; pwd)"
 
 LOCATIONS="$(cat "$SOURCE"/install_d/locations)"
 
+# Files installed in /opt/bin from $SOURCE/base:
+OPT_BIN_FILES='configure-location configure-network install-fpga fpga_init'
 
 
 # Parse local installation options
@@ -49,18 +51,18 @@ TARGET=none
 AUTOSTART=false
 STARTNOW=false
 REMOUNT_RW=false
+CLEAN_OPT=false
 NOTCH_FLAG=
 INST_TYPE="$(probe_libera)"
-while getopts 'ftlaswnT:h' option; do
+while getopts 'ftaswnCT:h' option; do
     case "$option" in
     f)  TARGET=final ;;
     t)  TARGET=test ;;
     a)  AUTOSTART=true ;;
-    l)  echo 'The -l option is obsolete: use -a'
-        AUTOSTART=true ;;
     s)  STARTNOW=true ;;
     w)  REMOUNT_RW=true ;;
     n)  NOTCH_FLAG=-f ;;
+    C)  CLEAN_OPT=true ;;
     T)  INST_TYPE="$OPTARG" ;;
     h)  echo -n 'Usage: libera-install-ioc <options>'
         if [ -n "$LOCATIONS" ]; then echo ' <location>'; else echo; fi
@@ -72,6 +74,7 @@ where <options> includes
     -s  Start IOC after installation
     -w  Remount ro rootfs rw if necessary
     -n  Force rewriting of notch filter files, even if already present
+    -C  Purge /opt/{bin,lib} on DLS install
     -T: Force instrument type in case autodetection fails.
         Don't use this option!
 EOF
@@ -109,17 +112,8 @@ fi
     Error 'Invalid arguments: try -h for help'
 
 
-# Check whether we can write to the filesystem.
-if grep -qE ' / [^ ]* ro(,| )' /proc/mounts; then
-    # Root is mounted read only.  Bail unless remount requested.
-    if $REMOUNT_RW; then
-        mount -o remount,rw /  ||
-            Error 'Unable to remount rootfs for writing'
-        trap 'mount -o remount,ro /' EXIT
-    else
-        Error 'Rootfs is mounted read-only.  Try -w option'
-    fi
-fi
+# Ensure we can write to the filesystem.
+ensure_root_rw $REMOUNT_RW
 
 
 # Make sure the libera driver isn't running: we need to stop everything, as
@@ -220,6 +214,29 @@ for f in libera-driver epics healthd; do
         >/etc/init.d/$f
     chmod +x /etc/init.d/$f
 done
+
+
+# If this is a DLS target system install or upgrade /opt/{lib,bin}
+if [ "$ROOTFS_ARCH" == DLS ]; then
+    # The libera config file now lives in /opt/lib, but for compatibility with
+    # older systems we still look for it in $CONFIGDIR.
+    rm -f $CONFIGDIR/libera*
+    ln -s /opt/lib/libera $CONFIGDIR
+
+    # If a clean install requested purge existing /opt install.  Don't do this
+    # normally as we generally want to keep the installed FPGA.
+    $CLEAN_OPT  &&  rm -rf /opt/bin /opt/lib
+
+    mkdir -p /opt/lib /opt/bin
+    cp "$SOURCE/bin/$EPICS_ARCH/fp" /opt/bin
+    for f in $OPT_BIN_FILES; do
+        cp "$SOURCE/base/$f" /opt/bin
+    done
+    cp "$SOURCE"/base/lib/* /opt/lib
+
+    /opt/bin/install-fpga -l
+    /opt/bin/configure-location $LOCATION
+fi
 
 
 # Configure autostart as required.  First clear out any existing autostart

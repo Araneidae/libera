@@ -6,5 +6,6 @@ DIRS += clockPllApp
 DIRS += healthdApp
 DIRS += liberaApp
 DIRS += extras
+DIRS += base
 DIRS += install_d
 include $(TOP)/configure/RULES_TOP

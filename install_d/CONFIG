@@ -40,14 +40,14 @@ IOC_REMOUNT_ROOTFS=0
 # samples.  Different ramp lengths are appropriate in the storage ring and
 # the booster: need to ensure that this length is less than the interval
 # between triggers.
-BR_IOC_BN_LENGTH=190
+BO_IOC_BN_LENGTH=190
 SR_IOC_BN_LENGTH=60
 
 # This determines how long a buffer will be used by signal conditioning:
 # multiply this by 8*NTBT (in the libera file on the IOC) to get the total
 # number of turns that will be sampled.  This should be set to at least 2,
 # and too large a value can be unhelpful.
-BR_IOC_SC_LENGTH=3
+BO_IOC_SC_LENGTH=3
 SR_IOC_SC_LENGTH=6
 
 # Maximum number of points to be captured in a single long turn-by-turn

@@ -1,0 +1,41 @@
+# libera.BR - Libera configuration file for Diamond booster
+#
+# DESIGN     - Path to FPGA design.
+# DTYPE      - FPGA design type (bo/sr).
+# FLMCDHZ    - Initial LMC frequency [dHz (10^-1 Hz)].
+# DFA        - FA decimation factor.
+# FREV       - Revolution frequency [Hz].
+# MCPRESC    - MC prescaler.
+# NCLK_ADC   - No. of CLK/ADC script repetitions in DCM script.
+#
+# HARMONIC   - Harmonic number.
+# NTBT       - Number of TbT samples per switch position [TbT samples].
+#
+# IL_K_FILT_XY             - Interlock XY K of IIR filter [1/255].
+# IL_K_FILT_ADC_OVERFLOW   - Interlock ADC overflow K of IIR filter [1/2^n].
+# IL_K_CORR_ADC_LIMIT      - Interlock ADC overflow scaling factor [n/1000].
+# IL_MAX_ADC_OVERFLOW_DUR  - ADC overflow duration upper limit [ADC samples].
+#
+# SWITCHING_DELAY  - Switching source delay/phase [ADC count].
+#
+# POSTMORTEM_BUFFER - Postmortem buffer length
+
+DESIGN="/opt/lib/libera.bin.BO"
+DTYPE="bo"
+FLMCDHZ="1173429848"
+DFA="189"
+FREV="1892628.7879"
+MCPRESC="189263"
+NCLK_ADC="145"
+
+HARMONIC="264"
+NTBT="143"
+
+IL_K_FILT_XY="255"
+IL_K_FILT_ADC_OVERFLOW="0"
+IL_K_CORR_ADC_LIMIT="1000"
+IL_MAX_ADC_OVERFLOW_DUR="976"
+
+SWITCHING_DELAY="0"
+
+POSTMORTEM_BUFFER="16384"

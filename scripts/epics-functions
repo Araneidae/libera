@@ -142,3 +142,23 @@ probe_libera()
         echo -n PHOTON
     fi
 }
+
+
+# This function ensures that we can write to the filesytem, or fails if
+# remounting is not enabled.  Called as
+#
+#   ensure_root_rw <enable-remount>
+#
+ensure_root_rw()
+{
+    if grep -qE ' / [^ ]* ro(,| )' /proc/mounts; then
+        # Root is mounted read only.  Bail unless remount requested.
+        if $1; then
+            mount -o remount,rw /  ||
+                Error 'Unable to remount rootfs for writing'
+            trap 'mount -o remount,ro /' EXIT
+        else
+            Error 'Rootfs is mounted read-only.  Try -w option'
+        fi
+    fi
+}

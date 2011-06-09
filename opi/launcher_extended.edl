@@ -3,9 +3,9 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 2548
-y 761
-w 650
+x 2518
+y 762
+w 681
 h 232
 font "helvetica-medium-r-18.0"
 ctlFont "helvetica-medium-r-18.0"
@@ -50,7 +50,7 @@ endObjectProperties
 object activeXTextDspClass
 beginObjectProperties
 major 4
-minor 1
+minor 5
 release 0
 x 152
 y 200
@@ -69,6 +69,7 @@ nullColor index 0
 useHexPrefix
 newPos
 objType "controls"
+noExecuteClipMask
 endObjectProperties
 
 # (Related Display)
@@ -77,7 +78,7 @@ beginObjectProperties
 major 4
 minor 2
 release 0
-x 360
+x 392
 y 200
 w 64
 h 24
@@ -305,7 +306,7 @@ beginObjectProperties
 major 4
 minor 2
 release 0
-x 432
+x 464
 y 200
 w 64
 h 24
@@ -327,7 +328,7 @@ beginObjectProperties
 major 4
 minor 2
 release 0
-x 576
+x 608
 y 200
 w 64
 h 24
@@ -1016,7 +1017,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 5
 release 0
 x 80
 y 32
@@ -1032,13 +1033,14 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Text Monitor)
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 5
 release 0
 x 160
 y 32
@@ -1054,17 +1056,18 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Text Monitor)
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 5
 release 0
 x 496
 y 32
-w 80
+w 136
 h 16
 controlPv "TS-DI-EBPM-01:VE:FPGA"
 format "hex"
@@ -1078,15 +1081,16 @@ nullColor index 0
 useHexPrefix
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Text Monitor)
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 5
 release 0
-x 584
+x 640
 y 32
 w 32
 h 16
@@ -1100,13 +1104,14 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Text Monitor)
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 5
 release 0
 x 320
 y 32
@@ -1122,13 +1127,14 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Text Monitor)
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 5
 release 0
 x 416
 y 32
@@ -1144,6 +1150,7 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Static Text)
@@ -1252,7 +1259,7 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 584
+x 616
 y 8
 w 52
 h 14
@@ -1270,9 +1277,9 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 5
 release 0
-x 584
+x 640
 y 56
 w 32
 h 16
@@ -1286,17 +1293,18 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Text Monitor)
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 5
 release 0
 x 496
 y 56
-w 80
+w 136
 h 16
 controlPv "TS-DI-EBPM-02:VE:FPGA"
 format "hex"
@@ -1310,13 +1318,14 @@ nullColor index 0
 useHexPrefix
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Text Monitor)
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 5
 release 0
 x 416
 y 56
@@ -1332,13 +1341,14 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Text Monitor)
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 5
 release 0
 x 320
 y 56
@@ -1354,13 +1364,14 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Text Monitor)
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 5
 release 0
 x 160
 y 56
@@ -1376,13 +1387,14 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Text Monitor)
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 5
 release 0
 x 80
 y 56
@@ -1398,15 +1410,16 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Text Monitor)
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 5
 release 0
-x 584
+x 640
 y 80
 w 32
 h 16
@@ -1420,17 +1433,18 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Text Monitor)
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 5
 release 0
 x 496
 y 80
-w 80
+w 136
 h 16
 controlPv "TS-DI-EBPM-03:VE:FPGA"
 format "hex"
@@ -1444,13 +1458,14 @@ nullColor index 0
 useHexPrefix
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Text Monitor)
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 5
 release 0
 x 416
 y 80
@@ -1466,13 +1481,14 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Text Monitor)
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 5
 release 0
 x 320
 y 80
@@ -1488,13 +1504,14 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Text Monitor)
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 5
 release 0
 x 160
 y 80
@@ -1510,13 +1527,14 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Text Monitor)
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 5
 release 0
 x 80
 y 80
@@ -1532,15 +1550,16 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Text Monitor)
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 5
 release 0
-x 584
+x 640
 y 104
 w 32
 h 16
@@ -1554,17 +1573,18 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Text Monitor)
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 5
 release 0
 x 496
 y 104
-w 80
+w 136
 h 16
 controlPv "TS-DI-EBPM-04:VE:FPGA"
 format "hex"
@@ -1578,13 +1598,14 @@ nullColor index 0
 useHexPrefix
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Text Monitor)
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 5
 release 0
 x 416
 y 104
@@ -1600,13 +1621,14 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Text Monitor)
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 5
 release 0
 x 320
 y 104
@@ -1622,13 +1644,14 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Text Monitor)
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 5
 release 0
 x 160
 y 104
@@ -1644,13 +1667,14 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Text Monitor)
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 5
 release 0
 x 80
 y 104
@@ -1666,15 +1690,16 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Text Monitor)
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 5
 release 0
-x 584
+x 640
 y 128
 w 32
 h 16
@@ -1688,17 +1713,18 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Text Monitor)
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 5
 release 0
 x 496
 y 128
-w 80
+w 136
 h 16
 controlPv "TS-DI-EBPM-05:VE:FPGA"
 format "hex"
@@ -1712,13 +1738,14 @@ nullColor index 0
 useHexPrefix
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Text Monitor)
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 5
 release 0
 x 416
 y 128
@@ -1734,13 +1761,14 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Text Monitor)
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 5
 release 0
 x 320
 y 128
@@ -1756,13 +1784,14 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Text Monitor)
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 5
 release 0
 x 160
 y 128
@@ -1778,13 +1807,14 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Text Monitor)
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 5
 release 0
 x 80
 y 128
@@ -1800,15 +1830,16 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Text Monitor)
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 5
 release 0
-x 584
+x 640
 y 152
 w 32
 h 16
@@ -1822,17 +1853,18 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Text Monitor)
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 5
 release 0
 x 496
 y 152
-w 80
+w 136
 h 16
 controlPv "TS-DI-EBPM-06:VE:FPGA"
 format "hex"
@@ -1846,13 +1878,14 @@ nullColor index 0
 useHexPrefix
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Text Monitor)
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 5
 release 0
 x 416
 y 152
@@ -1868,13 +1901,14 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Text Monitor)
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 5
 release 0
 x 320
 y 152
@@ -1890,13 +1924,14 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Text Monitor)
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 5
 release 0
 x 160
 y 152
@@ -1912,13 +1947,14 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Text Monitor)
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 5
 release 0
 x 80
 y 152
@@ -1934,15 +1970,16 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Text Monitor)
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 5
 release 0
-x 584
+x 640
 y 176
 w 32
 h 16
@@ -1956,17 +1993,18 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Text Monitor)
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 5
 release 0
 x 496
 y 176
-w 80
+w 136
 h 16
 controlPv "TS-DI-EBPM-07:VE:FPGA"
 format "hex"
@@ -1980,13 +2018,14 @@ nullColor index 0
 useHexPrefix
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Text Monitor)
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 5
 release 0
 x 416
 y 176
@@ -2002,13 +2041,14 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Text Monitor)
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 5
 release 0
 x 320
 y 176
@@ -2024,13 +2064,14 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Text Monitor)
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 5
 release 0
 x 160
 y 176
@@ -2046,13 +2087,14 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Text Monitor)
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 5
 release 0
 x 80
 y 176
@@ -2068,6 +2110,7 @@ limitsFromDb
 nullColor index 0
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Related Display)
@@ -2076,7 +2119,7 @@ beginObjectProperties
 major 4
 minor 2
 release 0
-x 504
+x 536
 y 200
 w 64
 h 24

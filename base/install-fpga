@@ -1,0 +1,159 @@
+#!/bin/sh
+
+# This file is part of the Libera EPICS Driver,
+# Copyright (C) 2005-2011 Michael Abbott, Diamond Light Source Ltd.
+#
+# The Libera EPICS Driver is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# The Libera EPICS Driver is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc., 51
+# Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# Contact:
+#      Dr. Michael Abbott,
+#      Diamond Light Source Ltd,
+#      Diamond House,
+#      Chilton,
+#      Didcot,
+#      Oxfordshire,
+#      OX11 0DE
+#      michael.abbott@diamond.ac.uk
+
+CONFIGDIR=/etc/libera
+. $CONFIGDIR/epics_ioc
+. "$LIBERA_IOC"/scripts/epics-functions
+
+
+
+REMOUNT_RW=false
+INSTALL_FILES=true
+while getopts 'wlh' option; do
+    case $option in
+        w)  REMOUNT_RW=true ;;
+        l)  INSTALL_FILES=false ;;
+        h)  cat <<'EOF'
+Usage: install-fpga [options] [fpga-dir|files]
+
+Installs FPGA files in /opt/lib and refreshes soft links for DLS operation.  The
+FPGA files are found either by searching a given directory or given on the
+command line.
+
+Possible options are:
+    -w  Remount file system rw during install
+    -l  Refresh links only
+EOF
+            exit 0 ;;
+    esac
+done
+shift $((OPTIND-1))
+
+
+# Function to find at most one FPGA file matching the given pattern, identifying
+# the image by location and type.  Called as
+#
+#   find_fpga_file <loc> <file-list>
+#
+find_fpga_file()
+{
+    local FOUND="$(echo -n "$2" | sed -n "/.*$1[^/]*bin[^/]*\.$TYPE/p")"
+    [ "$(echo -n "$FOUND" | wc -l)" -le 1 ] ||
+        Error Multiple $1..$TYPE images found
+    echo -n "$FOUND"
+}
+
+# Installs the given FPGA file, if found.  Called as:
+#
+#   install_fpga_file <file>
+install_fpga_file()
+{
+    if [ -n "$1" ]; then
+        echo >&2 Installing "$1"
+        cp "$1" /opt/lib
+    fi
+}
+
+# Creates soft links for FPGA files of given pattern.
+#
+#   link_fpga_file <file_loc> <loc> <type>
+#
+link_fpga_file()
+{
+    local file="$(find_fpga_file $1 "$LIB_FILES")"
+    if [ -n "$file" ]; then
+        ln -fs "$file" /opt/lib/libera.bin.$2
+        LINKED=$((LINKED+1))
+    else
+        rm -f /opt/lib/libera.bin.$2
+    fi
+}
+
+
+# Compute the instrument type and the corresponding FPGA extension
+check_instrument_type
+case $INST_TYPE in
+    ELECTRON)   TYPE=EL ;;
+    BRILLIANCE) TYPE=BR ;;
+    *)          Error "Unexpected instrument type: $INST_TYPE"
+esac
+
+
+# Gather and validate the list of files to be installed.
+IFS=$'\n'
+if $INSTALL_FILES; then
+    FILES="${1:?Installation directory missing}"
+    shift
+
+    if [ -d "$FILES" ]; then
+        # If a directory is given install all bin files
+        FILES="$(ls "$FILES"/*.bin*)"
+    else
+        # If the first argument isn't a directory the args must be a list of
+        # files to install.
+        while [ "$#" -gt 0 ]; do
+            FILES="$FILES"$'\n'"$1"
+            shift
+        done
+    fi
+
+    # First elementary file validation
+    [ -n "$FILES" ]  ||
+        Error No FPGA files to install
+    [ "$(echo "$FILES" | wc -l)" -le 4 ]  ||
+        Error Too many FPGA files to install
+    for file in $FILES; do
+        [ -e $file ]  ||
+            Error FPGA file $file does not exist
+    done
+
+    # Now filter out the sr and bo files for the selected instrument type.
+    FPGA_SR=$(find_fpga_file sr "$FILES")
+    FPGA_BO=$(find_fpga_file bo "$FILES")
+fi
+[ "$#" -eq 0 ]  ||  Error Unexpected arguments
+
+# Ensure we can write to the file system
+ensure_root_rw $REMOUNT_RW
+
+if $INSTALL_FILES; then
+    # Purge any existing FPGA files
+    rm -f /opt/lib/*.bin*
+
+    install_fpga_file "$FPGA_SR"
+    install_fpga_file "$FPGA_BO"
+fi
+
+LIB_FILES="$(find /opt/lib -type f -name '*.bin*' | sed 's:/opt/lib/::')"
+LINKED=0
+link_fpga_file sr SR
+link_fpga_file bo BO
+
+[ $LINKED -gt 0 ]  ||
+    echo >&2 'Warning: No FPGA files linked in /opt/lib'

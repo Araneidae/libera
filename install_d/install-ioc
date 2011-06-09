@@ -39,7 +39,6 @@ set -e
 #     healthd               Startup script installed in /etc/init.d
 #     locations             List of machine locations (eg SR/BO)
 #     make-notch-filters    Script to create notch filters
-#     libera-install-fpga
 #     libera-install-ioc    Script to install libera IOC on target
 INSTALL_FILES='
     CONFIG
@@ -48,15 +47,14 @@ INSTALL_FILES='
     healthd
     locations
     make-notch-filters
-    libera-install-fpga
     libera-install-ioc'
+OPT_BIN_FILES='configure-location configure-network install-fpga fpga_init'
 
 
 SOURCE="$(cd "$(dirname "$0")"/..; pwd)"
 . "$SOURCE"/install_d/CONFIG
 if (($# > 0)); then
     INSTALL_HOST="$1"
-    FPGA_SOURCE="$2"
 else
     : ${INSTALL_HOST:?Local installation path not defined}
 fi
@@ -83,14 +81,22 @@ done
 mkdir -p "$TARGET"/scripts
 cp "$SOURCE"/scripts/* "$TARGET"/scripts
 
+# Copy over the base directory
+mkdir -p "$TARGET"/base "$TARGET"/base/lib
+for f in $OPT_BIN_FILES; do
+    cp "$SOURCE"/base/$f "$TARGET"/base
+done
+cp "$SOURCE"/base/lib/* "$TARGET"/base/lib
+
 # Place the runioc script
 cp "$SOURCE"/runioc "$TARGET"
 
+
 # A special hack for targeting Libera 1.46 systems: here we're using a newer
-# compiler than used for the original distibution, and the C++ .so needs to
+# compiler than used for the original distribution, and the C++ .so needs to
 # be installed.  Hunt it down here and place it ready for installation.
 GNU_DIR="$(
-    make -C "$SOURCE"/configure -pn linux-arm |
+    make -C "$SOURCE"/configure -pn linux-arm 2>/dev/null |
     # This is annoying: can get the local GNU_DIR in the list as well; assume
     # the cross compiler is *not* in /usr
     sed -n '/^GNU_DIR = /{s///;\:/usr:!p;}')"
@@ -98,19 +104,6 @@ CPP_SO="$GNU_DIR/arm-linux/lib/libstdc++.so.6"
 if [ -n "$GNU_DIR" -a -f "$CPP_SO" ]; then
     CPP_SO_="$(readlink -fn "$CPP_SO")"  &&
     cp "$CPP_SO_" "$TARGET"/install_d
-fi
-
-
-# Finally copy over the FPGA files
-if [ -n "$FPGA_SOURCE" ]; then
-    FPGA_VERSION="$(basename "$FPGA_SOURCE")"
-
-    rm -rf "$INSTALL_HOST"/fpga
-    mkdir "$INSTALL_HOST"/fpga
-    cd "$FPGA_SOURCE"
-    for f in *.dls*; do
-        cp $f "$INSTALL_HOST"/fpga/$f."$FPGA_VERSION"
-    done
 fi
 
 

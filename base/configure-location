@@ -1,0 +1,28 @@
+#!/bin/sh
+
+# Configuration tool for reconfiguring Libera location
+
+Error() { echo >&2 "$@"; exit 1; }
+
+LOCATION="${1?Specify location or -h}"
+
+case "$LOCATION" in
+    SR|BO)  ;;
+    -h)     cat <<EOF
+Usage: $0 <location>
+
+Reconfigure BPM location.
+EOF
+            exit 0 ;;
+    *)      Error Invalid location ;;
+esac
+
+# List of files in /opt/lib to reconfigure
+LIB_FILES='libera notch1 notch2 polyphase_fir'
+
+# Reconfigure for the selected location
+for file in $LIB_FILES; do
+    ln -fs "$file.$LOCATION" /opt/lib/"$file"
+    [ -e "/opt/lib/$file.$LOCATION" ]  ||
+        echo >&2 "File /opt/lib/$file.$LOCATION not found"
+done

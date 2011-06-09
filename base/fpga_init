@@ -1,0 +1,184 @@
+#!/bin/sh
+
+# fpga_init - Initialize Libera FPGA design.
+#
+# Copyright (C) 2004-2006 Instrumentation Technologies
+# Copyright (C) 2009 Michael Abbott, Diamond Light Source Ltd.
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
+# or visit http://www.gnu.org
+
+
+Error()
+{
+    echo >&2 "$@"
+    exit 1
+}
+
+
+# Loads the specified filter by writing each line in the file to the given
+# register.  Called as
+#
+#   LoadFilter <register> <file>
+#
+LoadFilter()
+{
+    [ -r "$2" ]  ||  Error Unable to load filter file "$2"
+    while read; do
+        devmem $1 32 $REPLY
+    done <"$2"
+}
+
+
+
+# Pick up basic configuration.
+. /etc/libera/libera
+
+# Check for configuration parameters we need
+: "${NCLK_ADC:?}"
+: "${DTYPE:?}"
+: "${IL_K_FILT_XY:?}"
+: "${IL_K_FILT_ADC_OVERFLOW:?}"
+: "${NTBT:?}"
+: "${SWITCHING_DELAY:?}"
+
+
+[ $NCLK_ADC -ge 0 ]  ||  Error "NCLK_ADC must be non negative."
+
+# Libera Brilliance (pre)initialization
+libera_brilliance_init()
+{
+    sleep 1
+
+    ### ./init_AD9510_analog_bs.scr
+    devmem  0x1400403C 32 0x0000BD
+    devmem  0x1400403C 32 0x000099
+
+    #sleep 0.5
+    ########### OUT0 on ############
+    devmem  0x1400403C 32 0x003c08
+    ######### OUT1 on ##############
+    devmem  0x1400403C 32 0x003D08	
+    ########## OUT2 on #############
+    devmem  0x1400403C 32 0x003E08
+    ########## OUT3 on #############
+    devmem  0x1400403C 32 0x003F08
+    ########## update ##############
+    devmem  0x1400403C 32 0x005a01
+    ######### OUT4 off #############
+    devmem  0x1400403C 32 0x004003
+    ######### OUT5 off #############
+    devmem  0x1400403C 32 0x004102
+    ######### CLK select ###########
+    [ $DTYPE == "bo" ] && {
+        devmem  0x1400403C 32 0x00451d
+    } || {
+        devmem  0x1400403C 32 0x00451a
+    }
+
+
+    ######### Divider 0 config #####
+    devmem  0x1400403C 32 0x004811
+    devmem  0x1400403C 32 0x004980
+    ######### Divider 1 config #####
+    devmem  0x1400403C 32 0x004a11
+    devmem  0x1400403C 32 0x004b81
+    ######### Divider 2 config #####
+    devmem  0x1400403C 32 0x004c11
+    devmem  0x1400403C 32 0x004d82
+    ######### Divider 3 config #####
+    devmem  0x1400403C 32 0x004e11
+    devmem  0x1400403C 32 0x004f83
+    ######### Divider 5 config #####
+    devmem  0x1400403C 32 0x005211
+    devmem  0x1400403C 32 0x005380  # 01 for 500MHz
+
+
+    ######### Fine delay on ########
+    devmem  0x1400403C 32 0x003401  # 01 Bypass
+    #sleep 0.1
+    ######### Delay full scale #####
+    devmem  0x1400403C 32 0x003500
+    #sleep 0.1
+    ######### Fine delay adjust ####
+    devmem  0x1400403C 32 0x003607  # 07
+    #sleep 0.1
+
+    devmem  0x1400403C 32 0x005805
+    devmem  0x1400403C 32 0x005a01
+    #sleep 0.5
+
+
+    devmem  0x1400403C 32 0x005801
+    devmem  0x1400403C 32 0x005a01
+    #sleep 0.1
+
+
+    # ADC DCM reset
+    devmem 0x1400402c 32 0x01
+    sleep 0.1
+    devmem 0x1400402c 32 0x00
+
+    sleep 0.5
+}
+
+
+# FPGA design must be loaded before this script.
+# This is done elsewhere (/etc/init.d/libera)
+
+# Libera Brilliance specific (pre)initialization
+let INSTRUMENT=$(($(devmem 0x1400001C) >> 24))
+[ $INSTRUMENT -eq 1 ] &&  libera_brilliance_init
+
+# ADC clock
+while [ $NCLK_ADC -gt 0 ]; do
+    # 2 deg ADC shift
+    devmem 0x1400402c 32 0x2
+    NCLK_ADC=$(($NCLK_ADC - 1))
+done
+
+sleep 1
+
+# Initialize SDRAM
+devmem 0x14018010 32 0
+devmem 0x14018010 32 0
+devmem 0x14018010 32 0
+devmem 0x14018010 32 0x10400
+devmem 0x14018010 32 0x20000
+devmem 0x14018010 32 0x20000
+devmem 0x14018010 32 0x20000
+devmem 0x14018010 32 0x30033
+devmem 0x14018014 32 0x1
+
+# Set SW mode (digital SW = auto)
+devmem 0x1400C000 32 0x2
+
+# IL_K_FILT_XY
+devmem 0x1402401c 32 $IL_K_FILT_XY
+
+# IL_K_FILT_ADC_OVERFLOW
+devmem 0x1400c034 32 $IL_K_FILT_ADC_OVERFLOW
+devmem 0x1400c038 32 $(($NTBT-1))
+# Set DSC switching delay/phase
+devmem 0x1400c03c 32 $SWITCHING_DELAY
+
+
+
+#Notch 1 original, Notch 2 Chebychev 2 hand tuned
+LoadFilter 0x1401C018 /opt/lib/notch1
+LoadFilter 0x1401C01C /opt/lib/notch2
+
+# Polyphase FIR tuned to knock out switching harmonics
+LoadFilter 0x1401C014 /opt/lib/polyphase_fir

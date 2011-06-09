@@ -67,8 +67,9 @@ case "$1" in
             Error "Health daemon not running, not starting Libera FPGA"
 
         # First load the FPGA design
+        [ -e "$DESIGN" ]  ||  Error "FPGA design $DESIGN not found"
         echo -n "Loading FPGA design..."
-        /opt/bin/fp < $DESIGN
+        /opt/bin/fp < "$DESIGN"
         evaluate_retval
 
         # Initialize FPGA design
