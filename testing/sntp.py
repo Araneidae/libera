@@ -27,7 +27,7 @@ def print_ntp_date(timestamp):
 request_packet = ''.join(map(chr, [(3 << 3) | 3] + 47 * [0]))
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, 0)
-sock.settimeout(0.2)
+sock.settimeout(2)
 sock.connect((sys.argv[1], 123))
 sock.send(request_packet)
 response = sock.recv(256)

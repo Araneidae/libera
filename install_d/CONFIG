@@ -24,7 +24,9 @@ INSTALL_HOST=/home/libera/nfs/testing
 
 
 # The IOC normally runs as a daemon with output redirected to this file.
-IOC_LOG=/var/log/ioc
+# IOC_LOG=/var/log/ioc
+# We now send all IOC logging to the IOC console.
+IOC_LOG=/dev/console
 
 # Where to put core dumps
 #IOC_CORE=/mnt/nfs/testing/cores
