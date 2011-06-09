@@ -53,6 +53,8 @@ static EPICS_STRING BuildDate = BUILD_DATE_TIME;
 static EPICS_STRING EpicsVersion = EPICS_VERSION_STRING;
 
 int DecimationFactor;
+int FA_FIR_Decimation;
+int FA_DecimationFirLength;
 bool LiberaBrilliance;
 bool OldBrillianceApi;
 bool FastFeedbackFeature;
@@ -191,7 +193,7 @@ static ENV_MAP<int> EnvironmentInts[] = {
     { "FPGA_CUST_ID",   "CUSTID",   &CustomerId },
     { "FPGA_DDC_DEC",   "DDCDEC",   &DecimationFactor },
     { "FPGA_FA_CIC",    "FACIC" },
-    { "FPGA_FA_FIR",    "FAFIR" },
+    { "FPGA_FA_FIR",    "FAFIR",    &FA_FIR_Decimation },
     { "FPGA_FA_DEC",    "FADEC" },
     { "FPGA_CUSTOMER",  "CUSTOMER" },
     { "FPGA_ITECH",     "ITECH" },
@@ -322,6 +324,10 @@ bool InitialiseVersions(void)
         PUBLISH_ENV_MAP(bi,         EnvironmentBools);
     /* Must do this after the above so that CustomerId is initialised. */
     IdToString(CustomerId, CustomerIdString);
+    /* The FA decimation FIR length is hard-wired in the FPGA to be three times
+     * the decimation factor, so we compute this here.  This knowledge is also
+     * hard-wired into hardware.cpp. */
+    FA_DecimationFirLength = 3 * FA_FIR_Decimation;
 
     return Ok;
 }

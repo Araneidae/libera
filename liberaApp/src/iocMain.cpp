@@ -632,11 +632,11 @@ static bool LoadDatabases()
         DB_("%d", "FR_LENGTH",      FreeRunLength)  &&
         DB_("%d", "SC_IQ_LENGTH",   ConditioningIQlength())  &&
         DB_("%d", "ATTEN_COUNT",    MaximumAttenuation() + 1)  &&
+        DB_("%d", "FIR_LENGTH",     FA_DecimationFirLength)  &&
 
         LOAD_RECORDS_("db/libera.db")  &&
         IF_(Version2FpgaPresent, LOAD_RECORDS_("db/libera-2.0.db"))  &&
-        IF_(FastFeedbackFeature, LOAD_RECORDS_("db/fastFeedback.db"))  &&
-        true;
+        IF_(FastFeedbackFeature, LOAD_RECORDS_("db/fastFeedback.db"));
 
 #undef DB_
 #undef LOAD_RECORDS_

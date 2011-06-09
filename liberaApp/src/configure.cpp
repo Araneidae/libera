@@ -216,90 +216,197 @@ static bool InitialiseSpikeRemoval()
 
 /****************************************************************************/
 /*                                                                          */
-/*                           Notch Filter Control                           */
+/*                              Filter Control                              */
 /*                                                                          */
 /****************************************************************************/
 
 
-static bool NotchFilterEnabled = true;
-
-static NOTCH_FILTER DisabledNotchFilters[2];
-static NOTCH_FILTER NotchFilters[2];
-
-#define NOTCH_FILTER_FILENAME   "/opt/lib/notch%d"
-
-
-static void SetNotchFilterEnable()
+class DECIMATION_FILTER : public I_WAVEFORM
 {
-    if (NotchFilterEnabled)
+public:
+    DECIMATION_FILTER(
+        const char *name, const char *filename, int wf_length,
+        void (*on_update)(const int *)):
+
+        I_WAVEFORM(DBF_LONG),
+        filename(filename),
+        wf_length(wf_length),
+        on_update(on_update),
+        filter(new int[wf_length])
     {
-        WriteNotchFilter(0, NotchFilters[0]);
-        WriteNotchFilter(1, NotchFilters[1]);
+        ok = load_file();
+        do_reload = false;
+        enabled = true;
+        Publish_waveform(name, *this);
     }
-    else
+
+    /* Resets filter back to filter loaded from file and ensures that next EPICS
+     * process event will run backwards so the EPICS interface sees the reloaded
+     * filter. */
+    void Reset(void)
     {
-        WriteNotchFilter(0, DisabledNotchFilters[0]);
-        WriteNotchFilter(1, DisabledNotchFilters[1]);
+        ok = load_file();
+        update_filter();
+        do_reload = true;
     }
-}
+
+    /* Updates the enabled state.  Only safe to call if GetDisabled() has been
+     * overridden to return a non-null value. */
+    void SetEnabled(bool Enabled)
+    {
+        enabled = Enabled;
+        update_filter();
+    }
 
 
-static bool InitialiseNotchFilterEnable()
+protected:
+    /* Returns the waveform to use when disabling, or NULL if not supported. */
+    virtual int *GetDisabled(void) { return NULL; }
+
+
+private:
+    bool load_file(void)
+    {
+        FILE *input;
+        bool ok = TEST_NULL(input = fopen(filename, "r"));
+        if (ok)
+        {
+            for (size_t i = 0; ok  &&  i < wf_length; i ++)
+                ok = TEST_OK(fscanf(input, "%i\n", &filter[i]) == 1);
+            fclose(input);
+        }
+        return ok;
+    }
+
+    /* Called each time the filter has changed. */
+    void update_filter(void)
+    {
+        if (ok)
+            on_update(enabled ? filter : GetDisabled());
+    }
+
+    bool process(void *array, size_t max_length, size_t &new_length)
+    {
+        size_t length = max_length < wf_length ? max_length : wf_length;
+        new_length = length;
+        if (do_reload)
+        {
+            /* On reload we force a process where we write our state back to
+             * EPICS. */
+            memcpy(array, filter, sizeof(int) * length);
+            do_reload = false;
+        }
+        else
+        {
+            /* On normal processing we read from EPICS and update the underlying
+             * filter.  Any points not assigned are set to zero. */
+            memcpy(filter, array, sizeof(int) * length);
+            if (length < wf_length)
+                memset(filter + length, 0, sizeof(int) * (wf_length - length));
+            ok = true;
+            if (enabled)
+                update_filter();
+        }
+        return ok;
+    }
+
+    bool init(void *array, size_t &length)
+    {
+        length = wf_length;
+        memcpy(array, filter, wf_length * sizeof(int));
+        return ok;
+    }
+
+
+    const char *const filename;
+    const size_t wf_length;
+    void (*const on_update)(const int *);
+
+    bool ok;
+    bool enabled;
+    bool do_reload;
+
+protected:
+    int *const filter;
+};
+
+
+class NOTCH_FILTER : public DECIMATION_FILTER
 {
-    bool Ok = true;
-    for (int filter_index = 0; Ok && filter_index < 2; filter_index++)
+public:
+    NOTCH_FILTER(
+        const char *name, const char *filename,
+        void (*on_update)(const int *)):
+
+        DECIMATION_FILTER(name, filename, 5, on_update)
     {
-        int *Filter = NotchFilters[filter_index];
-        char FilterFileName[80];
-        sprintf(FilterFileName, NOTCH_FILTER_FILENAME, filter_index + 1);
-
-        /* Read the entire file in one go.  Saves hassle fighting with
-         * stupidities of fscanf(), though this code is much more
-         * complicated! */
-        int Input;
-        char NotchFile[1024 + 1];
-        int Read = 0;
-        Ok =
-            TEST_IO(Input = open(FilterFileName, O_RDONLY))  &&
-            TEST_IO(Read  = read(Input, NotchFile, 1024));
-        if (Ok)
-        {
-            NotchFile[Read] = '\0';    // Ensure file is null terminated
-            char * String = NotchFile;
-            for (int i = 0; Ok && i < 5; i ++)
-            {
-                char * End;
-                Filter[i] = strtoul(String, &End, 0);
-                errno = 0;
-                Ok = TEST_OK(End > String);
-                String = End;
-            }
-        }
-        if (Input != -1)
-            close(Input);
-
-        if (Ok)
-        {
-            /* After successfully loading NotchFilters[filter_index] compute
-             * the corresponding disabled filter.  This should have the same
-             * DC response as the original filter, computed as
-             *
-             *      2^17 * sum(numerator) / sum(denominator)
-             *
-             * where numerator is coefficients 0,1,2 and denominator is
-             * coefficients 1,2 together with a constant factor of 2^17. */
-            int numerator = Filter[0] + Filter[1] + Filter[2];
-            int denominator = 0x20000 + Filter[3] + Filter[4];
-            int *Disabled = DisabledNotchFilters[filter_index];
-            int response = (int) ((0x20000LL * numerator) / denominator);
-            if (response >= 0x20000)
-                response = 0x1FFFF;
-            memset(Disabled, 0, sizeof(NOTCH_FILTER));
-            Disabled[0] = response;
-        }
+        /* After successfully loading NotchFilters[filter_index] compute the
+         * corresponding disabled filter.  This should have the same DC response
+         * as the original filter, computed as
+         *
+         *      2^17 * sum(numerator) / sum(denominator)
+         *
+         * where numerator is coefficients 0,1,2 and denominator is coefficients
+         * 1,2 together with a constant factor of 2^17. */
+        int numerator = filter[0] + filter[1] + filter[2];
+        int denominator = 0x20000 + filter[3] + filter[4];
+        int response = (int) ((0x20000LL * numerator) / denominator);
+        if (response >= 0x20000)
+            response = 0x1FFFF;
+        memset(disabled_filter, 0, sizeof(disabled_filter));
+        disabled_filter[0] = response;
     }
-    return Ok;
-}
+
+
+private:
+    int *GetDisabled(void) { return disabled_filter; }
+
+    /* Disabled version of notch filter with same response as original
+     * version. */
+    int disabled_filter[5];
+};
+
+
+class FILTER_CONTROL
+{
+public:
+    FILTER_CONTROL(void) :
+        notch_1("CF:NOTCH1", "/opt/lib/notch1", WriteNotchFilter1),
+        notch_2("CF:NOTCH2", "/opt/lib/notch2", WriteNotchFilter2),
+        fir("CF:FIR", "/opt/lib/polyphase_fir",
+            FA_DecimationFirLength, WriteFA_FIR)
+    {
+        NotchFilterEnabled = true;
+        PUBLISH_METHOD_OUT(bo, "CF:NOTCHEN",
+            SetNotchFilterEnable, NotchFilterEnabled);
+        PUBLISH_METHOD_ACTION("CF:RESETFA", ResetFilters);
+
+        notch_1.SetEnabled(true);
+        notch_2.SetEnabled(true);
+        fir.SetEnabled(true);
+    }
+
+private:
+    bool SetNotchFilterEnable(bool Enabled)
+    {
+        notch_1.SetEnabled(Enabled);
+        notch_2.SetEnabled(Enabled);
+        return true;
+    }
+
+    bool ResetFilters(void)
+    {
+        notch_1.Reset();
+        notch_2.Reset();
+        fir.Reset();
+        return true;
+    }
+
+    NOTCH_FILTER notch_1, notch_2;
+    DECIMATION_FILTER fir;
+
+    bool NotchFilterEnabled;
+};
 
 
 /****************************************************************************/
@@ -318,7 +425,6 @@ bool InitialiseConfigure()
 {
     /* Enable the configuration features that need special initialisation. */
     bool Ok =
-        InitialiseNotchFilterEnable()  &&
         IF_(Version2FpgaPresent, InitialiseSpikeRemoval());
     if (!Ok)
         return false;
@@ -342,8 +448,7 @@ bool InitialiseConfigure()
     PUBLISH_CONFIGURATION(longout, "CF:TRIGDLY",
         ExternalTriggerDelay, WriteExternalTriggerDelay);
 
-    PUBLISH_FUNCTION_OUT(bo, "CF:NOTCHEN",
-        NotchFilterEnabled, SetNotchFilterEnable);
+    new FILTER_CONTROL;
 
     /* Write the initial state to the hardware and initialise everything that
      * needs initialising. */
@@ -353,7 +458,6 @@ bool InitialiseConfigure()
     UpdateSwitchTrigger();
     UpdateSwitchTriggerDelay();
     WriteExternalTriggerDelay(ExternalTriggerDelay);
-    SetNotchFilterEnable();
 
     return true;
 }

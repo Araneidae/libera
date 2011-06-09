@@ -29,6 +29,8 @@
 
 /* These globals control the operation of the EPICS driver. */
 extern int DecimationFactor;        // Samples per revolution
+extern int FA_FIR_Decimation;       // FA FIR decimation factor
+extern int FA_DecimationFirLength;  // Length of FIR FA decimation filter
 extern bool LiberaBrilliance;       // Brilliance option present
 extern bool OldBrillianceApi;       // Old Brilliance attenuator interface
 extern bool FastFeedbackFeature;    // Fast feedback option detected

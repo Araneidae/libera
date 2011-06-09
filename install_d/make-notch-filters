@@ -33,6 +33,14 @@
 
 Error() { echo >&2 "$@"; exit 1; }
 
+# Sign extension hack.  Relies on 64 bit arithmetic in our shell, which is what
+# we appear to have in all our Liberas.
+sign_extend() { echo $((($1 << 32) >> 32)); }
+# Check that our sign extension hack works in this shell.
+[ $(sign_extend 0x89ABCDEF) = -1985229329 ]  ||
+    Error Unable to convert notch filters
+
+
 if [ -e /opt/lib/notch1 -a /opt/lib/notch2 -a "$1" != -f ]; then
     echo Notch filters already present, not overwriting
     exit 0
@@ -41,9 +49,14 @@ fi
 for notch in 0 1; do
     ADDR=$(printf "0x%08X" $((0x1401C018 + 4*notch)))
     FILE=/opt/lib/notch$((notch+1))
-    sed -n "/^.*Monitor $ADDR w /{s///;p;}" \
-            /opt/bin/fpga_init_specific >$FILE ||
-        Error "Unable to read /opb/bin/fpga_init_specific"
+
+    cat /opt/bin/fpga_init_specific |
+    sed -n "/^.*Monitor $ADDR w /{s///;p;}" |
+    while read; do
+        # Convert hex value into signed integer value as required by Libera.
+        sign_extend $REPLY
+    done >"$FILE"
+
     if [ $(wc -l <$FILE) != 5 ]; then
         rm -f $FILE
         Error "Invalid notch file read"

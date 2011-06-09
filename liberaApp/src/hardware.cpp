@@ -1108,23 +1108,56 @@ bool WritePmTriggerParameters(
 }
 
 
-bool WriteNotchFilter(int index, NOTCH_FILTER Filter)
+/* Register offsets for FA filters. */
+#define FA_FIR_FIFO_OFFSET      5   // 0x1401C014 FIR coefficients
+#define FA_NOTCH1_OFFSET        6   // 0x1401C018 Notch 1 coefficients
+#define FA_NOTCH2_OFFSET        7   // 0x1401C01C Notch 2 coefficents
+#define FA_FIFO_RESET_OFFSET    8   // 0X1401c020 Reset filter FIFO pointers
+
+static void WriteNotchFilter(int offset, const int *filter)
 {
-    uint32_t WriteNotchAddress = 0x1401C018 + 4*index;
-    uint32_t * WriteNotch = NULL;
-    errno = 0;
-    bool Ok =
-        TEST_OK((index & 1) == index)  &&
-        TEST_NULL(WriteNotch = MapRawRegister(WriteNotchAddress));
-    if (Ok)
+    uint32_t *fa_base = MapRawRegister(FA_OFFSET);
+    if (fa_base)
     {
         LOCK();
+        fa_base[FA_FIFO_RESET_OFFSET] = 1;     // Reset FIFO
         for (int i = 0; i < 5; i ++)
-            *WriteNotch = Filter[i];
+            fa_base[offset] = filter[i];
         UNLOCK();
-        UnmapRawRegister(WriteNotch);
+        UnmapRawRegister(fa_base);
     }
-    return Ok;
+}
+
+void WriteNotchFilter1(const int *filter)
+{
+    WriteNotchFilter(FA_NOTCH1_OFFSET, filter);
+}
+
+void WriteNotchFilter2(const int *filter)
+{
+    WriteNotchFilter(FA_NOTCH2_OFFSET, filter);
+}
+
+void WriteFA_FIR(const int *filter)
+{
+    /* The filter coefficients for the FA FIR are written in a rather strange
+     * order: last N coefficients, middle N, then first N, where N is the
+     * decimation order. */
+    uint32_t *fa_base = MapRawRegister(FA_OFFSET);
+    if (fa_base)
+    {
+        int N = FA_FIR_Decimation;
+        LOCK();
+        fa_base[FA_FIFO_RESET_OFFSET] = 1;     // Reset FIFO
+        for (int i = 0; i < N; i ++)
+            fa_base[FA_FIR_FIFO_OFFSET] = filter[2*N + i];
+        for (int i = 0; i < N; i ++)
+            fa_base[FA_FIR_FIFO_OFFSET] = filter[N + i];
+        for (int i = 0; i < N; i ++)
+            fa_base[FA_FIR_FIFO_OFFSET] = filter[i];
+        UNLOCK();
+        UnmapRawRegister(fa_base);
+    }
 }
 
 

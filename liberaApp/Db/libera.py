@@ -290,6 +290,7 @@ def Config():
     # The number of attenuators depends on whether we're Electron or
     # Brilliance.
     ATTEN_COUNT = Parameter('ATTEN_COUNT')
+    FIR_LENGTH  = Parameter('FIR_LENGTH')
     MAX_ATTEN = 62
 
     SetChannelName('CF')
@@ -361,7 +362,7 @@ def Config():
     longInOut('ATTEN', 0, MAX_ATTEN, EGU = 'dB',
         FLNK = true_atten,
         DESC = 'Attenuator setting')
-    Waveform('ATTEN:OFFSET_S', address = 'ATTEN:OFFSET',
+    WaveformOut('ATTEN:OFFSET',
         length = ATTEN_COUNT,   FTVL = 'FLOAT', EGU = 'dB',
         FLNK = true_atten,
         DESC = 'Attenuator correction offset')
@@ -383,7 +384,21 @@ def Config():
 
     # Notch filter enable
     boolOut('NOTCHEN', 'Disabled', 'Enabled',
-        DESC = 'Enable/disable notch filter')
+        DESC = 'Enable/disable notch filters')
+    filters = [
+        WaveformOut('NOTCH1', length = 5,
+            DESC = 'First notch filter coefficients'),
+        WaveformOut('NOTCH2', length = 5,
+            DESC = 'Second notch filter coefficients'),
+        WaveformOut('FIR', length = FIR_LENGTH,
+            DESC = 'FA decimation FIR filter')]
+
+    # Filter reset is a little contrived: after the filters have been internally
+    # reset the next record process for each filter will cause the EPICS
+    # waveforms to be reinitialised.
+    boolOut('RESETFA', 'Reset Filter',
+        DESC = 'Reset FA filters to defaults',
+        FLNK = create_fanout('TRIGFAN', *filters))
 
     # Internal trigger skew
     longOut('TRIGDLY', 0, (1<<12)-1, DESC = 'Internal trigger delay')

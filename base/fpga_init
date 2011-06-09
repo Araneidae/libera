@@ -28,21 +28,6 @@ Error()
 }
 
 
-# Loads the specified filter by writing each line in the file to the given
-# register.  Called as
-#
-#   LoadFilter <register> <file>
-#
-LoadFilter()
-{
-    [ -r "$2" ]  ||  Error Unable to load filter file "$2"
-    while read; do
-        devmem $1 32 $REPLY
-    done <"$2"
-}
-
-
-
 # Pick up basic configuration.
 . /etc/libera/libera
 
@@ -173,12 +158,3 @@ devmem 0x1400c034 32 $IL_K_FILT_ADC_OVERFLOW
 devmem 0x1400c038 32 $(($NTBT-1))
 # Set DSC switching delay/phase
 devmem 0x1400c03c 32 $SWITCHING_DELAY
-
-
-
-#Notch 1 original, Notch 2 Chebychev 2 hand tuned
-LoadFilter 0x1401C018 /opt/lib/notch1
-LoadFilter 0x1401C01C /opt/lib/notch2
-
-# Polyphase FIR tuned to knock out switching harmonics
-LoadFilter 0x1401C014 /opt/lib/polyphase_fir

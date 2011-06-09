@@ -194,9 +194,10 @@ bool SetEventMask(int EventMask);
 int ReadEvents(libera_event_t Events[], int MaxEventCount);
 
 
-/* Writes the selected filter to the selected notch filter. */
-typedef int NOTCH_FILTER[5];
-bool WriteNotchFilter(int Index, NOTCH_FILTER Filter);
+/* Writes FA filters: two notch filters and the decimation FIR filter. */
+void WriteNotchFilter1(const int *filter);
+void WriteNotchFilter2(const int *filter);
+void WriteFA_FIR(const int *filter);
 
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */

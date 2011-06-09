@@ -210,6 +210,10 @@ def Waveform(name, length, FTVL='LONG', **fields):
         FTVL = FTVL,
         **fields)
 
+def WaveformOut(name, length, FTVL='LONG', SCAN='Passive', **fields):
+    return Libera.waveform(name + '_S', address=name,
+        SCAN = SCAN, NELM = length, FTVL = FTVL, **fields)
+
 
 # An InOut record is a fairly complex construction: an output record controls
 # a PV, but the controlled value may spontaneously change underfoot.  We
@@ -240,4 +244,4 @@ __all__ = [
     'boolIn',   'boolOut',  'boolInOut',
     'longIn',   'longOut',  'longInOut',
     'mbbIn',    'mbbOut',   'mbbInOut',
-    'stringIn', 'Waveform']
+    'stringIn', 'Waveform', 'WaveformOut']
