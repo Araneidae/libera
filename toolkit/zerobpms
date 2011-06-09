@@ -1,0 +1,32 @@
+#!/usr/bin/env dls-python2.6
+
+from pkg_resources import require
+require("cothread")
+from cothread import catools
+
+import re
+import sys
+import os
+import numpy
+
+
+# Convert BPM pattern into list of BPMs matching the patter.
+bpms_file = os.path.join(os.path.dirname(__file__), 'labbpms')
+bpms = [line[:-1] for line in file(bpms_file)]
+if len(sys.argv) > 1:
+    pattern = re.compile(sys.argv[1])
+    bpms = filter(pattern.search, bpms)
+
+def get(pv):
+    return numpy.array(catools.caget(['%s:%s' % (bpm, pv) for bpm in bpms]))
+
+def put(pv, value):
+    catools.caput(['%s:%s' % (bpm, pv) for bpm in bpms], value)
+
+for xy in 'XY':
+    bba = get('CF:BBA_%s_S' % xy)
+    bcd = get('CF:BCD_%s_S' % xy)
+    golden = get('CF:GOLDEN_%s_S' % xy)
+    pos = get('SA:%s' % xy)
+
+    put('CF:BBA_%s_S' % xy, pos + bba + bcd + golden)
