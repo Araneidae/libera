@@ -574,7 +574,7 @@ Configuration (<group> = CF)
     faults, as the skew does not normally change by much during normal beam
     movements.
 
-:id:`BBA_`\<axis>\ `_S`\*, :id:`BCD_`\<axis>\ `_S`, :id:`GOLDEN_`\<axis>\ `_S`
+:id:`BBA_`\<axis>\ `_S`\*, :id:`BCD_`\<axis>\ `_S`, :id:`GOLDEN_`\<axis>\ `_S`\*
     Offsets on the position reported by the BPM are divided into three stages.
     First it is assumed that the nominal centre of the BPM will be discovered by
     a process of "beam based alignment": this produces offsets that should be
@@ -591,7 +591,7 @@ Configuration (<group> = CF)
     `GOLDEN_`... PVs are designed to be programmed with the value of such
     offsets.
 
-    Note that only the `BBA` offsets are persistent between Libera restarts.
+    Note that the `BCD` offsets are not persistent between Libera restarts.
 
 :id:`G0_S`\*, :id:`G1_S`\*, :id:`G2_S`\*, :id:`G3_S`\*
     Gain offsets can be set for individual RF channels to compensate for channel

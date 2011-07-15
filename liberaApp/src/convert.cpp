@@ -334,8 +334,8 @@ bool InitialiseConvert()
     PUBLISH_CONFIGURATION(ao, "CF:BBA_Y",    BBA_Y,    UpdateCalibration);
     PUBLISH_FUNCTION_OUT (ao, "CF:BCD_X",    BCD_X,    UpdateCalibration);
     PUBLISH_FUNCTION_OUT (ao, "CF:BCD_Y",    BCD_Y,    UpdateCalibration);
-    PUBLISH_FUNCTION_OUT (ao, "CF:GOLDEN_X", GOLDEN_X, UpdateCalibration);
-    PUBLISH_FUNCTION_OUT (ao, "CF:GOLDEN_Y", GOLDEN_Y, UpdateCalibration);
+    PUBLISH_CONFIGURATION(ao, "CF:GOLDEN_X", GOLDEN_X, UpdateCalibration);
+    PUBLISH_CONFIGURATION(ao, "CF:GOLDEN_Y", GOLDEN_Y, UpdateCalibration);
 
     PUBLISH_GAIN("CF:G0", ChannelGain[0]);
     PUBLISH_GAIN("CF:G1", ChannelGain[1]);
