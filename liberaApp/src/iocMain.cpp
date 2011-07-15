@@ -613,10 +613,12 @@ static void EpicsPvPutHook(asTrapWriteMessage *pmessage, int after)
 
 static bool ReadBlacklistFile(void)
 {
+    printf("Loading PV log blacklist from %s\n", BlacklistFile);
     FILE *file = fopen(BlacklistFile, "r");
     bool ok = TEST_NULL(file);
     if (ok)
     {
+        printf("Ignoring:");
         gphInitPvt(&PvLogBlacklist, 256);
         char line[1024];
         while (fgets(line, sizeof(line), file))
@@ -625,10 +627,17 @@ static bool ReadBlacklistFile(void)
             if (len > 1  &&  line[len - 1] == '\n')
             {
                 line[len - 1] = '\0';
-                gphAdd(PvLogBlacklist, epicsStrDup(line), NULL);
+                /* Allow comments after first space in line. */
+                *strchrnul(line, ' ') = '\0';
+                if (line[0] != '\0')
+                {
+                    printf(" %s", line);
+                    gphAdd(PvLogBlacklist, epicsStrDup(line), NULL);
+                }
             }
         }
         fclose(file);
+        printf("\n");
     }
     return ok;
 }

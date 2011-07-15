@@ -1,1 +1,10 @@
-:CF:ISCALE_S
+ This file is a blacklist of PV names which will not be logged when changed
+ via external CA puts.
+
+ Each line of this file contains the full PV name after the $(DEVICE) prefix,
+ and comments are marked by leading spaces.  Empty lines after removing comments
+ are ignored.
+
+:CF:ISCALE_S        Automatically tracks DCCT to compensate drift
+:CF:GOLDEN_X_S      Managed by XBPM feedback in some BPMs
+:CF:GOLDEN_Y_S
