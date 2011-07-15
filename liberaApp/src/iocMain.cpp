@@ -46,6 +46,8 @@
 #include <iocInit.h>
 #include <asDbLib.h>
 #include <asTrapWrite.h>
+#include <gpHash.h>
+#include <epicsString.h>
 
 #include "hardware.h"
 #include "firstTurn.h"
@@ -133,6 +135,9 @@ static bool RemountRootfs = false;
 
 /* NTP monitoring can be turned off at startup. */
 static bool MonitorNtp = true;
+
+/* Blacklist file for PV logging, read at startup. */
+static const char * BlacklistFile = NULL;
 
 
 
@@ -439,6 +444,7 @@ static void Usage(const char *IocName)
 "    -M             Remount rootfs rw while writing persistent state\n"
 "    -d <device>    Name of device for database\n"
 "    -N             Disable NTP status monitoring\n"
+"    -b <file>      PV logging blacklist\n"
 "\n"
 "Note: This IOC application should normally be run from within runioc.\n",
         IocName);
@@ -455,7 +461,7 @@ static bool ProcessOptions(int &argc, char ** &argv)
     bool Ok = true;
     while (Ok)
     {
-        switch (getopt(argc, argv, "+hvp:nc:f:s:Md:N"))
+        switch (getopt(argc, argv, "+hvp:nc:f:s:Md:Nb:"))
         {
             case 'h':   Usage(argv[0]);                 return false;
             case 'v':   StartupMessage();               return false;
@@ -467,6 +473,7 @@ static bool ProcessOptions(int &argc, char ** &argv)
             case 'M':   RemountRootfs = true;           break;
             case 'd':   DeviceName = optarg;            break;
             case 'N':   MonitorNtp = false;             break;
+            case 'b':   BlacklistFile = optarg;         break;
             case '?':
             default:
                 fprintf(stderr, "Try `%s -h` for usage\n", argv[0]);
@@ -505,6 +512,8 @@ static bool ProcessOptions(int &argc, char ** &argv)
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                            IOC PV put logging                             */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+static struct gphPvt *PvLogBlacklist;
 
 /* Alas dbGetField is rather rubbish at formatting floating point numbers, so we
  * do that ourselves, but the rest formats ok. */
@@ -549,8 +558,34 @@ static void PrintValue(dbr_string_t *value, int length)
     }
 }
 
+static bool CheckBlacklist(asTrapWriteMessage *pmessage, int after)
+{
+    if (PvLogBlacklist)
+    {
+        if (after)
+            /* On second pass can just check for presence of userPvt field. */
+            return pmessage->userPvt == NULL;
+        else
+        {
+            /* On first pass check for device name prefix and suffix in
+             * blacklist file. */
+            dbAddr *dbaddr = (dbAddr *) pmessage->serverSpecific;
+            const char *record_name = dbaddr->precord->name;
+            int length = strlen(DeviceName);
+            return
+                strncmp(record_name, DeviceName, length) == 0  &&
+                gphFind(PvLogBlacklist, record_name + length, NULL) != NULL;
+        }
+    }
+    else
+        return false;
+}
+
 static void EpicsPvPutHook(asTrapWriteMessage *pmessage, int after)
 {
+    if (CheckBlacklist(pmessage, after))
+        return;
+
     dbAddr *dbaddr = (dbAddr *) pmessage->serverSpecific;
     long length = dbaddr->no_elements;
     dbr_string_t *value = (dbr_string_t *) calloc(length, sizeof(dbr_string_t));
@@ -576,10 +611,32 @@ static void EpicsPvPutHook(asTrapWriteMessage *pmessage, int after)
         pmessage->userPvt = value;
 }
 
+static bool ReadBlacklistFile(void)
+{
+    FILE *file = fopen(BlacklistFile, "r");
+    bool ok = TEST_NULL(file);
+    if (ok)
+    {
+        gphInitPvt(&PvLogBlacklist, 256);
+        char line[1024];
+        while (fgets(line, sizeof(line), file))
+        {
+            int len = strlen(line);
+            if (len > 1  &&  line[len - 1] == '\n')
+            {
+                line[len - 1] = '\0';
+                gphAdd(PvLogBlacklist, epicsStrDup(line), NULL);
+            }
+        }
+        fclose(file);
+    }
+    return ok;
+}
+
 static bool HookLogging(void)
 {
     asTrapWriteRegisterListener(EpicsPvPutHook);
-    return true;
+    return IF_(BlacklistFile, ReadBlacklistFile());
 }
 
 

@@ -34,6 +34,7 @@ set -e
 
 # Files needed for installation process:
 #     CONFIG                Configuration template installed in /etc/libera
+#     ioc-log-blacklist     List of PVs to ignore when PV put logging
 #     epics                 Startup script installed in /etc/init.d
 #     libera-driver         Startup script installed in /etc/init.d
 #     healthd               Startup script installed in /etc/init.d
@@ -42,6 +43,7 @@ set -e
 #     libera-install-ioc    Script to install libera IOC on target
 INSTALL_FILES='
     CONFIG
+    ioc-log-blacklist
     epics
     libera-driver
     healthd

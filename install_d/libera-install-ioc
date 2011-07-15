@@ -215,6 +215,9 @@ for f in libera-driver epics healthd; do
     chmod +x /etc/init.d/$f
 done
 
+# Place the logging blacklist
+cp "$SOURCE"/install_d/ioc-log-blacklist "$CONFIGDIR"
+
 
 # If this is a DLS target system install or upgrade /opt/{lib,bin}
 if [ "$ROOTFS_ARCH" == DLS ]; then

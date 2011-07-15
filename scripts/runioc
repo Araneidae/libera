@@ -106,6 +106,13 @@ if [ -n "$IOC_CORE" -a -d "$IOC_CORE" ]; then
     echo "$IOC_CORE/core.%h.%t" >/proc/sys/kernel/core_pattern
 fi
 
+if [ -n "$IOC_BLACKLIST" ]; then
+    # If blacklist doesn't begin with / interpret as relative to CONFIGDIR
+    [ "${IOC_BLACKLIST::1}" = / ]  ||
+        IOC_BLACKLIST="$CONFIGDIR/$IOC_BLACKLIST"
+    IocParameter -b "$IOC_BLACKLIST"
+fi
+
 
 # Define all the parameters to pass through to the IOC
 IocParameter -d "$DEVICE"

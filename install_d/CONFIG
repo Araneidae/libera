@@ -113,3 +113,6 @@ IOC_MONITOR_NTP=1
 IOC_HEALTHD_PANIC=/sbin/reboot
 # Extra health daemon options can be specified by setting this variable.
 IOC_HEALTHD_OPTS=
+
+# Writes to PVs listed in this blacklist file will not be logged
+IOC_BLACKLIST=ioc-log-blacklist
