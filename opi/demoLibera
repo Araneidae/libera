@@ -1,10 +1,12 @@
 #!/bin/sh
 
+# Hard-wired path to synclibera.  Hard to find a better location for this, as
+# it's no longer part of core Libera.
+SYNC_LIBERA_PATH=/home/mga83/epics/diagOpi/scripts
+
 cd "$(dirname "$(readlink -fn "$0")")"
 
-which edm >/dev/null 2>&1  ||
-    PATH=/dls_sw/epics/R3.14.8.2/extensions/bin/linux-x86/:"$PATH"
-PATH="$(pwd)"/scripts:"$PATH"
+PATH="$(pwd)"/scripts:"$PATH":"$SYNC_LIBERA_PATH"
 
 export EPICS_CA_MAX_ARRAY_BYTES=1000000
-edm -x -eolc launcher.edl &
+exec edm -x -eolc launcher.edl &
