@@ -95,8 +95,8 @@ def FirstTurn():
 # Booster ramp support records.  Decimated waveforms for overview of entire
 # 100ms booster ramp.
 def Booster():
-    SHORT_LENGTH = Parameter('BN_SHORT')    # 190  = BN_LONG / 16
-    LONG_LENGTH  = Parameter('BN_LONG')     # 3040 = BN_SHORT * 16
+    SHORT_LENGTH = Parameter('BN_SHORT', 'Length of short BN waveform')
+    LONG_LENGTH  = Parameter('BN_LONG', 'Length of long BN waveform')
 
     SetChannelName('BN')
     Enable()
@@ -171,7 +171,7 @@ def StatsXY():
 
 # Free running short (typically 2048) turn-by-turn buffer.
 def FreeRunning():
-    LENGTH = Parameter('FR_LENGTH')
+    LENGTH = Parameter('FR_LENGTH', 'Length of FR waveform')
 
     SetChannelName('FR')
     Enable()
@@ -202,8 +202,8 @@ def FreeRunning():
 # request.  Typically used for tune measurements.  Up to 200,000 points can
 # be captured in one request.
 def TurnByTurn():
-    LONG_LENGTH   = Parameter('TT_LONG')
-    WINDOW_LENGTH = Parameter('TT_WINDOW')
+    LONG_LENGTH   = Parameter('TT_LONG', 'Length of long TT capture')
+    WINDOW_LENGTH = Parameter('TT_WINDOW', 'Length of TT readout waveform')
 
     SetChannelName('TT')
 
@@ -289,8 +289,8 @@ def SlowAcquisition():
 def Config():
     # The number of attenuators depends on whether we're Electron or
     # Brilliance.
-    ATTEN_COUNT = Parameter('ATTEN_COUNT')
-    FIR_LENGTH  = Parameter('FIR_LENGTH')
+    ATTEN_COUNT = Parameter('ATTEN_COUNT', 'Number of attenuator settings')
+    FIR_LENGTH  = Parameter('FIR_LENGTH', 'Length of FA decimation FIR')
     MAX_ATTEN = 62
 
     SetChannelName('CF')
@@ -554,7 +554,7 @@ def Postmortem():
 COMP_MAT_SIZE = 8 * 4 * 2
 
 def Conditioning():
-    SC_IQ_LENGTH = Parameter('SC_IQ_LENGTH')
+    SC_IQ_LENGTH = Parameter('SC_IQ_LENGTH', 'Length of SC waveform')
 
     SetChannelName('SC')
 

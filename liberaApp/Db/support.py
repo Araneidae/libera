@@ -56,7 +56,8 @@ class LiberaRecordNames(TemplateRecordNames):
     __all__ = super.__all__ + ['SetChannelName', 'UnsetChannelName']
 
     def __init__(self):
-        self.super.__init__(self)
+        device = self.super.Parameter('DEVICE', 'Libera device name')
+        self.super.__init__(self, device)
         self.ChannelName = None
 
     def SetChannelName(self, name):
