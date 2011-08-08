@@ -131,16 +131,10 @@ check_instrument_type()
 
 
 # This function probes the Libera hardware, returning a string recording the
-# detected hardware type.
+# detected hardware type.  Don't currently have a reliable test for PHOTON.
 probe_libera()
 {
-    # We detect a Libera Photon by the absence of the temperature sensor on
-    # I2C node 18.  This can only occur on a system with sysfs.
-    if [ ! -d /sys -o -e /sys/bus/i2c/devices/0-0018 ]; then
-        detect_brilliance  &&  echo -n BRILLIANCE  ||  echo -n ELECTRON
-    else
-        echo -n PHOTON
-    fi
+    detect_brilliance  &&  echo -n BRILLIANCE  ||  echo -n ELECTRON
 }
 
 
