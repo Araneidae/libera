@@ -1,5 +1,5 @@
 /* This file is part of the Libera EPICS Driver,
- * Copyright (C) 2009  Michael Abbott, Diamond Light Source Ltd.
+ * Copyright (C) 2009-2011  Michael Abbott, Diamond Light Source Ltd.
  *
  * The Libera EPICS Driver is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as published by
@@ -323,7 +323,7 @@ void StartupMessage()
 "Libera EPICS Driver, Version %s.  Built: %s.\n"
 "Compiled with %s, linked with %s\n"
 "\n"
-"Copyright (C) 2005-2009 Michael Abbott, Diamond Light Source.\n"
+"Copyright (C) 2005-2011 Michael Abbott, Diamond Light Source.\n"
 "This program comes with ABSOLUTELY NO WARRANTY.  This is free software,\n"
 "and you are welcome to redistribute it under certain conditions.\n"
 "For details see the GPL or the attached file COPYING.\n",

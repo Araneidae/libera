@@ -3,7 +3,7 @@
 # fpga_init - Initialize Libera FPGA design.
 #
 # Copyright (C) 2004-2006 Instrumentation Technologies
-# Copyright (C) 2009 Michael Abbott, Diamond Light Source Ltd.
+# Copyright (C) 2009-2011 Michael Abbott, Diamond Light Source Ltd.
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
