@@ -136,6 +136,8 @@ static bool RemountRootfs = false;
 /* NTP monitoring can be turned off at startup. */
 static bool MonitorNtp = true;
 
+/* If set all CA puts are logged. */
+static bool EnablePvLogging = false;
 /* Blacklist file for PV logging, read at startup. */
 static const char * BlacklistFile = NULL;
 
@@ -444,6 +446,7 @@ static void Usage(const char *IocName)
 "    -M             Remount rootfs rw while writing persistent state\n"
 "    -d <device>    Name of device for database\n"
 "    -N             Disable NTP status monitoring\n"
+"    -l             Log all CA puts (except for those blacklisted)\n"
 "    -b <file>      PV logging blacklist\n"
 "\n"
 "Note: This IOC application should normally be run from within runioc.\n",
@@ -461,7 +464,7 @@ static bool ProcessOptions(int &argc, char ** &argv)
     bool Ok = true;
     while (Ok)
     {
-        switch (getopt(argc, argv, "+hvp:nc:f:s:Md:Nb:"))
+        switch (getopt(argc, argv, "+hvp:nc:f:s:Md:Nlb:"))
         {
             case 'h':   Usage(argv[0]);                 return false;
             case 'v':   StartupMessage();               return false;
@@ -473,6 +476,7 @@ static bool ProcessOptions(int &argc, char ** &argv)
             case 'M':   RemountRootfs = true;           break;
             case 'd':   DeviceName = optarg;            break;
             case 'N':   MonitorNtp = false;             break;
+            case 'l':   EnablePvLogging = true;         break;
             case 'b':   BlacklistFile = optarg;         break;
             case '?':
             default:
@@ -644,8 +648,9 @@ static bool ReadBlacklistFile(void)
 
 static bool HookLogging(void)
 {
-    asTrapWriteRegisterListener(EpicsPvPutHook);
-    return IF_(BlacklistFile, ReadBlacklistFile());
+    return
+        IF_(BlacklistFile, ReadBlacklistFile())  &&
+        DO_(asTrapWriteRegisterListener(EpicsPvPutHook));
 }
 
 
@@ -744,8 +749,8 @@ static bool StartIOC()
         TEST_EPICS(ioc_registerRecordDeviceDriver(pdbbase))  &&
         LoadDatabases()  &&
         TEST_EPICS(asSetFilename("db/access.acf"))  &&
-        TEST_EPICS(iocInit())  &&
-        HookLogging();
+        IF_(EnablePvLogging, HookLogging())  &&
+        TEST_EPICS(iocInit());
 }
 
 

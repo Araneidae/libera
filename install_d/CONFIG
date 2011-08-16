@@ -114,5 +114,7 @@ IOC_HEALTHD_PANIC=/sbin/reboot
 # Extra health daemon options can be specified by setting this variable.
 IOC_HEALTHD_OPTS=
 
+# Set this to 1 to enable CA put logging
+IOC_CA_LOGGING=1
 # Writes to PVs listed in this blacklist file will not be logged
 IOC_BLACKLIST=ioc-log-blacklist
