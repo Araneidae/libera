@@ -3,10 +3,10 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 349
-y 128
+x 659
+y 31
 w 409
-h 686
+h 713
 font "helvetica-medium-r-18.0"
 ctlFont "helvetica-medium-r-18.0"
 btnFont "helvetica-medium-r-18.0"
@@ -52,7 +52,7 @@ major 4
 minor 1
 release 0
 x 312
-y 656
+y 680
 w 88
 h 22
 fgColor index 25
@@ -68,7 +68,7 @@ endObjectProperties
 object xyGraphClass
 beginObjectProperties
 major 4
-minor 3
+minor 6
 release 0
 # Geometry
 x 8
@@ -120,7 +120,7 @@ endObjectProperties
 object xyGraphClass
 beginObjectProperties
 major 4
-minor 3
+minor 6
 release 0
 # Geometry
 x 8
@@ -172,7 +172,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 5
 release 0
 x 88
 y 368
@@ -191,6 +191,7 @@ useHexPrefix
 showUnits
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Static Text)
@@ -217,7 +218,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 5
 release 0
 x 240
 y 368
@@ -236,6 +237,7 @@ useHexPrefix
 showUnits
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Static Text)
@@ -262,7 +264,7 @@ endObjectProperties
 object xyGraphClass
 beginObjectProperties
 major 4
-minor 3
+minor 6
 release 0
 # Geometry
 x 8
@@ -270,7 +272,7 @@ y 392
 w 392
 h 232
 # Appearance
-graphTitle "Buttons A,B,C,D"
+graphTitle "Normalised Buttons A,B,C,D"
 fgColor index 14
 bgColor index 3
 gridColor index 4
@@ -296,10 +298,10 @@ y2Max 1
 # Trace Properties
 numTraces 4
 yPv {
-  0 "$(device):SA:A"
-  1 "$(device):SA:B"
-  2 "$(device):SA:C"
-  3 "$(device):SA:D"
+  0 "$(device):SA:AN"
+  1 "$(device):SA:BN"
+  2 "$(device):SA:CN"
+  3 "$(device):SA:DN"
 }
 xSigned {
   0 137055288
@@ -319,7 +321,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 5
 release 0
 x 32
 y 632
@@ -338,6 +340,7 @@ useHexPrefix
 showUnits
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Static Text)
@@ -364,10 +367,10 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 5
 release 0
 x 32
-y 656
+y 672
 w 96
 h 16
 controlPv "$(device):SA:C"
@@ -383,6 +386,7 @@ useHexPrefix
 showUnits
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Static Text)
@@ -392,7 +396,7 @@ major 4
 minor 1
 release 0
 x 8
-y 656
+y 672
 w 10
 h 16
 font "helvetica-medium-r-14.0"
@@ -409,7 +413,7 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 5
 release 0
 x 168
 y 632
@@ -428,6 +432,7 @@ useHexPrefix
 showUnits
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Static Text)
@@ -454,10 +459,10 @@ endObjectProperties
 object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 1
+minor 5
 release 0
 x 168
-y 656
+y 672
 w 96
 h 16
 controlPv "$(device):SA:D"
@@ -473,6 +478,7 @@ useHexPrefix
 showUnits
 newPos
 objType "monitors"
+noExecuteClipMask
 endObjectProperties
 
 # (Static Text)
@@ -482,7 +488,7 @@ major 4
 minor 1
 release 0
 x 144
-y 656
+y 672
 w 10
 h 16
 font "helvetica-medium-r-14.0"
@@ -502,7 +508,7 @@ major 4
 minor 2
 release 0
 x 312
-y 632
+y 656
 w 88
 h 22
 fgColor index 25
@@ -510,10 +516,10 @@ bgColor index 3
 topShadowColor index 1
 botShadowColor index 11
 font "helvetica-bold-r-12.0"
-buttonLabel "Strip"
+buttonLabel "Strip N"
 numCmds 1
 command {
-  0 "strip_tool.py SA:%s ABCD 0.01 0.1 $(device)"
+  0 "strip_tool.py SA:%sN ABCD 0.01 0.1 $(device)"
 }
 endObjectProperties
 
@@ -538,5 +544,211 @@ command {
   0 "libera-help SA_detail"
 }
 includeHelpIcon
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 5
+release 0
+x 32
+y 648
+w 96
+h 16
+controlPv "$(device):SA:AN"
+font "helvetica-medium-r-14.0"
+fontAlign "right"
+fgColor index 14
+bgColor index 3
+autoHeight
+limitsFromDb
+nullColor index 0
+fastUpdate
+useHexPrefix
+showUnits
+newPos
+objType "monitors"
+noExecuteClipMask
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 8
+y 648
+w 21
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 27
+bgColor index 0
+useDisplayBg
+value {
+  "AN"
+}
+autoSize
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 5
+release 0
+x 168
+y 648
+w 96
+h 16
+controlPv "$(device):SA:BN"
+font "helvetica-medium-r-14.0"
+fontAlign "right"
+fgColor index 14
+bgColor index 3
+autoHeight
+limitsFromDb
+nullColor index 0
+fastUpdate
+useHexPrefix
+showUnits
+newPos
+objType "monitors"
+noExecuteClipMask
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 144
+y 648
+w 19
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 18
+bgColor index 0
+useDisplayBg
+value {
+  "BN"
+}
+autoSize
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 5
+release 0
+x 32
+y 688
+w 96
+h 16
+controlPv "$(device):SA:CN"
+font "helvetica-medium-r-14.0"
+fontAlign "right"
+fgColor index 14
+bgColor index 3
+autoHeight
+limitsFromDb
+nullColor index 0
+fastUpdate
+useHexPrefix
+showUnits
+newPos
+objType "monitors"
+noExecuteClipMask
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 8
+y 688
+w 20
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 22
+bgColor index 0
+useDisplayBg
+value {
+  "CN"
+}
+autoSize
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 5
+release 0
+x 168
+y 688
+w 96
+h 16
+controlPv "$(device):SA:DN"
+font "helvetica-medium-r-14.0"
+fontAlign "right"
+fgColor index 14
+bgColor index 3
+autoHeight
+limitsFromDb
+nullColor index 0
+fastUpdate
+useHexPrefix
+showUnits
+newPos
+objType "monitors"
+noExecuteClipMask
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 144
+y 688
+w 20
+h 16
+font "helvetica-medium-r-14.0"
+fgColor index 33
+bgColor index 0
+useDisplayBg
+value {
+  "DN"
+}
+autoSize
+endObjectProperties
+
+# (Shell Command)
+object shellCmdClass
+beginObjectProperties
+major 4
+minor 2
+release 0
+x 312
+y 632
+w 88
+h 22
+fgColor index 25
+bgColor index 3
+topShadowColor index 1
+botShadowColor index 11
+font "helvetica-bold-r-12.0"
+buttonLabel "Strip"
+numCmds 1
+command {
+  0 "strip_tool.py SA:%s ABCD 0.01 0.1 $(device)"
+}
 endObjectProperties
 

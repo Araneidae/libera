@@ -274,7 +274,7 @@ def SlowAcquisition():
         DESC = 'Absolute input power')
     current = aIn('CURRENT', 0, 500, 1e-5, 'mA', 3,
         DESC = 'SA input current')
-    Trigger(False, ABCD_() + XYQS_(4) + [power, current] + MaxAdc())
+    Trigger(False, ABCD_() + ABCD_N() + XYQS_(4) + [power, current] + MaxAdc())
     UnsetChannelName()
 
 

@@ -98,6 +98,7 @@ public:
         THREAD("SLOW_ACQUISITION")
     {
         Publish_ABCD("SA", ABCD);
+        Publish_ABCD_N("SA", ABCD_Normalised);
         Publish_XYQS("SA", XYQS);
         Publish_ai("SA:POWER", Power);
         Publish_ai("SA:CURRENT", Current);
@@ -122,6 +123,7 @@ private:
                 Interlock.Wait();
                 ABCD = NewABCD;
                 ABCDtoXYQS(&ABCD, &XYQS, 1);
+                ComputeNormalisedABCD();
                 PowerAndCurrentFromS(XYQS.S, Power, Current);
                 MaxAdc = ReadMaxAdc();
                 Interlock.Ready();
@@ -132,6 +134,28 @@ private:
         }
     }
 
+    /* Computes ABCD_normalised = ABCD / XYQS.S. */
+    void ComputeNormalisedABCD()
+    {
+        /* We want to compute AN = 1e7 * A / S (and similarly for B, C, D).
+         * We'll compute K = 2^32 * 10^7 / S, and then AN = MulUU(K, A) etc. */
+        int shift = -56;
+        unsigned int InvS = Reciprocal(XYQS.S, shift);
+        unsigned int SCALE = 2560000000U;   // 2^8 * 10^7
+        /* Compute here K = 2^32 * SCALE * 2^-a * InvS; this means we need to
+         * take a = shift - 56, which unfortunately can fall either size of
+         * zero here.  Any residual shift needs to be applied to final
+         * multiplication stage. */
+        int abcd_shift = shift >= 0 ? 0 : -shift;
+        int invs_shift = shift >= 0 ? shift : 0;
+        unsigned int K = MulUU(SCALE, InvS >> invs_shift);
+
+        ABCD_Normalised.A = MulUU(K, ABCD.A << abcd_shift);
+        ABCD_Normalised.B = MulUU(K, ABCD.B << abcd_shift);
+        ABCD_Normalised.C = MulUU(K, ABCD.C << abcd_shift);
+        ABCD_Normalised.D = MulUU(K, ABCD.D << abcd_shift);
+    }
+
 
 #ifdef UNSAFE_PTHREAD_CANCEL
     /* Suppress use of pthread_cancel in this thread: it can cause trouble! */
@@ -140,7 +164,7 @@ private:
 
 
     INTERLOCK Interlock;
-    ABCD_ROW ABCD;
+    ABCD_ROW ABCD, ABCD_Normalised;
     XYQS_ROW XYQS;
     int Power;          // Power in dBm * 1e6
     int Current;        // Current in 10*nA

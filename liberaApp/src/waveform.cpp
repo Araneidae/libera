@@ -395,6 +395,14 @@ void Publish_ABCD(const char * Prefix, ABCD_ROW &ABCD)
     Publish_longin(Concat(Prefix, ":D"), ABCD.D);
 }
 
+void Publish_ABCD_N(const char * Prefix, ABCD_ROW &ABCD)
+{
+    Publish_ai(Concat(Prefix, ":AN"), ABCD.A);
+    Publish_ai(Concat(Prefix, ":BN"), ABCD.B);
+    Publish_ai(Concat(Prefix, ":CN"), ABCD.C);
+    Publish_ai(Concat(Prefix, ":DN"), ABCD.D);
+}
+
 void Publish_XYQS(const char * Prefix, XYQS_ROW &XYQS, const char * Suffix)
 {
     Publish_ai    (Concat(Prefix, ":X", Suffix), XYQS.X);

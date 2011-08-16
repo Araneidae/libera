@@ -82,6 +82,12 @@ def ABCD_():
             DESC = '%s button %s intensity' % (ChannelName(), button))
         for button in 'ABCD']
 
+def ABCD_N():
+    return [
+        aIn(button + 'N', 0, 10, 1e-7, PREC = 6,
+            DESC = 'Normalised %s button intensity')
+        for button in 'ABCD']
+
 def XYQS_wf(length, prefix='WF'):
     return [
         Waveform(prefix + position, length,
@@ -135,5 +141,5 @@ __all__ = support.__all__ + iocbuilder.__all__ + [
     'MAX_INT', 'MAX_mm', 'MAX_nm', 'MAX_S',
     'KB', 'MB',
     'MAX_ADC', 'RAW_ADC',
-    'IQ_wf', 'ABCD_wf', 'ABCD_', 'XYQS_wf', 'XYQS_',
+    'IQ_wf', 'ABCD_wf', 'ABCD_', 'ABCD_N', 'XYQS_wf', 'XYQS_',
     'Enable', 'Trigger' ]

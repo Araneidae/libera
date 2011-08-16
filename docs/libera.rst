@@ -388,6 +388,10 @@ Slow Acquisition (<group> = SA)
 <buttons>, <positions>
     Averaged button readings and positions updating at approximately 10Hz.
 
+<buttons>\ `N`
+    Averaged button readings normalised by mean intensity.  Useful for observing
+    button drift in the presence of beam decay.
+
 :id:`POWER`
     Absolute input power in dBm.  The scaling here is hard-wired and not
     particularly accurate.
@@ -400,7 +404,7 @@ Slow Acquisition (<group> = SA)
     is a true maximum ADC value, but requires a Diamond specific register to be
     implemented in the FPGA.
 
-.. :id:<buttons>, :id:<positions>
+.. :id:<buttons>, :id:<positions>, :id:<buttons>N
 
 
 Postmortem (<group> = PM)

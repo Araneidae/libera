@@ -232,4 +232,5 @@ public:
 
 /* Slightly misplaced publish routines. */
 void Publish_ABCD(const char * Prefix, ABCD_ROW &ABCD);
+void Publish_ABCD_N(const char * Prefix, ABCD_ROW &ABCD);
 void Publish_XYQS(const char * Prefix, XYQS_ROW &XYQS, const char * Suffix="");
