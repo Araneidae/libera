@@ -207,7 +207,6 @@ static bool InitialiseSignals()
 
 static void SetNonInteractive()
 {
-    close(0);
     RunIocShell = false;
     sem_init(&ShutdownSemaphore, 0, 0);
 }

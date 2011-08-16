@@ -36,6 +36,7 @@
 #include <string.h>
 #include <sys/wait.h>
 #include <limits.h>
+#include <fcntl.h>
 
 #include <epicsVersion.h>
 
@@ -84,61 +85,40 @@ static EPICS_STRING LibraryVersion;
 /*****************************************************************************/
 
 
-/* Fairly generic routine to start a new detached process in a clean
- * environment. */
+/* This is a fairly dirty system for ensuring that we can restart either EPICS
+ * or the entire Libera even when fairly low on memory. */
 
 static void DetachProcess(const char *Process, const char *const argv[])
 {
-    /* We fork twice to avoid leaving "zombie" processes behind.  These are
-     * harmless enough, but annoying.  The double-fork is a simple enough
-     * trick if a bit clunky.
-     *     We use vfork() rather than fork() here so that we don't run into
-     * unnecessary problems when the system is low on memory. */
-    pid_t MiddlePid;
-    if (TEST_IO(MiddlePid = vfork()))
+    /* Annoyingly we need to fork a new process because the first thing that
+     * `/etc/init.d/epics restart` does is to kill the old PID, so we need a new
+     * one.  We need to use vfork() here because if we are low on memory, for
+     * example if a full length TT waveform has been fetched, then fork() will
+     * fail. */
+    pid_t pid;
+    if (TEST_IO(pid = vfork()))
     {
-        if (MiddlePid == 0)
+        if (pid == 0)
         {
-            pid_t NewPid;
-            if (TEST_IO(NewPid = vfork()))
-            {
-                if (NewPid == 0)
-                {
-                    /* This is the new doubly forked process.  We still need
-                     * to make an effort to clean up the environment before
-                     * letting the new image have it. */
+            /* We're not obeying the rules for forkv(), but we should get away
+             * with it.  All the calls we're making are system calls which
+             * should only affect the new process, and the old one is going to
+             * be gone soon anyway. */
 
-                    /* Set a sensible home directory. */
-                    chdir("/");
+            /* Ensure that none of our open files will be inherited.  It's safer
+             * to do this than to close them. */
+            for (int i = 3; i < sysconf(_SC_OPEN_MAX); i ++)
+                fcntl(i, F_SETFD, FD_CLOEXEC);
 
-                    /* Enable all signals. */
-                    sigset_t sigset;
-                    sigfillset(&sigset);
-                    sigprocmask(SIG_UNBLOCK, &sigset, NULL);
+            /* Enable all signals. */
+            sigset_t sigset;
+            sigfillset(&sigset);
+            sigprocmask(SIG_UNBLOCK, &sigset, NULL);
 
-                    /* Close all the open file handles.  It's rather annoying:
-                     * there seems to be no good way to do this in general.
-                     * Fortunately in our case _SC_OPEN_MAX is manageably
-                     * small. */
-                    for (int i = 0; i < sysconf(_SC_OPEN_MAX); i ++)
-                        close(i);
-
-                    /* Finally we can actually exec the new process... */
-                    char * envp[] = { NULL };
-                    execve(Process, (char**) argv, envp);
-                }
-                else
-                    /* The middle process simply exits without further
-                     * ceremony.  The idea here is that this orphans the new
-                     * process, which means that the parent process doesn't
-                     * have to wait() for it, and so it won't generate a
-                     * zombie when it exits. */
-                    _exit(0);
-            }
+            /* Finally we can actually exec the new process... */
+            char * envp[] = { NULL };
+            execve(Process, (char**) argv, envp);
         }
-        else
-            /* Wait for the middle process to finish. */
-            TEST_IO(waitpid(MiddlePid, NULL, 0));
     }
 }
 
