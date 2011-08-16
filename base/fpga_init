@@ -55,7 +55,7 @@ libera_brilliance_init()
     ########### OUT0 on ############
     devmem  0x1400403C 32 0x003c08
     ######### OUT1 on ##############
-    devmem  0x1400403C 32 0x003D08	
+    devmem  0x1400403C 32 0x003D08
     ########## OUT2 on #############
     devmem  0x1400403C 32 0x003E08
     ########## OUT3 on #############

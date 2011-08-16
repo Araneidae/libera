@@ -11,7 +11,7 @@ case "$LOCATION" in
     -h)     cat <<EOF
 Usage: $0 <location>
 
-Reconfigure BPM location.
+Reconfigure BPM location.  <location> can be SR or BO.
 EOF
             exit 0 ;;
     *)      Error Invalid location ;;

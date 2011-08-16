@@ -82,8 +82,7 @@ if $USE_DHCP; then
     [ $# -ge 0 -a $# -le 1 ]  ||  Usage
     HOSTNAME="$1"
 else
-    [ $# -gt 0 -a $# -le 2 ]  ||
-        Error 'Network reconfiguration tool.  Try -h for help.'
+    [ $# -gt 0 -a $# -le 2 ]  ||  Usage
     HOSTNAME="$1"
     if [ $# = 2 ]; then
         IPADDR="$2"

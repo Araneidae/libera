@@ -96,8 +96,7 @@ link_fpga_file()
 }
 
 
-# Compute the instrument type and the corresponding FPGA extension
-check_instrument_type
+# Compute the FPGA extension corresponding to the instrument type
 case $INST_TYPE in
     ELECTRON)   TYPE=EL ;;
     BRILLIANCE) TYPE=BR ;;
