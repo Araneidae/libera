@@ -87,7 +87,7 @@ make -C liberaApp/Db
 cp db/* install_d/prebuilt
 # The .h files are built from python files
 for py in liberaApp/src/*.py; do
-    python2.4 $py >install_d/prebuilt/$(basename $py .py).h
+    dls-python2.6 $py >install_d/prebuilt/$(basename $py .py).h
 done
 
 # Add the prebuilt files and finish off the distribution
@@ -102,6 +102,15 @@ if ((BINARY)); then
     INSTALL="$LIBERA_VERSION"-install
     INSTALL_DIR="$TEMP_ROOT/$INSTALL"
     INSTALL_TAR="$TARGET"/libera-epics-$VERSION-install.tar.gz
+
+    # Fixup configure/CONFIG_SITE so that we build all targets
+    sed -i '/^# *CROSS_COMPILER_TARGET_ARCHS *+=/s/# *//' \
+        configure/CONFIG_SITE
+
+    # Fixup install_d/CONFIG so that the distribution has more appropriate
+    # defaults.
+    sed -i 's/^DIST_//' install_d/CONFIG
+
     make
     make -C docs
 
