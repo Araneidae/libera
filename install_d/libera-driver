@@ -66,6 +66,13 @@ case "$1" in
         { sleep 1; [ -e /tmp/healthd.command ]; }  ||
             Error "Health daemon not running, not starting Libera FPGA"
 
+        # Some versions of Libera need the base VCXO frequency to be programmed
+        if [ -x /opt/bin/vcxo ]; then
+            I2C_ADDRESS=0x55
+            [ -r $CONFIGDIR/vcxo ] && . $CONFIGDIR/vcxo
+            /opt/bin/vcxo -i $I2C_ADDRESS $FLMCDHZ
+        fi
+
         # First load the FPGA design
         [ -e "$DESIGN" ]  ||  Error "FPGA design $DESIGN not found"
         echo -n "Loading FPGA design..."
@@ -99,6 +106,7 @@ case "$1" in
         # Load the driver with proper parameters.  The parameters depend on
         # which version we're running, though.
         echo -n "Loading Libera driver..."
+        DECIMATION=$(read_register 0x10)    # Samples per turn from FPGA
         if $NEW_LIBERA; then
             DEV_PARAMS="pmsize=$POSTMORTEM_BUFFER"
         else
@@ -112,7 +120,6 @@ case "$1" in
         evaluate_retval
 
         # Start the clock PLL daemon from the same directory as the EPICS IOC
-        DECIMATION=$(read_register 0x10)    # Samples per turn from FPGA
         echo -n "Loading clock PLL daemon..."
         "$LIBERA_IOC"/bin/$EPICS_ARCH/clockPll \
             -p$MCPRESC -d$DECIMATION -r$HARMONIC
