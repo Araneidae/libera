@@ -37,9 +37,11 @@
 #include <stdint.h>
 #include <stdarg.h>
 
+#define db_accessHFORdb_accessC     // Needed to get correct DBF_ values
 #include <iocsh.h>
 #include <epicsThread.h>
 #include <dbAccess.h>
+#include <dbFldTypes.h>
 #include <db_access.h>
 #include <caerr.h>
 #include <envDefs.h>
@@ -530,12 +532,12 @@ static void FormatField(dbAddr *dbaddr, dbr_string_t *value)
     } while (0)
 
     long length = dbaddr->no_elements;
-    switch (dbaddr->dbr_field_type)
+    switch (dbaddr->field_type)
     {
-        case DBR_FLOAT:
+        case DBF_FLOAT:
             FORMAT(dbr_float_t, "%.7g");
             break;
-        case DBR_DOUBLE:
+        case DBF_DOUBLE:
             FORMAT(dbr_double_t, "%.15lg");
             break;
         default:
