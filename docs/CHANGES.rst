@@ -4,6 +4,35 @@ Change history of Libera EPICS Driver development
 .. This file is written in reStructuredText
 .. default-role:: literal
 
+
+2011/10/10 Version 2.05.7
+-------------------------
+Mostly very minor incremental changes, some changes to installation, a handful
+of bug fixes, some minor extra functionality.
+
+ - `synclibera` script removed from this distribution, maintaned elsewhere.
+ - Add support for secondary interlock selection, provided by DLS FPGA for use
+   in locations where it is necessary to switch under MPS control between two
+   different interlock windows.
+ - Correctly compute and display decimation factor when DDC factor is > 1.
+ - On read error force health sensors to zero so that an alarm condition is
+   signalled, rather than simply freezing the readings.
+ - Fix long standing channel update bug: if an EPICS PV initialises to a
+   non-zero value then writing it to zero wasn't generating an update event.
+ - Add detailing logging of all caput events together with an optional
+   blacklist.
+ - Add support for FA payload selection when supported by FPGA.
+ - Include installation of `/opt/lib` and `/opt/bin` directories, but *only*
+   when targeting a DLS rootfs installation.
+ - Integrate all three FA filters (notches and FIR) into EPICS control.
+ - Golden Orbit PVs, `GOLDEN_{X,Y}_S` are now persistent.
+ - Fix broken hardware probe in 2.05.3 installation which misfires on newer
+   Libera Electron installations.
+ - Include support for new programmable crystal controller.
+ - Add normalised `SA:<button>N` PVs to help with checking for button drift
+   during normal beam decay.
+
+
 2010/03/03 Version 2.05.3
 -------------------------
 Add to calculations performed on FR and TT waveforms, one bug fix.
