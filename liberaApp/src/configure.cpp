@@ -267,14 +267,19 @@ protected:
 private:
     bool load_file(void)
     {
-        FILE *input;
-        bool ok = TEST_NULL(input = fopen(filename, "r"));
-        if (ok)
+        FILE *input = fopen(filename, "r");
+        bool ok = input != NULL;
+        if (!ok)
+            printf("Unable to open filter file \"%s\"\n", filename);
+        else
         {
             for (size_t i = 0; ok  &&  i < wf_length; i ++)
                 ok = TEST_OK(fscanf(input, "%i\n", &filter[i]) == 1);
             fclose(input);
         }
+        /* If loading failed reset the filter to zero. */
+        if (!ok)
+            memset(filter, 0, sizeof(int) * wf_length);
         return ok;
     }
 

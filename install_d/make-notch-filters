@@ -41,24 +41,56 @@ sign_extend() { echo $((($1 << 32) >> 32)); }
     Error Unable to convert notch filters
 
 
-if [ -e /opt/lib/notch1 -a /opt/lib/notch2 -a "$1" != -f ]; then
+if [ -e /opt/lib/notch1 -a -e /opt/lib/notch2 -a \
+     -e /opt/lib/polyphase_fir -a "$1" != -f ]; then
     echo Notch filters already present, not overwriting
     exit 0
 fi
 
-for notch in 0 1; do
-    ADDR=$(printf "0x%08X" $((0x1401C018 + 4*notch)))
-    FILE=/opt/lib/notch$((notch+1))
 
+# Reads coefficients for specified address from FPGA initialisation file.
+# This unfortunately relies hugely on the FPGA initialisation file being in a
+# very specific format, so this is embarassingly fragile.
+read_filter()
+{
+    ADDR=$(printf "0x%08X" $((0x1401C000 + $1)))
     cat /opt/bin/fpga_init_specific |
     sed -n "/^.*Monitor $ADDR w /{s///;p;}" |
     while read; do
         # Convert hex value into signed integer value as required by Libera.
         sign_extend $REPLY
-    done >"$FILE"
+    done
+}
 
-    if [ $(wc -l <$FILE) != 5 ]; then
-        rm -f $FILE
+# If a notch filter isn't exactly five lines then we've messed up.
+check_notch()
+{
+    if [ $(wc -l <$1) != 5 ]; then
+        rm -f $1
         Error "Invalid notch file read"
     fi
-done
+}
+
+
+read_filter 0x18 >/opt/lib/notch1
+check_notch /opt/lib/notch1
+
+read_filter 0x1C >/opt/lib/notch2
+check_notch /opt/lib/notch2
+
+read_filter 0x14 >/tmp/polyphase_fir
+
+# For some mysterious reason the FIR coefficients need to be rearranged: they
+# are loaded out of order, and this needs to be undone for the generated FIR
+# file.  At least we can do a few extra checks...
+lines=$(wc -l </tmp/polyphase_fir)
+if [ $(((lines % 3))) != 0  -o  $((lines)) == 0 ]; then
+    Error "Invalid FIR file read"
+fi
+
+n=$((lines/3))
+{
+    sed -n "$((2*n+1)),$((3*n))p" /tmp/polyphase_fir
+    sed -n "$((n+1)),$((2*n))p" /tmp/polyphase_fir
+    sed -n "1,${n}p" /tmp/polyphase_fir
+} >/opt/lib/polyphase_fir
