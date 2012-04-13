@@ -34,7 +34,7 @@
 CONFIGDIR='@@CONFIGDIR@@'
 . $CONFIGDIR/libera
 . $CONFIGDIR/epics_ioc
-: "${LIBERA_IOC}"           # Path to EPICS IOC
+: "${LIBERA_IOC:?}"         # Path to EPICS IOC
 . "$LIBERA_IOC"/scripts/epics-functions
 
 # Figure out the firmware version.
