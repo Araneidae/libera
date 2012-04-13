@@ -440,6 +440,17 @@ def Interlock():
 
     # Common shared interlock settings
     InterlockSettings()
+    # True interlocks
+    true_interlocks = [
+        aIn('MINX', -5, 5, EGU = 'mm', PREC = 3, MDEL = 0, ADEL = 0,
+            DESC = 'Current interlock min X'),
+        aIn('MAXX', -5, 5, EGU = 'mm', PREC = 3, MDEL = 0, ADEL = 0,
+            DESC = 'Current interlock max X'),
+        aIn('MINY', -5, 5, EGU = 'mm', PREC = 3, MDEL = 0, ADEL = 0,
+            DESC = 'Current interlock min Y'),
+        aIn('MAXY', -5, 5, EGU = 'mm', PREC = 3, MDEL = 0, ADEL = 0,
+            DESC = 'Current interlock max Y')]
+
     # Extra secondary interlock settings
     aOut('MINX2', -5, 5, EGU = 'mm', DESC = 'Secondary interlock min X')
     aOut('MAXX2', -5, 5, EGU = 'mm', DESC = 'Secondary interlock max X')
@@ -447,6 +458,7 @@ def Interlock():
     aOut('MAXY2', -5, 5, EGU = 'mm', DESC = 'Secondary interlock max Y')
     mbbIn('WINDOW', ('Primary', 0), ('Secondary', 1),
         SCAN = '.1 second',
+        FLNK = create_fanout('FANILK', *true_interlocks),
         DESC = 'Currently active interlock')
 
     # Interlock control state.  This tracks the internal state, but can also

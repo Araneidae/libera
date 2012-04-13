@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 2310
-y 195
+x 2311
+y 196
 w 224
 h 214
 font "helvetica-medium-r-8.0"
@@ -82,7 +82,7 @@ font "helvetica-bold-r-14.0"
 buttonLabel "?"
 numCmds 1
 command {
-  0 "libera-help secondary"
+  0 "libera-help interlocks"
 }
 includeHelpIcon
 endObjectProperties
@@ -391,14 +391,14 @@ minor 1
 release 0
 x 8
 y 36
-w 108
+w 111
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
 bgColor index 0
 useDisplayBg
 value {
-  "Normal Interlock:"
+  "Primary Interlock:"
 }
 autoSize
 endObjectProperties

@@ -69,6 +69,12 @@ static int MinX2 = -1000000;     // +- 1 mm
 static int MaxX2 =  1000000;
 static int MinY2 = -1000000;
 static int MaxY2 =  1000000;
+/* Current interlock computed from interlocks above and interlock window. */
+static int currentMinX = -1000000;     // +- 1 mm
+static int currentMaxX =  1000000;
+static int currentMinY = -1000000;
+static int currentMaxY =  1000000;
+
 /* Interlock position offset: these need to adjust the position of the window
  * to take account of Golden Orbit offsets. */
 static int OffsetX = 0;
@@ -360,7 +366,25 @@ static bool ReadInterlockWindow(int &window)
     uint32_t status;
     bool ok = ReadInterlockStatus(status);
     if (ok)
+    {
         window = (status >> 5) & 1;
+        if (window)
+        {
+            /* window == 1 => Secondary interlock active. */
+            currentMinX = MinX2;
+            currentMaxX = MaxX2;
+            currentMinY = MinY2;
+            currentMaxY = MaxY2;
+        }
+        else
+        {
+            /* window == 0 => Primary interlock active. */
+            currentMinX = MinX;
+            currentMaxX = MaxX;
+            currentMinY = MinY;
+            currentMaxY = MaxY;
+        }
+    }
     return ok;
 }
 
@@ -393,6 +417,11 @@ bool InitialiseInterlock()
     PUBLISH_FUNCTION_OUT(bo,  "IL:TEST",
         InterlockTestMode, LockedWriteInterlockState);
     PUBLISH_FUNCTION_IN(mbbi, "IL:WINDOW", ReadInterlockWindow);
+
+    Publish_ai("IL:MINX", currentMinX);
+    Publish_ai("IL:MAXX", currentMaxX);
+    Publish_ai("IL:MINY", currentMinY);
+    Publish_ai("IL:MAXY", currentMaxY);
 
     /* The interlock enable is dynamic state. */
     EnableReadback = PUBLISH_READBACK(bi, bo, "IL:ENABLE",

@@ -509,6 +509,12 @@ Interlock Control (<group> = IL)
     external hardware signal (received on RS232 port #2) determines which
     interlock window is in force, and `WINDOW` indicates this.
 
+:id:`MIN`\<axis>, :id:`MAX`\<axis>
+    This shows the current selected interlock window, updates as appropriate
+    when the secondary interlock is selected.
+
+.. :id:`FANILK`
+
 :id:`OVER_S`\*, :id:`OVER_PC_S`, :id:`TIME_S`\*
     ADC overflow detection parameters: the interlock is dropped if the ADC input
     exceeds value `OVER` for at least `TIME` samples.  The overflow threshold
