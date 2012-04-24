@@ -3,7 +3,7 @@
 
 # Version number of this software: automatically included in build and used
 # to build distribution files.
-VERSION=2.05.9-dev
+VERSION=2.05.9
 
 # This is where installed files will be placed ready for deployment to the
 # Libera IOC.  The IOC files will be placed in $INSTALL_HOST/ioc and the
