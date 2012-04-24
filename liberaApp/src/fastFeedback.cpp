@@ -84,6 +84,15 @@ struct FF_STATUS_SPACE          // At FF_BASE_ADDRESS + FF_STATUS_OFFSET
     int TransmittedPacketCount[4];      // :TX_CNT
     int ProcessTime;                    // PROCESS_TIME
     int BpmCount;                       // BPM_COUNT
+    int cc_cmd_bpm_id_rdback;
+    int cc_cmd_tf_length_rdback;
+    int cc_cmd_powerdown_rdback;
+    int cc_cmd_loopback_rdback;
+    int cc_cmd_faival_rdback;
+    int cc_cmd_feature_rdback;
+    int cc_cmd_rx_maxcount;
+    int cc_cmd_tx_maxcount;
+    int cc_cmd_rx_resetcount;
 };
 
 
@@ -131,6 +140,9 @@ static volatile FF_CONTROL_SPACE * ControlSpace;
  * second. */
 static bool TxLinkUp[4];
 static bool RxLinkUp[4];
+/* Counts extracted from FIFO counts, also updated every second. */
+static int RxFifoCount[4];
+static int TxFifoCount[4];
 
 /* Mirrors of configuration values.  These values cannot be read and written
  * directly, and so are instead read and written here. */
@@ -185,10 +197,14 @@ static bool MapFastFeedbackMemory()
 static void ProcessRead()
 {
     int UpMask = StatusSpace->LinkUp;
+    int rx_maxcount = StatusSpace->cc_cmd_rx_maxcount;
+    int tx_maxcount = StatusSpace->cc_cmd_tx_maxcount;
     for (int i = 0; i < 4; i ++)
     {
         RxLinkUp[i] = (UpMask & (1 << i)) != 0;
         TxLinkUp[i] = (UpMask & (1 << (i + 4))) != 0;
+        RxFifoCount[i] = (rx_maxcount >> (8 * i)) & 0xFF;
+        TxFifoCount[i] = (tx_maxcount >> (8 * i)) & 0xFF;
     }
 }
 
@@ -283,6 +299,8 @@ bool InitialiseFastFeedback()
     PUBLISH_BLOCK(longin, "HARD_ERR", StatusSpace->HardErrorCount);
     PUBLISH_BLOCK(longin, "RX_CNT", StatusSpace->ReceivedPacketCount);
     PUBLISH_BLOCK(longin, "TX_CNT", StatusSpace->TransmittedPacketCount);
+    PUBLISH_BLOCK(longin, "RXFIFO", RxFifoCount);
+    PUBLISH_BLOCK(longin, "TXFIFO", TxFifoCount);
     PUBLISH_BLOCK(bi, "TX_UP", TxLinkUp);
     PUBLISH_BLOCK(bi, "RX_UP", RxLinkUp);
 

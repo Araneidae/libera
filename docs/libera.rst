@@ -1056,6 +1056,9 @@ descriptions <link> can be `LINK1`, `LINK2`, `LINK3` or `LINK4`.
 <link>\ :id:`:TX_CNT`, <link>\ :id:`:RX_CNT`
     Number of packets sent and received as a 16-bit counter.
 
+<link>\ :id:`:TXFIFO`, <link>\ :id:`:RXFIFO`
+    Length of internal communication controller receive and transmit queues.
+
 <link>\ :id:`:RX_UP`, <link>\ :id:`:TX_UP`
     Link status.  Note that `TX_UP` will only be "down" when the link is enabled
     if there is an internal Rocket I/O port fault, whereas `RX_UP` records the

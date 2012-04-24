@@ -60,7 +60,10 @@ def FastFeedback():
             boolIn('LINK%d:TX_UP' % i, 'Link Down', 'Link Up',
                 DESC = 'Transmit link status'),
             boolIn('LINK%d:RX_UP' % i, 'Link Down', 'Link Up',
-                DESC = 'Receive link status')]]
+                DESC = 'Receive link status'),
+            longIn('LINK%d:RXFIFO' % i,    DESC = 'RX FIFO length'),
+            longIn('LINK%d:TXFIFO' % i,    DESC = 'TX FIFO length'),
+        ]]
 
     boolOut('PROCESS',
         DESC = 'Update FF fields',
