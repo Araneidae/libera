@@ -46,6 +46,11 @@ def FastFeedback():
         longIn('TIMEFRAME',    DESC = 'Timeframe counter'),
         longIn('PROCESS_TIME', DESC = 'Total communication time'),
         longIn('BPM_COUNT',    DESC = 'Number of transmitters seen'),
+        longIn('SOFT_ERR',     DESC = 'Total soft error count'),
+        longIn('FRAME_ERR',    DESC = 'Total frame error count'),
+        longIn('HARD_ERR',     DESC = 'Total hard error count'),
+        longIn('RXFIFO',       DESC = 'Max RX FIFO length'),
+        longIn('TXFIFO',       DESC = 'Max TX FIFO length'),
     ] + [
         field
         for i in (1, 2, 3, 4)

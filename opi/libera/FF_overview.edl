@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 559
-y 165
+x 560
+y 166
 w 549
 h 561
 font "helvetica-medium-r-8.0"
@@ -144,7 +144,7 @@ beginObjectProperties
 major 4
 minor 5
 release 0
-x 224
+x 216
 y 304
 w 72
 h 16
@@ -168,9 +168,9 @@ beginObjectProperties
 major 4
 minor 5
 release 0
-x 328
+x 312
 y 304
-w 72
+w 80
 h 16
 controlPv "$(device):FF:LINK3:PARTNER"
 format "decimal"
@@ -192,9 +192,9 @@ beginObjectProperties
 major 4
 minor 5
 release 0
-x 432
+x 416
 y 304
-w 72
+w 80
 h 16
 controlPv "$(device):FF:LINK4:PARTNER"
 format "decimal"
@@ -216,9 +216,9 @@ beginObjectProperties
 major 4
 minor 5
 release 0
-x 432
+x 416
 y 328
-w 72
+w 80
 h 16
 controlPv "$(device):FF:LINK4:RX_UP"
 font "helvetica-medium-r-14.0"
@@ -239,9 +239,9 @@ beginObjectProperties
 major 4
 minor 5
 release 0
-x 328
+x 312
 y 328
-w 72
+w 80
 h 16
 controlPv "$(device):FF:LINK3:RX_UP"
 font "helvetica-medium-r-14.0"
@@ -262,7 +262,7 @@ beginObjectProperties
 major 4
 minor 5
 release 0
-x 224
+x 216
 y 328
 w 72
 h 16
@@ -725,9 +725,9 @@ beginObjectProperties
 major 4
 minor 5
 release 0
-x 432
+x 416
 y 424
-w 72
+w 80
 h 16
 controlPv "$(device):FF:LINK4:SOFT_ERR"
 font "helvetica-medium-r-14.0"
@@ -748,9 +748,9 @@ beginObjectProperties
 major 4
 minor 5
 release 0
-x 328
+x 312
 y 424
-w 72
+w 80
 h 16
 controlPv "$(device):FF:LINK3:SOFT_ERR"
 font "helvetica-medium-r-14.0"
@@ -771,7 +771,7 @@ beginObjectProperties
 major 4
 minor 5
 release 0
-x 224
+x 216
 y 424
 w 72
 h 16
@@ -837,9 +837,9 @@ beginObjectProperties
 major 4
 minor 5
 release 0
-x 432
+x 416
 y 448
-w 72
+w 80
 h 16
 controlPv "$(device):FF:LINK4:HARD_ERR"
 font "helvetica-medium-r-14.0"
@@ -860,9 +860,9 @@ beginObjectProperties
 major 4
 minor 5
 release 0
-x 328
+x 312
 y 448
-w 72
+w 80
 h 16
 controlPv "$(device):FF:LINK3:HARD_ERR"
 font "helvetica-medium-r-14.0"
@@ -883,7 +883,7 @@ beginObjectProperties
 major 4
 minor 5
 release 0
-x 224
+x 216
 y 448
 w 72
 h 16
@@ -949,9 +949,9 @@ beginObjectProperties
 major 4
 minor 5
 release 0
-x 432
+x 416
 y 472
-w 72
+w 80
 h 16
 controlPv "$(device):FF:LINK4:FRAME_ERR"
 font "helvetica-medium-r-14.0"
@@ -972,9 +972,9 @@ beginObjectProperties
 major 4
 minor 5
 release 0
-x 328
+x 312
 y 472
-w 72
+w 80
 h 16
 controlPv "$(device):FF:LINK3:FRAME_ERR"
 font "helvetica-medium-r-14.0"
@@ -995,7 +995,7 @@ beginObjectProperties
 major 4
 minor 5
 release 0
-x 224
+x 216
 y 472
 w 72
 h 16
@@ -1106,9 +1106,9 @@ beginObjectProperties
 major 4
 minor 5
 release 0
-x 432
+x 416
 y 376
-w 72
+w 80
 h 16
 controlPv "$(device):FF:LINK4:TX_UP"
 font "helvetica-medium-r-14.0"
@@ -1129,9 +1129,9 @@ beginObjectProperties
 major 4
 minor 5
 release 0
-x 328
+x 312
 y 376
-w 72
+w 80
 h 16
 controlPv "$(device):FF:LINK3:TX_UP"
 font "helvetica-medium-r-14.0"
@@ -1152,7 +1152,7 @@ beginObjectProperties
 major 4
 minor 5
 release 0
-x 224
+x 216
 y 376
 w 72
 h 16
@@ -1257,7 +1257,7 @@ beginObjectProperties
 major 4
 minor 5
 release 0
-x 264
+x 256
 y 280
 w 40
 h 16
@@ -1281,7 +1281,7 @@ beginObjectProperties
 major 4
 minor 5
 release 0
-x 480
+x 472
 y 280
 w 40
 h 16
@@ -1305,7 +1305,7 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 224
+x 216
 y 280
 w 34
 h 16
@@ -1325,9 +1325,9 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 432
+x 416
 y 280
-w 45
+w 48
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
@@ -1389,7 +1389,7 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 224
+x 216
 y 352
 w 64
 h 16
@@ -1411,9 +1411,9 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 328
+x 312
 y 352
-w 64
+w 72
 h 16
 indicatorColor index 14
 fgColor index 14
@@ -1433,9 +1433,9 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 432
+x 416
 y 352
-w 64
+w 72
 h 16
 indicatorColor index 14
 fgColor index 14
@@ -1455,9 +1455,9 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 432
+x 416
 y 400
-w 64
+w 72
 h 16
 indicatorColor index 14
 fgColor index 14
@@ -1477,9 +1477,9 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 328
+x 312
 y 400
-w 64
+w 72
 h 16
 indicatorColor index 14
 fgColor index 14
@@ -1499,7 +1499,7 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 224
+x 216
 y 400
 w 64
 h 16
@@ -1543,7 +1543,7 @@ beginObjectProperties
 major 4
 minor 5
 release 0
-x 328
+x 312
 y 280
 w 32
 h 16
@@ -1567,7 +1567,7 @@ beginObjectProperties
 major 4
 minor 1
 release 0
-x 360
+x 344
 y 280
 w 16
 h 16
@@ -1728,9 +1728,9 @@ beginObjectProperties
 major 4
 minor 5
 release 0
-x 432
+x 416
 y 496
-w 72
+w 80
 h 16
 controlPv "$(device):FF:LINK4:RXFIFO"
 font "helvetica-medium-r-14.0"
@@ -1751,9 +1751,9 @@ beginObjectProperties
 major 4
 minor 5
 release 0
-x 328
+x 312
 y 496
-w 72
+w 80
 h 16
 controlPv "$(device):FF:LINK3:RXFIFO"
 font "helvetica-medium-r-14.0"
@@ -1774,7 +1774,7 @@ beginObjectProperties
 major 4
 minor 5
 release 0
-x 224
+x 216
 y 496
 w 72
 h 16
@@ -1840,9 +1840,9 @@ beginObjectProperties
 major 4
 minor 5
 release 0
-x 432
+x 416
 y 520
-w 72
+w 80
 h 16
 controlPv "$(device):FF:LINK4:TXFIFO"
 font "helvetica-medium-r-14.0"
@@ -1863,9 +1863,9 @@ beginObjectProperties
 major 4
 minor 5
 release 0
-x 328
+x 312
 y 520
-w 72
+w 80
 h 16
 controlPv "$(device):FF:LINK3:TXFIFO"
 font "helvetica-medium-r-14.0"
@@ -1886,7 +1886,7 @@ beginObjectProperties
 major 4
 minor 5
 release 0
-x 224
+x 216
 y 520
 w 72
 h 16
@@ -1944,5 +1944,125 @@ value {
   "TX FIFO:"
 }
 autoSize
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 5
+release 0
+x 448
+y 496
+w 80
+h 16
+controlPv "$(device):FF:RXFIFO"
+font "helvetica-medium-r-14.0"
+fontAlign "right"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+autoHeight
+limitsFromDb
+nullColor index 0
+newPos
+objType "monitors"
+noExecuteClipMask
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 5
+release 0
+x 448
+y 520
+w 80
+h 16
+controlPv "$(device):FF:TXFIFO"
+font "helvetica-medium-r-14.0"
+fontAlign "right"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+autoHeight
+limitsFromDb
+nullColor index 0
+newPos
+objType "monitors"
+noExecuteClipMask
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 5
+release 0
+x 448
+y 424
+w 80
+h 16
+controlPv "$(device):FF:SOFT_ERR"
+font "helvetica-medium-r-14.0"
+fontAlign "right"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+autoHeight
+limitsFromDb
+nullColor index 0
+newPos
+objType "monitors"
+noExecuteClipMask
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 5
+release 0
+x 448
+y 448
+w 80
+h 16
+controlPv "$(device):FF:HARD_ERR"
+font "helvetica-medium-r-14.0"
+fontAlign "right"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+autoHeight
+limitsFromDb
+nullColor index 0
+newPos
+objType "monitors"
+noExecuteClipMask
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 5
+release 0
+x 448
+y 472
+w 80
+h 16
+controlPv "$(device):FF:FRAME_ERR"
+font "helvetica-medium-r-14.0"
+fontAlign "right"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+autoHeight
+limitsFromDb
+nullColor index 0
+newPos
+objType "monitors"
+noExecuteClipMask
 endObjectProperties
 

@@ -143,6 +143,12 @@ static bool RxLinkUp[4];
 /* Counts extracted from FIFO counts, also updated every second. */
 static int RxFifoCount[4];
 static int TxFifoCount[4];
+static int MaxRxFifoCount;
+static int MaxTxFifoCount;
+/* Sums of error counts for link specific fields. */
+static int TotalSoftErrorCount;
+static int TotalFrameErrorCount;
+static int TotalHardErrorCount;
 
 /* Mirrors of configuration values.  These values cannot be read and written
  * directly, and so are instead read and written here. */
@@ -199,13 +205,24 @@ static void ProcessRead()
     int UpMask = StatusSpace->LinkUp;
     int rx_maxcount = StatusSpace->cc_cmd_rx_maxcount;
     int tx_maxcount = StatusSpace->cc_cmd_tx_maxcount;
+    int rx_max = 0, tx_max = 0;
+    TotalSoftErrorCount = 0;
+    TotalFrameErrorCount = 0;
+    TotalHardErrorCount = 0;
     for (int i = 0; i < 4; i ++)
     {
         RxLinkUp[i] = (UpMask & (1 << i)) != 0;
         TxLinkUp[i] = (UpMask & (1 << (i + 4))) != 0;
         RxFifoCount[i] = (rx_maxcount >> (8 * i)) & 0xFF;
         TxFifoCount[i] = (tx_maxcount >> (8 * i)) & 0xFF;
+        if (RxFifoCount[i] > rx_max)  rx_max = RxFifoCount[i];
+        if (TxFifoCount[i] > tx_max)  tx_max = TxFifoCount[i];
+        TotalSoftErrorCount += StatusSpace->SoftErrorCount[i];
+        TotalFrameErrorCount += StatusSpace->FrameErrorCount[i];
+        TotalHardErrorCount += StatusSpace->HardErrorCount[i];
     }
+    MaxRxFifoCount = rx_max;
+    MaxTxFifoCount = tx_max;
 }
 
 
@@ -292,6 +309,11 @@ bool InitialiseFastFeedback()
     Publish_longin("FF:TIMEFRAME", StatusSpace->TimeFrameCounter);
     Publish_longin("FF:PROCESS_TIME", StatusSpace->ProcessTime);
     Publish_longin("FF:BPM_COUNT", StatusSpace->BpmCount);
+    Publish_longin("FF:SOFT_ERR", TotalSoftErrorCount);
+    Publish_longin("FF:FRAME_ERR", TotalFrameErrorCount);
+    Publish_longin("FF:HARD_ERR", TotalHardErrorCount);
+    Publish_longin("FF:RXFIFO", MaxRxFifoCount);
+    Publish_longin("FF:TXFIFO", MaxTxFifoCount);
     /* Channel specific read only parameters. */
     PUBLISH_BLOCK(longin, "PARTNER", StatusSpace->LinkPartner);
     PUBLISH_BLOCK(longin, "SOFT_ERR", StatusSpace->SoftErrorCount);
