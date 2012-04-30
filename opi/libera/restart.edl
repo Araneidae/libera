@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 542
-y 92
+x 543
+y 93
 w 472
 h 193
 font "helvetica-medium-r-16.0"
@@ -216,5 +216,27 @@ command {
   0 "libera-help restart"
 }
 includeHelpIcon
+endObjectProperties
+
+# (Shell Command)
+object shellCmdClass
+beginObjectProperties
+major 4
+minor 2
+release 0
+x 144
+y 160
+w 128
+h 24
+fgColor index 14
+bgColor index 3
+topShadowColor index 1
+botShadowColor index 11
+font "helvetica-bold-r-12.0"
+buttonLabel "Console"
+numCmds 1
+command {
+  0 "gnome-terminal -e\"console $(device)\" -t\"$(device)\""
+}
 endObjectProperties
 
