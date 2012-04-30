@@ -42,9 +42,14 @@ def FastFeedback():
 
     longIn('VERSION', PINI = 'YES', DESC = 'FPGA firmware version')
 
+    time_raw = longIn('PROCESS_TIME', DESC = 'Total communication time')
+    time_us = records.calc('PROCESS_TIME_US',
+        CALC = 'A/B',       EGU = 'us',     PREC = 2,
+        INPA = time_raw,    INPB = 106.25,
+        DESC = 'Communication time in us')
     inputs = [
         longIn('TIMEFRAME',    DESC = 'Timeframe counter'),
-        longIn('PROCESS_TIME', DESC = 'Total communication time'),
+        time_raw, time_us,
         longIn('BPM_COUNT',    DESC = 'Number of transmitters seen'),
         longIn('SOFT_ERR',     DESC = 'Total soft error count'),
         longIn('FRAME_ERR',    DESC = 'Total frame error count'),
