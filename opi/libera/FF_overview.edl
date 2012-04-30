@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 562
-y 168
+x 563
+y 169
 w 549
 h 561
 font "helvetica-medium-r-8.0"
@@ -106,8 +106,7 @@ w 69
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 value {
   "Timeframe:"
 }
@@ -128,8 +127,7 @@ controlPv "$(device):FF:LINK1:PARTNER"
 format "decimal"
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 autoHeight
 limitsFromDb
 nullColor index 0
@@ -152,8 +150,7 @@ controlPv "$(device):FF:LINK2:PARTNER"
 format "decimal"
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 autoHeight
 limitsFromDb
 nullColor index 0
@@ -176,8 +173,7 @@ controlPv "$(device):FF:LINK3:PARTNER"
 format "decimal"
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 autoHeight
 limitsFromDb
 nullColor index 0
@@ -200,8 +196,7 @@ controlPv "$(device):FF:LINK4:PARTNER"
 format "decimal"
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 autoHeight
 limitsFromDb
 nullColor index 0
@@ -223,8 +218,7 @@ h 16
 controlPv "$(device):FF:LINK4:RX_UP"
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 autoHeight
 limitsFromDb
 nullColor index 0
@@ -246,8 +240,7 @@ h 16
 controlPv "$(device):FF:LINK3:RX_UP"
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 autoHeight
 limitsFromDb
 nullColor index 0
@@ -269,8 +262,7 @@ h 16
 controlPv "$(device):FF:LINK2:RX_UP"
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 autoHeight
 limitsFromDb
 nullColor index 0
@@ -292,8 +284,7 @@ h 16
 controlPv "$(device):FF:LINK1:RX_UP"
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 autoHeight
 limitsFromDb
 nullColor index 0
@@ -314,8 +305,7 @@ w 67
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 value {
   "RX Status:"
 }
@@ -334,8 +324,7 @@ w 51
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 value {
   "BPM Id:"
 }
@@ -351,12 +340,12 @@ release 0
 x 120
 y 104
 w 80
-h 24
+h 20
 controlPv "$(device):FF:BPMID_S"
 font "helvetica-medium-r-14.0"
 fontAlign "right"
 fgColor index 14
-bgColor index 0
+bgColor index 5
 useDisplayBg
 editable
 autoHeight
@@ -381,8 +370,7 @@ w 66
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 value {
   "Loopback:"
 }
@@ -458,8 +446,7 @@ w 79
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 value {
   "PowerDown:"
 }
@@ -644,8 +631,7 @@ w 50
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 value {
   "Partner:"
 }
@@ -666,7 +652,7 @@ controlPv "$(device):FF:FRAMELEN_S"
 font "helvetica-medium-r-14.0"
 fontAlign "right"
 fgColor index 14
-bgColor index 0
+bgColor index 5
 useDisplayBg
 editable
 autoHeight
@@ -691,8 +677,7 @@ w 62
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 value {
   "RX count:"
 }
@@ -711,8 +696,7 @@ w 62
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 value {
   "TX count:"
 }
@@ -732,8 +716,7 @@ h 16
 controlPv "$(device):FF:LINK4:SOFT_ERR"
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 autoHeight
 limitsFromDb
 nullColor index 0
@@ -755,8 +738,7 @@ h 16
 controlPv "$(device):FF:LINK3:SOFT_ERR"
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 autoHeight
 limitsFromDb
 nullColor index 0
@@ -778,8 +760,7 @@ h 16
 controlPv "$(device):FF:LINK2:SOFT_ERR"
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 autoHeight
 limitsFromDb
 nullColor index 0
@@ -801,8 +782,7 @@ h 16
 controlPv "$(device):FF:LINK1:SOFT_ERR"
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 autoHeight
 limitsFromDb
 nullColor index 0
@@ -823,8 +803,7 @@ w 63
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 value {
   "Soft Error:"
 }
@@ -844,8 +823,7 @@ h 16
 controlPv "$(device):FF:LINK4:HARD_ERR"
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 autoHeight
 limitsFromDb
 nullColor index 0
@@ -867,8 +845,7 @@ h 16
 controlPv "$(device):FF:LINK3:HARD_ERR"
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 autoHeight
 limitsFromDb
 nullColor index 0
@@ -890,8 +867,7 @@ h 16
 controlPv "$(device):FF:LINK2:HARD_ERR"
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 autoHeight
 limitsFromDb
 nullColor index 0
@@ -913,8 +889,7 @@ h 16
 controlPv "$(device):FF:LINK1:HARD_ERR"
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 autoHeight
 limitsFromDb
 nullColor index 0
@@ -935,8 +910,7 @@ w 70
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 value {
   "Hard Error:"
 }
@@ -956,8 +930,7 @@ h 16
 controlPv "$(device):FF:LINK4:FRAME_ERR"
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 autoHeight
 limitsFromDb
 nullColor index 0
@@ -979,8 +952,7 @@ h 16
 controlPv "$(device):FF:LINK3:FRAME_ERR"
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 autoHeight
 limitsFromDb
 nullColor index 0
@@ -1002,8 +974,7 @@ h 16
 controlPv "$(device):FF:LINK2:FRAME_ERR"
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 autoHeight
 limitsFromDb
 nullColor index 0
@@ -1025,8 +996,7 @@ h 16
 controlPv "$(device):FF:LINK1:FRAME_ERR"
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 autoHeight
 limitsFromDb
 nullColor index 0
@@ -1047,8 +1017,7 @@ w 80
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 value {
   "Frame Error:"
 }
@@ -1069,7 +1038,7 @@ controlPv "$(device):FF:VERSION"
 format "hex"
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
+bgColor index 5
 useDisplayBg
 autoHeight
 limitsFromDb
@@ -1088,12 +1057,11 @@ minor 1
 release 0
 x 24
 y 272
-w 72
+w 69
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 value {
   "Timeframe:"
 }
@@ -1113,8 +1081,7 @@ h 16
 controlPv "$(device):FF:LINK4:TX_UP"
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 autoHeight
 limitsFromDb
 nullColor index 0
@@ -1136,8 +1103,7 @@ h 16
 controlPv "$(device):FF:LINK3:TX_UP"
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 autoHeight
 limitsFromDb
 nullColor index 0
@@ -1159,8 +1125,7 @@ h 16
 controlPv "$(device):FF:LINK2:TX_UP"
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 autoHeight
 limitsFromDb
 nullColor index 0
@@ -1182,8 +1147,7 @@ h 16
 controlPv "$(device):FF:LINK1:TX_UP"
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 autoHeight
 limitsFromDb
 nullColor index 0
@@ -1204,8 +1168,7 @@ w 67
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 value {
   "TX Status:"
 }
@@ -1243,8 +1206,7 @@ w 76
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 value {
   "Data select:"
 }
@@ -1265,8 +1227,7 @@ controlPv "$(device):FF:PROCESS_TIME"
 format "decimal"
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 autoHeight
 limitsFromDb
 nullColor index 0
@@ -1289,8 +1250,7 @@ controlPv "$(device):FF:BPM_COUNT"
 format "decimal"
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 autoHeight
 limitsFromDb
 nullColor index 0
@@ -1307,12 +1267,11 @@ minor 1
 release 0
 x 216
 y 272
-w 32
+w 34
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 value {
   "Time:"
 }
@@ -1327,12 +1286,11 @@ minor 1
 release 0
 x 416
 y 272
-w 48
+w 45
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 value {
   "Nodes:"
 }
@@ -1551,8 +1509,7 @@ controlPv "$(device):FF:PROCESS_TIME_US"
 format "decimal"
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 autoHeight
 limitsFromDb
 precision 1
@@ -1630,8 +1587,7 @@ w 51
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 value {
   "Payload"
 }
@@ -1650,8 +1606,7 @@ w 13
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 value {
   "X:"
 }
@@ -1689,8 +1644,7 @@ w 12
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 value {
   "Y:"
 }
@@ -1717,8 +1671,7 @@ h 16
 controlPv "$(device):FF:LINK4:RXFIFO"
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 autoHeight
 limitsFromDb
 nullColor index 0
@@ -1740,8 +1693,7 @@ h 16
 controlPv "$(device):FF:LINK3:RXFIFO"
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 autoHeight
 limitsFromDb
 nullColor index 0
@@ -1763,8 +1715,7 @@ h 16
 controlPv "$(device):FF:LINK2:RXFIFO"
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 autoHeight
 limitsFromDb
 nullColor index 0
@@ -1786,8 +1737,7 @@ h 16
 controlPv "$(device):FF:LINK1:RXFIFO"
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 autoHeight
 limitsFromDb
 nullColor index 0
@@ -1808,8 +1758,7 @@ w 60
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 value {
   "RX FIFO:"
 }
@@ -1829,8 +1778,7 @@ h 16
 controlPv "$(device):FF:LINK4:TXFIFO"
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 autoHeight
 limitsFromDb
 nullColor index 0
@@ -1852,8 +1800,7 @@ h 16
 controlPv "$(device):FF:LINK3:TXFIFO"
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 autoHeight
 limitsFromDb
 nullColor index 0
@@ -1875,8 +1822,7 @@ h 16
 controlPv "$(device):FF:LINK2:TXFIFO"
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 autoHeight
 limitsFromDb
 nullColor index 0
@@ -1898,8 +1844,7 @@ h 16
 controlPv "$(device):FF:LINK1:TXFIFO"
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 autoHeight
 limitsFromDb
 nullColor index 0
@@ -1920,8 +1865,7 @@ w 60
 h 16
 font "helvetica-medium-r-14.0"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 value {
   "TX FIFO:"
 }
@@ -1942,8 +1886,7 @@ controlPv "$(device):FF:RXFIFO"
 font "helvetica-medium-r-14.0"
 fontAlign "right"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 autoHeight
 limitsFromDb
 nullColor index 0
@@ -1966,8 +1909,7 @@ controlPv "$(device):FF:TXFIFO"
 font "helvetica-medium-r-14.0"
 fontAlign "right"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 autoHeight
 limitsFromDb
 nullColor index 0
@@ -1990,8 +1932,7 @@ controlPv "$(device):FF:SOFT_ERR"
 font "helvetica-medium-r-14.0"
 fontAlign "right"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 autoHeight
 limitsFromDb
 nullColor index 0
@@ -2014,8 +1955,7 @@ controlPv "$(device):FF:HARD_ERR"
 font "helvetica-medium-r-14.0"
 fontAlign "right"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 autoHeight
 limitsFromDb
 nullColor index 0
@@ -2038,8 +1978,7 @@ controlPv "$(device):FF:FRAME_ERR"
 font "helvetica-medium-r-14.0"
 fontAlign "right"
 fgColor index 14
-bgColor index 0
-useDisplayBg
+bgColor index 5
 autoHeight
 limitsFromDb
 nullColor index 0
