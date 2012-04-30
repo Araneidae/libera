@@ -1027,9 +1027,10 @@ only enabled if the controller is detected by the EPICS driver on startup.
     topology.
 
 
-:id:`PROCESS_TIME`
+:id:`PROCESS_TIME`, :id:`PROCESS_TIME_US`
     Time from start of communication phase until last packet was received, in
-    communication controller clock cycles.
+    communication controller clock cycles for `PROCESS_TIME` and converted to
+    microseconds for `PROCESS_TIME_US`.
 
 :id:`STOP_S`, :id:`START_S`
     To stop the communication controller process the `STOP_S` PV, to restart
@@ -1056,8 +1057,10 @@ descriptions <link> can be `LINK1`, `LINK2`, `LINK3` or `LINK4`.
 <link>\ :id:`:TX_CNT`, <link>\ :id:`:RX_CNT`
     Number of packets sent and received as a 16-bit counter.
 
-<link>\ :id:`:TXFIFO`, <link>\ :id:`:RXFIFO`
-    Length of internal communication controller receive and transmit queues.
+<link>\ :id:`:TXFIFO`, <link>\ :id:`:RXFIFO`, :id:`TXFIFO`, :id:`RXFIFO`
+    Length of internal communication controller receive and transmit queues for
+    each link and the maximum receive and transmit queue length across all
+    queues.
 
 <link>\ :id:`:RX_UP`, <link>\ :id:`:TX_UP`
     Link status.  Note that `TX_UP` will only be "down" when the link is enabled
@@ -1081,6 +1084,9 @@ descriptions <link> can be `LINK1`, `LINK2`, `LINK3` or `LINK4`.
     overflow/underflow error has occurred on internal RocketIO RX buffers, (2)
     Realignment error which indicates whenever the serial data is realigned from
     a comma character in the data stream.
+
+:id:`FRAME_ERR`, :id:`SOFT_ERR`, :id:`HARD_ERR`
+    Summary error counts, comprising sums of the error counts for each link.
 
 .. The following internal PV is not documented:
 .. :id:`PROCESS_S`
