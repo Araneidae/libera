@@ -1088,6 +1088,9 @@ descriptions <link> can be `LINK1`, `LINK2`, `LINK3` or `LINK4`.
 :id:`FRAME_ERR`, :id:`SOFT_ERR`, :id:`HARD_ERR`
     Summary error counts, comprising sums of the error counts for each link.
 
+:id:`RESET_ERR_S`
+    Reset all link error counts to zero.
+
 .. The following internal PV is not documented:
 .. :id:`PROCESS_S`
 

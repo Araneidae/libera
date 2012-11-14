@@ -104,7 +104,7 @@ struct FF_CONTROL_SPACE         // At FF_CONTROL_ADDRESS (1402A000)
      *           the rising edge of this bit.
      *      1 => Data select.  0 => real position data, 1 => time frame
      *           counter data is sent instead of positions.
-     *      2 => (Unused)
+     *      2 => Write 1 to this bit to reset error counts
      *      3 => Communication controller enable/disable.  Controller is
      *           enabled when this bit is 1.
      *   4-31    (Unused)
@@ -230,11 +230,12 @@ static void ProcessRead()
  * value.  The Handshake bit is used to enable the reading of configuration
  * space values on its rising edge. */
 
-inline static int ControlValue(bool Handshake)
+inline static int ControlValue(bool Handshake, bool ResetErrors)
 {
     return
         (Handshake << 0) |
         (DataSourceSelect << 1) |
+        (ResetErrors << 2) |
         (GlobalEnable << 3);
 }
 
@@ -256,8 +257,8 @@ static void ProcessWrite()
 
     /* Force the configuration values to be read by toggling the handshake
      * bit in the control register. */
-    ControlSpace->FaiConfiguration = ControlValue(true);
-    ControlSpace->FaiConfiguration = ControlValue(false);
+    ControlSpace->FaiConfiguration = ControlValue(true, false);
+    ControlSpace->FaiConfiguration = ControlValue(false, false);
 }
 
 
@@ -266,7 +267,7 @@ static void ProcessWrite()
 
 static void WriteDataSourceSelect()
 {
-    ControlSpace->FaiConfiguration = ControlValue(false);
+    ControlSpace->FaiConfiguration = ControlValue(false, false);
 }
 
 
@@ -274,6 +275,13 @@ static void ProcessPayload()
 {
     if (FAPayloadSelection)
         ControlSpace->FAPayload = ((YPayload & 0xF) << 4) | (XPayload & 0xF);
+}
+
+
+static void ResetErrors()
+{
+    ControlSpace->FaiConfiguration = ControlValue(false, true);
+    ControlSpace->FaiConfiguration = ControlValue(false, false);
 }
 
 
@@ -289,7 +297,7 @@ static void StopFastFeedback()
 static void StartFastFeedback()
 {
     ControlSpace->ExternalTriggerStartMask = 0;
-    ControlSpace->FaiConfiguration = ControlValue(false);
+    ControlSpace->FaiConfiguration = ControlValue(false, false);
     ControlSpace->ExternalTriggerStartMask = 1;
 }
 
@@ -355,6 +363,7 @@ bool InitialiseFastFeedback()
 
     PUBLISH_ACTION("FF:STOP",  StopFastFeedback);
     PUBLISH_ACTION("FF:START", StartFastFeedback);
+    PUBLISH_ACTION("FF:RESET_ERR", ResetErrors);
 
     /* Initialise the FPGA by writing the current configuration. */
     ProcessWrite();

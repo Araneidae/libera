@@ -102,6 +102,7 @@ def FastFeedback():
 
     boolOut('STOP',  'Stop',  DESC = 'Stop fast feedback')
     boolOut('START', 'Start', DESC = 'Start fast feedback')
+    boolOut('RESET_ERR', 'Reset Errors', DESC = 'Reset error counts')
 
     UnsetChannelName()
 
