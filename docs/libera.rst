@@ -526,6 +526,14 @@ Interlock Control (<group> = IL)
     detection is applied.  The coefficient K corresponds to a pole at 1-2\
     :sup:`-K` per sample for K in the range 0..6.
 
+    Note that this PV is ineffective on Diamond FPGAs with turn by turn overflow
+    detection.
+
+:id:`XY:IIRK_S`\*
+    This is one pole IIR filter applied to FA X and Y readings before interlock
+    overflow is detected.  The coefficient K corresponds to a pole at
+    (255-K)/256 for K in the range 0..255.
+
 :id:`OVERFLOW_S`\*
     This can be set to Enabled to enable ADC overflow detection even when the
     interlock is otherwise disabled.

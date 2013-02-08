@@ -88,6 +88,7 @@
 
 /* Interlock status register. */
 #define REGISTER_ILK_STATUS     0x14024004
+#define REGISTER_ILK_K_FILT_XY  0x1402401C
 
 /* Postmortem trigger position limit registers. */
 #define REGISTER_PM_MINX        0x14024020  // PM trigger min X limit
@@ -432,6 +433,16 @@ bool WriteExternalTriggerDelay(int Delay)
         return false;
 }
 
+
+
+bool WriteInterlockXYIIR_K(int K)
+{
+#ifdef RAW_REGISTER
+    return WriteRawRegister(REGISTER_ILK_K_FILT_XY, K);
+#else
+    return false;
+#endif
+}
 
 
 /*****************************************************************************/

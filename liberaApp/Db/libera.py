@@ -485,8 +485,9 @@ def Interlock():
     # Interlock holdoff delay
     longOut('HOLDOFF',  0, 1000, DESC = 'Interlock holdoff delay')
     longOut('IHOLDOFF', 0, 1000, DESC = 'Current holdoff delay')
-    # IIR constant
-    longOut('IIRK', 0, 6, DESC = 'Interlock IIR constant')
+    # IIR constants
+    longOut('IIRK', 0, 6, DESC = 'Interlock ADC IIR constant')
+    longOut('XY:IIRK', 0, 255, DESC = 'Interlock X/Y IIR constant')
 
     # Interlock state.  This is a bit nasty: we get repeated triggers on TRIG
     # while the interlock is active (ie, reporting signal bad).  The record

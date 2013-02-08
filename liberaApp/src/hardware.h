@@ -164,6 +164,16 @@ bool WriteInterlockParameters(
 bool WriteSecondaryInterlockParameters(
     int Xlow2, int Xhigh2, int Ylow2, int Yhigh2);
 
+/* Writes a filter coefficient for an IIR on the ADC overflow interlock.  This
+ * can be a value between 0 and 6 (inclusive), corresponding to a coefficient
+ * of 2^-K for a one pole IIR (pole at z=1-2^-K). */
+bool WriteInterlockIIR_K(int K);
+/* Writes filter coefficient for IIR on the X/Y position interlock.  This can be
+ * a value between 0 and 255 inclusive, corresponding to a coefficient of
+ * (1+K)/256 for a one pole IIR, pole at z=(255-K)/256. */
+bool WriteInterlockXYIIR_K(int K);
+
+
 /* Returns the interlock status word with the following immediate values:
  *
  *  bit 0   IL X position out of limit
@@ -283,12 +293,6 @@ bool WriteSwitchTriggerDelay(int Delay);
 
 /* Sets an internal delay from external triggers in sample clocks. */
 bool WriteExternalTriggerDelay(int Delay);
-
-
-/* Writes a filter coefficient for an IIR on the position interlock.  This
- * can be a value between 0 and 6 (inclusive), corresponding to a coefficient
- * of 2^-K for a one pole IIR (pole at z=1-2^-K). */
-bool WriteInterlockIIR_K(int K);
 
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */

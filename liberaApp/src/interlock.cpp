@@ -143,9 +143,12 @@ static int InterlockHoldoffCount = 1;   // Not so clear what's suitable
 
 static int InterlockHoldoff = 3;
 
-/* Interlock IIR filter constant.  The interlock position is filtered by an
- * IIR with constant factor 2^-K determined by this setting. */
+/* Interlock ADC IIR filter constant.  The interlock ADC overflow detection is
+ * filtered by an IIR with constant factor 2^-K determined by this setting. */
 static int InterlockIIR_K = 0;
+/* Interlock X/Y IIR filter constant.  The interlock X/Y position is filtered by
+ * an IIR with constant factor (1+K)/256 determined by this setting. */
+static int InterlockXYIIR_K = 255;
 
 
 /* We're going to need to use a mutex, as there are two possible threads
@@ -395,6 +398,12 @@ static void SetInterlockIIR_K()
 }
 
 
+static void SetInterlockXYIIR_K()
+{
+    WriteInterlockXYIIR_K(InterlockXYIIR_K);
+}
+
+
 bool InitialiseInterlock()
 {
     /* Interlock window plus secondary interlock. */
@@ -433,6 +442,8 @@ bool InitialiseInterlock()
         CurrentHoldoffCount, NULL_ACTION);
     PUBLISH_CONFIGURATION(longout, "IL:IIRK",
         InterlockIIR_K, SetInterlockIIR_K);
+    PUBLISH_CONFIGURATION(longout, "IL:XY:IIRK",
+        InterlockXYIIR_K, SetInterlockXYIIR_K);
 
     new INTERLOCK_EVENT();
 
