@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 543
-y 93
+x 544
+y 94
 w 472
 h 193
 font "helvetica-medium-r-16.0"
@@ -152,27 +152,6 @@ value {
 autoSize
 endObjectProperties
 
-# (Static Text)
-object activeXTextClass
-beginObjectProperties
-major 4
-minor 1
-release 0
-x 144
-y 120
-w 295
-h 32
-font "helvetica-medium-r-14.0"
-fgColor index 21
-bgColor index 0
-useDisplayBg
-value {
-  "Warning: rebooting the IOC will drop the MPS "
-  "interlock and will drop the beam."
-}
-autoSize
-endObjectProperties
-
 # (Shell Command)
 object shellCmdClass
 beginObjectProperties
@@ -238,5 +217,48 @@ numCmds 1
 command {
   0 "xterm -T $(device) -e console $(device)"
 }
+endObjectProperties
+
+# (Shell Command)
+object shellCmdClass
+beginObjectProperties
+major 4
+minor 2
+release 0
+x 144
+y 120
+w 128
+h 24
+fgColor index 14
+bgColor index 3
+topShadowColor index 1
+botShadowColor index 11
+font "helvetica-bold-r-12.0"
+buttonLabel "Restart Driver"
+numCmds 1
+command {
+  0 "xterm -T $(device) -e ssh -x root@$(device) /etc/init.d/libera-driver restart"
+}
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 280
+y 120
+w 169
+h 32
+font "helvetica-medium-r-14.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "Manually (re)start driver"
+  "after rebooting Libera IOC."
+}
+autoSize
 endObjectProperties
 

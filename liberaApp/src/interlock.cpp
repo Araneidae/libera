@@ -325,7 +325,7 @@ bool NotifyInterlockBpmEnable(bool Enabled)
 
 
 
-/* Called when the golden orbit offset may have changed. */
+/* Called when the origin offset may have changed. */
 
 void NotifyInterlockOffset(int NewOffsetX, int NewOffsetY)
 {

@@ -50,17 +50,15 @@ OPT_BIN_FILES='configure-location configure-network install-fpga fpga_init'
 TARGET=none
 AUTOSTART=false
 STARTNOW=false
-REMOUNT_RW=false
 CLEAN_OPT=false
 NOTCH_FLAG=
 INST_TYPE="$(probe_libera)"
-while getopts 'ftaswnCT:h' option; do
+while getopts 'ftasnCT:h' option; do
     case "$option" in
     f)  TARGET=final ;;
     t)  TARGET=test ;;
     a)  AUTOSTART=true ;;
     s)  STARTNOW=true ;;
-    w)  REMOUNT_RW=true ;;
     n)  NOTCH_FLAG=-f ;;
     C)  CLEAN_OPT=true ;;
     T)  INST_TYPE="$OPTARG" ;;
@@ -72,7 +70,6 @@ where <options> includes
     -t  Testing install: don't copy files, use from configured location
     -a  Enable autostart via /etc/init.d/libera-driver script
     -s  Start IOC after installation
-    -w  Remount ro rootfs rw if necessary
     -n  Force rewriting of notch filter files, even if already present
     -C  Purge /opt/{bin,lib} on DLS install
     -T: Force instrument type in case autodetection fails.
@@ -113,7 +110,7 @@ fi
 
 
 # Ensure we can write to the filesystem.
-ensure_root_rw $REMOUNT_RW
+ensure_root_rw true
 
 
 # Make sure the libera driver isn't running: we need to stop everything, as
@@ -187,7 +184,7 @@ STATE_DIR="$(
 mkdir -p "$STATE_DIR"
 
 # Now install the epics_ioc file.
-(
+{
     # Add on the paths required for running the IOC
     echo "LIBERA_IOC='$IOC_TARGET'"
     echo "EPICS_ARCH=$EPICS_ARCH"
@@ -203,9 +200,9 @@ mkdir -p "$STATE_DIR"
         s/^('"$LOCATION"'|'"$INST_TYPE"')_IOC_/IOC_/
         /^IOC_/! d
         ' "$SOURCE"/install_d/CONFIG
-    # If libera autostart is configured then add the appropriate entry
-    $AUTOSTART  &&  echo 'START_EPICS=yes'
-) > $CONFIGDIR/epics_ioc
+    # Always start the EPICS driver
+    echo 'START_EPICS=yes'
+} > $CONFIGDIR/epics_ioc
 
 # Copy over the startup scripts substituting in the hard-wired CONFIGDIR value
 # we've determined.
@@ -275,12 +272,14 @@ RUNLEVEL="$(
 RCD=/etc/rc$RUNLEVEL.d
 
 ln -fs ../init.d/healthd $RCD/S800healthd
-ln -fs ../init.d/libera-driver $RCD/S801libera-driver
-ln -fs ../init.d/libera-driver $RCD/K200libera-driver
+if $AUTOSTART; then
+    # Only auto-start the Libera driver if specifically requested.
+    ln -fs ../init.d/libera-driver $RCD/S801libera-driver
+    ln -fs ../init.d/libera-driver $RCD/K200libera-driver
+fi
 
 
 if $STARTNOW; then
     /etc/init.d/healthd start
     /etc/init.d/libera-driver start
-    $AUTOSTART  ||  /etc/init.d/epics start
 fi
