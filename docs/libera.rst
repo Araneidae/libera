@@ -669,7 +669,7 @@ Configuration (<group> = CF)
     Nominal beam current at 0dBm input power as seen by Libera.  This is used to
     compute `SA:CURRENT` and `FT:CHARGE`.
 
-:id:`NOTCHEN_S`
+:id:`NOTCHEN_S`\*
     For certain machine physics investigations it can be helpful to turn off the
     notch filters in the fast feedback stream.  Note that fast feedback will not
     work properly when this is disabled!

@@ -384,16 +384,18 @@ public:
         NotchFilterEnabled = true;
         PUBLISH_METHOD_OUT(bo, "CF:NOTCHEN",
             SetNotchFilterEnable, NotchFilterEnabled);
+        Persistent("CF:NOTCHEN", NotchFilterEnabled);
         PUBLISH_METHOD_ACTION("CF:RESETFA", ResetFilters);
 
-        notch_1.SetEnabled(true);
-        notch_2.SetEnabled(true);
+        notch_1.SetEnabled(NotchFilterEnabled);
+        notch_2.SetEnabled(NotchFilterEnabled);
         fir.SetEnabled(true);
     }
 
 private:
     bool SetNotchFilterEnable(bool Enabled)
     {
+        NotchFilterEnabled = Enabled;
         notch_1.SetEnabled(Enabled);
         notch_2.SetEnabled(Enabled);
         return true;
