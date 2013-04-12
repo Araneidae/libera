@@ -287,7 +287,7 @@ static void UpdateCalibration()
     X_0 = BBA_X + BCD_X + GOLDEN_X;
     Y_0 = BBA_Y + BCD_Y + GOLDEN_Y;
     WriteCalibrationSettings(K_X, K_Y, X_0, Y_0);
-    NotifyInterlockOffset(BBA_X + GOLDEN_X, BBA_Y + GOLDEN_Y);
+    NotifyInterlockOffset(BCD_X + GOLDEN_X, BCD_Y + GOLDEN_Y);
 }
 
 
