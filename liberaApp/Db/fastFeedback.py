@@ -56,6 +56,9 @@ def FastFeedback():
         longIn('HARD_ERR',     DESC = 'Total hard error count'),
         longIn('RXFIFO',       DESC = 'Max RX FIFO length'),
         longIn('TXFIFO',       DESC = 'Max TX FIFO length'),
+        Waveform('TOA_MIN', 256,   DESC = 'Min Time of Arrival'),
+        Waveform('TOA_MAX', 256,   DESC = 'Max Time of Arrival'),
+        Waveform('RCB', 256,   DESC = 'Receive Count'),
     ] + [
         field
         for i in (1, 2, 3, 4)

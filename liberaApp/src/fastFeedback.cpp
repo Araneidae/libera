@@ -117,8 +117,13 @@ struct FF_CONTROL_SPACE         // At FF_CONTROL_ADDRESS (1402A000)
     /* This register can be used to select the communication controller payload,
      * if the appropriate firmware is configured. */
     int FAPayload;
+    /* Time Of Arrival (TOA) and Receive Count Buffer (RCB) read enable and 
+     * strobe registers.*/
+    int TOAReadEna;
+    int TOAReadDat;
+    int RCBReadEna;
+    int RCBReadDat;
 };
-
 
 
 /* /dev/mem file handle used for access to FF control space. */
@@ -158,7 +163,11 @@ static bool LinkEnable[4] = { true, true, true, true };
 static int LoopBack[4] = { 0, 0, 0, 0 };
 static int XPayload = 14, YPayload = 15;
 
-
+/*
+ */
+static int MinTimeOfArrival[256];
+static int MaxTimeOfArrival[256];
+static int ReceiveCount[256];
 
 static bool MapFastFeedbackMemory()
 {
@@ -196,6 +205,49 @@ static bool MapFastFeedbackMemory()
 
 
 
+/* Read Receive Count and Time Of Arrival Buffers. The firmware supports 512
+ * nodes, however we are currently reading the first 256 node IDs since the rest
+ * is not allocated yet.  */
+static void ReadReceiveCount()
+{
+    /* Assert Read Enable for Receive Count Buffer, and wait 100usec for
+     * synchronisation */
+    ControlSpace->RCBReadEna = 1;
+    usleep(100);
+
+    /* Currently read the first 256 Nodes. */
+    for (int i=0; i<256; i++)
+        ReceiveCount[i] = ControlSpace->RCBReadDat;
+
+    /* De-assert read enable flag */
+    ControlSpace->RCBReadEna = 0;
+}
+
+static void ReadTimeOfArrival()
+{
+    /* Assert Read Enable for Receive Count Buffer, and wait 100usec for
+     * synchronisation */
+    ControlSpace->TOAReadEna = 1;
+    usleep(100);
+
+    /* Currently read the first 256 Nodes.  Lower 16-bit Min data, Upper 16-bits
+     * Max data */
+    for (int i=0; i<256; i++)
+    {
+        int TimeOfArrival = ControlSpace->TOAReadDat;
+        /* If Node is not connected, MIN value is stuck at its default value, so
+         * resetting it to 0 for displaying purposes. */
+        if ((TimeOfArrival & 0x0000FFFF) == 65535)
+            MinTimeOfArrival[i] = 0;
+        else
+            MinTimeOfArrival[i] = TimeOfArrival & 0x0000FFFF;
+        MaxTimeOfArrival[i] = (TimeOfArrival & 0xFFFF0000) >> 16;
+    }
+
+    ControlSpace->TOAReadEna = 0;
+}
+
+
 /* This is called each time the status and monitor fields are about to be
  * read.  We simply update the up bits, as all other fields can be read
  * directly. */
@@ -209,6 +261,7 @@ static void ProcessRead()
     TotalSoftErrorCount = 0;
     TotalFrameErrorCount = 0;
     TotalHardErrorCount = 0;
+
     for (int i = 0; i < 4; i ++)
     {
         RxLinkUp[i] = (UpMask & (1 << i)) != 0;
@@ -223,6 +276,9 @@ static void ProcessRead()
     }
     MaxRxFifoCount = rx_max;
     MaxTxFifoCount = tx_max;
+
+    ReadReceiveCount();
+    ReadTimeOfArrival();
 }
 
 
@@ -301,8 +357,6 @@ static void StartFastFeedback()
     ControlSpace->ExternalTriggerStartMask = 1;
 }
 
-
-
 bool InitialiseFastFeedback()
 {
     /* If fast feedback was not detected, don't do anything at all. */
@@ -322,6 +376,10 @@ bool InitialiseFastFeedback()
     Publish_longin("FF:HARD_ERR", TotalHardErrorCount);
     Publish_longin("FF:RXFIFO", MaxRxFifoCount);
     Publish_longin("FF:TXFIFO", MaxTxFifoCount);
+    PublishSimpleWaveform(int, "FF:TOA_MIN", MinTimeOfArrival);
+    PublishSimpleWaveform(int, "FF:TOA_MAX", MaxTimeOfArrival);
+    PublishSimpleWaveform(int, "FF:RCB", ReceiveCount);
+
     /* Channel specific read only parameters. */
     PUBLISH_BLOCK(longin, "PARTNER", StatusSpace->LinkPartner);
     PUBLISH_BLOCK(longin, "SOFT_ERR", StatusSpace->SoftErrorCount);
