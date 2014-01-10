@@ -68,6 +68,7 @@ public:
 
 typedef INT_WAVEFORM        int_WAVEFORM;
 typedef FLOAT_WAVEFORM      float_WAVEFORM;
+typedef unsigned char UCHAR;
 
 #ifdef I
 class COMPLEX_WAVEFORM : public SIMPLE_WAVEFORM<complex>

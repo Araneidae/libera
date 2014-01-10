@@ -165,9 +165,11 @@ static int XPayload = 14, YPayload = 15;
 
 /*
  */
-static int MinTimeOfArrival[256];
-static int MaxTimeOfArrival[256];
+static float MinTimeOfArrival[256];
+static float MaxTimeOfArrival[256];
 static int ReceiveCount[256];
+static int MissedCount[256];
+static char ReceivedFlag[256];
 
 static bool MapFastFeedbackMemory()
 {
@@ -216,8 +218,22 @@ static void ReadReceiveCount()
     usleep(100);
 
     /* Currently read the first 256 Nodes. */
+    int max_count = 0;
     for (int i=0; i<256; i++)
-        ReceiveCount[i] = ControlSpace->RCBReadDat;
+    {
+        int rx_count = ControlSpace->RCBReadDat;
+        ReceiveCount[i] = rx_count;
+        ReceivedFlag[i] = rx_count > 0;
+        if (rx_count > max_count)
+            max_count = rx_count;
+    }
+
+    /* Compute missed count from received counts. */
+    for (int i=0; i<256; i++)
+        if (ReceiveCount[i] > 0)
+            MissedCount[i] = max_count - ReceiveCount[i];
+        else
+            MissedCount[i] = 0;
 
     /* De-assert read enable flag */
     ControlSpace->RCBReadEna = 0;
@@ -240,8 +256,8 @@ static void ReadTimeOfArrival()
         if ((TimeOfArrival & 0x0000FFFF) == 65535)
             MinTimeOfArrival[i] = 0;
         else
-            MinTimeOfArrival[i] = TimeOfArrival & 0x0000FFFF;
-        MaxTimeOfArrival[i] = (TimeOfArrival & 0xFFFF0000) >> 16;
+            MinTimeOfArrival[i] = (TimeOfArrival & 0x0000FFFF) / 106.25;
+        MaxTimeOfArrival[i] = ((TimeOfArrival & 0xFFFF0000) >> 16) / 106.25;
     }
 
     ControlSpace->TOAReadEna = 0;
@@ -376,9 +392,11 @@ bool InitialiseFastFeedback()
     Publish_longin("FF:HARD_ERR", TotalHardErrorCount);
     Publish_longin("FF:RXFIFO", MaxRxFifoCount);
     Publish_longin("FF:TXFIFO", MaxTxFifoCount);
-    PublishSimpleWaveform(int, "FF:TOA_MIN", MinTimeOfArrival);
-    PublishSimpleWaveform(int, "FF:TOA_MAX", MaxTimeOfArrival);
+    PublishSimpleWaveform(float, "FF:TOA_MIN", MinTimeOfArrival);
+    PublishSimpleWaveform(float, "FF:TOA_MAX", MaxTimeOfArrival);
     PublishSimpleWaveform(int, "FF:RCB", ReceiveCount);
+    PublishSimpleWaveform(int, "FF:MISSED", MissedCount);
+    PublishSimpleWaveform(UCHAR, "FF:PRESENT", ReceivedFlag);
 
     /* Channel specific read only parameters. */
     PUBLISH_BLOCK(longin, "PARTNER", StatusSpace->LinkPartner);
