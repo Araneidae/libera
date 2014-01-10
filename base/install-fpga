@@ -35,9 +35,8 @@ CONFIGDIR=/etc/libera
 
 REMOUNT_RW=false
 INSTALL_FILES=true
-while getopts 'wlh' option; do
+while getopts 'lh' option; do
     case $option in
-        w)  REMOUNT_RW=true ;;
         l)  INSTALL_FILES=false ;;
         h)  cat <<'EOF'
 Usage: install-fpga [options] [fpga-dir|files]
@@ -47,7 +46,6 @@ FPGA files are found either by searching a given directory or given on the
 command line.
 
 Possible options are:
-    -w  Remount file system rw during install
     -l  Refresh links only
 EOF
             exit 0 ;;
@@ -139,7 +137,7 @@ fi
 [ "$#" -eq 0 ]  ||  Error Unexpected arguments
 
 # Ensure we can write to the file system
-ensure_root_rw $REMOUNT_RW
+ensure_root_rw true
 
 if $INSTALL_FILES; then
     # Purge any existing FPGA files
