@@ -29,6 +29,9 @@
 # implement fast arithmetic operations.  See support.c for the use of
 # definitions in this file.
 
+from pkg_resources import require
+require('numpy')
+
 import math
 
 def lround(x):

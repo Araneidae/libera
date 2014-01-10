@@ -32,6 +32,9 @@
 
 from __future__ import division
 
+from pkg_resources import require
+require('numpy')
+
 from numpy import *
 import math
 
