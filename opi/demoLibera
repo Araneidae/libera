@@ -4,9 +4,14 @@
 # it's no longer part of core Libera.
 SYNC_LIBERA_PATH=/home/mga83/epics/diagOpi/scripts
 
+# 4 channel timer in lab
+SUPPORT=/dls_sw/prod/R3.14.12.3/support
+_4CHTIMER=$SUPPORT/4chTimer/3-2
+
 cd "$(dirname "$(readlink -fn "$0")")"
 
 PATH="$(pwd)"/scripts:"$PATH":"$SYNC_LIBERA_PATH"
 
 export EPICS_CA_MAX_ARRAY_BYTES=1000000
+export EDMDATAFILES=$PWD:$_4CHTIMER/data
 exec edm -x -eolc launcher.edl &

@@ -3,10 +3,10 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 1931
-y 21
-w 368
-h 179
+x 1932
+y 22
+w 336
+h 209
 font "helvetica-medium-r-18.0"
 ctlFont "helvetica-medium-r-18.0"
 btnFont "helvetica-medium-r-18.0"
@@ -31,7 +31,7 @@ object activeXTextClass
 beginObjectProperties
 major 4
 minor 1
-release 0
+release 1
 x 16
 y 16
 w 68
@@ -70,7 +70,7 @@ object activeXTextClass
 beginObjectProperties
 major 4
 minor 1
-release 0
+release 1
 x 16
 y 48
 w 68
@@ -109,7 +109,7 @@ object activeXTextClass
 beginObjectProperties
 major 4
 minor 1
-release 0
+release 1
 x 16
 y 80
 w 68
@@ -148,7 +148,7 @@ object activeXTextClass
 beginObjectProperties
 major 4
 minor 1
-release 0
+release 1
 x 16
 y 112
 w 68
@@ -187,7 +187,7 @@ object activeXTextClass
 beginObjectProperties
 major 4
 minor 1
-release 0
+release 1
 x 192
 y 8
 w 123
@@ -231,7 +231,7 @@ endObjectProperties
 object activeMessageButtonClass
 beginObjectProperties
 major 4
-minor 0
+minor 1
 release 0
 x 232
 y 144
@@ -259,7 +259,7 @@ object activeXTextClass
 beginObjectProperties
 major 4
 minor 1
-release 0
+release 1
 x 16
 y 144
 w 46
@@ -272,5 +272,31 @@ value {
   "Trigger"
 }
 autoSize
+endObjectProperties
+
+# (Related Display)
+object relatedDisplayClass
+beginObjectProperties
+major 4
+minor 4
+release 0
+x 104
+y 176
+w 104
+h 24
+fgColor index 43
+bgColor index 3
+topShadowColor index 0
+botShadowColor index 14
+font "helvetica-bold-r-12.0"
+buttonLabel "4ch Timer"
+numPvs 4
+numDsps 1
+displayFileName {
+  0 "4chTimer.edl"
+}
+symbols {
+  0 "device=TS-DI-TIMER-01"
+}
 endObjectProperties
 
