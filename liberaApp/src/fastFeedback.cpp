@@ -165,11 +165,12 @@ static int XPayload = 14, YPayload = 15;
 
 /*
  */
-static float MinTimeOfArrival[256];
-static float MaxTimeOfArrival[256];
-static int ReceiveCount[256];
-static int MissedCount[256];
-static char ReceivedFlag[256];
+#define FA_ID_COUNT     512
+static float MinTimeOfArrival[FA_ID_COUNT];
+static float MaxTimeOfArrival[FA_ID_COUNT];
+static int ReceiveCount[FA_ID_COUNT];
+static int MissedCount[FA_ID_COUNT];
+static char ReceivedFlag[FA_ID_COUNT];
 
 static bool MapFastFeedbackMemory()
 {
@@ -219,7 +220,7 @@ static void ReadReceiveCount()
 
     /* Currently read the first 256 Nodes. */
     int max_count = 0;
-    for (int i=0; i<256; i++)
+    for (int i=0; i<FA_ID_COUNT; i++)
     {
         int rx_count = ControlSpace->RCBReadDat;
         ReceiveCount[i] = rx_count;
@@ -229,7 +230,7 @@ static void ReadReceiveCount()
     }
 
     /* Compute missed count from received counts. */
-    for (int i=0; i<256; i++)
+    for (int i=0; i<FA_ID_COUNT; i++)
         if (ReceiveCount[i] > 0)
             MissedCount[i] = max_count - ReceiveCount[i];
         else
@@ -248,7 +249,7 @@ static void ReadTimeOfArrival()
 
     /* Currently read the first 256 Nodes.  Lower 16-bit Min data, Upper 16-bits
      * Max data */
-    for (int i=0; i<256; i++)
+    for (int i=0; i<FA_ID_COUNT; i++)
     {
         int TimeOfArrival = ControlSpace->TOAReadDat;
         /* If Node is not connected, MIN value is stuck at its default value, so

@@ -33,6 +33,8 @@ from math import *
 from support import *
 from iocbuilder import *
 
+FA_ID_COUNT = 512
+
 
 # 10 bit BPM identifier, so range is 0..1023
 MAX_ID = 2**10 - 1
@@ -56,11 +58,14 @@ def FastFeedback():
         longIn('HARD_ERR',     DESC = 'Total hard error count'),
         longIn('RXFIFO',       DESC = 'Max RX FIFO length'),
         longIn('TXFIFO',       DESC = 'Max TX FIFO length'),
-        Waveform('TOA_MIN', 256, 'FLOAT',  DESC = 'Min Time of Arrival'),
-        Waveform('TOA_MAX', 256, 'FLOAT',  DESC = 'Max Time of Arrival'),
-        Waveform('RCB', 256,   DESC = 'Receive Count'),
-        Waveform('MISSED', 256,   DESC = 'Missed Count'),
-        Waveform('PRESENT', 256, 'UCHAR',   DESC = 'Signal received flag'),
+        Waveform('TOA_MIN', FA_ID_COUNT, 'FLOAT',
+            DESC = 'Min Time of Arrival'),
+        Waveform('TOA_MAX', FA_ID_COUNT, 'FLOAT',
+            DESC = 'Max Time of Arrival'),
+        Waveform('RCB', FA_ID_COUNT,   DESC = 'Receive Count'),
+        Waveform('MISSED', FA_ID_COUNT,   DESC = 'Missed Count'),
+        Waveform('PRESENT', FA_ID_COUNT, 'UCHAR',
+            DESC = 'Signal received flag'),
     ] + [
         field
         for i in (1, 2, 3, 4)
