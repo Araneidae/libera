@@ -85,7 +85,7 @@ def ABCD_():
 def ABCD_N():
     return [
         aIn(button + 'N', 0, 10, 1e-7, PREC = 6,
-            DESC = 'Normalised %s button intensity')
+            DESC = 'Normalised %s button intensity' % button)
         for button in 'ABCD']
 
 def XYQS_wf(length, prefix='WF'):

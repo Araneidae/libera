@@ -3,8 +3,8 @@ beginScreenProperties
 major 4
 minor 0
 release 1
-x 466
-y 22
+x 467
+y 23
 w 584
 h 840
 font "helvetica-medium-r-18.0"
@@ -31,7 +31,7 @@ object activeXTextClass
 beginObjectProperties
 major 4
 minor 1
-release 0
+release 1
 x 0
 y 0
 w 584
@@ -68,7 +68,7 @@ endObjectProperties
 object xyGraphClass
 beginObjectProperties
 major 4
-minor 3
+minor 8
 release 0
 # Geometry
 x 8
@@ -117,7 +117,7 @@ endObjectProperties
 object xyGraphClass
 beginObjectProperties
 major 4
-minor 3
+minor 8
 release 0
 # Geometry
 x 8
@@ -149,6 +149,10 @@ yPv {
   0 "$(device):$(mode):WFBI"
   1 "$(device):$(mode):WFBQ"
 }
+ySigned {
+  0 1
+  1 1
+}
 plotColor {
   0 index 14
   1 index 26
@@ -159,7 +163,7 @@ endObjectProperties
 object xyGraphClass
 beginObjectProperties
 major 4
-minor 3
+minor 8
 release 0
 # Geometry
 x 8
@@ -205,7 +209,7 @@ endObjectProperties
 object xyGraphClass
 beginObjectProperties
 major 4
-minor 3
+minor 8
 release 0
 # Geometry
 x 8
@@ -237,9 +241,9 @@ yPv {
   0 "$(device):$(mode):WFDI"
   1 "$(device):$(mode):WFDQ"
 }
-xSigned {
-  0 218
-  1 120
+ySigned {
+  0 1
+  1 1
 }
 plotColor {
   0 index 14
@@ -251,7 +255,7 @@ endObjectProperties
 object shellCmdClass
 beginObjectProperties
 major 4
-minor 2
+minor 3
 release 0
 x 4
 y 4
@@ -274,7 +278,7 @@ endObjectProperties
 object relatedDisplayClass
 beginObjectProperties
 major 4
-minor 2
+minor 4
 release 0
 x 448
 y 4
