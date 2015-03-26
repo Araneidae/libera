@@ -1,0 +1,8 @@
+#!/usr/bin/expect -f
+
+spawn ssh -x -l root [lindex $argv 0] [lrange $argv 1 end]
+expect {
+    "password: " { send -- "Jungle\r" }
+    "# " {}
+}
+interact

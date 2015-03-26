@@ -170,7 +170,7 @@ font "helvetica-bold-r-12.0"
 buttonLabel "Login"
 numCmds 1
 command {
-  0 "xterm -T $(device) -e ssh -x root@$(device)"
+  0 "xterm -T $(device) -e libera-login $(device)"
 }
 endObjectProperties
 
@@ -237,7 +237,7 @@ font "helvetica-bold-r-12.0"
 buttonLabel "Restart Driver"
 numCmds 1
 command {
-  0 "xterm -T $(device) -e ssh -x root@$(device) /etc/init.d/libera-driver restart"
+  0 "xterm -T $(device) -e libera-login $(device) /etc/init.d/libera-driver restart"
 }
 endObjectProperties
 
