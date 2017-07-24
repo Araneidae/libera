@@ -1,221 +1,401 @@
-<?xml version='1.0' encoding='utf-8'?>
-<display typeId="org.csstudio.opibuilder.Display" version="1.0">
+<?xml version="1.0" encoding="UTF-8"?>
+<display typeId="org.csstudio.opibuilder.Display" version="1.0.0">
+  <actions hook="false" hook_all="false" />
+  <auto_scale_widgets>
+    <auto_scale_widgets>false</auto_scale_widgets>
+    <min_width>-1</min_width>
+    <min_height>-1</min_height>
+  </auto_scale_widgets>
+  <auto_zoom_to_fit_all>false</auto_zoom_to_fit_all>
+  <background_color>
+    <color name="Canvas" red="200" green="200" blue="200" />
+  </background_color>
+  <boy_version>5.1.0.201705021243</boy_version>
+  <foreground_color>
+    <color name="Black" red="0" green="0" blue="0" />
+  </foreground_color>
+  <grid_space>8</grid_space>
+  <height>209</height>
+  <macros>
+    <include_parent_macros>true</include_parent_macros>
+  </macros>
+  <name>Lab IOC Control</name>
+  <rules />
+  <scripts />
+  <show_close_button>true</show_close_button>
+  <show_edit_range>true</show_edit_range>
+  <show_grid>true</show_grid>
+  <show_ruler>true</show_ruler>
+  <snap_to_geometry>true</snap_to_geometry>
+  <widget_type>Display</widget_type>
+  <width>336</width>
+  <wuid>-7b8876ae:15d7508270c:-7a5c</wuid>
   <x>1933</x>
   <y>23</y>
-  <width>336</width>
-  <height>209</height>
-  <font>
-    <fontdata fontName="liberation sans" height="18" pixels="true" style="0" />
-  </font>
-  <boy_version>4.0.0</boy_version>
-  <foreground_color>
-    <color blue="0" green="0" name="Black" red="0" />
-  </foreground_color>
-  <background_color>
-    <color blue="200" green="200" name="Canvas" red="200" />
-  </background_color>
-  <name>Lab IOC Control</name>
-  <show_grid>true</show_grid>
-  <grid_space>8</grid_space>
-  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <actions hook="false" hook_all="false" />
     <auto_size>true</auto_size>
     <background_color>
-      <color blue="255" green="255" name="White" red="255" />
+      <color name="White" red="255" green="255" blue="255" />
     </background_color>
-    <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
-      <color blue="0" green="0" name="Black" red="0" />
+      <color name="Black" red="0" green="0" blue="0" />
     </border_color>
     <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="14" pixels="true" style="0" />
+      <fontdata fontName="liberation sans" height="14" style="0" pixels="true" />
     </font>
     <foreground_color>
-      <color blue="0" green="0" name="Text: FG" red="0" />
+      <color name="Text: FG" red="0" green="0" blue="0" />
     </foreground_color>
-    <height>16</height>
+    <height>18</height>
     <horizontal_alignment>0</horizontal_alignment>
     <name>EDM Label</name>
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
     <text>Channel 1:</text>
+    <tooltip></tooltip>
     <transparent>true</transparent>
-    <width>68</width>
+    <vertical_alignment>1</vertical_alignment>
+    <visible>true</visible>
+    <widget_type>Label</widget_type>
+    <width>70</width>
+    <wrap_words>false</wrap_words>
+    <wuid>-7b8876ae:15d7508270c:-7a5b</wuid>
     <x>16</x>
     <y>16</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.MenuButton" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.MenuButton" version="1.0.0">
     <actions_from_pv>true</actions_from_pv>
+    <alarm_pulsing>false</alarm_pulsing>
+    <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color blue="205" green="205" name="Controller: BG" red="205" />
+      <color name="Controller: BG" red="205" green="205" blue="205" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
+    <border_color>
+      <color red="0" green="128" blue="255" />
+    </border_color>
+    <border_style>6</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="14" pixels="true" style="0" />
+      <fontdata fontName="liberation sans" height="14" style="0" pixels="true" />
     </font>
+    <forecolor_alarm_sensitive>false</forecolor_alarm_sensitive>
     <foreground_color>
-      <color blue="0" green="0" name="Black" red="0" />
+      <color name="Black" red="0" green="0" blue="0" />
     </foreground_color>
     <height>25</height>
+    <label></label>
     <name>EDM menu button</name>
     <pv_name>TS-DI-MUX-01:SEL1</pv_name>
+    <pv_value />
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
     <show_down_arrow>true</show_down_arrow>
+    <tooltip>$(pv_name)
+$(pv_value)</tooltip>
+    <transparent>false</transparent>
+    <visible>true</visible>
+    <widget_type>Menu Button</widget_type>
     <width>81</width>
+    <wuid>-7b8876ae:15d7508270c:-7a5a</wuid>
     <x>104</x>
     <y>8</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <actions hook="false" hook_all="false" />
     <auto_size>true</auto_size>
     <background_color>
-      <color blue="255" green="255" name="White" red="255" />
+      <color name="White" red="255" green="255" blue="255" />
     </background_color>
-    <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
-      <color blue="0" green="0" name="Black" red="0" />
+      <color name="Black" red="0" green="0" blue="0" />
     </border_color>
     <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="14" pixels="true" style="0" />
+      <fontdata fontName="liberation sans" height="14" style="0" pixels="true" />
     </font>
     <foreground_color>
-      <color blue="0" green="0" name="Text: FG" red="0" />
+      <color name="Text: FG" red="0" green="0" blue="0" />
     </foreground_color>
-    <height>16</height>
+    <height>18</height>
     <horizontal_alignment>0</horizontal_alignment>
     <name>EDM Label</name>
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
     <text>Channel 2:</text>
+    <tooltip></tooltip>
     <transparent>true</transparent>
-    <width>68</width>
+    <vertical_alignment>1</vertical_alignment>
+    <visible>true</visible>
+    <widget_type>Label</widget_type>
+    <width>70</width>
+    <wrap_words>false</wrap_words>
+    <wuid>-7b8876ae:15d7508270c:-7a59</wuid>
     <x>16</x>
     <y>48</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.MenuButton" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.MenuButton" version="1.0.0">
     <actions_from_pv>true</actions_from_pv>
+    <alarm_pulsing>false</alarm_pulsing>
+    <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color blue="205" green="205" name="Controller: BG" red="205" />
+      <color name="Controller: BG" red="205" green="205" blue="205" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
+    <border_color>
+      <color red="0" green="128" blue="255" />
+    </border_color>
+    <border_style>6</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="14" pixels="true" style="0" />
+      <fontdata fontName="liberation sans" height="14" style="0" pixels="true" />
     </font>
+    <forecolor_alarm_sensitive>false</forecolor_alarm_sensitive>
     <foreground_color>
-      <color blue="0" green="0" name="Black" red="0" />
+      <color name="Black" red="0" green="0" blue="0" />
     </foreground_color>
     <height>25</height>
+    <label></label>
     <name>EDM menu button</name>
     <pv_name>TS-DI-MUX-01:SEL2</pv_name>
+    <pv_value />
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
     <show_down_arrow>true</show_down_arrow>
+    <tooltip>$(pv_name)
+$(pv_value)</tooltip>
+    <transparent>false</transparent>
+    <visible>true</visible>
+    <widget_type>Menu Button</widget_type>
     <width>81</width>
+    <wuid>-7b8876ae:15d7508270c:-7a58</wuid>
     <x>104</x>
     <y>40</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <actions hook="false" hook_all="false" />
     <auto_size>true</auto_size>
     <background_color>
-      <color blue="255" green="255" name="White" red="255" />
+      <color name="White" red="255" green="255" blue="255" />
     </background_color>
-    <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
-      <color blue="0" green="0" name="Black" red="0" />
+      <color name="Black" red="0" green="0" blue="0" />
     </border_color>
     <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="14" pixels="true" style="0" />
+      <fontdata fontName="liberation sans" height="14" style="0" pixels="true" />
     </font>
     <foreground_color>
-      <color blue="0" green="0" name="Text: FG" red="0" />
+      <color name="Text: FG" red="0" green="0" blue="0" />
     </foreground_color>
-    <height>16</height>
+    <height>18</height>
     <horizontal_alignment>0</horizontal_alignment>
     <name>EDM Label</name>
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
     <text>Channel 3:</text>
+    <tooltip></tooltip>
     <transparent>true</transparent>
-    <width>68</width>
+    <vertical_alignment>1</vertical_alignment>
+    <visible>true</visible>
+    <widget_type>Label</widget_type>
+    <width>70</width>
+    <wrap_words>false</wrap_words>
+    <wuid>-7b8876ae:15d7508270c:-7a57</wuid>
     <x>16</x>
     <y>80</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.MenuButton" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.MenuButton" version="1.0.0">
     <actions_from_pv>true</actions_from_pv>
+    <alarm_pulsing>false</alarm_pulsing>
+    <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color blue="205" green="205" name="Controller: BG" red="205" />
+      <color name="Controller: BG" red="205" green="205" blue="205" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
+    <border_color>
+      <color red="0" green="128" blue="255" />
+    </border_color>
+    <border_style>6</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="14" pixels="true" style="0" />
+      <fontdata fontName="liberation sans" height="14" style="0" pixels="true" />
     </font>
+    <forecolor_alarm_sensitive>false</forecolor_alarm_sensitive>
     <foreground_color>
-      <color blue="0" green="0" name="Black" red="0" />
+      <color name="Black" red="0" green="0" blue="0" />
     </foreground_color>
     <height>25</height>
+    <label></label>
     <name>EDM menu button</name>
     <pv_name>TS-DI-MUX-01:SEL3</pv_name>
+    <pv_value />
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
     <show_down_arrow>true</show_down_arrow>
+    <tooltip>$(pv_name)
+$(pv_value)</tooltip>
+    <transparent>false</transparent>
+    <visible>true</visible>
+    <widget_type>Menu Button</widget_type>
     <width>81</width>
+    <wuid>-7b8876ae:15d7508270c:-7a56</wuid>
     <x>104</x>
     <y>72</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <actions hook="false" hook_all="false" />
     <auto_size>true</auto_size>
     <background_color>
-      <color blue="255" green="255" name="White" red="255" />
+      <color name="White" red="255" green="255" blue="255" />
     </background_color>
-    <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
-      <color blue="0" green="0" name="Black" red="0" />
+      <color name="Black" red="0" green="0" blue="0" />
     </border_color>
     <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="14" pixels="true" style="0" />
+      <fontdata fontName="liberation sans" height="14" style="0" pixels="true" />
     </font>
     <foreground_color>
-      <color blue="0" green="0" name="Text: FG" red="0" />
+      <color name="Text: FG" red="0" green="0" blue="0" />
     </foreground_color>
-    <height>16</height>
+    <height>18</height>
     <horizontal_alignment>0</horizontal_alignment>
     <name>EDM Label</name>
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
     <text>Channel 4:</text>
+    <tooltip></tooltip>
     <transparent>true</transparent>
-    <width>68</width>
+    <vertical_alignment>1</vertical_alignment>
+    <visible>true</visible>
+    <widget_type>Label</widget_type>
+    <width>70</width>
+    <wrap_words>false</wrap_words>
+    <wuid>-7b8876ae:15d7508270c:-7a55</wuid>
     <x>16</x>
     <y>112</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.MenuButton" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.MenuButton" version="1.0.0">
     <actions_from_pv>true</actions_from_pv>
+    <alarm_pulsing>false</alarm_pulsing>
+    <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color blue="205" green="205" name="Controller: BG" red="205" />
-    </background_color>
-    <border_alarm_sensitive>false</border_alarm_sensitive>
-    <font>
-      <fontdata fontName="liberation sans" height="14" pixels="true" style="0" />
-    </font>
-    <foreground_color>
-      <color blue="0" green="0" name="Black" red="0" />
-    </foreground_color>
-    <height>25</height>
-    <name>EDM menu button</name>
-    <pv_name>TS-DI-MUX-01:SEL4</pv_name>
-    <show_down_arrow>true</show_down_arrow>
-    <width>81</width>
-    <x>104</x>
-    <y>104</y>
-  </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0">
-    <auto_size>true</auto_size>
-    <background_color>
-      <color blue="255" green="255" name="White" red="255" />
+      <color name="Controller: BG" red="205" green="205" blue="205" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
-      <color blue="0" green="0" name="Black" red="0" />
+      <color red="0" green="128" blue="255" />
+    </border_color>
+    <border_style>6</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
+    <font>
+      <fontdata fontName="liberation sans" height="14" style="0" pixels="true" />
+    </font>
+    <forecolor_alarm_sensitive>false</forecolor_alarm_sensitive>
+    <foreground_color>
+      <color name="Black" red="0" green="0" blue="0" />
+    </foreground_color>
+    <height>25</height>
+    <label></label>
+    <name>EDM menu button</name>
+    <pv_name>TS-DI-MUX-01:SEL4</pv_name>
+    <pv_value />
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
+    <show_down_arrow>true</show_down_arrow>
+    <tooltip>$(pv_name)
+$(pv_value)</tooltip>
+    <transparent>false</transparent>
+    <visible>true</visible>
+    <widget_type>Menu Button</widget_type>
+    <width>81</width>
+    <wuid>-7b8876ae:15d7508270c:-7a54</wuid>
+    <x>104</x>
+    <y>104</y>
+  </widget>
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <actions hook="false" hook_all="false" />
+    <auto_size>true</auto_size>
+    <background_color>
+      <color name="White" red="255" green="255" blue="255" />
+    </background_color>
+    <border_color>
+      <color name="Black" red="0" green="0" blue="0" />
     </border_color>
     <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="14" pixels="true" style="0" />
+      <fontdata fontName="liberation sans" height="14" style="0" pixels="true" />
     </font>
     <foreground_color>
-      <color blue="0" green="0" name="Text: FG" red="0" />
+      <color name="Text: FG" red="0" green="0" blue="0" />
     </foreground_color>
-    <height>112</height>
+    <height>126</height>
     <horizontal_alignment>0</horizontal_alignment>
     <name>EDM Label</name>
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
     <text>1. Pulse Trigger
  1-1 Machine clock
  1-2 Trigger
@@ -223,50 +403,98 @@
  2-1 Postmortem
  2-2 1Hz
  2-3 Pulse Trigger</text>
+    <tooltip></tooltip>
     <transparent>true</transparent>
-    <width>123</width>
+    <vertical_alignment>1</vertical_alignment>
+    <visible>true</visible>
+    <widget_type>Label</widget_type>
+    <width>124</width>
+    <wrap_words>false</wrap_words>
+    <wuid>-7b8876ae:15d7508270c:-7a53</wuid>
     <x>192</x>
     <y>8</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.MenuButton" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.MenuButton" version="1.0.0">
     <actions_from_pv>true</actions_from_pv>
+    <alarm_pulsing>false</alarm_pulsing>
+    <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color blue="205" green="205" name="Controller: BG" red="205" />
+      <color name="Controller: BG" red="205" green="205" blue="205" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
+    <border_color>
+      <color red="0" green="128" blue="255" />
+    </border_color>
+    <border_style>6</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="14" pixels="true" style="0" />
+      <fontdata fontName="liberation sans" height="14" style="0" pixels="true" />
     </font>
+    <forecolor_alarm_sensitive>false</forecolor_alarm_sensitive>
     <foreground_color>
-      <color blue="0" green="0" name="Black" red="0" />
+      <color name="Black" red="0" green="0" blue="0" />
     </foreground_color>
     <height>25</height>
+    <label></label>
     <name>EDM menu button</name>
     <pv_name>TS-DI-EVR-01:TRIG:MODE</pv_name>
+    <pv_value />
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
     <show_down_arrow>true</show_down_arrow>
+    <tooltip>$(pv_name)
+$(pv_value)</tooltip>
+    <transparent>false</transparent>
+    <visible>true</visible>
+    <widget_type>Menu Button</widget_type>
     <width>121</width>
+    <wuid>-7b8876ae:15d7508270c:-7a52</wuid>
     <x>104</x>
     <y>144</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.ActionButton" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.ActionButton" version="2.0.0">
     <actions hook="true" hook_all="true">
       <action type="WRITE_PV">
         <pv_name>$(pv_name)</pv_name>
         <value>1</value>
+        <timeout>10</timeout>
+        <confirm_message></confirm_message>
+        <description></description>
       </action>
     </actions>
+    <alarm_pulsing>false</alarm_pulsing>
+    <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
+    <background_color>
+      <color red="240" green="240" blue="240" />
+    </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
+    <border_color>
+      <color red="0" green="128" blue="255" />
+    </border_color>
+    <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="14" pixels="true" style="0" />
+      <fontdata fontName="liberation sans" height="14" style="0" pixels="true" />
     </font>
+    <forecolor_alarm_sensitive>false</forecolor_alarm_sensitive>
     <foreground_color>
-      <color blue="0" green="0" name="Text: FG" red="0" />
+      <color name="Text: FG" red="0" green="0" blue="0" />
     </foreground_color>
     <height>25</height>
+    <image></image>
     <name>EDM Message Button</name>
+    <push_action_index>0</push_action_index>
     <pv_name>TS-DI-EVR-01:TS-RESET.OUT2</pv_name>
+    <pv_value />
     <rules>
-      <rule name="visibleRule" out_exp="false" prop_id="visible">
+      <rule name="visibleRule" prop_id="visible" out_exp="false">
         <exp bool_exp="pv0&gt;=2.0&amp;&amp; pv0&lt;3.0">
           <value>true</value>
         </exp>
@@ -275,51 +503,79 @@
         </exp>
         <pv trig="true">TS-DI-EVR-01:TRIG:MODE</pv>
       </rule>
-      <rule name="OnOffBackgroundRule" out_exp="false" prop_id="background_color">
+      <rule name="OnOffBackgroundRule" prop_id="background_color" out_exp="false">
         <exp bool_exp="widget.getValue() == 1">
           <value>
-            <color blue="192" green="192" name="Grey 75%" red="192" />
+            <color name="Grey 75%" red="192" green="192" blue="192" />
           </value>
         </exp>
         <exp bool_exp="true">
           <value>
-            <color blue="192" green="192" name="Grey 75%" red="192" />
+            <color name="Grey 75%" red="192" green="192" blue="192" />
           </value>
         </exp>
         <pv trig="true">TS-DI-EVR-01:TS-RESET.OUT2</pv>
       </rule>
     </rules>
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
+    <style>0</style>
     <text>Trigger</text>
+    <toggle_button>false</toggle_button>
+    <tooltip>$(pv_name)
+$(pv_value)</tooltip>
+    <visible>true</visible>
+    <widget_type>Action Button</widget_type>
     <width>81</width>
+    <wuid>-7b8876ae:15d7508270c:-7a51</wuid>
     <x>232</x>
     <y>144</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <actions hook="false" hook_all="false" />
     <auto_size>true</auto_size>
     <background_color>
-      <color blue="255" green="255" name="White" red="255" />
+      <color name="White" red="255" green="255" blue="255" />
     </background_color>
-    <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
-      <color blue="0" green="0" name="Black" red="0" />
+      <color name="Black" red="0" green="0" blue="0" />
     </border_color>
     <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="14" pixels="true" style="0" />
+      <fontdata fontName="liberation sans" height="14" style="0" pixels="true" />
     </font>
     <foreground_color>
-      <color blue="0" green="0" name="Text: FG" red="0" />
+      <color name="Text: FG" red="0" green="0" blue="0" />
     </foreground_color>
-    <height>16</height>
+    <height>18</height>
     <horizontal_alignment>0</horizontal_alignment>
     <name>EDM Label</name>
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
     <text>Trigger</text>
+    <tooltip></tooltip>
     <transparent>true</transparent>
-    <width>46</width>
+    <vertical_alignment>1</vertical_alignment>
+    <visible>true</visible>
+    <widget_type>Label</widget_type>
+    <width>45</width>
+    <wrap_words>false</wrap_words>
+    <wuid>-7b8876ae:15d7508270c:-7a50</wuid>
     <x>16</x>
     <y>144</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.ActionButton" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.ActionButton" version="2.0.0">
     <actions hook="false" hook_all="false">
       <action type="OPEN_DISPLAY">
         <path>../4chTimer/4chTimer.opi</path>
@@ -328,27 +584,54 @@
           <device>TS-DI-TIMER-01</device>
         </macros>
         <mode>8</mode>
-        <description />
+        <description></description>
       </action>
     </actions>
+    <alarm_pulsing>false</alarm_pulsing>
+    <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color blue="205" green="205" name="Controller: BG" red="205" />
+      <color name="Controller: BG" red="205" green="205" blue="205" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
+    <border_color>
+      <color red="0" green="128" blue="255" />
+    </border_color>
+    <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="12" pixels="true" style="1" />
+      <fontdata fontName="liberation sans" height="12" style="1" pixels="true" />
     </font>
+    <forecolor_alarm_sensitive>false</forecolor_alarm_sensitive>
     <foreground_color>
-      <color blue="32" green="64" name="Related Display: FG" red="128" />
+      <color name="Related Display: FG" red="128" green="64" blue="0" />
     </foreground_color>
     <height>25</height>
+    <image></image>
     <name>EDM related display</name>
+    <push_action_index>0</push_action_index>
+    <pv_name></pv_name>
+    <pv_value />
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
+    <style>0</style>
     <text>4ch Timer</text>
+    <toggle_button>false</toggle_button>
+    <tooltip>$(pv_name)
+$(pv_value)</tooltip>
+    <visible>true</visible>
+    <widget_type>Action Button</widget_type>
     <width>105</width>
+    <wuid>-7b8876ae:15d7508270c:-7a4f</wuid>
     <x>104</x>
     <y>176</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.ActionButton" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.ActionButton" version="2.0.0">
     <actions hook="false" hook_all="false">
       <action type="OPEN_DISPLAY">
         <path>../TimingTemplates/evr.opi</path>
@@ -357,23 +640,50 @@
           <evr>TS-DI-EVR-01:SET_HW</evr>
         </macros>
         <mode>8</mode>
-        <description />
+        <description></description>
       </action>
     </actions>
+    <alarm_pulsing>false</alarm_pulsing>
+    <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color blue="205" green="205" name="Controller: BG" red="205" />
+      <color name="Controller: BG" red="205" green="205" blue="205" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
+    <border_color>
+      <color red="0" green="128" blue="255" />
+    </border_color>
+    <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="12" pixels="true" style="1" />
+      <fontdata fontName="liberation sans" height="12" style="1" pixels="true" />
     </font>
+    <forecolor_alarm_sensitive>false</forecolor_alarm_sensitive>
     <foreground_color>
-      <color blue="32" green="64" name="Related Display: FG" red="128" />
+      <color name="Related Display: FG" red="128" green="64" blue="0" />
     </foreground_color>
     <height>25</height>
+    <image></image>
     <name>EDM related display</name>
+    <push_action_index>0</push_action_index>
+    <pv_name></pv_name>
+    <pv_value />
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
+    <style>0</style>
     <text>EVR</text>
+    <toggle_button>false</toggle_button>
+    <tooltip>$(pv_name)
+$(pv_value)</tooltip>
+    <visible>true</visible>
+    <widget_type>Action Button</widget_type>
     <width>105</width>
+    <wuid>-7b8876ae:15d7508270c:-7a4e</wuid>
     <x>216</x>
     <y>176</y>
   </widget>

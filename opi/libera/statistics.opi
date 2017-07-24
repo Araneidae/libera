@@ -1,313 +1,620 @@
-<?xml version='1.0' encoding='utf-8'?>
-<display typeId="org.csstudio.opibuilder.Display" version="1.0">
+<?xml version="1.0" encoding="UTF-8"?>
+<display typeId="org.csstudio.opibuilder.Display" version="1.0.0">
+  <actions hook="false" hook_all="false" />
+  <auto_scale_widgets>
+    <auto_scale_widgets>false</auto_scale_widgets>
+    <min_width>-1</min_width>
+    <min_height>-1</min_height>
+  </auto_scale_widgets>
+  <auto_zoom_to_fit_all>false</auto_zoom_to_fit_all>
+  <background_color>
+    <color name="Canvas" red="200" green="200" blue="200" />
+  </background_color>
+  <boy_version>5.1.0.201705021243</boy_version>
+  <foreground_color>
+    <color name="Black" red="0" green="0" blue="0" />
+  </foreground_color>
+  <grid_space>8</grid_space>
+  <height>248</height>
+  <macros>
+    <include_parent_macros>true</include_parent_macros>
+  </macros>
+  <name>Statistics</name>
+  <rules />
+  <scripts />
+  <show_close_button>true</show_close_button>
+  <show_edit_range>true</show_edit_range>
+  <show_grid>true</show_grid>
+  <show_ruler>true</show_ruler>
+  <snap_to_geometry>true</snap_to_geometry>
+  <widget_type>Display</widget_type>
+  <width>408</width>
+  <wuid>-7b8876ae:15d7508270c:-771f</wuid>
   <x>768</x>
   <y>90</y>
-  <width>408</width>
-  <height>248</height>
-  <font>
-    <fontdata fontName="liberation sans" height="18" pixels="true" style="0" />
-  </font>
-  <boy_version>4.0.0</boy_version>
-  <foreground_color>
-    <color blue="0" green="0" name="Black" red="0" />
-  </foreground_color>
-  <background_color>
-    <color blue="200" green="200" name="Canvas" red="200" />
-  </background_color>
-  <name>Statistics</name>
-  <show_grid>true</show_grid>
-  <grid_space>8</grid_space>
-  <widget typeId="org.csstudio.opibuilder.widgets.Rectangle" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.Rectangle" version="1.0.0">
+    <actions hook="false" hook_all="false" />
+    <alarm_pulsing>false</alarm_pulsing>
+    <alpha>255</alpha>
+    <anti_alias>true</anti_alias>
+    <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color blue="192" green="192" name="Grey 75%" red="192" />
+      <color name="Grey 75%" red="192" green="192" blue="192" />
     </background_color>
+    <bg_gradient_color>
+      <color red="255" green="255" blue="255" />
+    </bg_gradient_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
+    <border_color>
+      <color red="0" green="128" blue="255" />
+    </border_color>
+    <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
+    <fg_gradient_color>
+      <color red="255" green="255" blue="255" />
+    </fg_gradient_color>
+    <fill_level>0.0</fill_level>
+    <font>
+      <opifont.name fontName="Liberation Sans" height="15" style="0" pixels="true">Default</opifont.name>
+    </font>
+    <forecolor_alarm_sensitive>false</forecolor_alarm_sensitive>
+    <foreground_color>
+      <color red="255" green="0" blue="0" />
+    </foreground_color>
+    <gradient>false</gradient>
     <height>65</height>
+    <horizontal_fill>true</horizontal_fill>
     <line_color>
-      <color blue="0" green="0" name="Black" red="0" />
+      <color name="Black" red="0" green="0" blue="0" />
     </line_color>
     <line_style>0</line_style>
     <line_width>1</line_width>
     <name>EDM Rectangle</name>
+    <pv_name></pv_name>
+    <pv_value />
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
+    <tooltip>$(pv_name)
+$(pv_value)</tooltip>
     <transparent>false</transparent>
     <visible>true</visible>
+    <widget_type>Rectangle</widget_type>
     <width>393</width>
+    <wuid>-7b8876ae:15d7508270c:-771e</wuid>
     <x>8</x>
     <y>144</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <actions hook="false" hook_all="false" />
     <auto_size>false</auto_size>
     <background_color>
-      <color blue="198" green="181" name="DI title" red="198" />
+      <color name="DI title" red="198" green="181" blue="198" />
     </background_color>
-    <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
-      <color blue="0" green="0" name="Black" red="0" />
+      <color name="Black" red="0" green="0" blue="0" />
     </border_color>
     <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="18" pixels="true" style="0" />
+      <fontdata fontName="liberation sans" height="18" style="0" pixels="true" />
     </font>
     <foreground_color>
-      <color blue="0" green="0" name="Text: FG" red="0" />
+      <color name="Text: FG" red="0" green="0" blue="0" />
     </foreground_color>
     <height>32</height>
     <horizontal_alignment>1</horizontal_alignment>
     <name>EDM Label</name>
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
     <text>$(device):$(mode) statistics</text>
+    <tooltip></tooltip>
     <transparent>false</transparent>
+    <vertical_alignment>1</vertical_alignment>
+    <visible>true</visible>
+    <widget_type>Label</widget_type>
     <width>408</width>
+    <wrap_words>false</wrap_words>
+    <wuid>-7b8876ae:15d7508270c:-771d</wuid>
     <x>0</x>
     <y>0</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.ActionButton" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.ActionButton" version="2.0.0">
     <actions hook="false" hook_all="false">
       <action type="EXECUTE_JAVASCRIPT">
+        <path></path>
+        <scriptText><![CDATA[importPackage(Packages.org.csstudio.opibuilder.scriptUtil);ScriptUtil.closeAssociatedOPI(widget);]]></scriptText>
         <embedded>true</embedded>
-        <scriptText>importPackage(Packages.org.csstudio.opibuilder.scriptUtil);ScriptUtil.closeAssociatedOPI(widget);</scriptText>
+        <description></description>
       </action>
     </actions>
+    <alarm_pulsing>false</alarm_pulsing>
+    <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color blue="205" green="205" name="Controller: BG" red="205" />
+      <color name="Controller: BG" red="205" green="205" blue="205" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
+    <border_color>
+      <color red="0" green="128" blue="255" />
+    </border_color>
+    <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="12" pixels="true" style="0" />
+      <fontdata fontName="liberation sans" height="12" style="0" pixels="true" />
     </font>
+    <forecolor_alarm_sensitive>false</forecolor_alarm_sensitive>
     <foreground_color>
-      <color blue="192" green="0" name="Controller: FG" red="0" />
+      <color name="Controller: FG" red="0" green="0" blue="196" />
     </foreground_color>
     <height>25</height>
+    <image></image>
     <name>EDM Exit Button</name>
+    <push_action_index>0</push_action_index>
+    <pv_name></pv_name>
+    <pv_value />
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
+    <style>0</style>
     <text>EXIT</text>
+    <toggle_button>false</toggle_button>
+    <tooltip>$(pv_name)
+$(pv_value)</tooltip>
+    <visible>true</visible>
+    <widget_type>Action Button</widget_type>
     <width>65</width>
+    <wuid>-7b8876ae:15d7508270c:-771c</wuid>
     <x>328</x>
     <y>216</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.ActionButton" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.ActionButton" version="2.0.0">
     <actions hook="false" hook_all="false">
       <action type="EXECUTE_CMD">
         <command>../scripts/libera-help statistics</command>
         <command_directory>$(opi.dir)</command_directory>
-        <description />
+        <wait_time>10</wait_time>
+        <description></description>
       </action>
     </actions>
+    <alarm_pulsing>false</alarm_pulsing>
+    <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color blue="205" green="205" name="Controller: BG" red="205" />
+      <color name="Controller: BG" red="205" green="205" blue="205" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
+    <border_color>
+      <color red="0" green="128" blue="255" />
+    </border_color>
+    <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="14" pixels="true" style="1" />
+      <fontdata fontName="liberation sans" height="14" style="1" pixels="true" />
     </font>
+    <forecolor_alarm_sensitive>false</forecolor_alarm_sensitive>
     <foreground_color>
-      <color blue="0" green="0" name="Text: FG" red="0" />
+      <color name="Text: FG" red="0" green="0" blue="0" />
     </foreground_color>
     <height>25</height>
+    <image></image>
     <name>EDM shell command</name>
+    <push_action_index>0</push_action_index>
+    <pv_name></pv_name>
+    <pv_value />
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
+    <style>0</style>
     <text>?</text>
+    <toggle_button>false</toggle_button>
+    <tooltip>$(pv_name)
+$(pv_value)</tooltip>
+    <visible>true</visible>
+    <widget_type>Action Button</widget_type>
     <width>25</width>
+    <wuid>-7b8876ae:15d7508270c:-771b</wuid>
     <x>4</x>
     <y>4</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.Rectangle" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.Rectangle" version="1.0.0">
+    <actions hook="false" hook_all="false" />
+    <alarm_pulsing>false</alarm_pulsing>
+    <alpha>255</alpha>
+    <anti_alias>true</anti_alias>
+    <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color blue="192" green="192" name="Grey 75%" red="192" />
+      <color name="Grey 75%" red="192" green="192" blue="192" />
     </background_color>
+    <bg_gradient_color>
+      <color red="255" green="255" blue="255" />
+    </bg_gradient_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
+    <border_color>
+      <color red="0" green="128" blue="255" />
+    </border_color>
+    <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
+    <fg_gradient_color>
+      <color red="255" green="255" blue="255" />
+    </fg_gradient_color>
+    <fill_level>0.0</fill_level>
+    <font>
+      <opifont.name fontName="Liberation Sans" height="15" style="0" pixels="true">Default</opifont.name>
+    </font>
+    <forecolor_alarm_sensitive>false</forecolor_alarm_sensitive>
+    <foreground_color>
+      <color red="255" green="0" blue="0" />
+    </foreground_color>
+    <gradient>false</gradient>
     <height>81</height>
+    <horizontal_fill>true</horizontal_fill>
     <line_color>
-      <color blue="0" green="0" name="Black" red="0" />
+      <color name="Black" red="0" green="0" blue="0" />
     </line_color>
     <line_style>0</line_style>
     <line_width>1</line_width>
     <name>EDM Rectangle</name>
+    <pv_name></pv_name>
+    <pv_value />
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
+    <tooltip>$(pv_name)
+$(pv_value)</tooltip>
     <transparent>false</transparent>
     <visible>true</visible>
+    <widget_type>Rectangle</widget_type>
     <width>393</width>
+    <wuid>-7b8876ae:15d7508270c:-771a</wuid>
     <x>8</x>
     <y>48</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <actions hook="false" hook_all="false" />
     <auto_size>false</auto_size>
     <background_color>
-      <color blue="102" green="102" name="Grey 40%" red="102" />
+      <color name="Grey 40%" red="102" green="102" blue="102" />
     </background_color>
-    <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
-      <color blue="230" green="230" name="Grey 90%" red="230" />
+      <color name="Grey 90%" red="230" green="230" blue="230" />
     </border_color>
     <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="12" pixels="true" style="0" />
+      <fontdata fontName="liberation sans" height="12" style="0" pixels="true" />
     </font>
     <foreground_color>
-      <color blue="230" green="230" name="Grey 90%" red="230" />
+      <color name="Grey 90%" red="230" green="230" blue="230" />
     </foreground_color>
     <height>16</height>
     <horizontal_alignment>1</horizontal_alignment>
     <name>EDM Label</name>
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
     <text>Statistics</text>
+    <tooltip></tooltip>
     <transparent>false</transparent>
+    <vertical_alignment>1</vertical_alignment>
+    <visible>true</visible>
+    <widget_type>Label</widget_type>
     <width>120</width>
+    <wrap_words>false</wrap_words>
+    <wuid>-7b8876ae:15d7508270c:-7719</wuid>
     <x>8</x>
     <y>40</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.Rectangle" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.Rectangle" version="1.0.0">
+    <actions hook="false" hook_all="false" />
+    <alarm_pulsing>false</alarm_pulsing>
+    <alpha>255</alpha>
+    <anti_alias>true</anti_alias>
+    <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color blue="192" green="192" name="Grey 75%" red="192" />
+      <color name="Grey 75%" red="192" green="192" blue="192" />
     </background_color>
+    <bg_gradient_color>
+      <color red="255" green="255" blue="255" />
+    </bg_gradient_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
+    <border_color>
+      <color red="0" green="128" blue="255" />
+    </border_color>
+    <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
+    <fg_gradient_color>
+      <color red="255" green="255" blue="255" />
+    </fg_gradient_color>
+    <fill_level>0.0</fill_level>
+    <font>
+      <opifont.name fontName="Liberation Sans" height="15" style="0" pixels="true">Default</opifont.name>
+    </font>
+    <forecolor_alarm_sensitive>false</forecolor_alarm_sensitive>
+    <foreground_color>
+      <color red="255" green="0" blue="0" />
+    </foreground_color>
+    <gradient>false</gradient>
     <height>17</height>
+    <horizontal_fill>true</horizontal_fill>
     <line_color>
-      <color blue="0" green="0" name="Black" red="0" />
+      <color name="Black" red="0" green="0" blue="0" />
     </line_color>
     <line_style>0</line_style>
     <line_width>1</line_width>
     <name>EDM Rectangle</name>
+    <pv_name></pv_name>
+    <pv_value />
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
+    <tooltip>$(pv_name)
+$(pv_value)</tooltip>
     <transparent>true</transparent>
     <visible>true</visible>
+    <widget_type>Rectangle</widget_type>
     <width>121</width>
+    <wuid>-7b8876ae:15d7508270c:-7718</wuid>
     <x>8</x>
     <y>40</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <actions hook="false" hook_all="false" />
     <auto_size>true</auto_size>
     <background_color>
-      <color blue="255" green="255" name="White" red="255" />
+      <color name="White" red="255" green="255" blue="255" />
     </background_color>
-    <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
-      <color blue="0" green="0" name="Black" red="0" />
+      <color name="Black" red="0" green="0" blue="0" />
     </border_color>
     <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="14" pixels="true" style="1" />
+      <fontdata fontName="liberation sans" height="14" style="1" pixels="true" />
     </font>
     <foreground_color>
-      <color blue="0" green="0" name="Text: FG" red="0" />
+      <color name="Text: FG" red="0" green="0" blue="0" />
     </foreground_color>
-    <height>16</height>
+    <height>18</height>
     <horizontal_alignment>0</horizontal_alignment>
     <name>EDM Label</name>
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
     <text>Mean</text>
+    <tooltip></tooltip>
     <transparent>true</transparent>
+    <vertical_alignment>1</vertical_alignment>
+    <visible>true</visible>
+    <widget_type>Label</widget_type>
     <width>38</width>
+    <wrap_words>false</wrap_words>
+    <wuid>-7b8876ae:15d7508270c:-7717</wuid>
     <x>64</x>
     <y>64</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <actions hook="false" hook_all="false" />
     <auto_size>true</auto_size>
     <background_color>
-      <color blue="255" green="255" name="White" red="255" />
+      <color name="White" red="255" green="255" blue="255" />
     </background_color>
-    <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
-      <color blue="0" green="0" name="Black" red="0" />
+      <color name="Black" red="0" green="0" blue="0" />
     </border_color>
     <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="14" pixels="true" style="1" />
+      <fontdata fontName="liberation sans" height="14" style="1" pixels="true" />
     </font>
     <foreground_color>
-      <color blue="0" green="0" name="Text: FG" red="0" />
+      <color name="Text: FG" red="0" green="0" blue="0" />
     </foreground_color>
-    <height>16</height>
+    <height>18</height>
     <horizontal_alignment>0</horizontal_alignment>
     <name>EDM Label</name>
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
     <text>Min</text>
+    <tooltip></tooltip>
     <transparent>true</transparent>
+    <vertical_alignment>1</vertical_alignment>
+    <visible>true</visible>
+    <widget_type>Label</widget_type>
     <width>26</width>
+    <wrap_words>false</wrap_words>
+    <wuid>-7b8876ae:15d7508270c:-7716</wuid>
     <x>200</x>
     <y>64</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <actions hook="false" hook_all="false" />
     <auto_size>true</auto_size>
     <background_color>
-      <color blue="255" green="255" name="White" red="255" />
+      <color name="White" red="255" green="255" blue="255" />
     </background_color>
-    <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
-      <color blue="0" green="0" name="Black" red="0" />
+      <color name="Black" red="0" green="0" blue="0" />
     </border_color>
     <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="14" pixels="true" style="1" />
+      <fontdata fontName="liberation sans" height="14" style="1" pixels="true" />
     </font>
     <foreground_color>
-      <color blue="0" green="0" name="Text: FG" red="0" />
+      <color name="Text: FG" red="0" green="0" blue="0" />
     </foreground_color>
-    <height>16</height>
+    <height>18</height>
     <horizontal_alignment>0</horizontal_alignment>
     <name>EDM Label</name>
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
     <text>Max</text>
+    <tooltip></tooltip>
     <transparent>true</transparent>
-    <width>28</width>
+    <vertical_alignment>1</vertical_alignment>
+    <visible>true</visible>
+    <widget_type>Label</widget_type>
+    <width>29</width>
+    <wrap_words>false</wrap_words>
+    <wuid>-7b8876ae:15d7508270c:-7715</wuid>
     <x>264</x>
     <y>64</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <actions hook="false" hook_all="false" />
     <auto_size>true</auto_size>
     <background_color>
-      <color blue="255" green="255" name="White" red="255" />
+      <color name="White" red="255" green="255" blue="255" />
     </background_color>
-    <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
-      <color blue="0" green="0" name="Black" red="0" />
+      <color name="Black" red="0" green="0" blue="0" />
     </border_color>
     <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="14" pixels="true" style="1" />
+      <fontdata fontName="liberation sans" height="14" style="1" pixels="true" />
     </font>
     <foreground_color>
-      <color blue="0" green="0" name="Text: FG" red="0" />
+      <color name="Text: FG" red="0" green="0" blue="0" />
     </foreground_color>
-    <height>32</height>
+    <height>36</height>
     <horizontal_alignment>0</horizontal_alignment>
     <name>EDM Label</name>
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
     <text>Std
 dev.</text>
+    <tooltip></tooltip>
     <transparent>true</transparent>
-    <width>29</width>
+    <vertical_alignment>1</vertical_alignment>
+    <visible>true</visible>
+    <widget_type>Label</widget_type>
+    <width>28</width>
+    <wrap_words>false</wrap_words>
+    <wuid>-7b8876ae:15d7508270c:-7714</wuid>
     <x>128</x>
     <y>56</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <actions hook="false" hook_all="false" />
     <auto_size>true</auto_size>
     <background_color>
-      <color blue="255" green="255" name="White" red="255" />
+      <color name="White" red="255" green="255" blue="255" />
     </background_color>
-    <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
-      <color blue="0" green="0" name="Black" red="0" />
+      <color name="Black" red="0" green="0" blue="0" />
     </border_color>
     <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="14" pixels="true" style="1" />
+      <fontdata fontName="liberation sans" height="14" style="1" pixels="true" />
     </font>
     <foreground_color>
-      <color blue="0" green="0" name="Text: FG" red="0" />
+      <color name="Text: FG" red="0" green="0" blue="0" />
     </foreground_color>
-    <height>32</height>
+    <height>36</height>
     <horizontal_alignment>0</horizontal_alignment>
     <name>EDM Label</name>
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
     <text>Peak
 peak</text>
+    <tooltip></tooltip>
     <transparent>true</transparent>
+    <vertical_alignment>1</vertical_alignment>
+    <visible>true</visible>
+    <widget_type>Label</widget_type>
     <width>34</width>
+    <wrap_words>false</wrap_words>
+    <wuid>-7b8876ae:15d7508270c:-7713</wuid>
     <x>328</x>
     <y>56</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.TextUpdate" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.TextUpdate" version="1.0.0">
+    <actions hook="false" hook_all="false" />
+    <alarm_pulsing>false</alarm_pulsing>
+    <auto_size>false</auto_size>
+    <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color blue="255" green="255" name="White" red="255" />
+      <color name="White" red="255" green="255" blue="255" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
-    <border_style>None</border_style>
+    <border_color>
+      <color red="0" green="128" blue="255" />
+    </border_color>
+    <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="14" pixels="true" style="0" />
+      <fontdata fontName="liberation sans" height="14" style="0" pixels="true" />
     </font>
+    <forecolor_alarm_sensitive>false</forecolor_alarm_sensitive>
     <foreground_color>
-      <color blue="0" green="0" name="Black" red="0" />
+      <color name="Black" red="0" green="0" blue="0" />
     </foreground_color>
     <format_type>0</format_type>
     <height>16</height>
@@ -316,23 +623,50 @@ peak</text>
     <precision>0</precision>
     <precision_from_pv>true</precision_from_pv>
     <pv_name>$(device):$(mode):MEANX</pv_name>
+    <pv_value />
+    <rotation_angle>0.0</rotation_angle>
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
     <show_units>false</show_units>
+    <text>######</text>
+    <tooltip>$(pv_name)
+$(pv_value)</tooltip>
     <transparent>true</transparent>
+    <vertical_alignment>1</vertical_alignment>
+    <visible>true</visible>
+    <widget_type>Text Update</widget_type>
     <width>64</width>
+    <wrap_words>false</wrap_words>
+    <wuid>-7b8876ae:15d7508270c:-7712</wuid>
     <x>40</x>
     <y>88</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.TextUpdate" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.TextUpdate" version="1.0.0">
+    <actions hook="false" hook_all="false" />
+    <alarm_pulsing>false</alarm_pulsing>
+    <auto_size>false</auto_size>
+    <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color blue="255" green="255" name="White" red="255" />
+      <color name="White" red="255" green="255" blue="255" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
-    <border_style>None</border_style>
+    <border_color>
+      <color red="0" green="128" blue="255" />
+    </border_color>
+    <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="14" pixels="true" style="0" />
+      <fontdata fontName="liberation sans" height="14" style="0" pixels="true" />
     </font>
+    <forecolor_alarm_sensitive>false</forecolor_alarm_sensitive>
     <foreground_color>
-      <color blue="0" green="0" name="Black" red="0" />
+      <color name="Black" red="0" green="0" blue="0" />
     </foreground_color>
     <format_type>0</format_type>
     <height>16</height>
@@ -341,23 +675,50 @@ peak</text>
     <precision>0</precision>
     <precision_from_pv>true</precision_from_pv>
     <pv_name>$(device):$(mode):STDX</pv_name>
+    <pv_value />
+    <rotation_angle>0.0</rotation_angle>
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
     <show_units>false</show_units>
+    <text>######</text>
+    <tooltip>$(pv_name)
+$(pv_value)</tooltip>
     <transparent>true</transparent>
+    <vertical_alignment>1</vertical_alignment>
+    <visible>true</visible>
+    <widget_type>Text Update</widget_type>
     <width>64</width>
+    <wrap_words>false</wrap_words>
+    <wuid>-7b8876ae:15d7508270c:-7711</wuid>
     <x>104</x>
     <y>88</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.TextUpdate" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.TextUpdate" version="1.0.0">
+    <actions hook="false" hook_all="false" />
+    <alarm_pulsing>false</alarm_pulsing>
+    <auto_size>false</auto_size>
+    <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color blue="255" green="255" name="White" red="255" />
+      <color name="White" red="255" green="255" blue="255" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
-    <border_style>None</border_style>
+    <border_color>
+      <color red="0" green="128" blue="255" />
+    </border_color>
+    <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="14" pixels="true" style="0" />
+      <fontdata fontName="liberation sans" height="14" style="0" pixels="true" />
     </font>
+    <forecolor_alarm_sensitive>false</forecolor_alarm_sensitive>
     <foreground_color>
-      <color blue="0" green="0" name="Black" red="0" />
+      <color name="Black" red="0" green="0" blue="0" />
     </foreground_color>
     <format_type>0</format_type>
     <height>16</height>
@@ -366,23 +727,50 @@ peak</text>
     <precision>0</precision>
     <precision_from_pv>true</precision_from_pv>
     <pv_name>$(device):$(mode):MINX</pv_name>
+    <pv_value />
+    <rotation_angle>0.0</rotation_angle>
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
     <show_units>false</show_units>
+    <text>######</text>
+    <tooltip>$(pv_name)
+$(pv_value)</tooltip>
     <transparent>true</transparent>
+    <vertical_alignment>1</vertical_alignment>
+    <visible>true</visible>
+    <widget_type>Text Update</widget_type>
     <width>64</width>
+    <wrap_words>false</wrap_words>
+    <wuid>-7b8876ae:15d7508270c:-7710</wuid>
     <x>168</x>
     <y>88</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.TextUpdate" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.TextUpdate" version="1.0.0">
+    <actions hook="false" hook_all="false" />
+    <alarm_pulsing>false</alarm_pulsing>
+    <auto_size>false</auto_size>
+    <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color blue="255" green="255" name="White" red="255" />
+      <color name="White" red="255" green="255" blue="255" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
-    <border_style>None</border_style>
+    <border_color>
+      <color red="0" green="128" blue="255" />
+    </border_color>
+    <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="14" pixels="true" style="0" />
+      <fontdata fontName="liberation sans" height="14" style="0" pixels="true" />
     </font>
+    <forecolor_alarm_sensitive>false</forecolor_alarm_sensitive>
     <foreground_color>
-      <color blue="0" green="0" name="Black" red="0" />
+      <color name="Black" red="0" green="0" blue="0" />
     </foreground_color>
     <format_type>0</format_type>
     <height>16</height>
@@ -391,23 +779,50 @@ peak</text>
     <precision>0</precision>
     <precision_from_pv>true</precision_from_pv>
     <pv_name>$(device):$(mode):MAXX</pv_name>
+    <pv_value />
+    <rotation_angle>0.0</rotation_angle>
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
     <show_units>false</show_units>
+    <text>######</text>
+    <tooltip>$(pv_name)
+$(pv_value)</tooltip>
     <transparent>true</transparent>
+    <vertical_alignment>1</vertical_alignment>
+    <visible>true</visible>
+    <widget_type>Text Update</widget_type>
     <width>64</width>
+    <wrap_words>false</wrap_words>
+    <wuid>-7b8876ae:15d7508270c:-770f</wuid>
     <x>232</x>
     <y>88</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.TextUpdate" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.TextUpdate" version="1.0.0">
+    <actions hook="false" hook_all="false" />
+    <alarm_pulsing>false</alarm_pulsing>
+    <auto_size>false</auto_size>
+    <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color blue="255" green="255" name="White" red="255" />
+      <color name="White" red="255" green="255" blue="255" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
-    <border_style>None</border_style>
+    <border_color>
+      <color red="0" green="128" blue="255" />
+    </border_color>
+    <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="14" pixels="true" style="0" />
+      <fontdata fontName="liberation sans" height="14" style="0" pixels="true" />
     </font>
+    <forecolor_alarm_sensitive>false</forecolor_alarm_sensitive>
     <foreground_color>
-      <color blue="0" green="0" name="Black" red="0" />
+      <color name="Black" red="0" green="0" blue="0" />
     </foreground_color>
     <format_type>0</format_type>
     <height>16</height>
@@ -416,73 +831,130 @@ peak</text>
     <precision>0</precision>
     <precision_from_pv>true</precision_from_pv>
     <pv_name>$(device):$(mode):PPX</pv_name>
+    <pv_value />
+    <rotation_angle>0.0</rotation_angle>
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
     <show_units>false</show_units>
+    <text>######</text>
+    <tooltip>$(pv_name)
+$(pv_value)</tooltip>
     <transparent>true</transparent>
+    <vertical_alignment>1</vertical_alignment>
+    <visible>true</visible>
+    <widget_type>Text Update</widget_type>
     <width>64</width>
+    <wrap_words>false</wrap_words>
+    <wuid>-7b8876ae:15d7508270c:-770e</wuid>
     <x>296</x>
     <y>88</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <actions hook="false" hook_all="false" />
     <auto_size>true</auto_size>
     <background_color>
-      <color blue="255" green="255" name="White" red="255" />
+      <color name="White" red="255" green="255" blue="255" />
     </background_color>
-    <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
-      <color blue="0" green="0" name="Black" red="0" />
+      <color name="Black" red="0" green="0" blue="0" />
     </border_color>
     <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="14" pixels="true" style="1" />
+      <fontdata fontName="liberation sans" height="14" style="1" pixels="true" />
     </font>
     <foreground_color>
-      <color blue="0" green="0" name="Text: FG" red="0" />
+      <color name="Text: FG" red="0" green="0" blue="0" />
     </foreground_color>
-    <height>16</height>
+    <height>18</height>
     <horizontal_alignment>0</horizontal_alignment>
     <name>EDM Label</name>
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
     <text>X:</text>
+    <tooltip></tooltip>
     <transparent>true</transparent>
-    <width>14</width>
+    <vertical_alignment>1</vertical_alignment>
+    <visible>true</visible>
+    <widget_type>Label</widget_type>
+    <width>15</width>
+    <wrap_words>false</wrap_words>
+    <wuid>-7b8876ae:15d7508270c:-770d</wuid>
     <x>16</x>
     <y>88</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <actions hook="false" hook_all="false" />
     <auto_size>true</auto_size>
     <background_color>
-      <color blue="255" green="255" name="White" red="255" />
+      <color name="White" red="255" green="255" blue="255" />
     </background_color>
-    <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
-      <color blue="0" green="0" name="Black" red="0" />
+      <color name="Black" red="0" green="0" blue="0" />
     </border_color>
     <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="14" pixels="true" style="0" />
+      <fontdata fontName="liberation sans" height="14" style="0" pixels="true" />
     </font>
     <foreground_color>
-      <color blue="0" green="0" name="Text: FG" red="0" />
+      <color name="Text: FG" red="0" green="0" blue="0" />
     </foreground_color>
-    <height>16</height>
+    <height>18</height>
     <horizontal_alignment>0</horizontal_alignment>
     <name>EDM Label</name>
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
     <text>um</text>
+    <tooltip></tooltip>
     <transparent>true</transparent>
-    <width>19</width>
+    <vertical_alignment>1</vertical_alignment>
+    <visible>true</visible>
+    <widget_type>Label</widget_type>
+    <width>21</width>
+    <wrap_words>false</wrap_words>
+    <wuid>-7b8876ae:15d7508270c:-770c</wuid>
     <x>368</x>
     <y>88</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.TextUpdate" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.TextUpdate" version="1.0.0">
+    <actions hook="false" hook_all="false" />
+    <alarm_pulsing>false</alarm_pulsing>
+    <auto_size>false</auto_size>
+    <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color blue="255" green="255" name="White" red="255" />
+      <color name="White" red="255" green="255" blue="255" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
-    <border_style>None</border_style>
+    <border_color>
+      <color red="0" green="128" blue="255" />
+    </border_color>
+    <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="14" pixels="true" style="0" />
+      <fontdata fontName="liberation sans" height="14" style="0" pixels="true" />
     </font>
+    <forecolor_alarm_sensitive>false</forecolor_alarm_sensitive>
     <foreground_color>
-      <color blue="0" green="0" name="Black" red="0" />
+      <color name="Black" red="0" green="0" blue="0" />
     </foreground_color>
     <format_type>0</format_type>
     <height>16</height>
@@ -491,23 +963,50 @@ peak</text>
     <precision>0</precision>
     <precision_from_pv>true</precision_from_pv>
     <pv_name>$(device):$(mode):MEANY</pv_name>
+    <pv_value />
+    <rotation_angle>0.0</rotation_angle>
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
     <show_units>false</show_units>
+    <text>######</text>
+    <tooltip>$(pv_name)
+$(pv_value)</tooltip>
     <transparent>true</transparent>
+    <vertical_alignment>1</vertical_alignment>
+    <visible>true</visible>
+    <widget_type>Text Update</widget_type>
     <width>64</width>
+    <wrap_words>false</wrap_words>
+    <wuid>-7b8876ae:15d7508270c:-770b</wuid>
     <x>40</x>
     <y>104</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.TextUpdate" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.TextUpdate" version="1.0.0">
+    <actions hook="false" hook_all="false" />
+    <alarm_pulsing>false</alarm_pulsing>
+    <auto_size>false</auto_size>
+    <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color blue="255" green="255" name="White" red="255" />
+      <color name="White" red="255" green="255" blue="255" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
-    <border_style>None</border_style>
+    <border_color>
+      <color red="0" green="128" blue="255" />
+    </border_color>
+    <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="14" pixels="true" style="0" />
+      <fontdata fontName="liberation sans" height="14" style="0" pixels="true" />
     </font>
+    <forecolor_alarm_sensitive>false</forecolor_alarm_sensitive>
     <foreground_color>
-      <color blue="0" green="0" name="Black" red="0" />
+      <color name="Black" red="0" green="0" blue="0" />
     </foreground_color>
     <format_type>0</format_type>
     <height>16</height>
@@ -516,23 +1015,50 @@ peak</text>
     <precision>0</precision>
     <precision_from_pv>true</precision_from_pv>
     <pv_name>$(device):$(mode):STDY</pv_name>
+    <pv_value />
+    <rotation_angle>0.0</rotation_angle>
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
     <show_units>false</show_units>
+    <text>######</text>
+    <tooltip>$(pv_name)
+$(pv_value)</tooltip>
     <transparent>true</transparent>
+    <vertical_alignment>1</vertical_alignment>
+    <visible>true</visible>
+    <widget_type>Text Update</widget_type>
     <width>64</width>
+    <wrap_words>false</wrap_words>
+    <wuid>-7b8876ae:15d7508270c:-770a</wuid>
     <x>104</x>
     <y>104</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.TextUpdate" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.TextUpdate" version="1.0.0">
+    <actions hook="false" hook_all="false" />
+    <alarm_pulsing>false</alarm_pulsing>
+    <auto_size>false</auto_size>
+    <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color blue="255" green="255" name="White" red="255" />
+      <color name="White" red="255" green="255" blue="255" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
-    <border_style>None</border_style>
+    <border_color>
+      <color red="0" green="128" blue="255" />
+    </border_color>
+    <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="14" pixels="true" style="0" />
+      <fontdata fontName="liberation sans" height="14" style="0" pixels="true" />
     </font>
+    <forecolor_alarm_sensitive>false</forecolor_alarm_sensitive>
     <foreground_color>
-      <color blue="0" green="0" name="Black" red="0" />
+      <color name="Black" red="0" green="0" blue="0" />
     </foreground_color>
     <format_type>0</format_type>
     <height>16</height>
@@ -541,23 +1067,50 @@ peak</text>
     <precision>0</precision>
     <precision_from_pv>true</precision_from_pv>
     <pv_name>$(device):$(mode):MINY</pv_name>
+    <pv_value />
+    <rotation_angle>0.0</rotation_angle>
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
     <show_units>false</show_units>
+    <text>######</text>
+    <tooltip>$(pv_name)
+$(pv_value)</tooltip>
     <transparent>true</transparent>
+    <vertical_alignment>1</vertical_alignment>
+    <visible>true</visible>
+    <widget_type>Text Update</widget_type>
     <width>64</width>
+    <wrap_words>false</wrap_words>
+    <wuid>-7b8876ae:15d7508270c:-7709</wuid>
     <x>168</x>
     <y>104</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.TextUpdate" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.TextUpdate" version="1.0.0">
+    <actions hook="false" hook_all="false" />
+    <alarm_pulsing>false</alarm_pulsing>
+    <auto_size>false</auto_size>
+    <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color blue="255" green="255" name="White" red="255" />
+      <color name="White" red="255" green="255" blue="255" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
-    <border_style>None</border_style>
+    <border_color>
+      <color red="0" green="128" blue="255" />
+    </border_color>
+    <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="14" pixels="true" style="0" />
+      <fontdata fontName="liberation sans" height="14" style="0" pixels="true" />
     </font>
+    <forecolor_alarm_sensitive>false</forecolor_alarm_sensitive>
     <foreground_color>
-      <color blue="0" green="0" name="Black" red="0" />
+      <color name="Black" red="0" green="0" blue="0" />
     </foreground_color>
     <format_type>0</format_type>
     <height>16</height>
@@ -566,23 +1119,50 @@ peak</text>
     <precision>0</precision>
     <precision_from_pv>true</precision_from_pv>
     <pv_name>$(device):$(mode):MAXY</pv_name>
+    <pv_value />
+    <rotation_angle>0.0</rotation_angle>
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
     <show_units>false</show_units>
+    <text>######</text>
+    <tooltip>$(pv_name)
+$(pv_value)</tooltip>
     <transparent>true</transparent>
+    <vertical_alignment>1</vertical_alignment>
+    <visible>true</visible>
+    <widget_type>Text Update</widget_type>
     <width>64</width>
+    <wrap_words>false</wrap_words>
+    <wuid>-7b8876ae:15d7508270c:-7708</wuid>
     <x>232</x>
     <y>104</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.TextUpdate" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.TextUpdate" version="1.0.0">
+    <actions hook="false" hook_all="false" />
+    <alarm_pulsing>false</alarm_pulsing>
+    <auto_size>false</auto_size>
+    <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color blue="255" green="255" name="White" red="255" />
+      <color name="White" red="255" green="255" blue="255" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
-    <border_style>None</border_style>
+    <border_color>
+      <color red="0" green="128" blue="255" />
+    </border_color>
+    <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="14" pixels="true" style="0" />
+      <fontdata fontName="liberation sans" height="14" style="0" pixels="true" />
     </font>
+    <forecolor_alarm_sensitive>false</forecolor_alarm_sensitive>
     <foreground_color>
-      <color blue="0" green="0" name="Black" red="0" />
+      <color name="Black" red="0" green="0" blue="0" />
     </foreground_color>
     <format_type>0</format_type>
     <height>16</height>
@@ -591,173 +1171,290 @@ peak</text>
     <precision>0</precision>
     <precision_from_pv>true</precision_from_pv>
     <pv_name>$(device):$(mode):PPY</pv_name>
+    <pv_value />
+    <rotation_angle>0.0</rotation_angle>
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
     <show_units>false</show_units>
+    <text>######</text>
+    <tooltip>$(pv_name)
+$(pv_value)</tooltip>
     <transparent>true</transparent>
+    <vertical_alignment>1</vertical_alignment>
+    <visible>true</visible>
+    <widget_type>Text Update</widget_type>
     <width>64</width>
+    <wrap_words>false</wrap_words>
+    <wuid>-7b8876ae:15d7508270c:-7707</wuid>
     <x>296</x>
     <y>104</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <actions hook="false" hook_all="false" />
     <auto_size>true</auto_size>
     <background_color>
-      <color blue="255" green="255" name="White" red="255" />
+      <color name="White" red="255" green="255" blue="255" />
     </background_color>
-    <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
-      <color blue="0" green="0" name="Black" red="0" />
+      <color name="Black" red="0" green="0" blue="0" />
     </border_color>
     <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="14" pixels="true" style="1" />
+      <fontdata fontName="liberation sans" height="14" style="1" pixels="true" />
     </font>
     <foreground_color>
-      <color blue="0" green="0" name="Text: FG" red="0" />
+      <color name="Text: FG" red="0" green="0" blue="0" />
     </foreground_color>
-    <height>16</height>
+    <height>18</height>
     <horizontal_alignment>0</horizontal_alignment>
     <name>EDM Label</name>
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
     <text>Y:</text>
+    <tooltip></tooltip>
     <transparent>true</transparent>
-    <width>15</width>
+    <vertical_alignment>1</vertical_alignment>
+    <visible>true</visible>
+    <widget_type>Label</widget_type>
+    <width>14</width>
+    <wrap_words>false</wrap_words>
+    <wuid>-7b8876ae:15d7508270c:-7706</wuid>
     <x>16</x>
     <y>104</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <actions hook="false" hook_all="false" />
     <auto_size>true</auto_size>
     <background_color>
-      <color blue="255" green="255" name="White" red="255" />
+      <color name="White" red="255" green="255" blue="255" />
     </background_color>
-    <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
-      <color blue="0" green="0" name="Black" red="0" />
+      <color name="Black" red="0" green="0" blue="0" />
     </border_color>
     <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="14" pixels="true" style="0" />
+      <fontdata fontName="liberation sans" height="14" style="0" pixels="true" />
     </font>
     <foreground_color>
-      <color blue="0" green="0" name="Text: FG" red="0" />
+      <color name="Text: FG" red="0" green="0" blue="0" />
     </foreground_color>
-    <height>16</height>
+    <height>18</height>
     <horizontal_alignment>0</horizontal_alignment>
     <name>EDM Label</name>
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
     <text>um</text>
+    <tooltip></tooltip>
     <transparent>true</transparent>
-    <width>19</width>
+    <vertical_alignment>1</vertical_alignment>
+    <visible>true</visible>
+    <widget_type>Label</widget_type>
+    <width>21</width>
+    <wrap_words>false</wrap_words>
+    <wuid>-7b8876ae:15d7508270c:-7705</wuid>
     <x>368</x>
     <y>104</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <actions hook="false" hook_all="false" />
     <auto_size>true</auto_size>
     <background_color>
-      <color blue="255" green="255" name="White" red="255" />
+      <color name="White" red="255" green="255" blue="255" />
     </background_color>
-    <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
-      <color blue="0" green="0" name="Black" red="0" />
+      <color name="Black" red="0" green="0" blue="0" />
     </border_color>
     <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="14" pixels="true" style="1" />
+      <fontdata fontName="liberation sans" height="14" style="1" pixels="true" />
     </font>
     <foreground_color>
-      <color blue="0" green="0" name="Text: FG" red="0" />
+      <color name="Text: FG" red="0" green="0" blue="0" />
     </foreground_color>
-    <height>16</height>
+    <height>18</height>
     <horizontal_alignment>0</horizontal_alignment>
     <name>EDM Label</name>
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
     <text>I</text>
+    <tooltip></tooltip>
     <transparent>true</transparent>
+    <vertical_alignment>1</vertical_alignment>
+    <visible>true</visible>
+    <widget_type>Label</widget_type>
     <width>4</width>
+    <wrap_words>false</wrap_words>
+    <wuid>-7b8876ae:15d7508270c:-7704</wuid>
     <x>160</x>
     <y>152</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <actions hook="false" hook_all="false" />
     <auto_size>true</auto_size>
     <background_color>
-      <color blue="255" green="255" name="White" red="255" />
+      <color name="White" red="255" green="255" blue="255" />
     </background_color>
-    <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
-      <color blue="0" green="0" name="Black" red="0" />
+      <color name="Black" red="0" green="0" blue="0" />
     </border_color>
     <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="14" pixels="true" style="1" />
+      <fontdata fontName="liberation sans" height="14" style="1" pixels="true" />
     </font>
     <foreground_color>
-      <color blue="0" green="0" name="Text: FG" red="0" />
+      <color name="Text: FG" red="0" green="0" blue="0" />
     </foreground_color>
-    <height>16</height>
+    <height>18</height>
     <horizontal_alignment>0</horizontal_alignment>
     <name>EDM Label</name>
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
     <text>Mag</text>
+    <tooltip></tooltip>
     <transparent>true</transparent>
+    <vertical_alignment>1</vertical_alignment>
+    <visible>true</visible>
+    <widget_type>Label</widget_type>
     <width>30</width>
+    <wrap_words>false</wrap_words>
+    <wuid>-7b8876ae:15d7508270c:-7703</wuid>
     <x>272</x>
     <y>152</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <actions hook="false" hook_all="false" />
     <auto_size>true</auto_size>
     <background_color>
-      <color blue="255" green="255" name="White" red="255" />
+      <color name="White" red="255" green="255" blue="255" />
     </background_color>
-    <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
-      <color blue="0" green="0" name="Black" red="0" />
+      <color name="Black" red="0" green="0" blue="0" />
     </border_color>
     <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="14" pixels="true" style="1" />
+      <fontdata fontName="liberation sans" height="14" style="1" pixels="true" />
     </font>
     <foreground_color>
-      <color blue="0" green="0" name="Text: FG" red="0" />
+      <color name="Text: FG" red="0" green="0" blue="0" />
     </foreground_color>
-    <height>16</height>
+    <height>18</height>
     <horizontal_alignment>0</horizontal_alignment>
     <name>EDM Label</name>
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
     <text>Phase</text>
+    <tooltip></tooltip>
     <transparent>true</transparent>
+    <vertical_alignment>1</vertical_alignment>
+    <visible>true</visible>
+    <widget_type>Label</widget_type>
     <width>43</width>
+    <wrap_words>false</wrap_words>
+    <wuid>-7b8876ae:15d7508270c:-7702</wuid>
     <x>344</x>
     <y>152</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <actions hook="false" hook_all="false" />
     <auto_size>true</auto_size>
     <background_color>
-      <color blue="255" green="255" name="White" red="255" />
+      <color name="White" red="255" green="255" blue="255" />
     </background_color>
-    <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
-      <color blue="0" green="0" name="Black" red="0" />
+      <color name="Black" red="0" green="0" blue="0" />
     </border_color>
     <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="14" pixels="true" style="1" />
+      <fontdata fontName="liberation sans" height="14" style="1" pixels="true" />
     </font>
     <foreground_color>
-      <color blue="0" green="0" name="Text: FG" red="0" />
+      <color name="Text: FG" red="0" green="0" blue="0" />
     </foreground_color>
-    <height>16</height>
+    <height>18</height>
     <horizontal_alignment>0</horizontal_alignment>
     <name>EDM Label</name>
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
     <text>Q</text>
+    <tooltip></tooltip>
     <transparent>true</transparent>
+    <vertical_alignment>1</vertical_alignment>
+    <visible>true</visible>
+    <widget_type>Label</widget_type>
     <width>12</width>
+    <wrap_words>false</wrap_words>
+    <wuid>-7b8876ae:15d7508270c:-7701</wuid>
     <x>224</x>
     <y>152</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.TextUpdate" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.TextUpdate" version="1.0.0">
+    <actions hook="false" hook_all="false" />
+    <alarm_pulsing>false</alarm_pulsing>
+    <auto_size>false</auto_size>
+    <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color blue="255" green="255" name="White" red="255" />
+      <color name="White" red="255" green="255" blue="255" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
-    <border_style>None</border_style>
+    <border_color>
+      <color red="0" green="128" blue="255" />
+    </border_color>
+    <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="14" pixels="true" style="0" />
+      <fontdata fontName="liberation sans" height="14" style="0" pixels="true" />
     </font>
+    <forecolor_alarm_sensitive>false</forecolor_alarm_sensitive>
     <foreground_color>
-      <color blue="0" green="0" name="Black" red="0" />
+      <color name="Black" red="0" green="0" blue="0" />
     </foreground_color>
     <format_type>0</format_type>
     <height>16</height>
@@ -766,23 +1463,50 @@ peak</text>
     <precision>0</precision>
     <precision_from_pv>true</precision_from_pv>
     <pv_name>$(device):$(mode):TUNEIX</pv_name>
+    <pv_value />
+    <rotation_angle>0.0</rotation_angle>
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
     <show_units>false</show_units>
+    <text>######</text>
+    <tooltip>$(pv_name)
+$(pv_value)</tooltip>
     <transparent>true</transparent>
+    <vertical_alignment>1</vertical_alignment>
+    <visible>true</visible>
+    <widget_type>Text Update</widget_type>
     <width>64</width>
+    <wrap_words>false</wrap_words>
+    <wuid>-7b8876ae:15d7508270c:-7700</wuid>
     <x>112</x>
     <y>168</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.TextUpdate" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.TextUpdate" version="1.0.0">
+    <actions hook="false" hook_all="false" />
+    <alarm_pulsing>false</alarm_pulsing>
+    <auto_size>false</auto_size>
+    <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color blue="255" green="255" name="White" red="255" />
+      <color name="White" red="255" green="255" blue="255" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
-    <border_style>None</border_style>
+    <border_color>
+      <color red="0" green="128" blue="255" />
+    </border_color>
+    <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="14" pixels="true" style="0" />
+      <fontdata fontName="liberation sans" height="14" style="0" pixels="true" />
     </font>
+    <forecolor_alarm_sensitive>false</forecolor_alarm_sensitive>
     <foreground_color>
-      <color blue="0" green="0" name="Black" red="0" />
+      <color name="Black" red="0" green="0" blue="0" />
     </foreground_color>
     <format_type>0</format_type>
     <height>16</height>
@@ -791,23 +1515,50 @@ peak</text>
     <precision>0</precision>
     <precision_from_pv>true</precision_from_pv>
     <pv_name>$(device):$(mode):TUNEQX</pv_name>
+    <pv_value />
+    <rotation_angle>0.0</rotation_angle>
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
     <show_units>false</show_units>
+    <text>######</text>
+    <tooltip>$(pv_name)
+$(pv_value)</tooltip>
     <transparent>true</transparent>
+    <vertical_alignment>1</vertical_alignment>
+    <visible>true</visible>
+    <widget_type>Text Update</widget_type>
     <width>64</width>
+    <wrap_words>false</wrap_words>
+    <wuid>-7b8876ae:15d7508270c:-76ff</wuid>
     <x>176</x>
     <y>168</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.TextUpdate" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.TextUpdate" version="1.0.0">
+    <actions hook="false" hook_all="false" />
+    <alarm_pulsing>false</alarm_pulsing>
+    <auto_size>false</auto_size>
+    <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color blue="255" green="255" name="White" red="255" />
+      <color name="White" red="255" green="255" blue="255" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
-    <border_style>None</border_style>
+    <border_color>
+      <color red="0" green="128" blue="255" />
+    </border_color>
+    <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="14" pixels="true" style="0" />
+      <fontdata fontName="liberation sans" height="14" style="0" pixels="true" />
     </font>
+    <forecolor_alarm_sensitive>false</forecolor_alarm_sensitive>
     <foreground_color>
-      <color blue="0" green="0" name="Black" red="0" />
+      <color name="Black" red="0" green="0" blue="0" />
     </foreground_color>
     <format_type>0</format_type>
     <height>16</height>
@@ -816,23 +1567,50 @@ peak</text>
     <precision>0</precision>
     <precision_from_pv>true</precision_from_pv>
     <pv_name>$(device):$(mode):TUNEMAGX</pv_name>
+    <pv_value />
+    <rotation_angle>0.0</rotation_angle>
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
     <show_units>false</show_units>
+    <text>######</text>
+    <tooltip>$(pv_name)
+$(pv_value)</tooltip>
     <transparent>true</transparent>
+    <vertical_alignment>1</vertical_alignment>
+    <visible>true</visible>
+    <widget_type>Text Update</widget_type>
     <width>64</width>
+    <wrap_words>false</wrap_words>
+    <wuid>-7b8876ae:15d7508270c:-76fe</wuid>
     <x>240</x>
     <y>168</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.TextUpdate" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.TextUpdate" version="1.0.0">
+    <actions hook="false" hook_all="false" />
+    <alarm_pulsing>false</alarm_pulsing>
+    <auto_size>false</auto_size>
+    <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color blue="255" green="255" name="White" red="255" />
+      <color name="White" red="255" green="255" blue="255" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
-    <border_style>None</border_style>
+    <border_color>
+      <color red="0" green="128" blue="255" />
+    </border_color>
+    <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="14" pixels="true" style="0" />
+      <fontdata fontName="liberation sans" height="14" style="0" pixels="true" />
     </font>
+    <forecolor_alarm_sensitive>false</forecolor_alarm_sensitive>
     <foreground_color>
-      <color blue="0" green="0" name="Black" red="0" />
+      <color name="Black" red="0" green="0" blue="0" />
     </foreground_color>
     <format_type>0</format_type>
     <height>16</height>
@@ -841,48 +1619,90 @@ peak</text>
     <precision>0</precision>
     <precision_from_pv>true</precision_from_pv>
     <pv_name>$(device):$(mode):TUNEPHX</pv_name>
+    <pv_value />
+    <rotation_angle>0.0</rotation_angle>
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
     <show_units>false</show_units>
+    <text>######</text>
+    <tooltip>$(pv_name)
+$(pv_value)</tooltip>
     <transparent>true</transparent>
+    <vertical_alignment>1</vertical_alignment>
+    <visible>true</visible>
+    <widget_type>Text Update</widget_type>
     <width>48</width>
+    <wrap_words>false</wrap_words>
+    <wuid>-7b8876ae:15d7508270c:-76fd</wuid>
     <x>336</x>
     <y>168</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <actions hook="false" hook_all="false" />
     <auto_size>true</auto_size>
     <background_color>
-      <color blue="255" green="255" name="White" red="255" />
+      <color name="White" red="255" green="255" blue="255" />
     </background_color>
-    <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
-      <color blue="0" green="0" name="Black" red="0" />
+      <color name="Black" red="0" green="0" blue="0" />
     </border_color>
     <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="14" pixels="true" style="1" />
+      <fontdata fontName="liberation sans" height="14" style="1" pixels="true" />
     </font>
     <foreground_color>
-      <color blue="0" green="0" name="Text: FG" red="0" />
+      <color name="Text: FG" red="0" green="0" blue="0" />
     </foreground_color>
-    <height>16</height>
+    <height>18</height>
     <horizontal_alignment>0</horizontal_alignment>
     <name>EDM Label</name>
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
     <text>X:</text>
+    <tooltip></tooltip>
     <transparent>true</transparent>
-    <width>14</width>
+    <vertical_alignment>1</vertical_alignment>
+    <visible>true</visible>
+    <widget_type>Label</widget_type>
+    <width>15</width>
+    <wrap_words>false</wrap_words>
+    <wuid>-7b8876ae:15d7508270c:-76fc</wuid>
     <x>16</x>
     <y>168</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.TextUpdate" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.TextUpdate" version="1.0.0">
+    <actions hook="false" hook_all="false" />
+    <alarm_pulsing>false</alarm_pulsing>
+    <auto_size>false</auto_size>
+    <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color blue="255" green="255" name="White" red="255" />
+      <color name="White" red="255" green="255" blue="255" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
-    <border_style>None</border_style>
+    <border_color>
+      <color red="0" green="128" blue="255" />
+    </border_color>
+    <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="14" pixels="true" style="0" />
+      <fontdata fontName="liberation sans" height="14" style="0" pixels="true" />
     </font>
+    <forecolor_alarm_sensitive>false</forecolor_alarm_sensitive>
     <foreground_color>
-      <color blue="0" green="0" name="Black" red="0" />
+      <color name="Black" red="0" green="0" blue="0" />
     </foreground_color>
     <format_type>0</format_type>
     <height>16</height>
@@ -891,23 +1711,50 @@ peak</text>
     <precision>0</precision>
     <precision_from_pv>true</precision_from_pv>
     <pv_name>$(device):$(mode):TUNEIY</pv_name>
+    <pv_value />
+    <rotation_angle>0.0</rotation_angle>
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
     <show_units>false</show_units>
+    <text>######</text>
+    <tooltip>$(pv_name)
+$(pv_value)</tooltip>
     <transparent>true</transparent>
+    <vertical_alignment>1</vertical_alignment>
+    <visible>true</visible>
+    <widget_type>Text Update</widget_type>
     <width>64</width>
+    <wrap_words>false</wrap_words>
+    <wuid>-7b8876ae:15d7508270c:-76fb</wuid>
     <x>112</x>
     <y>184</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.TextUpdate" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.TextUpdate" version="1.0.0">
+    <actions hook="false" hook_all="false" />
+    <alarm_pulsing>false</alarm_pulsing>
+    <auto_size>false</auto_size>
+    <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color blue="255" green="255" name="White" red="255" />
+      <color name="White" red="255" green="255" blue="255" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
-    <border_style>None</border_style>
+    <border_color>
+      <color red="0" green="128" blue="255" />
+    </border_color>
+    <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="14" pixels="true" style="0" />
+      <fontdata fontName="liberation sans" height="14" style="0" pixels="true" />
     </font>
+    <forecolor_alarm_sensitive>false</forecolor_alarm_sensitive>
     <foreground_color>
-      <color blue="0" green="0" name="Black" red="0" />
+      <color name="Black" red="0" green="0" blue="0" />
     </foreground_color>
     <format_type>0</format_type>
     <height>16</height>
@@ -916,23 +1763,50 @@ peak</text>
     <precision>0</precision>
     <precision_from_pv>true</precision_from_pv>
     <pv_name>$(device):$(mode):TUNEQY</pv_name>
+    <pv_value />
+    <rotation_angle>0.0</rotation_angle>
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
     <show_units>false</show_units>
+    <text>######</text>
+    <tooltip>$(pv_name)
+$(pv_value)</tooltip>
     <transparent>true</transparent>
+    <vertical_alignment>1</vertical_alignment>
+    <visible>true</visible>
+    <widget_type>Text Update</widget_type>
     <width>64</width>
+    <wrap_words>false</wrap_words>
+    <wuid>-7b8876ae:15d7508270c:-76fa</wuid>
     <x>176</x>
     <y>184</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.TextUpdate" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.TextUpdate" version="1.0.0">
+    <actions hook="false" hook_all="false" />
+    <alarm_pulsing>false</alarm_pulsing>
+    <auto_size>false</auto_size>
+    <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color blue="255" green="255" name="White" red="255" />
+      <color name="White" red="255" green="255" blue="255" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
-    <border_style>None</border_style>
+    <border_color>
+      <color red="0" green="128" blue="255" />
+    </border_color>
+    <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="14" pixels="true" style="0" />
+      <fontdata fontName="liberation sans" height="14" style="0" pixels="true" />
     </font>
+    <forecolor_alarm_sensitive>false</forecolor_alarm_sensitive>
     <foreground_color>
-      <color blue="0" green="0" name="Black" red="0" />
+      <color name="Black" red="0" green="0" blue="0" />
     </foreground_color>
     <format_type>0</format_type>
     <height>16</height>
@@ -941,23 +1815,50 @@ peak</text>
     <precision>0</precision>
     <precision_from_pv>true</precision_from_pv>
     <pv_name>$(device):$(mode):TUNEMAGY</pv_name>
+    <pv_value />
+    <rotation_angle>0.0</rotation_angle>
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
     <show_units>false</show_units>
+    <text>######</text>
+    <tooltip>$(pv_name)
+$(pv_value)</tooltip>
     <transparent>true</transparent>
+    <vertical_alignment>1</vertical_alignment>
+    <visible>true</visible>
+    <widget_type>Text Update</widget_type>
     <width>64</width>
+    <wrap_words>false</wrap_words>
+    <wuid>-7b8876ae:15d7508270c:-76f9</wuid>
     <x>240</x>
     <y>184</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.TextUpdate" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.TextUpdate" version="1.0.0">
+    <actions hook="false" hook_all="false" />
+    <alarm_pulsing>false</alarm_pulsing>
+    <auto_size>false</auto_size>
+    <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color blue="255" green="255" name="White" red="255" />
+      <color name="White" red="255" green="255" blue="255" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
-    <border_style>None</border_style>
+    <border_color>
+      <color red="0" green="128" blue="255" />
+    </border_color>
+    <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="14" pixels="true" style="0" />
+      <fontdata fontName="liberation sans" height="14" style="0" pixels="true" />
     </font>
+    <forecolor_alarm_sensitive>false</forecolor_alarm_sensitive>
     <foreground_color>
-      <color blue="0" green="0" name="Black" red="0" />
+      <color name="Black" red="0" green="0" blue="0" />
     </foreground_color>
     <format_type>0</format_type>
     <height>16</height>
@@ -966,177 +1867,358 @@ peak</text>
     <precision>0</precision>
     <precision_from_pv>true</precision_from_pv>
     <pv_name>$(device):$(mode):TUNEPHY</pv_name>
+    <pv_value />
+    <rotation_angle>0.0</rotation_angle>
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
     <show_units>false</show_units>
+    <text>######</text>
+    <tooltip>$(pv_name)
+$(pv_value)</tooltip>
     <transparent>true</transparent>
+    <vertical_alignment>1</vertical_alignment>
+    <visible>true</visible>
+    <widget_type>Text Update</widget_type>
     <width>48</width>
+    <wrap_words>false</wrap_words>
+    <wuid>-7b8876ae:15d7508270c:-76f8</wuid>
     <x>336</x>
     <y>184</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <actions hook="false" hook_all="false" />
     <auto_size>true</auto_size>
     <background_color>
-      <color blue="255" green="255" name="White" red="255" />
+      <color name="White" red="255" green="255" blue="255" />
     </background_color>
-    <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
-      <color blue="0" green="0" name="Black" red="0" />
+      <color name="Black" red="0" green="0" blue="0" />
     </border_color>
     <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="14" pixels="true" style="1" />
+      <fontdata fontName="liberation sans" height="14" style="1" pixels="true" />
     </font>
     <foreground_color>
-      <color blue="0" green="0" name="Text: FG" red="0" />
+      <color name="Text: FG" red="0" green="0" blue="0" />
     </foreground_color>
-    <height>16</height>
+    <height>18</height>
     <horizontal_alignment>0</horizontal_alignment>
     <name>EDM Label</name>
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
     <text>Y:</text>
+    <tooltip></tooltip>
     <transparent>true</transparent>
-    <width>15</width>
+    <vertical_alignment>1</vertical_alignment>
+    <visible>true</visible>
+    <widget_type>Label</widget_type>
+    <width>14</width>
+    <wrap_words>false</wrap_words>
+    <wuid>-7b8876ae:15d7508270c:-76f7</wuid>
     <x>16</x>
     <y>184</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.TextInput" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.TextInput" version="2.0.0">
+    <actions hook="false" hook_all="false" />
+    <alarm_pulsing>false</alarm_pulsing>
+    <auto_size>false</auto_size>
+    <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color blue="255" green="255" name="White" red="255" />
+      <color name="White" red="255" green="255" blue="255" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
-    <border_style>None</border_style>
+    <border_color>
+      <color red="0" green="128" blue="255" />
+    </border_color>
+    <border_style>0</border_style>
+    <border_width>1</border_width>
+    <confirm_message></confirm_message>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="14" pixels="true" style="0" />
+      <fontdata fontName="liberation sans" height="14" style="0" pixels="true" />
     </font>
+    <forecolor_alarm_sensitive>false</forecolor_alarm_sensitive>
     <foreground_color>
-      <color blue="0" green="0" name="Black" red="0" />
+      <color name="Black" red="0" green="0" blue="0" />
     </foreground_color>
     <format_type>0</format_type>
     <height>20</height>
     <horizontal_alignment>2</horizontal_alignment>
+    <limits_from_pv>false</limits_from_pv>
+    <maximum>Infinity</maximum>
+    <minimum>-Infinity</minimum>
+    <multiline_input>false</multiline_input>
     <name>EDM TextInput</name>
     <precision>0</precision>
     <precision_from_pv>true</precision_from_pv>
     <pv_name>$(device):$(mode):TUNEX_S</pv_name>
+    <pv_value />
+    <rotation_angle>0.0</rotation_angle>
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
+    <selector_type>0</selector_type>
     <show_units>false</show_units>
+    <style>0</style>
+    <text></text>
+    <tooltip>$(pv_name)
+$(pv_value)</tooltip>
     <transparent>true</transparent>
+    <visible>true</visible>
+    <widget_type>Text Input</widget_type>
     <width>64</width>
+    <wuid>-7b8876ae:15d7508270c:-76f6</wuid>
     <x>40</x>
     <y>160</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <actions hook="false" hook_all="false" />
     <auto_size>false</auto_size>
     <background_color>
-      <color blue="102" green="102" name="Grey 40%" red="102" />
+      <color name="Grey 40%" red="102" green="102" blue="102" />
     </background_color>
-    <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
-      <color blue="230" green="230" name="Grey 90%" red="230" />
+      <color name="Grey 90%" red="230" green="230" blue="230" />
     </border_color>
     <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="12" pixels="true" style="0" />
+      <fontdata fontName="liberation sans" height="12" style="0" pixels="true" />
     </font>
     <foreground_color>
-      <color blue="230" green="230" name="Grey 90%" red="230" />
+      <color name="Grey 90%" red="230" green="230" blue="230" />
     </foreground_color>
     <height>16</height>
     <horizontal_alignment>1</horizontal_alignment>
     <name>EDM Label</name>
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
     <text>Tune Response</text>
+    <tooltip></tooltip>
     <transparent>false</transparent>
+    <vertical_alignment>1</vertical_alignment>
+    <visible>true</visible>
+    <widget_type>Label</widget_type>
     <width>120</width>
+    <wrap_words>false</wrap_words>
+    <wuid>-7b8876ae:15d7508270c:-76f5</wuid>
     <x>8</x>
     <y>136</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.Rectangle" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.Rectangle" version="1.0.0">
+    <actions hook="false" hook_all="false" />
+    <alarm_pulsing>false</alarm_pulsing>
+    <alpha>255</alpha>
+    <anti_alias>true</anti_alias>
+    <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color blue="192" green="192" name="Grey 75%" red="192" />
+      <color name="Grey 75%" red="192" green="192" blue="192" />
     </background_color>
+    <bg_gradient_color>
+      <color red="255" green="255" blue="255" />
+    </bg_gradient_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
+    <border_color>
+      <color red="0" green="128" blue="255" />
+    </border_color>
+    <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
+    <fg_gradient_color>
+      <color red="255" green="255" blue="255" />
+    </fg_gradient_color>
+    <fill_level>0.0</fill_level>
+    <font>
+      <opifont.name fontName="Liberation Sans" height="15" style="0" pixels="true">Default</opifont.name>
+    </font>
+    <forecolor_alarm_sensitive>false</forecolor_alarm_sensitive>
+    <foreground_color>
+      <color red="255" green="0" blue="0" />
+    </foreground_color>
+    <gradient>false</gradient>
     <height>17</height>
+    <horizontal_fill>true</horizontal_fill>
     <line_color>
-      <color blue="0" green="0" name="Black" red="0" />
+      <color name="Black" red="0" green="0" blue="0" />
     </line_color>
     <line_style>0</line_style>
     <line_width>1</line_width>
     <name>EDM Rectangle</name>
+    <pv_name></pv_name>
+    <pv_value />
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
+    <tooltip>$(pv_name)
+$(pv_value)</tooltip>
     <transparent>true</transparent>
     <visible>true</visible>
+    <widget_type>Rectangle</widget_type>
     <width>121</width>
+    <wuid>-7b8876ae:15d7508270c:-76f4</wuid>
     <x>8</x>
     <y>136</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.TextInput" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.TextInput" version="2.0.0">
+    <actions hook="false" hook_all="false" />
+    <alarm_pulsing>false</alarm_pulsing>
+    <auto_size>false</auto_size>
+    <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color blue="255" green="255" name="White" red="255" />
+      <color name="White" red="255" green="255" blue="255" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
-    <border_style>None</border_style>
+    <border_color>
+      <color red="0" green="128" blue="255" />
+    </border_color>
+    <border_style>0</border_style>
+    <border_width>1</border_width>
+    <confirm_message></confirm_message>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="14" pixels="true" style="0" />
+      <fontdata fontName="liberation sans" height="14" style="0" pixels="true" />
     </font>
+    <forecolor_alarm_sensitive>false</forecolor_alarm_sensitive>
     <foreground_color>
-      <color blue="0" green="0" name="Black" red="0" />
+      <color name="Black" red="0" green="0" blue="0" />
     </foreground_color>
     <format_type>0</format_type>
     <height>20</height>
     <horizontal_alignment>2</horizontal_alignment>
+    <limits_from_pv>false</limits_from_pv>
+    <maximum>Infinity</maximum>
+    <minimum>-Infinity</minimum>
+    <multiline_input>false</multiline_input>
     <name>EDM TextInput</name>
     <precision>0</precision>
     <precision_from_pv>true</precision_from_pv>
     <pv_name>$(device):$(mode):TUNEY_S</pv_name>
+    <pv_value />
+    <rotation_angle>0.0</rotation_angle>
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
+    <selector_type>0</selector_type>
     <show_units>false</show_units>
+    <style>0</style>
+    <text></text>
+    <tooltip>$(pv_name)
+$(pv_value)</tooltip>
     <transparent>true</transparent>
+    <visible>true</visible>
+    <widget_type>Text Input</widget_type>
     <width>64</width>
+    <wuid>-7b8876ae:15d7508270c:-76f3</wuid>
     <x>40</x>
     <y>184</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <actions hook="false" hook_all="false" />
     <auto_size>true</auto_size>
     <background_color>
-      <color blue="255" green="255" name="White" red="255" />
+      <color name="White" red="255" green="255" blue="255" />
     </background_color>
-    <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
-      <color blue="0" green="0" name="Black" red="0" />
+      <color name="Black" red="0" green="0" blue="0" />
     </border_color>
     <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="14" pixels="true" style="0" />
+      <fontdata fontName="liberation sans" height="14" style="0" pixels="true" />
     </font>
     <foreground_color>
-      <color blue="0" green="0" name="Text: FG" red="0" />
+      <color name="Text: FG" red="0" green="0" blue="0" />
     </foreground_color>
-    <height>16</height>
+    <height>18</height>
     <horizontal_alignment>0</horizontal_alignment>
     <name>EDM Label</name>
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
     <text>nm</text>
+    <tooltip></tooltip>
     <transparent>true</transparent>
-    <width>19</width>
+    <vertical_alignment>1</vertical_alignment>
+    <visible>true</visible>
+    <widget_type>Label</widget_type>
+    <width>21</width>
+    <wrap_words>false</wrap_words>
+    <wuid>-7b8876ae:15d7508270c:-76f2</wuid>
     <x>312</x>
     <y>184</y>
   </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0">
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <actions hook="false" hook_all="false" />
     <auto_size>true</auto_size>
     <background_color>
-      <color blue="255" green="255" name="White" red="255" />
+      <color name="White" red="255" green="255" blue="255" />
     </background_color>
-    <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
-      <color blue="0" green="0" name="Black" red="0" />
+      <color name="Black" red="0" green="0" blue="0" />
     </border_color>
     <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
     <font>
-      <fontdata fontName="liberation sans" height="14" pixels="true" style="0" />
+      <fontdata fontName="liberation sans" height="14" style="0" pixels="true" />
     </font>
     <foreground_color>
-      <color blue="0" green="0" name="Text: FG" red="0" />
+      <color name="Text: FG" red="0" green="0" blue="0" />
     </foreground_color>
-    <height>16</height>
+    <height>18</height>
     <horizontal_alignment>0</horizontal_alignment>
     <name>EDM Label</name>
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
     <text>nm</text>
+    <tooltip></tooltip>
     <transparent>true</transparent>
-    <width>19</width>
+    <vertical_alignment>1</vertical_alignment>
+    <visible>true</visible>
+    <widget_type>Label</widget_type>
+    <width>21</width>
+    <wrap_words>false</wrap_words>
+    <wuid>-7b8876ae:15d7508270c:-76f1</wuid>
     <x>312</x>
     <y>168</y>
   </widget>
