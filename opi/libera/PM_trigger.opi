@@ -10,7 +10,7 @@
   <background_color>
     <color name="Canvas" red="200" green="200" blue="200" />
   </background_color>
-  <boy_version>5.1.0.201705021243</boy_version>
+  <boy_version>5.1.0.201707201056</boy_version>
   <foreground_color>
     <color name="Black" red="0" green="0" blue="0" />
   </foreground_color>
@@ -327,13 +327,13 @@ $(pv_value)</tooltip>
     <auto_size>false</auto_size>
     <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color name="White" red="255" green="255" blue="255" />
+      <color name="Canvas" red="200" green="200" blue="200" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
       <color red="0" green="128" blue="255" />
     </border_color>
-    <border_style>0</border_style>
+    <border_style>3</border_style>
     <border_width>1</border_width>
     <confirm_message></confirm_message>
     <enabled>true</enabled>
@@ -348,8 +348,8 @@ $(pv_value)</tooltip>
     <height>20</height>
     <horizontal_alignment>2</horizontal_alignment>
     <limits_from_pv>false</limits_from_pv>
-    <maximum>Infinity</maximum>
-    <minimum>-Infinity</minimum>
+    <maximum>1.7976931348623157E308</maximum>
+    <minimum>-1.7976931348623157E308</minimum>
     <multiline_input>false</multiline_input>
     <name>EDM TextInput</name>
     <precision>0</precision>
@@ -370,7 +370,7 @@ $(pv_value)</tooltip>
     <text></text>
     <tooltip>$(pv_name)
 $(pv_value)</tooltip>
-    <transparent>true</transparent>
+    <transparent>false</transparent>
     <visible>true</visible>
     <widget_type>Text Input</widget_type>
     <width>64</width>
@@ -384,13 +384,13 @@ $(pv_value)</tooltip>
     <auto_size>false</auto_size>
     <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color name="White" red="255" green="255" blue="255" />
+      <color name="Canvas" red="200" green="200" blue="200" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
       <color red="0" green="128" blue="255" />
     </border_color>
-    <border_style>0</border_style>
+    <border_style>3</border_style>
     <border_width>1</border_width>
     <confirm_message></confirm_message>
     <enabled>true</enabled>
@@ -405,8 +405,8 @@ $(pv_value)</tooltip>
     <height>20</height>
     <horizontal_alignment>2</horizontal_alignment>
     <limits_from_pv>false</limits_from_pv>
-    <maximum>Infinity</maximum>
-    <minimum>-Infinity</minimum>
+    <maximum>1.7976931348623157E308</maximum>
+    <minimum>-1.7976931348623157E308</minimum>
     <multiline_input>false</multiline_input>
     <name>EDM TextInput</name>
     <precision>0</precision>
@@ -427,7 +427,7 @@ $(pv_value)</tooltip>
     <text></text>
     <tooltip>$(pv_name)
 $(pv_value)</tooltip>
-    <transparent>true</transparent>
+    <transparent>false</transparent>
     <visible>true</visible>
     <widget_type>Text Input</widget_type>
     <width>64</width>
@@ -481,13 +481,13 @@ $(pv_value)</tooltip>
     <auto_size>false</auto_size>
     <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color name="White" red="255" green="255" blue="255" />
+      <color name="Canvas" red="200" green="200" blue="200" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
       <color red="0" green="128" blue="255" />
     </border_color>
-    <border_style>0</border_style>
+    <border_style>3</border_style>
     <border_width>1</border_width>
     <confirm_message></confirm_message>
     <enabled>true</enabled>
@@ -502,8 +502,8 @@ $(pv_value)</tooltip>
     <height>20</height>
     <horizontal_alignment>2</horizontal_alignment>
     <limits_from_pv>false</limits_from_pv>
-    <maximum>Infinity</maximum>
-    <minimum>-Infinity</minimum>
+    <maximum>1.7976931348623157E308</maximum>
+    <minimum>-1.7976931348623157E308</minimum>
     <multiline_input>false</multiline_input>
     <name>EDM TextInput</name>
     <precision>0</precision>
@@ -524,7 +524,7 @@ $(pv_value)</tooltip>
     <text></text>
     <tooltip>$(pv_name)
 $(pv_value)</tooltip>
-    <transparent>true</transparent>
+    <transparent>false</transparent>
     <visible>true</visible>
     <widget_type>Text Input</widget_type>
     <width>64</width>
@@ -538,13 +538,13 @@ $(pv_value)</tooltip>
     <auto_size>false</auto_size>
     <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color name="White" red="255" green="255" blue="255" />
+      <color name="Canvas" red="200" green="200" blue="200" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
       <color red="0" green="128" blue="255" />
     </border_color>
-    <border_style>0</border_style>
+    <border_style>3</border_style>
     <border_width>1</border_width>
     <confirm_message></confirm_message>
     <enabled>true</enabled>
@@ -559,8 +559,8 @@ $(pv_value)</tooltip>
     <height>20</height>
     <horizontal_alignment>2</horizontal_alignment>
     <limits_from_pv>false</limits_from_pv>
-    <maximum>Infinity</maximum>
-    <minimum>-Infinity</minimum>
+    <maximum>1.7976931348623157E308</maximum>
+    <minimum>-1.7976931348623157E308</minimum>
     <multiline_input>false</multiline_input>
     <name>EDM TextInput</name>
     <precision>0</precision>
@@ -581,7 +581,7 @@ $(pv_value)</tooltip>
     <text></text>
     <tooltip>$(pv_name)
 $(pv_value)</tooltip>
-    <transparent>true</transparent>
+    <transparent>false</transparent>
     <visible>true</visible>
     <widget_type>Text Input</widget_type>
     <width>64</width>
@@ -595,13 +595,13 @@ $(pv_value)</tooltip>
     <auto_size>false</auto_size>
     <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color name="White" red="255" green="255" blue="255" />
+      <color name="Canvas" red="200" green="200" blue="200" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
       <color red="0" green="128" blue="255" />
     </border_color>
-    <border_style>0</border_style>
+    <border_style>3</border_style>
     <border_width>1</border_width>
     <confirm_message></confirm_message>
     <enabled>true</enabled>
@@ -616,8 +616,8 @@ $(pv_value)</tooltip>
     <height>20</height>
     <horizontal_alignment>2</horizontal_alignment>
     <limits_from_pv>false</limits_from_pv>
-    <maximum>Infinity</maximum>
-    <minimum>-Infinity</minimum>
+    <maximum>1.7976931348623157E308</maximum>
+    <minimum>-1.7976931348623157E308</minimum>
     <multiline_input>false</multiline_input>
     <name>EDM TextInput</name>
     <precision>0</precision>
@@ -638,7 +638,7 @@ $(pv_value)</tooltip>
     <text></text>
     <tooltip>$(pv_name)
 $(pv_value)</tooltip>
-    <transparent>true</transparent>
+    <transparent>false</transparent>
     <visible>true</visible>
     <widget_type>Text Input</widget_type>
     <width>48</width>
@@ -692,13 +692,13 @@ $(pv_value)</tooltip>
     <auto_size>false</auto_size>
     <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color name="White" red="255" green="255" blue="255" />
+      <color name="Canvas" red="200" green="200" blue="200" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
       <color red="0" green="128" blue="255" />
     </border_color>
-    <border_style>0</border_style>
+    <border_style>3</border_style>
     <border_width>1</border_width>
     <confirm_message></confirm_message>
     <enabled>true</enabled>
@@ -713,8 +713,8 @@ $(pv_value)</tooltip>
     <height>20</height>
     <horizontal_alignment>2</horizontal_alignment>
     <limits_from_pv>false</limits_from_pv>
-    <maximum>Infinity</maximum>
-    <minimum>-Infinity</minimum>
+    <maximum>1.7976931348623157E308</maximum>
+    <minimum>-1.7976931348623157E308</minimum>
     <multiline_input>false</multiline_input>
     <name>EDM TextInput</name>
     <precision>0</precision>
@@ -735,7 +735,7 @@ $(pv_value)</tooltip>
     <text></text>
     <tooltip>$(pv_name)
 $(pv_value)</tooltip>
-    <transparent>true</transparent>
+    <transparent>false</transparent>
     <visible>true</visible>
     <widget_type>Text Input</widget_type>
     <width>48</width>
@@ -810,8 +810,8 @@ $(pv_value)</tooltip>
     <height>16</height>
     <horizontal_alignment>2</horizontal_alignment>
     <limits_from_pv>false</limits_from_pv>
-    <maximum>Infinity</maximum>
-    <minimum>-Infinity</minimum>
+    <maximum>1.7976931348623157E308</maximum>
+    <minimum>-1.7976931348623157E308</minimum>
     <multiline_input>false</multiline_input>
     <name>EDM TextInput</name>
     <precision>0</precision>
@@ -1073,13 +1073,13 @@ $(pv_value)</tooltip>
       <auto_size>false</auto_size>
       <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
       <background_color>
-        <color name="White" red="255" green="255" blue="255" />
+        <color name="Canvas" red="200" green="200" blue="200" />
       </background_color>
       <border_alarm_sensitive>false</border_alarm_sensitive>
       <border_color>
         <color red="0" green="128" blue="255" />
       </border_color>
-      <border_style>0</border_style>
+      <border_style>3</border_style>
       <border_width>1</border_width>
       <confirm_message></confirm_message>
       <enabled>true</enabled>
@@ -1094,8 +1094,8 @@ $(pv_value)</tooltip>
       <height>20</height>
       <horizontal_alignment>0</horizontal_alignment>
       <limits_from_pv>false</limits_from_pv>
-      <maximum>Infinity</maximum>
-      <minimum>-Infinity</minimum>
+      <maximum>1.7976931348623157E308</maximum>
+      <minimum>-1.7976931348623157E308</minimum>
       <multiline_input>false</multiline_input>
       <name>EDM TextInput</name>
       <precision>0</precision>
@@ -1116,7 +1116,7 @@ $(pv_value)</tooltip>
       <text></text>
       <tooltip>$(pv_name)
 $(pv_value)</tooltip>
-      <transparent>true</transparent>
+      <transparent>false</transparent>
       <visible>true</visible>
       <widget_type>Text Input</widget_type>
       <width>61</width>

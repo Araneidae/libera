@@ -10,7 +10,7 @@
   <background_color>
     <color name="Canvas" red="200" green="200" blue="200" />
   </background_color>
-  <boy_version>5.1.0.201705021243</boy_version>
+  <boy_version>5.1.0.201707201056</boy_version>
   <foreground_color>
     <color name="Black" red="0" green="0" blue="0" />
   </foreground_color>
@@ -152,7 +152,7 @@
     <axis_count>3</axis_count>
     <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color name="Grey 75%" red="192" green="192" blue="192" />
+      <color name="Canvas" red="200" green="200" blue="200" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
@@ -168,7 +168,7 @@
     <height>160</height>
     <name>EDM xyGraph</name>
     <plot_area_background_color>
-      <color name="Grey 75%" red="192" green="192" blue="192" />
+      <color name="Canvas" red="200" green="200" blue="200" />
     </plot_area_background_color>
     <pv_name>$(trace_0_y_pv)</pv_name>
     <pv_value />
@@ -300,7 +300,7 @@ $(trace_0_y_pv_value)</tooltip>
     <axis_count>3</axis_count>
     <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color name="Grey 75%" red="192" green="192" blue="192" />
+      <color name="Canvas" red="200" green="200" blue="200" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
@@ -316,7 +316,7 @@ $(trace_0_y_pv_value)</tooltip>
     <height>160</height>
     <name>EDM xyGraph</name>
     <plot_area_background_color>
-      <color name="Grey 75%" red="192" green="192" blue="192" />
+      <color name="Canvas" red="200" green="200" blue="200" />
     </plot_area_background_color>
     <pv_name>$(trace_0_y_pv)</pv_name>
     <pv_value />
@@ -448,7 +448,7 @@ $(trace_0_y_pv_value)</tooltip>
     <axis_count>3</axis_count>
     <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color name="Grey 75%" red="192" green="192" blue="192" />
+      <color name="Canvas" red="200" green="200" blue="200" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
@@ -464,7 +464,7 @@ $(trace_0_y_pv_value)</tooltip>
     <height>160</height>
     <name>EDM xyGraph</name>
     <plot_area_background_color>
-      <color name="Grey 75%" red="192" green="192" blue="192" />
+      <color name="Canvas" red="200" green="200" blue="200" />
     </plot_area_background_color>
     <pv_name>$(trace_0_y_pv)</pv_name>
     <pv_value />
@@ -631,7 +631,7 @@ $(pv_value)</tooltip>
     <auto_size>false</auto_size>
     <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color name="Grey 75%" red="192" green="192" blue="192" />
+      <color name="Canvas" red="200" green="200" blue="200" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
@@ -723,7 +723,7 @@ $(pv_value)</tooltip>
     <auto_size>false</auto_size>
     <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color name="Grey 75%" red="192" green="192" blue="192" />
+      <color name="Canvas" red="200" green="200" blue="200" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
@@ -942,7 +942,7 @@ $(pv_value)</tooltip>
     <axis_count>3</axis_count>
     <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color name="Grey 75%" red="192" green="192" blue="192" />
+      <color name="Canvas" red="200" green="200" blue="200" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
@@ -958,7 +958,7 @@ $(pv_value)</tooltip>
     <height>160</height>
     <name>EDM xyGraph</name>
     <plot_area_background_color>
-      <color name="Grey 75%" red="192" green="192" blue="192" />
+      <color name="Canvas" red="200" green="200" blue="200" />
     </plot_area_background_color>
     <pv_name>$(trace_0_y_pv)</pv_name>
     <pv_value />

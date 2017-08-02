@@ -10,7 +10,7 @@
   <background_color>
     <color name="Canvas" red="200" green="200" blue="200" />
   </background_color>
-  <boy_version>5.1.0.201705021243</boy_version>
+  <boy_version>5.1.0.201707201056</boy_version>
   <foreground_color>
     <color name="Black" red="0" green="0" blue="0" />
   </foreground_color>
@@ -152,7 +152,7 @@
     <axis_count>3</axis_count>
     <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color name="Grey 75%" red="192" green="192" blue="192" />
+      <color name="Canvas" red="200" green="200" blue="200" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
@@ -168,7 +168,7 @@
     <height>160</height>
     <name>EDM xyGraph</name>
     <plot_area_background_color>
-      <color name="Grey 75%" red="192" green="192" blue="192" />
+      <color name="Canvas" red="200" green="200" blue="200" />
     </plot_area_background_color>
     <pv_name>$(trace_0_y_pv)</pv_name>
     <pv_value />
@@ -300,7 +300,7 @@ $(trace_0_y_pv_value)</tooltip>
     <axis_count>3</axis_count>
     <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color name="Grey 75%" red="192" green="192" blue="192" />
+      <color name="Canvas" red="200" green="200" blue="200" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
@@ -316,7 +316,7 @@ $(trace_0_y_pv_value)</tooltip>
     <height>160</height>
     <name>EDM xyGraph</name>
     <plot_area_background_color>
-      <color name="Grey 75%" red="192" green="192" blue="192" />
+      <color name="Canvas" red="200" green="200" blue="200" />
     </plot_area_background_color>
     <pv_name>$(trace_0_y_pv)</pv_name>
     <pv_value />
@@ -427,7 +427,7 @@ $(pv_value)</tooltip>
     <auto_size>false</auto_size>
     <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color name="Grey 75%" red="192" green="192" blue="192" />
+      <color name="Canvas" red="200" green="200" blue="200" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
@@ -467,10 +467,10 @@ $(pv_value)</tooltip>
     <vertical_alignment>1</vertical_alignment>
     <visible>true</visible>
     <widget_type>Text Update</widget_type>
-    <width>48</width>
+    <width>112</width>
     <wrap_words>false</wrap_words>
     <wuid>-7b8876ae:15d7508270c:-777f</wuid>
-    <x>128</x>
+    <x>64</x>
     <y>480</y>
   </widget>
   <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
@@ -572,7 +572,7 @@ $(pv_value)</tooltip>
     <auto_size>false</auto_size>
     <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color name="Grey 75%" red="192" green="192" blue="192" />
+      <color name="Canvas" red="200" green="200" blue="200" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
@@ -612,10 +612,10 @@ $(pv_value)</tooltip>
     <vertical_alignment>1</vertical_alignment>
     <visible>true</visible>
     <widget_type>Text Update</widget_type>
-    <width>48</width>
+    <width>112</width>
     <wrap_words>false</wrap_words>
     <wuid>-7b8876ae:15d7508270c:-777c</wuid>
-    <x>128</x>
+    <x>64</x>
     <y>408</y>
   </widget>
   <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
@@ -664,7 +664,7 @@ $(pv_value)</tooltip>
     <auto_size>false</auto_size>
     <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color name="Grey 75%" red="192" green="192" blue="192" />
+      <color name="Canvas" red="200" green="200" blue="200" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
@@ -704,10 +704,10 @@ $(pv_value)</tooltip>
     <vertical_alignment>1</vertical_alignment>
     <visible>true</visible>
     <widget_type>Text Update</widget_type>
-    <width>48</width>
+    <width>112</width>
     <wrap_words>false</wrap_words>
     <wuid>-7b8876ae:15d7508270c:-777a</wuid>
-    <x>248</x>
+    <x>184</x>
     <y>408</y>
   </widget>
   <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
@@ -796,7 +796,7 @@ $(pv_value)</tooltip>
     <auto_size>false</auto_size>
     <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color name="Grey 75%" red="192" green="192" blue="192" />
+      <color name="Canvas" red="200" green="200" blue="200" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
@@ -836,10 +836,10 @@ $(pv_value)</tooltip>
     <vertical_alignment>1</vertical_alignment>
     <visible>true</visible>
     <widget_type>Text Update</widget_type>
-    <width>48</width>
+    <width>112</width>
     <wrap_words>false</wrap_words>
     <wuid>-7b8876ae:15d7508270c:-7777</wuid>
-    <x>248</x>
+    <x>184</x>
     <y>432</y>
   </widget>
   <widget typeId="org.csstudio.opibuilder.widgets.TextUpdate" version="1.0.0">
@@ -848,7 +848,7 @@ $(pv_value)</tooltip>
     <auto_size>false</auto_size>
     <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color name="Grey 75%" red="192" green="192" blue="192" />
+      <color name="Canvas" red="200" green="200" blue="200" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
@@ -888,10 +888,10 @@ $(pv_value)</tooltip>
     <vertical_alignment>1</vertical_alignment>
     <visible>true</visible>
     <widget_type>Text Update</widget_type>
-    <width>48</width>
+    <width>112</width>
     <wrap_words>false</wrap_words>
     <wuid>-7b8876ae:15d7508270c:-7776</wuid>
-    <x>128</x>
+    <x>64</x>
     <y>432</y>
   </widget>
   <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
@@ -940,7 +940,7 @@ $(pv_value)</tooltip>
     <auto_size>false</auto_size>
     <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color name="Grey 75%" red="192" green="192" blue="192" />
+      <color name="Canvas" red="200" green="200" blue="200" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
@@ -980,10 +980,10 @@ $(pv_value)</tooltip>
     <vertical_alignment>1</vertical_alignment>
     <visible>true</visible>
     <widget_type>Text Update</widget_type>
-    <width>48</width>
+    <width>112</width>
     <wrap_words>false</wrap_words>
     <wuid>-7b8876ae:15d7508270c:-7774</wuid>
-    <x>128</x>
+    <x>64</x>
     <y>456</y>
   </widget>
   <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">

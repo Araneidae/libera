@@ -10,7 +10,7 @@
   <background_color>
     <color name="Canvas" red="200" green="200" blue="200" />
   </background_color>
-  <boy_version>5.1.0.201705021243</boy_version>
+  <boy_version>5.1.0.201707201056</boy_version>
   <foreground_color>
     <color name="Black" red="0" green="0" blue="0" />
   </foreground_color>
@@ -461,13 +461,13 @@ $(pv_value)</tooltip>
     <auto_size>false</auto_size>
     <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color name="White" red="255" green="255" blue="255" />
+      <color name="Canvas" red="200" green="200" blue="200" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
       <color red="0" green="128" blue="255" />
     </border_color>
-    <border_style>0</border_style>
+    <border_style>3</border_style>
     <border_width>1</border_width>
     <confirm_message></confirm_message>
     <enabled>true</enabled>
@@ -482,8 +482,8 @@ $(pv_value)</tooltip>
     <height>24</height>
     <horizontal_alignment>2</horizontal_alignment>
     <limits_from_pv>false</limits_from_pv>
-    <maximum>Infinity</maximum>
-    <minimum>-Infinity</minimum>
+    <maximum>1.7976931348623157E308</maximum>
+    <minimum>-1.7976931348623157E308</minimum>
     <multiline_input>false</multiline_input>
     <name>EDM TextInput</name>
     <precision>0</precision>
@@ -504,7 +504,7 @@ $(pv_value)</tooltip>
     <text></text>
     <tooltip>$(pv_name)
 $(pv_value)</tooltip>
-    <transparent>true</transparent>
+    <transparent>false</transparent>
     <visible>true</visible>
     <widget_type>Text Input</widget_type>
     <width>64</width>
@@ -602,13 +602,13 @@ $(pv_value)</tooltip>
     <auto_size>false</auto_size>
     <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color name="White" red="255" green="255" blue="255" />
+      <color name="Canvas" red="200" green="200" blue="200" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
       <color red="0" green="128" blue="255" />
     </border_color>
-    <border_style>0</border_style>
+    <border_style>3</border_style>
     <border_width>1</border_width>
     <confirm_message></confirm_message>
     <enabled>true</enabled>
@@ -623,8 +623,8 @@ $(pv_value)</tooltip>
     <height>24</height>
     <horizontal_alignment>2</horizontal_alignment>
     <limits_from_pv>false</limits_from_pv>
-    <maximum>Infinity</maximum>
-    <minimum>-Infinity</minimum>
+    <maximum>1.7976931348623157E308</maximum>
+    <minimum>-1.7976931348623157E308</minimum>
     <multiline_input>false</multiline_input>
     <name>EDM TextInput</name>
     <precision>0</precision>
@@ -645,7 +645,7 @@ $(pv_value)</tooltip>
     <text></text>
     <tooltip>$(pv_name)
 $(pv_value)</tooltip>
-    <transparent>true</transparent>
+    <transparent>false</transparent>
     <visible>true</visible>
     <widget_type>Text Input</widget_type>
     <width>64</width>
@@ -699,13 +699,13 @@ $(pv_value)</tooltip>
     <auto_size>false</auto_size>
     <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color name="White" red="255" green="255" blue="255" />
+      <color name="Canvas" red="200" green="200" blue="200" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
       <color red="0" green="128" blue="255" />
     </border_color>
-    <border_style>0</border_style>
+    <border_style>3</border_style>
     <border_width>1</border_width>
     <confirm_message></confirm_message>
     <enabled>true</enabled>
@@ -720,8 +720,8 @@ $(pv_value)</tooltip>
     <height>20</height>
     <horizontal_alignment>2</horizontal_alignment>
     <limits_from_pv>false</limits_from_pv>
-    <maximum>Infinity</maximum>
-    <minimum>-Infinity</minimum>
+    <maximum>1.7976931348623157E308</maximum>
+    <minimum>-1.7976931348623157E308</minimum>
     <multiline_input>false</multiline_input>
     <name>EDM TextInput</name>
     <precision>0</precision>
@@ -742,7 +742,7 @@ $(pv_value)</tooltip>
     <text></text>
     <tooltip>$(pv_name)
 $(pv_value)</tooltip>
-    <transparent>true</transparent>
+    <transparent>false</transparent>
     <visible>true</visible>
     <widget_type>Text Input</widget_type>
     <width>64</width>
@@ -796,13 +796,13 @@ $(pv_value)</tooltip>
     <auto_size>false</auto_size>
     <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color name="White" red="255" green="255" blue="255" />
+      <color name="Canvas" red="200" green="200" blue="200" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
       <color red="0" green="128" blue="255" />
     </border_color>
-    <border_style>0</border_style>
+    <border_style>3</border_style>
     <border_width>1</border_width>
     <confirm_message></confirm_message>
     <enabled>true</enabled>
@@ -817,8 +817,8 @@ $(pv_value)</tooltip>
     <height>24</height>
     <horizontal_alignment>0</horizontal_alignment>
     <limits_from_pv>false</limits_from_pv>
-    <maximum>Infinity</maximum>
-    <minimum>-Infinity</minimum>
+    <maximum>1.7976931348623157E308</maximum>
+    <minimum>-1.7976931348623157E308</minimum>
     <multiline_input>false</multiline_input>
     <name>EDM TextInput</name>
     <precision>0</precision>
@@ -839,7 +839,7 @@ $(pv_value)</tooltip>
     <text></text>
     <tooltip>$(pv_name)
 $(pv_value)</tooltip>
-    <transparent>true</transparent>
+    <transparent>false</transparent>
     <visible>true</visible>
     <widget_type>Text Input</widget_type>
     <width>64</width>
@@ -893,13 +893,13 @@ $(pv_value)</tooltip>
     <auto_size>false</auto_size>
     <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color name="White" red="255" green="255" blue="255" />
+      <color name="Canvas" red="200" green="200" blue="200" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
       <color red="0" green="128" blue="255" />
     </border_color>
-    <border_style>0</border_style>
+    <border_style>3</border_style>
     <border_width>1</border_width>
     <confirm_message></confirm_message>
     <enabled>true</enabled>
@@ -914,8 +914,8 @@ $(pv_value)</tooltip>
     <height>24</height>
     <horizontal_alignment>0</horizontal_alignment>
     <limits_from_pv>false</limits_from_pv>
-    <maximum>Infinity</maximum>
-    <minimum>-Infinity</minimum>
+    <maximum>1.7976931348623157E308</maximum>
+    <minimum>-1.7976931348623157E308</minimum>
     <multiline_input>false</multiline_input>
     <name>EDM TextInput</name>
     <precision>0</precision>
@@ -936,7 +936,7 @@ $(pv_value)</tooltip>
     <text></text>
     <tooltip>$(pv_name)
 $(pv_value)</tooltip>
-    <transparent>true</transparent>
+    <transparent>false</transparent>
     <visible>true</visible>
     <widget_type>Text Input</widget_type>
     <width>64</width>
@@ -990,13 +990,13 @@ $(pv_value)</tooltip>
     <auto_size>false</auto_size>
     <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color name="White" red="255" green="255" blue="255" />
+      <color name="Canvas" red="200" green="200" blue="200" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
       <color red="0" green="128" blue="255" />
     </border_color>
-    <border_style>0</border_style>
+    <border_style>3</border_style>
     <border_width>1</border_width>
     <confirm_message></confirm_message>
     <enabled>true</enabled>
@@ -1011,8 +1011,8 @@ $(pv_value)</tooltip>
     <height>24</height>
     <horizontal_alignment>0</horizontal_alignment>
     <limits_from_pv>false</limits_from_pv>
-    <maximum>Infinity</maximum>
-    <minimum>-Infinity</minimum>
+    <maximum>1.7976931348623157E308</maximum>
+    <minimum>-1.7976931348623157E308</minimum>
     <multiline_input>false</multiline_input>
     <name>EDM TextInput</name>
     <precision>0</precision>
@@ -1033,7 +1033,7 @@ $(pv_value)</tooltip>
     <text></text>
     <tooltip>$(pv_name)
 $(pv_value)</tooltip>
-    <transparent>true</transparent>
+    <transparent>false</transparent>
     <visible>true</visible>
     <widget_type>Text Input</widget_type>
     <width>64</width>
@@ -1087,13 +1087,13 @@ $(pv_value)</tooltip>
     <auto_size>false</auto_size>
     <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color name="White" red="255" green="255" blue="255" />
+      <color name="Canvas" red="200" green="200" blue="200" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
       <color red="0" green="128" blue="255" />
     </border_color>
-    <border_style>0</border_style>
+    <border_style>3</border_style>
     <border_width>1</border_width>
     <confirm_message></confirm_message>
     <enabled>true</enabled>
@@ -1108,8 +1108,8 @@ $(pv_value)</tooltip>
     <height>24</height>
     <horizontal_alignment>0</horizontal_alignment>
     <limits_from_pv>false</limits_from_pv>
-    <maximum>Infinity</maximum>
-    <minimum>-Infinity</minimum>
+    <maximum>1.7976931348623157E308</maximum>
+    <minimum>-1.7976931348623157E308</minimum>
     <multiline_input>false</multiline_input>
     <name>EDM TextInput</name>
     <precision>0</precision>
@@ -1130,7 +1130,7 @@ $(pv_value)</tooltip>
     <text></text>
     <tooltip>$(pv_name)
 $(pv_value)</tooltip>
-    <transparent>true</transparent>
+    <transparent>false</transparent>
     <visible>true</visible>
     <widget_type>Text Input</widget_type>
     <width>64</width>
@@ -1242,13 +1242,13 @@ $(pv_value)</tooltip>
     <auto_size>false</auto_size>
     <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color name="White" red="255" green="255" blue="255" />
+      <color name="Canvas" red="200" green="200" blue="200" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
       <color red="0" green="128" blue="255" />
     </border_color>
-    <border_style>0</border_style>
+    <border_style>3</border_style>
     <border_width>1</border_width>
     <confirm_message></confirm_message>
     <enabled>true</enabled>
@@ -1261,10 +1261,10 @@ $(pv_value)</tooltip>
     </foreground_color>
     <format_type>0</format_type>
     <height>24</height>
-    <horizontal_alignment>2</horizontal_alignment>
+    <horizontal_alignment>0</horizontal_alignment>
     <limits_from_pv>false</limits_from_pv>
-    <maximum>Infinity</maximum>
-    <minimum>-Infinity</minimum>
+    <maximum>1.7976931348623157E308</maximum>
+    <minimum>-1.7976931348623157E308</minimum>
     <multiline_input>false</multiline_input>
     <name>EDM TextInput</name>
     <precision>0</precision>
@@ -1285,7 +1285,7 @@ $(pv_value)</tooltip>
     <text></text>
     <tooltip>$(pv_name)
 $(pv_value)</tooltip>
-    <transparent>true</transparent>
+    <transparent>false</transparent>
     <visible>true</visible>
     <widget_type>Text Input</widget_type>
     <width>72</width>
@@ -1339,13 +1339,13 @@ $(pv_value)</tooltip>
     <auto_size>false</auto_size>
     <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color name="White" red="255" green="255" blue="255" />
+      <color name="Canvas" red="200" green="200" blue="200" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
       <color red="0" green="128" blue="255" />
     </border_color>
-    <border_style>0</border_style>
+    <border_style>3</border_style>
     <border_width>1</border_width>
     <confirm_message></confirm_message>
     <enabled>true</enabled>
@@ -1358,10 +1358,10 @@ $(pv_value)</tooltip>
     </foreground_color>
     <format_type>0</format_type>
     <height>24</height>
-    <horizontal_alignment>2</horizontal_alignment>
+    <horizontal_alignment>0</horizontal_alignment>
     <limits_from_pv>false</limits_from_pv>
-    <maximum>Infinity</maximum>
-    <minimum>-Infinity</minimum>
+    <maximum>1.7976931348623157E308</maximum>
+    <minimum>-1.7976931348623157E308</minimum>
     <multiline_input>false</multiline_input>
     <name>EDM TextInput</name>
     <precision>0</precision>
@@ -1382,7 +1382,7 @@ $(pv_value)</tooltip>
     <text></text>
     <tooltip>$(pv_name)
 $(pv_value)</tooltip>
-    <transparent>true</transparent>
+    <transparent>false</transparent>
     <visible>true</visible>
     <widget_type>Text Input</widget_type>
     <width>72</width>
@@ -2164,13 +2164,13 @@ $(pv_value)</tooltip>
     <auto_size>false</auto_size>
     <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color name="White" red="255" green="255" blue="255" />
+      <color name="Canvas" red="200" green="200" blue="200" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
       <color red="0" green="128" blue="255" />
     </border_color>
-    <border_style>0</border_style>
+    <border_style>3</border_style>
     <border_width>1</border_width>
     <confirm_message></confirm_message>
     <enabled>true</enabled>
@@ -2183,10 +2183,10 @@ $(pv_value)</tooltip>
     </foreground_color>
     <format_type>0</format_type>
     <height>24</height>
-    <horizontal_alignment>2</horizontal_alignment>
+    <horizontal_alignment>0</horizontal_alignment>
     <limits_from_pv>false</limits_from_pv>
-    <maximum>Infinity</maximum>
-    <minimum>-Infinity</minimum>
+    <maximum>1.7976931348623157E308</maximum>
+    <minimum>-1.7976931348623157E308</minimum>
     <multiline_input>false</multiline_input>
     <name>EDM TextInput</name>
     <precision>0</precision>
@@ -2207,7 +2207,7 @@ $(pv_value)</tooltip>
     <text></text>
     <tooltip>$(pv_name)
 $(pv_value)</tooltip>
-    <transparent>true</transparent>
+    <transparent>false</transparent>
     <visible>true</visible>
     <widget_type>Text Input</widget_type>
     <width>48</width>
@@ -2261,13 +2261,13 @@ $(pv_value)</tooltip>
     <auto_size>false</auto_size>
     <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color name="White" red="255" green="255" blue="255" />
+      <color name="Canvas" red="200" green="200" blue="200" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
       <color red="0" green="128" blue="255" />
     </border_color>
-    <border_style>0</border_style>
+    <border_style>3</border_style>
     <border_width>1</border_width>
     <confirm_message></confirm_message>
     <enabled>true</enabled>
@@ -2280,10 +2280,10 @@ $(pv_value)</tooltip>
     </foreground_color>
     <format_type>0</format_type>
     <height>20</height>
-    <horizontal_alignment>2</horizontal_alignment>
+    <horizontal_alignment>0</horizontal_alignment>
     <limits_from_pv>false</limits_from_pv>
-    <maximum>Infinity</maximum>
-    <minimum>-Infinity</minimum>
+    <maximum>1.7976931348623157E308</maximum>
+    <minimum>-1.7976931348623157E308</minimum>
     <multiline_input>false</multiline_input>
     <name>EDM TextInput</name>
     <precision>0</precision>
@@ -2304,7 +2304,7 @@ $(pv_value)</tooltip>
     <text></text>
     <tooltip>$(pv_name)
 $(pv_value)</tooltip>
-    <transparent>true</transparent>
+    <transparent>false</transparent>
     <visible>true</visible>
     <widget_type>Text Input</widget_type>
     <width>56</width>
@@ -2519,13 +2519,13 @@ $(pv_value)</tooltip>
     <auto_size>false</auto_size>
     <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color name="White" red="255" green="255" blue="255" />
+      <color name="Canvas" red="200" green="200" blue="200" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
       <color red="0" green="128" blue="255" />
     </border_color>
-    <border_style>0</border_style>
+    <border_style>3</border_style>
     <border_width>1</border_width>
     <confirm_message></confirm_message>
     <enabled>true</enabled>
@@ -2538,10 +2538,10 @@ $(pv_value)</tooltip>
     </foreground_color>
     <format_type>0</format_type>
     <height>24</height>
-    <horizontal_alignment>2</horizontal_alignment>
+    <horizontal_alignment>0</horizontal_alignment>
     <limits_from_pv>false</limits_from_pv>
-    <maximum>Infinity</maximum>
-    <minimum>-Infinity</minimum>
+    <maximum>1.7976931348623157E308</maximum>
+    <minimum>-1.7976931348623157E308</minimum>
     <multiline_input>false</multiline_input>
     <name>EDM TextInput</name>
     <precision>0</precision>
@@ -2562,7 +2562,7 @@ $(pv_value)</tooltip>
     <text></text>
     <tooltip>$(pv_name)
 $(pv_value)</tooltip>
-    <transparent>true</transparent>
+    <transparent>false</transparent>
     <visible>true</visible>
     <widget_type>Text Input</widget_type>
     <width>32</width>
@@ -2616,13 +2616,13 @@ $(pv_value)</tooltip>
     <auto_size>false</auto_size>
     <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color name="White" red="255" green="255" blue="255" />
+      <color name="Canvas" red="200" green="200" blue="200" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
       <color red="0" green="128" blue="255" />
     </border_color>
-    <border_style>0</border_style>
+    <border_style>3</border_style>
     <border_width>1</border_width>
     <confirm_message></confirm_message>
     <enabled>true</enabled>
@@ -2635,10 +2635,10 @@ $(pv_value)</tooltip>
     </foreground_color>
     <format_type>0</format_type>
     <height>24</height>
-    <horizontal_alignment>2</horizontal_alignment>
+    <horizontal_alignment>0</horizontal_alignment>
     <limits_from_pv>false</limits_from_pv>
-    <maximum>Infinity</maximum>
-    <minimum>-Infinity</minimum>
+    <maximum>1.7976931348623157E308</maximum>
+    <minimum>-1.7976931348623157E308</minimum>
     <multiline_input>false</multiline_input>
     <name>EDM TextInput</name>
     <precision>0</precision>
@@ -2659,7 +2659,7 @@ $(pv_value)</tooltip>
     <text></text>
     <tooltip>$(pv_name)
 $(pv_value)</tooltip>
-    <transparent>true</transparent>
+    <transparent>false</transparent>
     <visible>true</visible>
     <widget_type>Text Input</widget_type>
     <width>40</width>
@@ -2869,13 +2869,13 @@ $(pv_value)</tooltip>
     <auto_size>false</auto_size>
     <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color name="White" red="255" green="255" blue="255" />
+      <color name="Canvas" red="200" green="200" blue="200" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
       <color red="0" green="128" blue="255" />
     </border_color>
-    <border_style>0</border_style>
+    <border_style>3</border_style>
     <border_width>1</border_width>
     <confirm_message></confirm_message>
     <enabled>true</enabled>
@@ -2890,8 +2890,8 @@ $(pv_value)</tooltip>
     <height>20</height>
     <horizontal_alignment>2</horizontal_alignment>
     <limits_from_pv>false</limits_from_pv>
-    <maximum>Infinity</maximum>
-    <minimum>-Infinity</minimum>
+    <maximum>1.7976931348623157E308</maximum>
+    <minimum>-1.7976931348623157E308</minimum>
     <multiline_input>false</multiline_input>
     <name>EDM TextInput</name>
     <precision>0</precision>
@@ -2912,7 +2912,7 @@ $(pv_value)</tooltip>
     <text></text>
     <tooltip>$(pv_name)
 $(pv_value)</tooltip>
-    <transparent>true</transparent>
+    <transparent>false</transparent>
     <visible>true</visible>
     <widget_type>Text Input</widget_type>
     <width>80</width>
@@ -3288,13 +3288,13 @@ $(pv_value)</tooltip>
     <auto_size>false</auto_size>
     <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color name="White" red="255" green="255" blue="255" />
+      <color name="Canvas" red="200" green="200" blue="200" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
       <color red="0" green="128" blue="255" />
     </border_color>
-    <border_style>0</border_style>
+    <border_style>3</border_style>
     <border_width>1</border_width>
     <confirm_message></confirm_message>
     <enabled>true</enabled>
@@ -3307,10 +3307,10 @@ $(pv_value)</tooltip>
     </foreground_color>
     <format_type>0</format_type>
     <height>20</height>
-    <horizontal_alignment>2</horizontal_alignment>
+    <horizontal_alignment>0</horizontal_alignment>
     <limits_from_pv>false</limits_from_pv>
-    <maximum>Infinity</maximum>
-    <minimum>-Infinity</minimum>
+    <maximum>1.7976931348623157E308</maximum>
+    <minimum>-1.7976931348623157E308</minimum>
     <multiline_input>false</multiline_input>
     <name>EDM TextInput</name>
     <precision>0</precision>
@@ -3331,7 +3331,7 @@ $(pv_value)</tooltip>
     <text></text>
     <tooltip>$(pv_name)
 $(pv_value)</tooltip>
-    <transparent>true</transparent>
+    <transparent>false</transparent>
     <visible>true</visible>
     <widget_type>Text Input</widget_type>
     <width>80</width>
@@ -3523,13 +3523,13 @@ $(pv_value)</tooltip>
     <auto_size>false</auto_size>
     <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color name="White" red="255" green="255" blue="255" />
+      <color name="Canvas" red="200" green="200" blue="200" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
       <color red="0" green="128" blue="255" />
     </border_color>
-    <border_style>0</border_style>
+    <border_style>3</border_style>
     <border_width>1</border_width>
     <confirm_message></confirm_message>
     <enabled>true</enabled>
@@ -3542,10 +3542,10 @@ $(pv_value)</tooltip>
     </foreground_color>
     <format_type>0</format_type>
     <height>20</height>
-    <horizontal_alignment>2</horizontal_alignment>
+    <horizontal_alignment>0</horizontal_alignment>
     <limits_from_pv>false</limits_from_pv>
-    <maximum>Infinity</maximum>
-    <minimum>-Infinity</minimum>
+    <maximum>1.7976931348623157E308</maximum>
+    <minimum>-1.7976931348623157E308</minimum>
     <multiline_input>false</multiline_input>
     <name>EDM TextInput</name>
     <precision>0</precision>
@@ -3566,7 +3566,7 @@ $(pv_value)</tooltip>
     <text></text>
     <tooltip>$(pv_name)
 $(pv_value)</tooltip>
-    <transparent>true</transparent>
+    <transparent>false</transparent>
     <visible>true</visible>
     <widget_type>Text Input</widget_type>
     <width>72</width>
@@ -3580,13 +3580,13 @@ $(pv_value)</tooltip>
     <auto_size>false</auto_size>
     <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color name="White" red="255" green="255" blue="255" />
+      <color name="Canvas" red="200" green="200" blue="200" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
       <color red="0" green="128" blue="255" />
     </border_color>
-    <border_style>0</border_style>
+    <border_style>3</border_style>
     <border_width>1</border_width>
     <confirm_message></confirm_message>
     <enabled>true</enabled>
@@ -3599,10 +3599,10 @@ $(pv_value)</tooltip>
     </foreground_color>
     <format_type>0</format_type>
     <height>20</height>
-    <horizontal_alignment>2</horizontal_alignment>
+    <horizontal_alignment>0</horizontal_alignment>
     <limits_from_pv>false</limits_from_pv>
-    <maximum>Infinity</maximum>
-    <minimum>-Infinity</minimum>
+    <maximum>1.7976931348623157E308</maximum>
+    <minimum>-1.7976931348623157E308</minimum>
     <multiline_input>false</multiline_input>
     <name>EDM TextInput</name>
     <precision>0</precision>
@@ -3623,7 +3623,7 @@ $(pv_value)</tooltip>
     <text></text>
     <tooltip>$(pv_name)
 $(pv_value)</tooltip>
-    <transparent>true</transparent>
+    <transparent>false</transparent>
     <visible>true</visible>
     <widget_type>Text Input</widget_type>
     <width>72</width>
@@ -3677,13 +3677,13 @@ $(pv_value)</tooltip>
     <auto_size>false</auto_size>
     <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color name="White" red="255" green="255" blue="255" />
+      <color name="Canvas" red="200" green="200" blue="200" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
       <color red="0" green="128" blue="255" />
     </border_color>
-    <border_style>0</border_style>
+    <border_style>3</border_style>
     <border_width>1</border_width>
     <confirm_message></confirm_message>
     <enabled>true</enabled>
@@ -3696,10 +3696,10 @@ $(pv_value)</tooltip>
     </foreground_color>
     <format_type>0</format_type>
     <height>20</height>
-    <horizontal_alignment>2</horizontal_alignment>
+    <horizontal_alignment>0</horizontal_alignment>
     <limits_from_pv>false</limits_from_pv>
-    <maximum>Infinity</maximum>
-    <minimum>-Infinity</minimum>
+    <maximum>1.7976931348623157E308</maximum>
+    <minimum>-1.7976931348623157E308</minimum>
     <multiline_input>false</multiline_input>
     <name>EDM TextInput</name>
     <precision>0</precision>
@@ -3720,7 +3720,7 @@ $(pv_value)</tooltip>
     <text></text>
     <tooltip>$(pv_name)
 $(pv_value)</tooltip>
-    <transparent>true</transparent>
+    <transparent>false</transparent>
     <visible>true</visible>
     <widget_type>Text Input</widget_type>
     <width>72</width>
@@ -3734,13 +3734,13 @@ $(pv_value)</tooltip>
     <auto_size>false</auto_size>
     <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color name="White" red="255" green="255" blue="255" />
+      <color name="Canvas" red="200" green="200" blue="200" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
       <color red="0" green="128" blue="255" />
     </border_color>
-    <border_style>0</border_style>
+    <border_style>3</border_style>
     <border_width>1</border_width>
     <confirm_message></confirm_message>
     <enabled>true</enabled>
@@ -3753,10 +3753,10 @@ $(pv_value)</tooltip>
     </foreground_color>
     <format_type>0</format_type>
     <height>20</height>
-    <horizontal_alignment>2</horizontal_alignment>
+    <horizontal_alignment>0</horizontal_alignment>
     <limits_from_pv>false</limits_from_pv>
-    <maximum>Infinity</maximum>
-    <minimum>-Infinity</minimum>
+    <maximum>1.7976931348623157E308</maximum>
+    <minimum>-1.7976931348623157E308</minimum>
     <multiline_input>false</multiline_input>
     <name>EDM TextInput</name>
     <precision>0</precision>
@@ -3777,7 +3777,7 @@ $(pv_value)</tooltip>
     <text></text>
     <tooltip>$(pv_name)
 $(pv_value)</tooltip>
-    <transparent>true</transparent>
+    <transparent>false</transparent>
     <visible>true</visible>
     <widget_type>Text Input</widget_type>
     <width>72</width>
@@ -3831,13 +3831,13 @@ $(pv_value)</tooltip>
     <auto_size>false</auto_size>
     <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color name="White" red="255" green="255" blue="255" />
+      <color name="Canvas" red="200" green="200" blue="200" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
       <color red="0" green="128" blue="255" />
     </border_color>
-    <border_style>0</border_style>
+    <border_style>3</border_style>
     <border_width>1</border_width>
     <confirm_message></confirm_message>
     <enabled>true</enabled>
@@ -3850,10 +3850,10 @@ $(pv_value)</tooltip>
     </foreground_color>
     <format_type>0</format_type>
     <height>20</height>
-    <horizontal_alignment>2</horizontal_alignment>
+    <horizontal_alignment>0</horizontal_alignment>
     <limits_from_pv>false</limits_from_pv>
-    <maximum>Infinity</maximum>
-    <minimum>-Infinity</minimum>
+    <maximum>1.7976931348623157E308</maximum>
+    <minimum>-1.7976931348623157E308</minimum>
     <multiline_input>false</multiline_input>
     <name>EDM TextInput</name>
     <precision>0</precision>
@@ -3874,7 +3874,7 @@ $(pv_value)</tooltip>
     <text></text>
     <tooltip>$(pv_name)
 $(pv_value)</tooltip>
-    <transparent>true</transparent>
+    <transparent>false</transparent>
     <visible>true</visible>
     <widget_type>Text Input</widget_type>
     <width>56</width>
@@ -3909,8 +3909,8 @@ $(pv_value)</tooltip>
     <height>16</height>
     <horizontal_alignment>2</horizontal_alignment>
     <limits_from_pv>false</limits_from_pv>
-    <maximum>Infinity</maximum>
-    <minimum>-Infinity</minimum>
+    <maximum>1.7976931348623157E308</maximum>
+    <minimum>-1.7976931348623157E308</minimum>
     <multiline_input>false</multiline_input>
     <name>EDM TextInput</name>
     <precision>0</precision>
@@ -4143,7 +4143,7 @@ $(pv_value)</tooltip>
     </scale_options>
     <scripts />
     <show_legend>false</show_legend>
-    <show_plot_area_border>true</show_plot_area_border>
+    <show_plot_area_border>false</show_plot_area_border>
     <show_toolbar>false</show_toolbar>
     <title></title>
     <title_font>
@@ -4363,8 +4363,8 @@ $(pv_value)</tooltip>
     <height>16</height>
     <horizontal_alignment>0</horizontal_alignment>
     <limits_from_pv>false</limits_from_pv>
-    <maximum>Infinity</maximum>
-    <minimum>-Infinity</minimum>
+    <maximum>1.7976931348623157E308</maximum>
+    <minimum>-1.7976931348623157E308</minimum>
     <multiline_input>false</multiline_input>
     <name>EDM TextInput</name>
     <precision>0</precision>
@@ -4439,13 +4439,13 @@ $(pv_value)</tooltip>
     <auto_size>false</auto_size>
     <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color name="White" red="255" green="255" blue="255" />
+      <color name="Canvas" red="200" green="200" blue="200" />
     </background_color>
     <border_alarm_sensitive>false</border_alarm_sensitive>
     <border_color>
       <color red="0" green="128" blue="255" />
     </border_color>
-    <border_style>0</border_style>
+    <border_style>3</border_style>
     <border_width>1</border_width>
     <confirm_message></confirm_message>
     <enabled>true</enabled>
@@ -4458,10 +4458,10 @@ $(pv_value)</tooltip>
     </foreground_color>
     <format_type>0</format_type>
     <height>20</height>
-    <horizontal_alignment>2</horizontal_alignment>
+    <horizontal_alignment>0</horizontal_alignment>
     <limits_from_pv>false</limits_from_pv>
-    <maximum>Infinity</maximum>
-    <minimum>-Infinity</minimum>
+    <maximum>1.7976931348623157E308</maximum>
+    <minimum>-1.7976931348623157E308</minimum>
     <multiline_input>false</multiline_input>
     <name>EDM TextInput</name>
     <precision>0</precision>
@@ -4482,7 +4482,7 @@ $(pv_value)</tooltip>
     <text></text>
     <tooltip>$(pv_name)
 $(pv_value)</tooltip>
-    <transparent>true</transparent>
+    <transparent>false</transparent>
     <visible>true</visible>
     <widget_type>Text Input</widget_type>
     <width>80</width>
@@ -5372,5 +5372,211 @@ $(pv_value)</tooltip>
     <wuid>-7b8876ae:15d7508270c:-7863</wuid>
     <x>384</x>
     <y>96</y>
+  </widget>
+  <widget typeId="org.csstudio.opibuilder.widgets.Rectangle" version="1.0.0">
+    <actions hook="false" hook_all="false" />
+    <alarm_pulsing>false</alarm_pulsing>
+    <alpha>255</alpha>
+    <anti_alias>true</anti_alias>
+    <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
+    <background_color>
+      <color name="Canvas" red="200" green="200" blue="200" />
+    </background_color>
+    <bg_gradient_color>
+      <color red="255" green="255" blue="255" />
+    </bg_gradient_color>
+    <border_alarm_sensitive>false</border_alarm_sensitive>
+    <border_color>
+      <color name="Black" red="0" green="0" blue="0" />
+    </border_color>
+    <border_style>1</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
+    <fg_gradient_color>
+      <color red="255" green="255" blue="255" />
+    </fg_gradient_color>
+    <fill_level>0.0</fill_level>
+    <font>
+      <opifont.name fontName="Liberation Sans" height="15" style="0" pixels="true">Default</opifont.name>
+    </font>
+    <forecolor_alarm_sensitive>false</forecolor_alarm_sensitive>
+    <foreground_color>
+      <color red="255" green="0" blue="0" />
+    </foreground_color>
+    <gradient>false</gradient>
+    <height>22</height>
+    <horizontal_fill>true</horizontal_fill>
+    <line_color>
+      <color red="128" green="0" blue="255" />
+    </line_color>
+    <line_style>0</line_style>
+    <line_width>0</line_width>
+    <name>Rectangle</name>
+    <pv_name></pv_name>
+    <pv_value />
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
+    <tooltip>$(pv_name)
+$(pv_value)</tooltip>
+    <transparent>false</transparent>
+    <visible>true</visible>
+    <widget_type>Rectangle</widget_type>
+    <width>41</width>
+    <wuid>-288d61ea:15da20d7ea4:-4519</wuid>
+    <x>407</x>
+    <y>401</y>
+  </widget>
+  <widget typeId="org.csstudio.opibuilder.widgets.dawn.xygraph" version="1.0.0">
+    <actions hook="false" hook_all="false" />
+    <alarm_pulsing>false</alarm_pulsing>
+    <axis_0_auto_scale>false</axis_0_auto_scale>
+    <axis_0_auto_scale_threshold>0.95</axis_0_auto_scale_threshold>
+    <axis_0_auto_scale_tight>false</axis_0_auto_scale_tight>
+    <axis_0_axis_color>
+      <color name="Black" red="0" green="0" blue="0" />
+    </axis_0_axis_color>
+    <axis_0_axis_title></axis_0_axis_title>
+    <axis_0_dash_grid_line>true</axis_0_dash_grid_line>
+    <axis_0_grid_color>
+      <color name="Black" red="0" green="0" blue="0" />
+    </axis_0_grid_color>
+    <axis_0_log_scale>false</axis_0_log_scale>
+    <axis_0_maximum>4.3</axis_0_maximum>
+    <axis_0_minimum>-1.2</axis_0_minimum>
+    <axis_0_scale_font>
+      <opifont.name fontName="Liberation Sans" height="15" style="0" pixels="true">Default</opifont.name>
+    </axis_0_scale_font>
+    <axis_0_scale_format></axis_0_scale_format>
+    <axis_0_show_grid>false</axis_0_show_grid>
+    <axis_0_time_format>0</axis_0_time_format>
+    <axis_0_title_font>
+      <fontdata fontName="Arial" height="9" style="1" pixels="true" />
+    </axis_0_title_font>
+    <axis_0_visible>false</axis_0_visible>
+    <axis_1_auto_scale>false</axis_1_auto_scale>
+    <axis_1_auto_scale_threshold>0.95</axis_1_auto_scale_threshold>
+    <axis_1_auto_scale_tight>false</axis_1_auto_scale_tight>
+    <axis_1_axis_color>
+      <color name="Black" red="0" green="0" blue="0" />
+    </axis_1_axis_color>
+    <axis_1_axis_title></axis_1_axis_title>
+    <axis_1_dash_grid_line>true</axis_1_dash_grid_line>
+    <axis_1_grid_color>
+      <color name="Black" red="0" green="0" blue="0" />
+    </axis_1_grid_color>
+    <axis_1_log_scale>false</axis_1_log_scale>
+    <axis_1_maximum>5.5</axis_1_maximum>
+    <axis_1_minimum>-1.0</axis_1_minimum>
+    <axis_1_scale_font>
+      <opifont.name fontName="Liberation Sans" height="15" style="0" pixels="true">Default</opifont.name>
+    </axis_1_scale_font>
+    <axis_1_scale_format></axis_1_scale_format>
+    <axis_1_show_grid>false</axis_1_show_grid>
+    <axis_1_time_format>0</axis_1_time_format>
+    <axis_1_title_font>
+      <fontdata fontName="Arial" height="9" style="1" pixels="true" />
+    </axis_1_title_font>
+    <axis_1_visible>false</axis_1_visible>
+    <axis_2_auto_scale>false</axis_2_auto_scale>
+    <axis_2_auto_scale_threshold>0.0</axis_2_auto_scale_threshold>
+    <axis_2_auto_scale_tight>false</axis_2_auto_scale_tight>
+    <axis_2_axis_color>
+      <color name="Black" red="0" green="0" blue="0" />
+    </axis_2_axis_color>
+    <axis_2_axis_title></axis_2_axis_title>
+    <axis_2_dash_grid_line>true</axis_2_dash_grid_line>
+    <axis_2_grid_color>
+      <color name="Black" red="0" green="0" blue="0" />
+    </axis_2_grid_color>
+    <axis_2_left_bottom_side>false</axis_2_left_bottom_side>
+    <axis_2_log_scale>false</axis_2_log_scale>
+    <axis_2_maximum>1.0</axis_2_maximum>
+    <axis_2_minimum>0.0</axis_2_minimum>
+    <axis_2_scale_font>
+      <opifont.name fontName="Liberation Sans" height="15" style="0" pixels="true">Default</opifont.name>
+    </axis_2_scale_font>
+    <axis_2_scale_format></axis_2_scale_format>
+    <axis_2_show_grid>false</axis_2_show_grid>
+    <axis_2_time_format>0</axis_2_time_format>
+    <axis_2_title_font>
+      <fontdata fontName="Arial" height="9" style="1" pixels="true" />
+    </axis_2_title_font>
+    <axis_2_visible>false</axis_2_visible>
+    <axis_2_y_axis>false</axis_2_y_axis>
+    <axis_count>3</axis_count>
+    <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
+    <background_color>
+      <color name="Grey 75%" red="192" green="192" blue="192" />
+    </background_color>
+    <border_alarm_sensitive>false</border_alarm_sensitive>
+    <border_color>
+      <color name="Black" red="0" green="0" blue="0" />
+    </border_color>
+    <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
+    <forecolor_alarm_sensitive>false</forecolor_alarm_sensitive>
+    <foreground_color>
+      <color name="Black" red="0" green="0" blue="0" />
+    </foreground_color>
+    <height>46</height>
+    <name>EDM xyGraph_13</name>
+    <plot_area_background_color>
+      <color name="Grey 75%" red="192" green="192" blue="192" />
+    </plot_area_background_color>
+    <pv_name>$(trace_0_y_pv)</pv_name>
+    <pv_value />
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
+    <show_legend>false</show_legend>
+    <show_plot_area_border>false</show_plot_area_border>
+    <show_toolbar>false</show_toolbar>
+    <title></title>
+    <title_font>
+      <fontdata fontName="Arial" height="12" style="1" pixels="true" />
+    </title_font>
+    <tooltip>$(trace_0_y_pv)
+$(trace_0_y_pv_value)</tooltip>
+    <trace_0_anti_alias>false</trace_0_anti_alias>
+    <trace_0_buffer_size>65536</trace_0_buffer_size>
+    <trace_0_concatenate_data>false</trace_0_concatenate_data>
+    <trace_0_line_width>1</trace_0_line_width>
+    <trace_0_name>$(trace_0_y_pv)</trace_0_name>
+    <trace_0_plot_mode>0</trace_0_plot_mode>
+    <trace_0_point_size>6</trace_0_point_size>
+    <trace_0_point_style>2</trace_0_point_style>
+    <trace_0_trace_color>
+      <color name="Black" red="0" green="0" blue="0" />
+    </trace_0_trace_color>
+    <trace_0_trace_type>2</trace_0_trace_type>
+    <trace_0_update_delay>0</trace_0_update_delay>
+    <trace_0_update_mode>0</trace_0_update_mode>
+    <trace_0_visible>true</trace_0_visible>
+    <trace_0_x_axis_index>0</trace_0_x_axis_index>
+    <trace_0_x_pv></trace_0_x_pv>
+    <trace_0_x_pv_value />
+    <trace_0_y_axis_index>1</trace_0_y_axis_index>
+    <trace_0_y_pv>$(device):CF:PERM</trace_0_y_pv>
+    <trace_0_y_pv_value />
+    <trace_count>1</trace_count>
+    <transparent>true</transparent>
+    <trigger_pv></trigger_pv>
+    <trigger_pv_value />
+    <visible>true</visible>
+    <widget_type>Dawn XY Graph</widget_type>
+    <width>65</width>
+    <wuid>-288d61ea:15da20d7ea4:-4d8f</wuid>
+    <x>396</x>
+    <y>385</y>
   </widget>
 </display>
