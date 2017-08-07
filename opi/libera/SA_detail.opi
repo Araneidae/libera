@@ -1193,59 +1193,6 @@ $(pv_value)</tooltip>
   <widget typeId="org.csstudio.opibuilder.widgets.ActionButton" version="2.0.0">
     <actions hook="false" hook_all="false">
       <action type="EXECUTE_CMD">
-        <command>../scripts/strip_tool.py SA:%sN ABCD 0.01 0.1 $(device)</command>
-        <command_directory>$(opi.dir)</command_directory>
-        <wait_time>10</wait_time>
-        <description></description>
-      </action>
-    </actions>
-    <alarm_pulsing>false</alarm_pulsing>
-    <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
-    <background_color>
-      <color name="Controller: BG" red="205" green="205" blue="205" />
-    </background_color>
-    <border_alarm_sensitive>false</border_alarm_sensitive>
-    <border_color>
-      <color red="0" green="128" blue="255" />
-    </border_color>
-    <border_style>0</border_style>
-    <border_width>1</border_width>
-    <enabled>true</enabled>
-    <font>
-      <fontdata fontName="liberation sans" height="12" style="1" pixels="true" />
-    </font>
-    <forecolor_alarm_sensitive>false</forecolor_alarm_sensitive>
-    <foreground_color>
-      <color name="Controller: FG" red="0" green="0" blue="196" />
-    </foreground_color>
-    <height>23</height>
-    <image></image>
-    <name>EDM shell command</name>
-    <push_action_index>0</push_action_index>
-    <pv_name></pv_name>
-    <pv_value />
-    <rules />
-    <scale_options>
-      <width_scalable>true</width_scalable>
-      <height_scalable>true</height_scalable>
-      <keep_wh_ratio>false</keep_wh_ratio>
-    </scale_options>
-    <scripts />
-    <style>0</style>
-    <text>Strip N</text>
-    <toggle_button>false</toggle_button>
-    <tooltip>$(pv_name)
-$(pv_value)</tooltip>
-    <visible>true</visible>
-    <widget_type>Action Button</widget_type>
-    <width>89</width>
-    <wuid>-7b8876ae:15d7508270c:-7643</wuid>
-    <x>312</x>
-    <y>656</y>
-  </widget>
-  <widget typeId="org.csstudio.opibuilder.widgets.ActionButton" version="2.0.0">
-    <actions hook="false" hook_all="false">
-      <action type="EXECUTE_CMD">
         <command>../scripts/libera-help SA_detail</command>
         <command_directory>$(opi.dir)</command_directory>
         <wait_time>10</wait_time>
@@ -1666,10 +1613,18 @@ $(pv_value)</tooltip>
   </widget>
   <widget typeId="org.csstudio.opibuilder.widgets.ActionButton" version="2.0.0">
     <actions hook="false" hook_all="false">
-      <action type="EXECUTE_CMD">
-        <command>../scripts/strip_tool.py SA:%s ABCD 0.01 0.1 $(device)</command>
-        <command_directory>$(opi.dir)</command_directory>
-        <wait_time>10</wait_time>
+      <action type="OPEN_DISPLAY">
+        <path>striptool.opi</path>
+        <macros>
+          <include_parent_macros>true</include_parent_macros>
+          <trace_0_y_pv>$(device):SA:A</trace_0_y_pv>
+          <trace_1_y_pv>$(device):SA:B</trace_1_y_pv>
+          <trace_2_y_pv>$(device):SA:C</trace_2_y_pv>
+          <trace_3_y_pv>$(device):SA:D</trace_3_y_pv>
+          <scale_format>0.00E0</scale_format>
+          <scale_units>μm</scale_units>
+        </macros>
+        <mode>8</mode>
         <description></description>
       </action>
     </actions>
@@ -1712,9 +1667,70 @@ $(pv_value)</tooltip>
 $(pv_value)</tooltip>
     <visible>true</visible>
     <widget_type>Action Button</widget_type>
-    <width>89</width>
-    <wuid>-7b8876ae:15d7508270c:-7639</wuid>
+    <width>88</width>
+    <wuid>2b4aaf0e:15dac53dfaa:-7f46</wuid>
     <x>312</x>
-    <y>632</y>
+    <y>629</y>
+  </widget>
+  <widget typeId="org.csstudio.opibuilder.widgets.ActionButton" version="2.0.0">
+    <actions hook="false" hook_all="false">
+      <action type="OPEN_DISPLAY">
+        <path>striptool.opi</path>
+        <macros>
+          <include_parent_macros>true</include_parent_macros>
+          <trace_0_y_pv>$(device):SA:AN</trace_0_y_pv>
+          <trace_1_y_pv>$(device):SA:BN</trace_1_y_pv>
+          <trace_2_y_pv>$(device):SA:CN</trace_2_y_pv>
+          <trace_3_y_pv>$(device):SA:DN</trace_3_y_pv>
+          <scale_format>0.00</scale_format>
+          <scale_units>mm</scale_units>
+        </macros>
+        <mode>8</mode>
+        <description></description>
+      </action>
+    </actions>
+    <alarm_pulsing>false</alarm_pulsing>
+    <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
+    <background_color>
+      <color name="Controller: BG" red="205" green="205" blue="205" />
+    </background_color>
+    <border_alarm_sensitive>false</border_alarm_sensitive>
+    <border_color>
+      <color red="0" green="128" blue="255" />
+    </border_color>
+    <border_style>0</border_style>
+    <border_width>1</border_width>
+    <enabled>true</enabled>
+    <font>
+      <fontdata fontName="liberation sans" height="12" style="1" pixels="true" />
+    </font>
+    <forecolor_alarm_sensitive>false</forecolor_alarm_sensitive>
+    <foreground_color>
+      <color name="Controller: FG" red="0" green="0" blue="196" />
+    </foreground_color>
+    <height>23</height>
+    <image></image>
+    <name>EDM shell command</name>
+    <push_action_index>0</push_action_index>
+    <pv_name></pv_name>
+    <pv_value />
+    <rules />
+    <scale_options>
+      <width_scalable>true</width_scalable>
+      <height_scalable>true</height_scalable>
+      <keep_wh_ratio>false</keep_wh_ratio>
+    </scale_options>
+    <scripts />
+    <style>0</style>
+    <text>Strip N</text>
+    <toggle_button>false</toggle_button>
+    <tooltip>$(pv_name)
+$(pv_value)</tooltip>
+    <visible>true</visible>
+    <widget_type>Action Button</widget_type>
+    <width>89</width>
+    <wuid>2b4aaf0e:15dac53dfaa:-7d8c</wuid>
+    <x>312</x>
+    <y>654</y>
   </widget>
 </display>
