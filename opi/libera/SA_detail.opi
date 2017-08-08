@@ -1614,13 +1614,13 @@ $(pv_value)</tooltip>
   <widget typeId="org.csstudio.opibuilder.widgets.ActionButton" version="2.0.0">
     <actions hook="false" hook_all="false">
       <action type="OPEN_DISPLAY">
-        <path>striptool.opi</path>
+        <path>../scripts/databrowser.opi</path>
         <macros>
           <include_parent_macros>true</include_parent_macros>
-          <trace_0_y_pv>$(device):SA:A</trace_0_y_pv>
-          <trace_1_y_pv>$(device):SA:B</trace_1_y_pv>
-          <trace_2_y_pv>$(device):SA:C</trace_2_y_pv>
-          <trace_3_y_pv>$(device):SA:D</trace_3_y_pv>
+          <trace_0>$(device):SA:A</trace_0>
+          <trace_1>$(device):SA:B</trace_1>
+          <trace_2>$(device):SA:C</trace_2>
+          <trace_3>$(device):SA:D</trace_3>
           <scale_format>0.00E0</scale_format>
           <scale_units>μm</scale_units>
         </macros>
@@ -1675,15 +1675,15 @@ $(pv_value)</tooltip>
   <widget typeId="org.csstudio.opibuilder.widgets.ActionButton" version="2.0.0">
     <actions hook="false" hook_all="false">
       <action type="OPEN_DISPLAY">
-        <path>striptool.opi</path>
+        <path>../scripts/databrowser.opi</path>
         <macros>
           <include_parent_macros>true</include_parent_macros>
-          <trace_0_y_pv>$(device):SA:AN</trace_0_y_pv>
-          <trace_1_y_pv>$(device):SA:BN</trace_1_y_pv>
-          <trace_2_y_pv>$(device):SA:CN</trace_2_y_pv>
-          <trace_3_y_pv>$(device):SA:DN</trace_3_y_pv>
-          <scale_format>0.00</scale_format>
-          <scale_units>mm</scale_units>
+          <trace_0>$(device):SA:AN</trace_0>
+          <trace_1>$(device):SA:BN</trace_1>
+          <trace_2>$(device):SA:CN</trace_2>
+          <trace_3>$(device):SA:DN</trace_3>
+          <scale_format>0.00E0</scale_format>
+          <scale_units>μm</scale_units>
         </macros>
         <mode>8</mode>
         <description></description>
