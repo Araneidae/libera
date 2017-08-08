@@ -2231,10 +2231,16 @@ $(pv_value)</tooltip>
   </widget>
   <widget typeId="org.csstudio.opibuilder.widgets.ActionButton" version="2.0.0">
     <actions hook="false" hook_all="false">
-      <action type="EXECUTE_CMD">
-        <command>../scripts/strip_tool.py SC:C%sMAG 1234 0.001 2 $(device)</command>
-        <command_directory>$(opi.dir)</command_directory>
-        <wait_time>10</wait_time>
+      <action type="OPEN_DISPLAY">
+        <path>../scripts/databrowser.opi</path>
+        <macros>
+          <include_parent_macros>true</include_parent_macros>
+          <trace_0>$(device):SC:C1MAG</trace_0>
+          <trace_1>$(device):SC:C2MAG</trace_1>
+          <trace_2>$(device):SC:C3MAG</trace_2>
+          <trace_3>$(device):SC:C4MAG</trace_3>
+        </macros>
+        <mode>8</mode>
         <description></description>
       </action>
     </actions>
