@@ -9,4 +9,5 @@ DIRS += liberaApp
 DIRS += extras
 DIRS += base
 DIRS += install_d
+DIRS += opi
 include $(TOP)/configure/RULES_TOP
