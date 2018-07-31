@@ -126,7 +126,7 @@ font "helvetica-bold-r-14.0"
 buttonLabel "?"
 numCmds 1
 command {
-  0 "libera-help atten_offset"
+  0 "libera-help SR_debug"
 }
 includeHelpIcon
 endObjectProperties

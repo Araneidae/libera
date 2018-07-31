@@ -276,7 +276,7 @@ $(trace_0_y_pv_value)</tooltip>
   <widget typeId="org.csstudio.opibuilder.widgets.ActionButton" version="2.0.0">
     <actions hook="false" hook_all="false">
       <action type="EXECUTE_CMD">
-        <command>../scripts/libera-help atten_offset</command>
+        <command>../scripts/libera-help SR_debug</command>
         <command_directory>$(opi.dir)</command_directory>
         <wait_time>10</wait_time>
         <description></description>
